@@ -1,5 +1,5 @@
 <script setup>
-const isOpen = ref(deleteModal);
+const isOpen = ref(deleteModalStatus);
 </script>
 
 <template>

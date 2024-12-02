@@ -1,9 +1,16 @@
-import type { Inventory } from "~/types";
+import type { Inventory, InventoryItems } from "~/types";
+import type { ObjectId } from "mongoose";
 
 export const useInventoryStore = defineStore("inventories", () => {
   // State
   const inventories = ref<Inventory[]>([]);
-  const inventory = ref({});
+  const inventory = ref({
+    _id: undefined as unknown as ObjectId,
+    date: new Date(),
+    type: undefined as unknown as string,
+    category: undefined as unknown as string,
+    items: [] as InventoryItems[],
+  });
   // CRUD actions
   const getInventories = async (): Promise<void> => {
     const response = await $fetch("/api/inventory");
@@ -11,55 +18,48 @@ export const useInventoryStore = defineStore("inventories", () => {
     return;
   };
 
-  const addInventory = async (newInventory: Inventory): Promise<void> => {
-    await $fetch("/api/inventory/create", {
-      method: "POST",
-      body: JSON.stringify(newInventory),
-    });
+  const updateInventory = async (): Promise<void> => {
+    if (!inventory.value._id) {
+      await $fetch("/api/inventory/create", {
+        method: "POST",
+        body: JSON.stringify(inventory.value),
+      });
+    } else {
+      await $fetch(`/api/inventory/${inventory.value._id}`, {
+        method: "PUT",
+        body: JSON.stringify(inventory.value),
+      });
+    }
     getInventories();
+    resetInventory();
     return;
   };
 
-  // Setters
-  const sortInventory = () => {
-    const sortDays = inventories.value.sort((a, b) => {
-      return parseInt(a.day) - parseInt(b.day);
-    });
-    const sortMonths = sortDays.sort((a, b) => {
-      if (a.month < b.month) return -1;
-      if (a.month > b.month) return 1;
-      return 0;
-    });
-    const sortYears = sortMonths.sort((a, b) => {
-      if (a.year < b.year) return -1;
-      if (a.year > b.year) return 1;
-      return 0;
-    });
-    inventories.value = sortYears;
+  const resetInventory = () => {
+    inventory.value = {
+      _id: undefined as unknown as ObjectId,
+      date: new Date(),
+      type: undefined as unknown as string,
+      category: undefined as unknown as string,
+      items: [] as InventoryItems[],
+    };
+    return;
   };
-  // Getters
-  const getItemInventory = (id: string) => {
-    sortInventory();
-    console.log(id);
-    const item = inventories.value.map((inventory) => {
-      return {
-        _id: inventory._id,
-        year: inventory.year,
-        month: inventory.month,
-        day: inventory.day,
-        items: inventory.items[id],
-      };
+
+  const deleteInventory = async (id: string): Promise<void> => {
+    await $fetch(`/api/inventory/${id}`, {
+      method: "DELETE",
     });
-    console.log(item);
-    return item;
+    getInventories();
+    return;
   };
 
   return {
     inventories,
     inventory,
     getInventories,
-    addInventory,
-    sortInventory,
-    getItemInventory,
+    updateInventory,
+    resetInventory,
+    deleteInventory,
   };
 });

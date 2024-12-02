@@ -97,10 +97,10 @@ const stepProofingRecommendedLiters = computed(() => {
 </script>
 
 <template>
-  <UContainer class="flex justify-center">
-    <div class="flex flex-col gap-3 justify-center w-1/2 px-auto">
+  <div class="flex justify-center">
+    <div class="flex flex-col gap-3 justify-center px-auto p-3">
       <h1 class="self-center text-xl">Weight to ABV</h1>
-      <div class="grid grid-cols-2 lg:grid-cols-6 gap-3 justify-center">
+      <div class="grid grid-cols-2 gap-3 justify-center">
         <UFormGroup label="Weight" class="gap-1 col-span-2">
           <div class="grid grid-cols-2 gap-2">
             <UInput
@@ -138,7 +138,7 @@ const stepProofingRecommendedLiters = computed(() => {
         </UFormGroup>
       </div>
       <h1 class="self-center text-xl">Proofing Down</h1>
-      <div class="grid grid-cols-1 lg:grid-cols-3 gap-3 justify-center">
+      <div class="grid grid-cols-1 gap-3 justify-center">
         <UFormGroup label="Volume" class="col-span-1">
           <div class="grid grid-cols-2 gap-1">
             <UInput
@@ -219,7 +219,7 @@ const stepProofingRecommendedLiters = computed(() => {
         </UFormGroup>
       </div>
       <h1 class="self-center text-xl">Stepped Proofing</h1>
-      <div class="grid grid-cols-1 lg:grid-cols-2 gap-3 justify-center">
+      <div class="grid grid-cols-1 gap-3 justify-center">
         <UFormGroup label="Initial ABV" class="col-span-1">
           <UInput type="number" v-model="stepProofing.initialAbv" />
         </UFormGroup>
@@ -330,5 +330,5 @@ const stepProofingRecommendedLiters = computed(() => {
         </UFormGroup>
       </div>
     </div>
-  </UContainer>
+  </div>
 </template>

@@ -7,14 +7,6 @@ export const Bottle = defineMongooseModel({
       type: String,
       required: true,
     },
-    class: {
-      type: String,
-      required: true,
-    },
-    type: {
-      type: String,
-      required: false,
-    },
     abv: {
       type: Number,
       required: false,

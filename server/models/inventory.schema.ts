@@ -3,20 +3,20 @@ import { defineMongooseModel } from "#nuxt/mongoose";
 export const Inventory = defineMongooseModel({
   name: "Inventory",
   schema: {
-    year: {
+    date: {
+      type: Date,
+      required: true,
+    },
+    type: {
       type: String,
       required: true,
     },
-    month: {
-      type: String,
-      required: true,
-    },
-    day: {
+    category: {
       type: String,
       required: true,
     },
     items: {
-      type: Object,
+      type: Array,
     },
   },
 });

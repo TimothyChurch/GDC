@@ -2,7 +2,7 @@
 const items = (row) => [
   [
     {
-      label: "Ingredient",
+      label: "item",
       icon: "i-heroicons-pencil-square-20-solid",
       click: () => console.log("Edit"),
     },
@@ -35,14 +35,22 @@ const items = (row) => [
 </script>
 
 <template>
-  <div class="flex justify-between p-3">
+  <div class="flex justify-between p-3 h-14">
     <div>Profile Area</div>
-    <UDropdown :items="items()">
+    <div name="Right Nav">
+      <UDropdown :items="items()">
+        <UButton
+          color="gray"
+          variant="ghost"
+          icon="i-heroicons-ellipsis-horizontal-20-solid"
+        />
+      </UDropdown>
       <UButton
         color="gray"
         variant="ghost"
-        icon="i-heroicons-ellipsis-horizontal-20-solid"
+        icon="i-heroicons-calculator"
+        @click="toggleCalculatorModal"
       />
-    </UDropdown>
+    </div>
   </div>
 </template>

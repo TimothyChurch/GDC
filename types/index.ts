@@ -1,6 +1,6 @@
 import type { ObjectId } from "mongoose";
 
-export interface Ingredient {
+export interface Item {
   _id: ObjectId;
   name: string;
   type: string;
@@ -10,24 +10,60 @@ export interface Ingredient {
 export interface Recipe {
   _id: ObjectId;
   name: string;
-  description: string;
-  ingredients: { ingredient: ObjectId; amount: number; unit: string }[];
+  class: string;
+  type: string;
+  volume: number;
+  volumeUnit: string;
+  items: { item: ObjectId; amount: number; unit: string }[];
 }
 
 export interface Bottle {
   _id: ObjectId;
   name: string;
-  class: string;
-  type: string;
   abv: number;
   recipe: ObjectId;
-  batches: { batch: ObjectId }[];
 }
 
 export interface Inventory {
   _id: ObjectId;
-  year: string;
-  month: string;
-  day: string;
-  items: {};
+  date: Date;
+  type: string;
+  category: string;
+  items: InventoryItems[];
+}
+
+export interface InventoryItems {
+  _id: ObjectId;
+  behindBar: number;
+  inOffice: number;
+  total: number;
+}
+
+export interface Contact {
+  _id: ObjectId;
+  firstName: string;
+  lastName: string;
+  businessName: string;
+  type: string;
+  website: string;
+  address: string;
+  email: string;
+  phone: string;
+}
+
+export interface PurchaseOrder {
+  _id: ObjectId;
+  status: string;
+  vendor: ObjectId;
+  items: PurchaseOrderItem[];
+  total: number;
+  date: Date;
+}
+
+export interface PurchaseOrderItem {
+  item: ObjectId;
+  quantity: number;
+  size: number;
+  sizeUnit: string;
+  price: number;
 }

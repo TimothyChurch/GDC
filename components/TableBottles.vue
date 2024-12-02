@@ -1,6 +1,12 @@
 <script setup>
+// Bottle Store
+
 const bottleStore = useBottleStore();
-const { selectBottle, deleteBottle } = bottleStore;
+if (bottleStore.bottles.length === 0) {
+  bottleStore.getBottles();
+}
+
+// Table Parameters
 
 const columns = [
   {
@@ -28,12 +34,25 @@ const columns = [
     key: "actions",
   },
 ];
+
+const page = ref(1);
+const pageCount = ref(5);
+
+const rows = computed(() => {
+  return bottleStore.bottles.slice(
+    (page.value - 1) * pageCount.value,
+    page.value * pageCount.value
+  );
+});
+
+// Table Buttons
+
 const items = (row) => [
   [
     {
       label: "Edit",
       icon: "i-heroicons-pencil-square-20-solid",
-      click: () => editItem(row._id),
+      click: () => editItem(row),
     },
     {
       label: "Delete",
@@ -42,29 +61,33 @@ const items = (row) => [
     },
   ],
 ];
-const newItem = () => {
-  formSelection.value = "FormBottleAdd";
+
+// Functions for Table
+
+const addItem = () => {
+  bottleStore.resetBottle();
+  formSelection.value = "FormBottle";
   toggleFormModal();
 };
-const editItem = (id) => {
-  selectBottle(id);
-  formSelection.value = "FormBottleEdit";
+const editItem = (row) => {
+  bottleStore.bottle = row;
+  formSelection.value = "FormBottle";
   toggleFormModal();
 };
 const deleteItem = async (id) => {
-  await deleteBottle(id);
+  await bottleStore.deleteBottle(id);
 };
 </script>
 
 <template>
-  <div>
-    <UTable :columns="columns" :rows="bottleStore.bottles">
+  <div class="flex flex-col">
+    <UTable :columns="columns" :rows="rows">
       <template #actions-header>
         <UButton
           color="gray"
           variant="ghost"
           icon="i-heroicons-plus-20-solid"
-          @click="newItem"
+          @click="addItem"
         />
       </template>
       <template #actions-data="{ row }">
@@ -77,5 +100,19 @@ const deleteItem = async (id) => {
         </UDropdown>
       </template>
     </UTable>
+    <div class="flex justify-between">
+      <UFormGroup label="Results per Page">
+        <USelect :options="[5, 10, 20, 100]" v-model="pageCount" />
+      </UFormGroup>
+      <div
+        class="flex justify-end px-3 py-3.5 border-t border-gray-200 dark:border-gray-700"
+      >
+        <UPagination
+          v-model="page"
+          :page-count="pageCount"
+          :total="bottleStore.bottles.length"
+        />
+      </div>
+    </div>
   </div>
 </template>

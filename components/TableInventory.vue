@@ -1,39 +1,9 @@
-<script setup>
-const inventoryStore = useInventoryStore();
-const bottleStore = useBottleStore();
+<script setup lang="ts">
+import type { Inventory } from "~/types";
 
-const bottleInventory = ref();
-const buttonClick = () => {
-  bottleInventory.value = inventoryStore.getItemInventory(
-    "6733ef11f79ffe4449b33e80"
-  );
-};
-const formattedInventories = computed(() => {
-  const data = inventoryStore.inventories.map((inventory) => {
-    const data = {
-      year: inventory.year,
-      month: inventory.month,
-      day: inventory.day,
-      ...inventory.items,
-    };
-    return data;
-  });
-  const sortDays = data.sort((a, b) => {
-    return parseInt(a.day) - parseInt(b.day);
-  });
-  const sortMonths = sortDays.sort((a, b) => {
-    if (a.month < b.month) return -1;
-    if (a.month > b.month) return 1;
-    return 0;
-  });
-  const sortYears = sortMonths.sort((a, b) => {
-    if (a.year < b.year) return -1;
-    if (a.year > b.year) return 1;
-    return 0;
-  });
-  return sortYears;
-});
-const date = [
+const inventoryStore = useInventoryStore();
+
+const columns = [
   {
     key: "year",
     label: "Year",
@@ -46,67 +16,71 @@ const date = [
     key: "day",
     label: "Day",
   },
-];
-const actions = [
+  {
+    key: "type",
+    label: "Type",
+  },
+  {
+    key: "category",
+    label: "Category",
+  },
   {
     key: "actions",
   },
 ];
-
-const columns = computed(() => {
-  const bottlesObject = bottleStore.bottles.map((bottle) => {
-    const data = { key: bottle._id, label: bottle.name };
-    return data;
-  });
-  const sortedBottles = bottlesObject.sort((a, b) => {
-    if (a.label < b.label) return -1;
-    if (a.label > b.label) return 1;
-    return 0;
-  });
-  const addDate = date.concat(sortedBottles);
-  const allColumns = addDate.concat(actions);
-
-  return allColumns;
-});
-
-const items = (row) => [
+const items = (row: Inventory) => [
   [
     {
       label: "Edit",
       icon: "i-heroicons-pencil-square-20-solid",
-      click: () => editItem(row._id),
+      click: () => editItem(row),
     },
     {
       label: "Delete",
       icon: "i-heroicons-trash-20-solid",
-      click: () => deleteItem(row._id),
+      click: () => deleteItem(row),
     },
   ],
 ];
 
-const newItem = () => {
-  formSelection.value = "FormBottleAdd";
+const expand = ref({
+  openedRows: [],
+  row: {},
+});
+
+// CRUD Functions
+
+const addItem = () => {
+  inventoryStore.resetInventory();
+  formSelection.value = "FormInventoryBase";
   toggleFormModal();
 };
-const editItem = (id) => {
-  selectBottle(id);
-  formSelection.value = "FormBottleEdit";
+const editItem = (row: Inventory) => {
+  inventoryStore.inventory = row;
+  formSelection.value = "FormInventoryBase";
   toggleFormModal();
 };
-const deleteItem = async (id) => {
-  await deleteBottle(id);
+const deleteItem = (row: Inventory) => {
+  inventoryStore.deleteInventory(row._id.toString());
 };
 </script>
 
 <template>
-  <UContainer>
-    <UTable :rows="formattedInventories" :columns="columns">
+  <div>
+    <UTable
+      :rows="inventoryStore.inventories"
+      :columns="columns"
+      v-model:expand="expand"
+    >
+      <template #expand="{ row }">
+        <UTable :rows="row.items" />
+      </template>
       <template #actions-header>
         <UButton
           color="gray"
           variant="ghost"
           icon="i-heroicons-plus-20-solid"
-          @click="newItem"
+          @click="addItem()"
         />
       </template>
       <template #actions-data="{ row }">
@@ -119,5 +93,5 @@ const deleteItem = async (id) => {
         </UDropdown>
       </template>
     </UTable>
-  </UContainer>
+  </div>
 </template>
