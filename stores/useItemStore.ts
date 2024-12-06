@@ -9,15 +9,20 @@ export const useItemStore = defineStore("items", () => {
     name: "",
     type: "",
     vendor: undefined as unknown as ObjectId,
+    inventoryUnit: "",
+    purchaseHistory: [],
+    inventoryHistory: [],
   });
 
   // CRUD actions
-  const getitems = async (): Promise<void> => {
-    const response = await $fetch("/api/item");
-    items.value = response as Item[];
+  const getItems = async (): Promise<void> => {
+    if (!items.value.length) {
+      const response = await $fetch("/api/item");
+      items.value = response as Item[];
+    }
   };
 
-  const updateitem = async (): Promise<void> => {
+  const updateItem = async (): Promise<void> => {
     if (!item.value._id) {
       await $fetch("/api/item/create", {
         method: "POST",
@@ -29,27 +34,30 @@ export const useItemStore = defineStore("items", () => {
         body: JSON.stringify(item.value),
       });
     }
-    await getitems();
-    resetitem();
+    await getItems();
+    resetItem();
   };
 
-  const resetitem = (): void => {
+  const resetItem = (): void => {
     item.value = {
       _id: undefined as unknown as ObjectId,
       name: "",
       type: "",
       vendor: undefined as unknown as ObjectId,
+      inventoryUnit: "",
+      purchaseHistory: [],
+      inventoryHistory: [],
     };
   };
 
-  const deleteitem = async (id: string): Promise<void> => {
+  const deleteItem = async (id: string): Promise<void> => {
     await $fetch(`/api/item/${id}`, {
       method: "DELETE",
     });
-    await getitems();
+    await getItems();
   };
 
-  const getitemById = (id: string): Item | undefined => {
+  const getItemById = (id: string): Item | undefined => {
     return items.value.find((ing) => ing._id.toString() === id);
   };
 
@@ -60,10 +68,10 @@ export const useItemStore = defineStore("items", () => {
   return {
     items,
     item,
-    getitems,
-    updateitem,
-    deleteitem,
-    getitemById,
+    getItems,
+    updateItem,
+    deleteItem,
+    getItemById,
     nameById,
   };
 });

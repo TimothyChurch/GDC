@@ -19,20 +19,26 @@ export const usePurchaseOrderStore = defineStore("purchaseOrders", () => {
     purchaseOrders.value = response as PurchaseOrder[];
   };
 
-  const updatePurchaseOrder = async (): Promise<void> => {
+  const updatePurchaseOrder = async (): Promise<PurchaseOrder> => {
+    const response = ref();
     if (!purchaseOrder.value._id) {
-      await $fetch("/api/purchaseOrder/create", {
+      response.value = await $fetch("/api/purchaseOrder/create", {
         method: "POST",
         body: JSON.stringify(purchaseOrder.value),
       });
     } else {
-      await $fetch(`/api/purchaseOrder/${purchaseOrder.value._id}`, {
-        method: "PUT",
-        body: JSON.stringify(purchaseOrder.value),
-      });
+      response.value = await $fetch(
+        `/api/purchaseOrder/${purchaseOrder.value._id}`,
+        {
+          method: "PUT",
+          body: JSON.stringify(purchaseOrder.value),
+        }
+      );
     }
-    resetCurrentPurchaseOrder();
     await getPurchaseOrders();
+    resetCurrentPurchaseOrder();
+
+    return response.value;
   };
 
   const deletePurchaseOrder = async (id: string): Promise<void> => {
@@ -60,6 +66,10 @@ export const usePurchaseOrderStore = defineStore("purchaseOrders", () => {
     );
   };
 
+  const getPurchaseOrderById = (id: string) => {
+    return purchaseOrders.value.find((po) => po._id.toString() === id);
+  };
+
   return {
     purchaseOrders,
     purchaseOrder,
@@ -68,5 +78,6 @@ export const usePurchaseOrderStore = defineStore("purchaseOrders", () => {
     deletePurchaseOrder,
     resetCurrentPurchaseOrder,
     getPurchaseOrderByVendor,
+    getPurchaseOrderById,
   };
 });

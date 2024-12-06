@@ -19,5 +19,15 @@ export const Item = defineMongooseModel({
       type: String,
       required: false,
     },
+    inventoryUnit: {
+      type: String,
+      required: true,
+    },
+    purchaseHistory: {
+      type: Array,
+    },
+    inventoryHistory: {
+      type: Array,
+    },
   },
 });

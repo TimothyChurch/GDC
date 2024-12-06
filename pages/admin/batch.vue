@@ -6,8 +6,6 @@ definePageMeta({
 
 <template>
   <div>
-    <h1>Inventory Page</h1>
-    <FormInventory />
-    <TableInventorySummary />
+    <FormBatch />
   </div>
 </template>

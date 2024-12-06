@@ -7,16 +7,9 @@ export const Inventory = defineMongooseModel({
       type: Date,
       required: true,
     },
-    type: {
-      type: String,
-      required: true,
-    },
-    category: {
-      type: String,
-      required: true,
-    },
     items: {
-      type: Array,
+      type: Object,
+      required: true,
     },
   },
 });

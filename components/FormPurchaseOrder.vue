@@ -65,16 +65,21 @@ const statusOptions = [
   "Cancelled",
 ];
 // Submit Form
-const submitForm = () => {
+const submitForm = async () => {
   purchaseOrderStore.purchaseOrder.total = total.value.value;
-  purchaseOrderStore.updatePurchaseOrder();
+  const data = await purchaseOrderStore.updatePurchaseOrder();
+  data.items.forEach((item) => {
+    itemStore.item = itemStore.items.find((i) => i._id === item.item);
+    itemStore.item.purchaseHistory.push(data._id);
+    itemStore.updateItem();
+  });
   toggleFormModal();
 };
 </script>
 
 <template>
   <div>
-    <div class="flex gap-3">
+    <div class="flex flex-wrap gap-3">
       <UFormGroup label="Date">
         <UPopover :popper="{ placement: 'bottom-start' }">
           <UButton
@@ -90,15 +95,13 @@ const submitForm = () => {
                 (purchaseOrderStore.purchaseOrder.date = new Date(
                   purchaseOrderStore.purchaseOrder.date
                 ))
-            "
-          />
+            " />
 
           <template #panel="{ close }">
             <DatePicker
               v-model="purchaseOrderStore.purchaseOrder.date"
               is-required
-              @close="close"
-            />
+              @close="close" />
           </template>
         </UPopover>
       </UFormGroup>
@@ -106,22 +109,19 @@ const submitForm = () => {
         <USelect
           :options="statusOptions"
           v-model="purchaseOrderStore.purchaseOrder.status"
-          placeholder="Select status"
-        />
+          placeholder="Select status" />
       </UFormGroup>
       <UFormGroup label="Vendor">
         <USelect
           :options="contactStore.contacts"
           v-model="purchaseOrderStore.purchaseOrder.vendor"
           option-attribute="businessName"
-          value-attribute="_id"
-        />
+          value-attribute="_id" />
       </UFormGroup>
     </div>
     <UTable
       :rows="purchaseOrderStore.purchaseOrder.items"
-      :columns="itemsTableColumns"
-    >
+      :columns="itemsTableColumns">
       <template #item-data="{ row }">
         {{ itemStore.items.find((i) => i._id === row.item)?.name }}
       </template>
@@ -154,7 +154,9 @@ const submitForm = () => {
         >Add Item
       </UButton>
     </div>
-    <div v-if="additionalItem" class="flex justify-around my-3 gap-3">
+    <div
+      v-if="additionalItem"
+      class="flex flex-wrap justify-between my-3 gap-3">
       <UFormGroup label="Item">
         <USelect
           :options="
@@ -164,8 +166,7 @@ const submitForm = () => {
           "
           v-model="newItem.item"
           option-attribute="name"
-          value-attribute="_id"
-        />
+          value-attribute="_id" />
       </UFormGroup>
       <UFormGroup label="Quantity">
         <UInput v-model.number="newItem.quantity" />

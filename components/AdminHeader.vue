@@ -42,15 +42,14 @@ const items = (row) => [
         <UButton
           color="gray"
           variant="ghost"
-          icon="i-heroicons-ellipsis-horizontal-20-solid"
-        />
+          icon="i-heroicons-plus-circle"
+          size="xl" />
       </UDropdown>
       <UButton
         color="gray"
         variant="ghost"
         icon="i-heroicons-calculator"
-        @click="toggleCalculatorModal"
-      />
+        @click="toggleCalculatorModal" />
     </div>
   </div>
 </template>

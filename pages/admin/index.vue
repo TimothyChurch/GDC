@@ -1,29 +1,18 @@
 <script setup>
 definePageMeta({
-  layout: "admin",
+	layout: 'admin',
 });
 </script>
 
 <template>
-  <div class="grid grid-cols-2 gap-2">
-    <UCard class="col-span-2">
-      <TableInventorySummary />
-    </UCard>
-    <UCard>
-      <template #header>Contacts</template>
-      <TableContacts />
-    </UCard>
-    <UCard>
-      <template #header>items</template>
-      <TableItems />
-    </UCard>
-    <UCard>
-      <template #header>Recipes</template>
-      <TableRecipes />
-    </UCard>
-    <UCard>
-      <template #header>Bottles</template>
-      <TableBottles />
-    </UCard>
-  </div>
+	<div>
+		<div class="flex flex-col gap-3">
+			<h1>Production Table</h1>
+			<TableProductions />
+			<h1>Vessel Table</h1>
+			<TableVessels />
+			<h1>Batch Table</h1>
+			<TableBatches />
+		</div>
+	</div>
 </template>

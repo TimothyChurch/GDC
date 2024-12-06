@@ -6,6 +6,7 @@ export const useBottleStore = defineStore("bottles", () => {
   const bottle = ref<Bottle>({
     _id: undefined as unknown as ObjectId,
     name: "",
+    type: "bottle",
     abv: 0,
     recipe: "" as unknown as ObjectId,
   });
@@ -21,6 +22,7 @@ export const useBottleStore = defineStore("bottles", () => {
     bottle.value = {
       _id: undefined as unknown as ObjectId,
       name: "",
+      type: "bottle",
       abv: 0,
       recipe: "" as unknown as ObjectId,
     };

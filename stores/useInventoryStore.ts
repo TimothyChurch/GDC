@@ -7,9 +7,7 @@ export const useInventoryStore = defineStore("inventories", () => {
   const inventory = ref({
     _id: undefined as unknown as ObjectId,
     date: new Date(),
-    type: undefined as unknown as string,
-    category: undefined as unknown as string,
-    items: [] as InventoryItems[],
+    items: {},
   });
   // CRUD actions
   const getInventories = async (): Promise<void> => {
@@ -39,9 +37,7 @@ export const useInventoryStore = defineStore("inventories", () => {
     inventory.value = {
       _id: undefined as unknown as ObjectId,
       date: new Date(),
-      type: undefined as unknown as string,
-      category: undefined as unknown as string,
-      items: [] as InventoryItems[],
+      items: {},
     };
     return;
   };
