@@ -5,5 +5,7 @@ definePageMeta({
 </script>
 
 <template>
-	<div><TableBatches /></div>
+	<div>
+		<TablePurchaseOrders />
+	</div>
 </template>

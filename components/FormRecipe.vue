@@ -2,6 +2,24 @@
 const recipeStore = useRecipeStore();
 const itemStore = useItemStore();
 
+const recipeItemsColumns = [
+	{
+		key: '_id',
+		label: 'Item',
+	},
+	{
+		key: 'amount',
+		label: 'Amount',
+	},
+	{
+		key: 'unit',
+		label: 'Unit',
+	},
+	{
+		key: 'actions',
+	},
+];
+
 const newitem = ref({
 	_id: null,
 	amount: null,
@@ -61,12 +79,21 @@ const types = computed(() => {
 
 			<UTable
 				:rows="recipeStore.recipe.items"
+				:columns="recipeItemsColumns"
 				class="col-span-2">
-				<template #_id-header>item</template>
 				<template
 					#_id-data="{ row }"
 					:key="row._id">
 					{{ itemStore.nameById(row._id) }}
+				</template>
+				<template #actions-data="{ row }">
+					<UButton
+						@click="
+							recipeStore.recipe.items = recipeStore.recipe.items.filter(
+								(item) => item._id != row._id
+							)
+						"
+						icon="i-heroicons-solid-trash" />
 				</template>
 			</UTable>
 			<div class="grid grid-cols-3 gap-3 justify-between col-span-2">

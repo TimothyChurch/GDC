@@ -5,22 +5,26 @@ const itemStore = useItemStore();
 const bottleStore = useBottleStore();
 const inventoryStore = useInventoryStore();
 // Define Filter State
-const allItems = computed(() => itemStore.items.concat(bottleStore.bottles));
-const filter = ref('');
+const allItems = computed(() => {
+	return [...itemStore.items, ...bottleStore.bottles];
+});
+const searchFilter = ref('');
+const typeFilter = ref('');
 const filteredItems = computed(() => {
-	return allItems.value.filter((item) => {
-		const test1 = item.name.toLowerCase().includes(filter.value.toLowerCase());
-		const test2 = item.type
-			? item?.type.toLowerCase().includes(filter.value.toLowerCase())
-			: false;
-		return test1 || test2;
-	});
+	const filtered = ref(allItems.value);
+	if (typeFilter.value != '') {
+		filtered.value = filteredItems.value.filter(
+			(item) => item.type === typeFilter.value
+		);
+	}
+	return filtered.value.filter((item) =>
+		item.name.toLowerCase().includes(searchFilter.value.toLowerCase())
+	);
 });
 // Define Table Component
 const columns = [
 	{ key: 'name', label: 'Name', sortable: true },
 	{ key: 'type', label: 'Type', sortable: true },
-	{ key: 'brand', label: 'Brand' },
 	{ key: 'amount', label: 'Amount' },
 ];
 </script>
@@ -29,13 +33,19 @@ const columns = [
 	<div>
 		<SiteDatePicker v-model="inventoryStore.inventory.date" />
 		<UInput
-			v-model="filter"
+			v-model="searchFilter"
 			placeholder="Filter items..." />
 		<UTable
 			:rows="filteredItems"
 			:columns="columns">
+			<template #type-header>
+				<USelect
+					v-model="typeFilter"
+					:options="itemInventoryTypes()"
+					placeholder="Filter by type" />
+			</template>
 			<template #amount-data="{ row }">
-				<UInput v-model="inventoryStore.inventory.items[row._id]">
+				<UInput v-model="inventoryStore.inventory.items[row._id.toString()]">
 					<template #trailing>
 						{{ row.inventoryUnit }}
 					</template>

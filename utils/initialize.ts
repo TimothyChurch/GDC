@@ -1,35 +1,39 @@
-export const initializeStores = () => {
+export const initializeStores = async () => {
 	const batchStore = useBatchStore();
 	const bottleStore = useBottleStore();
 	const contactStore = useContactStore();
 	const inventoryStore = useInventoryStore();
 	const itemStore = useItemStore();
 	const purchaseOrderStore = usePurchaseOrderStore();
+	const productionsStore = useProductionsStore();
 	const recipeStore = useRecipeStore();
 	const vesselStore = useVesselStore();
 
 	if (!batchStore.batches.length) {
-		batchStore.getBatches();
+		await batchStore.getBatches();
 	}
 	if (!bottleStore.bottles.length) {
-		bottleStore.getBottles();
+		await bottleStore.getBottles();
 	}
 	if (!contactStore.contacts.length) {
-		contactStore.getContacts();
+		await contactStore.getContacts();
 	}
 	if (!inventoryStore.inventories.length) {
-		inventoryStore.getInventories();
+		await inventoryStore.getInventories();
 	}
 	if (!itemStore.items.length) {
-		itemStore.getItems();
+		await itemStore.getItems();
 	}
 	if (!purchaseOrderStore.purchaseOrders.length) {
-		purchaseOrderStore.getPurchaseOrders();
+		await purchaseOrderStore.getPurchaseOrders();
+	}
+	if (!productionsStore.productions.length) {
+		await productionsStore.getProductions();
 	}
 	if (!recipeStore.recipes.length) {
-		recipeStore.getRecipes();
+		await recipeStore.getRecipes();
 	}
 	if (!vesselStore.vessels.length) {
-		vesselStore.getVessels();
+		await vesselStore.getVessels();
 	}
 };

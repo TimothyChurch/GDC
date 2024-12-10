@@ -1,13 +1,13 @@
 <script setup>
 definePageMeta({
-  layout: "admin",
+	layout: 'admin',
 });
 </script>
 
 <template>
-  <div>
-    <h1>Inventory Page</h1>
-    <FormInventory />
-    <TableInventorySummary />
-  </div>
+	<div classs="flex">
+		test
+		<TableInventoryItems />
+		<TableInventoryBottles />
+	</div>
 </template>

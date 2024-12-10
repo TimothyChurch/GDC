@@ -1,11 +1,12 @@
 <script setup lang="ts">
-const productionStore = useProductionStore();
+// Access needed stores
+const productionsStore = useProductionsStore();
 const vesselStore = useVesselStore();
 const bottleStore = useBottleStore();
 const itemStore = useItemStore();
 const recipeStore = useRecipeStore();
 const batchStore = useBatchStore();
-
+// Labels for vessels based on their contents
 const vesselLabels = computed(() => {
 	const vessels = vesselStore.vessels.filter(
 		(vessel) =>
@@ -33,12 +34,12 @@ const vesselLabels = computed(() => {
 		return vesselObject;
 	});
 });
-
+// Compute overall production cost
 const productionCost = computed(() => {
 	const batchCost = ref(0);
 	const barrelCost = ref(0);
-	if (productionStore.production.vessel.length > 0) {
-		productionStore.production.vessel.forEach((vessel) => {
+	if (productionsStore.production.vessel.length > 0) {
+		productionsStore.production.vessel.forEach((vessel) => {
 			const v = vesselStore.getVesselById(vessel as unknown as string);
 			v?.contents.forEach(
 				(content: { cost: number }) => (batchCost.value += content.cost)
@@ -47,26 +48,26 @@ const productionCost = computed(() => {
 		});
 	}
 
-	const bottleCost = productionStore.production.bottling.glassware
+	const bottleCost = productionsStore.production.bottling.glassware
 		? (latestPrice(
-				productionStore.production.bottling.glassware as unknown as string
+				productionsStore.production.bottling.glassware as unknown as string
 		  ) as number)
 		: 0;
-	const capCost = productionStore.production.bottling.cap
+	const capCost = productionsStore.production.bottling.cap
 		? (latestPrice(
-				productionStore.production.bottling.cap as unknown as string
+				productionsStore.production.bottling.cap as unknown as string
 		  ) as number)
 		: 0;
-	const labelCost = productionStore.production.bottling.label
+	const labelCost = productionsStore.production.bottling.label
 		? (latestPrice(
-				productionStore.production.bottling.label as unknown as string
+				productionsStore.production.bottling.label as unknown as string
 		  ) as number)
 		: 0;
 
 	const totalCost =
 		batchCost.value +
 		barrelCost.value +
-		(bottleCost + capCost + labelCost) * productionStore.production.quantity;
+		(bottleCost + capCost + labelCost) * productionsStore.production.quantity;
 
 	console.log(
 		`Total Cost: $${totalCost.toFixed(
@@ -77,6 +78,7 @@ const productionCost = computed(() => {
 	);
 	return totalCost;
 });
+// Filter vessels based on selected IDs
 const filteredVessels = (ids: any[]) => {
 	const filtered = ids.map((id) => {
 		const temp = vesselLabels.value.find(
@@ -87,40 +89,39 @@ const filteredVessels = (ids: any[]) => {
 	});
 	return filtered;
 };
-
+// Save production
 const saveProduction = () => {
-	productionStore.production.productionCost = productionCost.value;
-	productionStore.production.bottleCost =
-		productionCost.value / productionStore.production.quantity;
-	productionStore.updateProduction();
+	productionsStore.production.productionCost = productionCost.value;
+	productionsStore.production.bottleCost =
+		productionCost.value / productionsStore.production.quantity;
+	productionsStore.updateProduction();
 };
 </script>
 
 <template>
 	<div>
-		{{ productionStore.production.vessel }}
-		<UForm :state="productionStore.production">
+		<UForm :state="productionsStore.production">
 			<UFormGroup label="Production Date">
-				<SiteDatePicker v-model="productionStore.production.date" />
+				<SiteDatePicker v-model="productionsStore.production.date" />
 			</UFormGroup>
 			<UFormGroup label="Vessels">
 				<USelectMenu
-					v-model="productionStore.production.vessel"
+					v-model="productionsStore.production.vessel"
 					:options="vesselLabels"
 					option-attribute="name"
 					value-attribute="_id"
 					multiple
 					searchable>
 					<template #label>
-						<span v-if="productionStore.production.vessel.length > 0">{{
-							filteredVessels(productionStore.production.vessel).join(', ')
+						<span v-if="productionsStore.production.vessel.length > 0">{{
+							filteredVessels(productionsStore.production.vessel).join(', ')
 						}}</span>
 					</template>
 				</USelectMenu>
 			</UFormGroup>
 			<UFormGroup label="Bottle">
 				<USelectMenu
-					v-model="productionStore.production.bottle"
+					v-model="productionsStore.production.bottle"
 					:options="bottleStore.bottles"
 					option-attribute="name"
 					value-attribute="_id"
@@ -128,7 +129,7 @@ const saveProduction = () => {
 			</UFormGroup>
 			<UFormGroup label="Glassware">
 				<USelectMenu
-					v-model="productionStore.production.bottling.glassware"
+					v-model="productionsStore.production.bottling.glassware"
 					:options="
 						itemStore.items.filter(
 							(item) => item.type.toLowerCase() === 'glass bottle'
@@ -139,7 +140,7 @@ const saveProduction = () => {
 			</UFormGroup>
 			<UFormGroup label="Cap">
 				<USelect
-					v-model="productionStore.production.bottling.cap"
+					v-model="productionsStore.production.bottling.cap"
 					:options="
 						itemStore.items.filter(
 							(item) => item.type.toLowerCase() === 'bottle cap'
@@ -150,7 +151,7 @@ const saveProduction = () => {
 			</UFormGroup>
 			<UFormGroup label="Label">
 				<USelectMenu
-					v-model="productionStore.production.bottling.label"
+					v-model="productionsStore.production.bottling.label"
 					:options="
 						itemStore.items.filter(
 							(item) => item.type.toLowerCase() === 'label'
@@ -161,7 +162,7 @@ const saveProduction = () => {
 			</UFormGroup>
 			<UFormGroup label="Quantity">
 				<UInput
-					v-model="productionStore.production.quantity"
+					v-model="productionsStore.production.quantity"
 					type="number" />
 			</UFormGroup>
 			<UFormGroup label="Production Cost">
@@ -169,7 +170,7 @@ const saveProduction = () => {
 			</UFormGroup>
 			<UFormGroup label="Bottle Cost">
 				{{
-					Dollar.format(productionCost / productionStore.production.quantity)
+					Dollar.format(productionCost / productionsStore.production.quantity)
 				}}
 			</UFormGroup>
 			<UButton @click="saveProduction">Submit</UButton>

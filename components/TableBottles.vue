@@ -16,23 +16,25 @@ const columns = [
 		label: 'ABV',
 	},
 	{
+		key: 'type',
+		label: 'Type',
+	},
+	{
 		key: 'recipe',
 		label: 'Recipe',
 	},
+	{
+		key: 'cost',
+		label: 'Cost',
+	},
+	{ key: 'price', label: 'Price' },
 	{
 		key: 'actions',
 	},
 ];
 
 const page = ref(1);
-const pageCount = ref(5);
-
-const rows = computed(() => {
-	return bottleStore.bottles.slice(
-		(page.value - 1) * pageCount.value,
-		page.value * pageCount.value
-	);
-});
+const pageCount = ref(10);
 
 // Table Buttons
 
@@ -67,12 +69,26 @@ const editItem = (row) => {
 const deleteItem = async (id) => {
 	await bottleStore.deleteBottle(id);
 };
+const searchFilter = ref('');
+const rows = computed(() => {
+	const filtered = ref(bottleStore.bottles);
+	if (searchFilter.value != '') {
+		filtered.value = filtered.value.filter((bottle) =>
+			bottle.name.toLowerCase().includes(searchFilter.value.toLowerCase())
+		);
+	}
+	return filtered.value.slice(
+		(page.value - 1) * pageCount.value,
+		page.value * pageCount.value
+	);
+});
 </script>
 
 <template>
 	<div class="flex flex-col">
-		{{ formModalStatus }}
-		{{ formSelection }}
+		<UInput
+			v-model="searchFilter"
+			placeholder="Search..." />
 		<UTable
 			:columns="columns"
 			:rows="rows">

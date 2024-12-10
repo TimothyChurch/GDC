@@ -51,7 +51,7 @@ const items = (row) => [
 		{
 			label: 'Delete',
 			icon: 'i-heroicons-trash-20-solid',
-			click: () => deleteRecipe(row._id),
+			click: () => deleteRecipe(row),
 		},
 	],
 ];
@@ -66,12 +66,33 @@ const editRecipe = (row) => {
 	toggleFormModal();
 };
 const deleteRecipe = (row) => {
+	console.log(row);
 	recipeStore.deleteRecipe(row._id);
+};
+
+const itemsTableRows = (row) => {
+	console.log(row);
+	return row.items.map((item) => {
+		return {
+			name: itemStore.nameById(item._id),
+			amount: `${item.amount} ${item.unit}`,
+			cost: `${Dollar.format(latestPrice(item._id))} /
+						${itemStore.getItemById(item._id)?.inventoryUnit}`,
+			total: `${Dollar.format(
+				item.amount *
+					latestPrice(item._id) *
+					convertUnitRatio(
+						item.unit,
+						itemStore.getItemById(item._id)?.inventoryUnit
+					)
+			)}`,
+		};
+	});
 };
 </script>
 
 <template>
-	<UContainer>
+	<div>
 		<UTable
 			:rows="recipeStore.recipes"
 			:columns="columns"
@@ -95,23 +116,8 @@ const deleteRecipe = (row) => {
 				</UDropdown>
 			</template>
 			<template #expand="{ row }">
-				<UTable
-					:rows="row.items"
-					:columns="recipeColumns">
-					<template #_id-data="{ row }">
-						{{ itemStore.nameById(row._id) }}
-					</template>
-					<template #amount-data="{ row }">
-						{{ row.amount }} {{ row.unit }}
-					</template>
-					<template #cost-data="{ row }">
-						{{ Dollar.format(latestPrice(row._id)) }}
-					</template>
-					<template #total-data="{ row }">
-						{{ Dollar.format(row.amount * latestPrice(row._id)) }}
-					</template>
-				</UTable>
+				<UTable :rows="itemsTableRows(row)"> </UTable>
 			</template>
 		</UTable>
-	</UContainer>
+	</div>
 </template>

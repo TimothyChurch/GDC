@@ -3,7 +3,7 @@ import { ref } from 'vue';
 import type { Production } from '~/types';
 import type { ObjectId } from 'mongoose';
 
-export const useProductionStore = defineStore('productions', () => {
+export const useProductionsStore = defineStore('productions', () => {
 	// State
 	const productions = ref<Production[]>([]);
 	const production = ref<Production>({

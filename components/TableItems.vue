@@ -3,15 +3,25 @@ const itemStore = useItemStore();
 const contactStore = useContactStore();
 
 const search = ref('');
+const filteredType = ref('');
 
-const filteredItems = computed(() =>
-	itemStore.items.filter(
+const filteredItems = computed(() => {
+	const firstFilter = ref(itemStore.items);
+	if (filteredType.value != '') {
+		firstFilter.value = firstFilter.value.filter(
+			(item) => item.type === filteredType.value
+		);
+	}
+	return firstFilter.value.filter(
 		(item) =>
 			item.name.toLowerCase().includes(search.value.toLowerCase()) ||
 			item.type.toLowerCase().includes(search.value.toLowerCase()) ||
-			item.vendor.toLowerCase().includes(search.value.toLowerCase())
-	)
-);
+			contactStore
+				.getContactById(item.vendor)
+				.businessName.toLowerCase()
+				.includes(search.value.toLowerCase())
+	);
+});
 
 const columns = [
 	{ key: 'name', label: 'Name', sortable: true },
@@ -73,6 +83,12 @@ const deleteItem = async (id) => {
 						variant="ghost"
 						icon="i-heroicons-ellipsis-horizontal-20-solid" />
 				</UDropdown>
+			</template>
+			<template #type-header>
+				<USelect
+					v-model="filteredType"
+					placeholder="Filter by type"
+					:options="itemInventoryTypes" />
 			</template>
 			<template #vendor-data="{ row }">
 				{{ contactStore.getContactById(row.vendor)?.businessName }}
