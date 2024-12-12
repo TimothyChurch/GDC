@@ -71,7 +71,6 @@ const deleteRecipe = (row) => {
 };
 
 const itemsTableRows = (row) => {
-	console.log(row);
 	return row.items.map((item) => {
 		return {
 			name: itemStore.nameById(item._id),

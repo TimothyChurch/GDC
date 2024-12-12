@@ -5,12 +5,10 @@ definePageMeta({
 </script>
 
 <template>
-	<div>
-		<div class="flex flex-col gap-3">
-			<h1>Production Table</h1>
-			<TableProductions />
-			<h1>Inventory Table</h1>
-			<TableInventoryItems />
-		</div>
+	<div class="flex flex-col gap-3 flex-grow mx-auto">
+		<DashboardUpcoming />
+		<DashboardBrewing />
+		<DashboardFermenters />
+		<DashboardDistilling />
 	</div>
 </template>

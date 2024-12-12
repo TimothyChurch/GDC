@@ -19,7 +19,14 @@ const recipeItemsColumns = [
 		key: 'actions',
 	},
 ];
-
+const recipeItemsRows = computed(() => {
+	return recipeStore.recipe.items;
+});
+const removeItem = (itemId) => {
+	recipeStore.recipe.items = recipeStore.recipe.items.filter(
+		(item) => item._id != itemId
+	);
+};
 const newitem = ref({
 	_id: null,
 	amount: null,
@@ -35,6 +42,11 @@ const types = computed(() => {
 		(liquor) => liquor.class == recipeStore.recipe.class
 	)[0]?.types;
 });
+
+const saveRecipe = () => {
+	recipeStore.updateRecipe();
+	toggleFormModal();
+};
 </script>
 <template>
 	<UContainer>
@@ -76,9 +88,8 @@ const types = computed(() => {
 					v-model="recipeStore.recipe.volumeUnit"
 					:options="['gal', 'L']" />
 			</UFormGroup>
-
 			<UTable
-				:rows="recipeStore.recipe.items"
+				:rows="recipeItemsRows"
 				:columns="recipeItemsColumns"
 				class="col-span-2">
 				<template
@@ -88,17 +99,13 @@ const types = computed(() => {
 				</template>
 				<template #actions-data="{ row }">
 					<UButton
-						@click="
-							recipeStore.recipe.items = recipeStore.recipe.items.filter(
-								(item) => item._id != row._id
-							)
-						"
+						@click="removeItem(row._id)"
 						icon="i-heroicons-solid-trash" />
 				</template>
 			</UTable>
 			<div class="grid grid-cols-3 gap-3 justify-between col-span-2">
 				<UFormGroup label="Name">
-					<USelect
+					<USelectMenu
 						:options="itemStore.items"
 						v-model="newitem._id"
 						option-attribute="name"
@@ -115,7 +122,8 @@ const types = computed(() => {
 					<div class="flex gap-3">
 						<USelectMenu
 							v-model="newitem.unit"
-							:options="['oz', 'lb', 'g', 'kg', 'gal', 'L']" />
+							:options="allUnits"
+							searchable />
 
 						<UButton
 							@click="additem"
@@ -124,7 +132,7 @@ const types = computed(() => {
 				</UFormGroup>
 			</div>
 			<UButton
-				@click="recipeStore.updateRecipe"
+				@click="saveRecipe()"
 				class="my-5 col-span-2"
 				>Save Recipe</UButton
 			>

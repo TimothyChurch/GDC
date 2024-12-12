@@ -9,7 +9,6 @@ export const useVesselStore = defineStore('vessels', () => {
 		_id: undefined as unknown as ObjectId,
 		name: '',
 		type: '',
-		status: '',
 		stats: {
 			weight: undefined as unknown as number,
 			weightUnit: '',
@@ -21,9 +20,21 @@ export const useVesselStore = defineStore('vessels', () => {
 			char: '',
 			cost: undefined as unknown as number,
 		},
-		contents: [],
 		cost: undefined as unknown as number,
 	});
+	const fermenters = computed(() =>
+		vessels.value.filter((v) => v.type === 'Fermenter')
+	);
+	const mashTuns = computed(() =>
+		vessels.value.filter((v) => v.type === 'Mash Tun')
+	);
+	const stills = computed(() =>
+		vessels.value.filter((v) => v.type === 'Still')
+	);
+	const tanks = computed(() => vessels.value.filter((v) => v.type === 'Tank'));
+	const barrels = computed(() =>
+		vessels.value.filter((v) => v.type === 'Barrel')
+	);
 
 	// Actions
 	const getVessels = async (): Promise<void> => {
@@ -90,7 +101,6 @@ export const useVesselStore = defineStore('vessels', () => {
 			_id: undefined as unknown as ObjectId,
 			name: '',
 			type: '',
-			status: '',
 			stats: {
 				weight: undefined as unknown as number,
 				weightUnit: '',
@@ -102,7 +112,6 @@ export const useVesselStore = defineStore('vessels', () => {
 				char: '',
 				cost: undefined as unknown as number,
 			},
-			contents: [],
 			cost: undefined as unknown as number,
 		};
 	};
@@ -115,6 +124,11 @@ export const useVesselStore = defineStore('vessels', () => {
 	return {
 		vessels,
 		vessel,
+		fermenters,
+		mashTuns,
+		stills,
+		tanks,
+		barrels,
 		getVessels,
 		getVesselById,
 		updateVessel,

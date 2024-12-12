@@ -11,10 +11,6 @@ export const Vessel = defineMongooseModel({
 			type: String,
 			required: true,
 		},
-		status: {
-			type: String,
-			required: false,
-		},
 		stats: {
 			weight: {
 				type: Number,
@@ -47,34 +43,6 @@ export const Vessel = defineMongooseModel({
 				required: false,
 			},
 		},
-		contents: [
-			{
-				batch: {
-					type: String,
-					required: false,
-				},
-				volume: {
-					type: Number,
-					required: false,
-				},
-				volumeUnit: {
-					type: String,
-					required: false,
-				},
-				weight: {
-					type: Number,
-					required: false,
-				},
-				weightUnit: {
-					type: String,
-					required: false,
-				},
-				cost: {
-					type: Number,
-					required: false,
-				},
-			},
-		],
 		cost: {
 			type: Number,
 			required: false,

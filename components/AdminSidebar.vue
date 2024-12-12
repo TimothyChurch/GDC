@@ -32,6 +32,10 @@ const links = [
 		label: 'Purchase Orders',
 		to: '/admin/purchaseOrders',
 	},
+	{
+		label: 'Vessels',
+		to: '/admin/vessels',
+	},
 ];
 </script>
 

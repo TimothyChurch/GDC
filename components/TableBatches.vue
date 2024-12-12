@@ -5,10 +5,8 @@ const vesselStore = useVesselStore();
 
 const columns = [
 	{ key: 'recipe', label: 'Recipe' },
-	{ key: 'brewDate', label: 'Brew Date' },
-	{ key: 'fermenter', label: 'Fermenter' },
-	{ key: 'distillDate', label: 'Distill Date' },
-	{ key: 'notes', label: 'Notes' },
+	{ key: 'brewing', label: 'Brew Date' },
+	{ key: 'status', label: 'Status' },
 	{ key: 'actions' },
 ];
 const items = (row) => [
@@ -48,14 +46,8 @@ const deleteItem = (row) => {
 			<template #recipe-data="{ row }">
 				{{ recipeStore.getRecipeById(row.recipe)?.name }}
 			</template>
-			<template #brewDate-data="{ row }">
-				{{ new Date(row.brewDate).toLocaleDateString() }}
-			</template>
-			<template #fermenter-data="{ row }">
-				{{ vesselStore.getVesselById(row.fermenter) }}
-			</template>
-			<template #distillDate-data="{ row }">
-				{{ new Date(row.distillDate).toLocaleDateString() }}
+			<template #status-data="{ row }">
+				{{ row.status?.stage }}
 			</template>
 			<template #actions-header>
 				<UButton

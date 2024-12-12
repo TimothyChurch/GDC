@@ -1,0 +1,12 @@
+<script setup>
+definePageMeta({
+	layout: 'admin',
+});
+</script>
+
+<template>
+	<div>
+		<FormBatch />
+		<TableBatches />
+	</div>
+</template>

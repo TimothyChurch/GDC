@@ -3,38 +3,77 @@ import type { ObjectId } from 'mongoose';
 export interface Batch {
 	_id: ObjectId;
 	recipe: ObjectId;
-	cost: number;
+	recipeCost: number;
+	status: {
+		stage: string;
+		vessel: string;
+	};
 	batchSize: number;
 	batchSizeUnit: string;
-	brewDate: Date;
-	fermenter: string;
-	distillDate: Date;
-	prevTails: {
-		volume: number;
-		volumeUnit: string;
-		abv: number;
+	batchCost: number;
+	brewing: {
+		vessel: ObjectId;
+		date: Date;
+		notes: string;
 	};
-	collected: {
-		heads: {
+	fermenting: {
+		vessel: ObjectId;
+		notes: string;
+	};
+	distilling: {
+		vessel: ObjectId;
+		date: Date;
+		additions: {
+			tails: {
+				volume: number;
+				volumeUnit: string;
+				abv: number;
+			};
+		};
+		collected: {
+			heads: {
+				vessel: ObjectId;
+				volume: number;
+				volumeUnit: string;
+				abv: number;
+			};
+			hearts: {
+				vessel: ObjectId;
+				volume: number;
+				volumeUnit: string;
+				abv: number;
+			};
+			tails: {
+				vessel: ObjectId;
+				volume: number;
+				volumeUnit: string;
+				abv: number;
+			};
+			total: {
+				volume: number;
+				volumeUnit: string;
+				abv: number;
+			};
+		};
+		notes: string;
+	};
+	barreled: {
+		vessel: ObjectId;
+		entry: {
+			date: Date;
 			volume: number;
 			volumeUnit: string;
 			abv: number;
 		};
-		hearts: {
+		exit: {
+			date: Date;
 			volume: number;
 			volumeUnit: string;
 			abv: number;
 		};
-		tails: {
-			volume: number;
-			volumeUnit: string;
-			abv: number;
-		};
-		total: {
-			volume: number;
-			volumeUnit: string;
-			abv: number;
-		};
+	};
+	bottled: {
+		productionRecord: ObjectId;
 	};
 }
 
@@ -125,7 +164,6 @@ export interface Vessel {
 	_id: ObjectId;
 	name: string;
 	type: string;
-	status: string;
 	stats: {
 		weight: number;
 		weightUnit: string;
@@ -137,6 +175,5 @@ export interface Vessel {
 		char: string;
 		cost: number;
 	};
-	contents: [];
 	cost: number;
 }

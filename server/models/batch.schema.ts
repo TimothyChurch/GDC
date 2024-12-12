@@ -1,61 +1,127 @@
 import { defineMongooseModel } from '#nuxt/mongoose';
+import mongoose from 'mongoose';
+
+const { Schema } = mongoose;
 
 export const Batch = defineMongooseModel({
 	name: 'Batch',
 	schema: {
 		recipe: {
-			type: String,
+			type: Schema.Types.ObjectId,
+			ref: 'Recipe',
 			required: true,
 		},
-		cost: {
+		recipeCost: {
 			type: Number,
 			required: true,
+		},
+		status: {
+			stage: {
+				type: String,
+				required: true,
+			},
+			vessel: {
+				type: String,
+				required: false,
+			},
 		},
 		batchSize: {
 			type: Number,
-			required: false,
+			required: true,
 		},
 		batchSizeUnit: {
 			type: String,
-			required: false,
+			required: true,
 		},
-		brewDate: {
-			type: Date,
-			required: false,
+		batchCost: {
+			type: Number,
 		},
-		fermenter: {
-			type: String,
-			required: false,
+		brewing: {
+			vessel: {
+				type: Schema.Types.ObjectId,
+				ref: 'Vessel',
+			},
+			date: Date,
+			notes: String,
 		},
-		distillDate: {
-			type: Date,
-			required: false,
+		fermenting: {
+			vessel: {
+				type: Schema.Types.ObjectId,
+				ref: 'Vessel',
+			},
+			notes: String,
 		},
-		prevTails: {
-			volume: Number,
-			volumeUnit: String,
-			abv: Number,
+		distilling: {
+			vessel: {
+				type: Schema.Types.ObjectId,
+				ref: 'Vessel',
+			},
+			date: Date,
+			additions: {
+				tails: {
+					volume: Number,
+					volumeUnit: String,
+					abv: Number,
+				},
+			},
+			collected: {
+				heads: {
+					vessel: {
+						type: Schema.Types.ObjectId,
+						ref: 'Vessel',
+					},
+					volume: Number,
+					volumeUnit: String,
+					abv: Number,
+				},
+				hearts: {
+					vessel: {
+						type: Schema.Types.ObjectId,
+						ref: 'Vessel',
+					},
+					volume: Number,
+					volumeUnit: String,
+					abv: Number,
+				},
+				tails: {
+					vessel: {
+						type: Schema.Types.ObjectId,
+						ref: 'Vessel',
+					},
+					volume: Number,
+					volumeUnit: String,
+					abv: Number,
+				},
+				total: {
+					volume: Number,
+					volumeUnit: String,
+					abv: Number,
+				},
+			},
+			notes: String,
 		},
-		collected: {
-			heads: {
+		barreled: {
+			vessel: {
+				type: Schema.Types.ObjectId,
+				ref: 'Vessel',
+			},
+			entry: {
+				date: Date,
 				volume: Number,
 				volumeUnit: String,
 				abv: Number,
 			},
-			hearts: {
+			exit: {
+				date: Date,
 				volume: Number,
 				volumeUnit: String,
 				abv: Number,
 			},
-			tails: {
-				volume: Number,
-				volumeUnit: String,
-				abv: Number,
-			},
-			total: {
-				volume: Number,
-				volumeUnit: String,
-				abv: Number,
+		},
+		bottled: {
+			productionRecord: {
+				type: Schema.Types.ObjectId,
+				ref: 'Production',
 			},
 		},
 	},

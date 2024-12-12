@@ -26,6 +26,7 @@ export const convertUnitRatio = (
 		| 'each'
 		| 'count'
 ) => {
+	if (fromUnit === toUnit) return 1;
 	const conversionRates = {
 		// Volume Measurements
 		'fl oz': { cup: 0.125, gallon: 0.0078125, mL: 29.5735, L: 0.0295735 },

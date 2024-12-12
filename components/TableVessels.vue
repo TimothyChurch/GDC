@@ -1,7 +1,5 @@
 <script setup>
 const vesselStore = useVesselStore();
-const batchStore = useBatchStore();
-const recipeStore = useRecipeStore();
 
 const columns = [
 	{
@@ -15,12 +13,8 @@ const columns = [
 		sortable: true,
 	},
 	{
-		key: 'status',
-		label: 'Status',
-	},
-	{
-		key: 'contents',
-		label: 'Contents',
+		key: 'stats',
+		label: 'Weight',
 	},
 	{
 		key: 'actions',

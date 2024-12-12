@@ -2,8 +2,11 @@
 definePageMeta({
 	layout: 'admin',
 });
+const vesselStore = useVesselStore();
 </script>
 
 <template>
-	<div><TableBatches /></div>
+	<div>
+		<TableVessels />
+	</div>
 </template>
