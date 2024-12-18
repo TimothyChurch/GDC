@@ -43,6 +43,10 @@ export const Vessel = defineMongooseModel({
 				required: false,
 			},
 		},
+		contents: {
+			type: Array,
+			required: false,
+		},
 		cost: {
 			type: Number,
 			required: false,

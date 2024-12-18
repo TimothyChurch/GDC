@@ -112,6 +112,7 @@ export interface Item {
 	_id: ObjectId;
 	name: string;
 	type: string;
+	brand: string;
 	vendor: ObjectId;
 	inventoryUnit: string;
 	purchaseHistory: ObjectId[];
@@ -175,5 +176,15 @@ export interface Vessel {
 		char: string;
 		cost: number;
 	};
+	contents: Contents[];
 	cost: number;
+}
+
+export interface Contents {
+	batch: ObjectId;
+	type: string;
+	volume: number;
+	volumeUnit: string;
+	abv: number;
+	value: number;
 }

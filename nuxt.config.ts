@@ -8,11 +8,15 @@ export default defineNuxtConfig({
 		'@vueuse/nuxt',
 		'nuxt-mongoose',
 		'@pinia/nuxt',
+		'@nuxt/test-utils/module',
 	],
 	mongoose: {
 		uri: 'mongodb+srv://TChurch:EricAvis1989@galvestondistillingco.pjkvjym.mongodb.net/',
 		options: {},
 		modelsDir: 'models',
 		devtools: true,
+	},
+	devServer: {
+		port: 3001,
 	},
 });

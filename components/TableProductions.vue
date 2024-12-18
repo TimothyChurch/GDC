@@ -1,11 +1,11 @@
 <script setup>
 // Access needed stores
-const productionsStore = useProductionsStore();
+const productionsStore = uesProductionStore();
 const vesselStore = useVesselStore();
 const bottlestore = useBottleStore();
 // Columns for table data
 const columns = [
-	{ key: 'date', label: 'Date' },
+	{ key: 'date', label: 'Date', sortable: true },
 	{ key: 'vessel', label: 'Vessel' },
 	{ key: 'bottle', label: 'Bottle' },
 	{ key: 'quantity', label: 'Quantity' },
@@ -18,6 +18,10 @@ const page = ref(1);
 const pageCount = ref(10);
 
 const rows = computed(() => {
+	productionsStore.productions.map((production) => ({
+		...production,
+		date: new Date(production.date),
+	}));
 	return productionsStore.productions.slice(
 		(page.value - 1) * pageCount.value,
 		page.value * pageCount.value

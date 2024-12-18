@@ -1,7 +1,7 @@
 <script setup></script>
 
 <template>
-	<UContainer>
-		<Proofing />
-	</UContainer>
+	<div>
+		<TableRecipes />
+	</div>
 </template>

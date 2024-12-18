@@ -5,7 +5,7 @@ export const initializeStores = async () => {
 	const inventoryStore = useInventoryStore();
 	const itemStore = useItemStore();
 	const purchaseOrderStore = usePurchaseOrderStore();
-	const productionsStore = useProductionsStore();
+	const productionStore = uesProductionStore();
 	const recipeStore = useRecipeStore();
 	const vesselStore = useVesselStore();
 
@@ -27,8 +27,8 @@ export const initializeStores = async () => {
 	if (!purchaseOrderStore.purchaseOrders.length) {
 		await purchaseOrderStore.getPurchaseOrders();
 	}
-	if (!productionsStore.productions.length) {
-		await productionsStore.getProductions();
+	if (!productionStore.productions.length) {
+		await productionStore.getProductions();
 	}
 	if (!recipeStore.recipes.length) {
 		await recipeStore.getRecipes();

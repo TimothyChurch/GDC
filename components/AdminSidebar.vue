@@ -29,6 +29,10 @@ const links = [
 		to: '/admin/recipe',
 	},
 	{
+		label: 'Production',
+		to: '/admin/production',
+	},
+	{
 		label: 'Purchase Orders',
 		to: '/admin/purchaseOrders',
 	},

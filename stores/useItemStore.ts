@@ -24,6 +24,15 @@ export const useItemStore = defineStore('items', () => {
 		}
 	};
 
+	const setItem = (id: string) => {
+		const foundItem = items.value.find((i) => i._id.toString() === id);
+		if (foundItem) {
+			item.value = foundItem;
+		} else {
+			console.error(`Item with ID ${id} not found.`);
+		}
+	};
+
 	const updateItem = async (): Promise<void> => {
 		if (!item.value._id) {
 			await $fetch('/api/item/create', {
@@ -80,6 +89,7 @@ export const useItemStore = defineStore('items', () => {
 		items,
 		item,
 		getItems,
+		setItem,
 		updateItem,
 		deleteItem,
 		getItemById,

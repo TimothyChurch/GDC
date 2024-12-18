@@ -1,6 +1,6 @@
 import { defineStore } from 'pinia';
 import { ref } from 'vue';
-import type { Batch } from '~/types';
+import type { Batch, Recipe } from '~/types';
 import type { ObjectId } from 'mongoose';
 
 export const useBatchStore = defineStore('batches', () => {
@@ -240,6 +240,18 @@ export const useBatchStore = defineStore('batches', () => {
 		return statusOptions;
 	};
 
+	const getRecipeNameByBatchId = (id: string): string | undefined => {
+		const recipeStore = useRecipeStore();
+		const batch = getBatchById(id);
+		if (batch && batch.recipe) {
+			const recipe = recipeStore.getRecipeById(
+				batch.recipe.toString()
+			) as Recipe;
+			console.log(recipe);
+			return recipe.name;
+		}
+	};
+
 	return {
 		batches,
 		batch,
@@ -256,5 +268,6 @@ export const useBatchStore = defineStore('batches', () => {
 		getBatchById,
 		getBatchByStatus,
 		batchStages,
+		getRecipeNameByBatchId,
 	};
 });

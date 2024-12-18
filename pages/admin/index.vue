@@ -1,14 +1,5 @@
-<script setup>
-definePageMeta({
-	layout: 'admin',
-});
-</script>
+<script setup></script>
 
 <template>
-	<div class="flex flex-col gap-3 flex-grow mx-auto">
-		<DashboardUpcoming />
-		<DashboardBrewing />
-		<DashboardFermenters />
-		<DashboardDistilling />
-	</div>
+	<TableInventoryInputs />
 </template>

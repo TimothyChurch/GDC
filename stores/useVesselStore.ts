@@ -20,6 +20,7 @@ export const useVesselStore = defineStore('vessels', () => {
 			char: '',
 			cost: undefined as unknown as number,
 		},
+		contents: [],
 		cost: undefined as unknown as number,
 	});
 	const fermenters = computed(() =>
@@ -112,6 +113,7 @@ export const useVesselStore = defineStore('vessels', () => {
 				char: '',
 				cost: undefined as unknown as number,
 			},
+			contents: [],
 			cost: undefined as unknown as number,
 		};
 	};

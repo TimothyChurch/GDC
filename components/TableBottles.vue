@@ -1,4 +1,5 @@
 <script setup>
+const router = useRouter();
 // Bottle Store
 
 const bottleStore = useBottleStore();
@@ -40,6 +41,11 @@ const pageCount = ref(10);
 
 const items = (row) => [
 	[
+		{
+			label: 'Details',
+			icon: 'i-heroicons-info-circle-20-solid',
+			click: () => router.push(`/admin/bottles/${row._id}`),
+		},
 		{
 			label: 'Edit',
 			icon: 'i-heroicons-pencil-square-20-solid',

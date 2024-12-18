@@ -1,8 +1,4 @@
-<script setup>
-definePageMeta({
-	layout: 'admin',
-});
-</script>
+<script setup></script>
 
 <template>
 	<div classs="flex">

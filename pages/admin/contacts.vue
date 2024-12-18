@@ -1,12 +1,7 @@
-<script setup>
-definePageMeta({
-  layout: "admin",
-});
-const contactStore = useContactStore();
-</script>
+<script setup></script>
 
 <template>
-  <div>
-    <TableContacts />
-  </div>
+	<div>
+		<TableContacts />
+	</div>
 </template>

@@ -4,7 +4,7 @@ const bottleStore = useBottleStore();
 const contactStore = useContactStore();
 const inventoryStore = useInventoryStore();
 const itemStore = useItemStore();
-const productionsStore = useProductionsStore();
+const productionsStore = uesProductionStore();
 const purchaseOrderStore = usePurchaseOrderStore();
 const recipeStore = useRecipeStore();
 const vesselStore = useVesselStore();
@@ -25,11 +25,10 @@ const allStores = [
 ];
 
 const results = computed(() => {
-	const results = ref([]);
+	const results = ref([]) as Ref;
 	if (searchText.value != '') {
 		allStores.forEach((store) => {
 			const storeSearch = store.search(searchText.value);
-			console.log(storeSearch);
 			results.value = [...results.value, ...storeSearch];
 		});
 	}
@@ -38,11 +37,13 @@ const results = computed(() => {
 </script>
 
 <template>
-	<div>
+	<div class="items">
 		<UInput
 			placeholder="Search..."
 			@click="isOpen = true" />
-		<UModal v-model="isOpen">
+		<UModal
+			v-model="isOpen"
+			:ui="{ container: 'sm:items-start' }">
 			<div class="m-3">
 				<UInput v-model="searchText" />
 				{{ results }}

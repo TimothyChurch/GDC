@@ -1,11 +1,11 @@
 <script setup>
 definePageMeta({
-  layout: "admin",
+	layout: 'admin',
 });
 </script>
 
 <template>
-  <div>
-    <TableRecipes />
-  </div>
+	<div>
+		<NuxtPage />
+	</div>
 </template>

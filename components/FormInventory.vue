@@ -12,11 +12,13 @@ const searchFilter = ref('');
 const typeFilter = ref('');
 const filteredItems = computed(() => {
 	const filtered = ref(allItems.value);
+	const typeFiltered = ref([]);
 	if (typeFilter.value != '') {
-		filtered.value = filteredItems.value.filter(
+		filtered.value = filtered.value.filter(
 			(item) => item.type === typeFilter.value
 		);
 	}
+
 	return filtered.value.filter((item) =>
 		item.name.toLowerCase().includes(searchFilter.value.toLowerCase())
 	);
@@ -27,21 +29,30 @@ const columns = [
 	{ key: 'type', label: 'Type', sortable: true },
 	{ key: 'amount', label: 'Amount' },
 ];
+
+const saveInventory = () => {
+	inventoryStore.updateInventory();
+	alert('Inventory saved!');
+	toggleFormModal();
+};
 </script>
 
 <template>
 	<div>
-		<SiteDatePicker v-model="inventoryStore.inventory.date" />
-		<UInput
-			v-model="searchFilter"
-			placeholder="Filter items..." />
+		<div class="flex gap-3">
+			<SiteDatePicker v-model="inventoryStore.inventory.date" />
+			<UInput
+				v-model="searchFilter"
+				placeholder="Filter items..."
+				@click="searchFilter = ''" />
+		</div>
 		<UTable
 			:rows="filteredItems"
 			:columns="columns">
 			<template #type-header>
-				<USelect
+				<USelectMenu
 					v-model="typeFilter"
-					:options="itemInventoryTypes()"
+					:options="itemInventoryTypes"
 					placeholder="Filter by type" />
 			</template>
 			<template #amount-data="{ row }">
@@ -56,8 +67,6 @@ const columns = [
 				<div v-else>{{ row.type }}</div>
 			</template>
 		</UTable>
-		<UButton @click="inventoryStore.updateInventory()"
-			>Update Inventory</UButton
-		>
+		<UButton @click="saveInventory()">Update Inventory</UButton>
 	</div>
 </template>

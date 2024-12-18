@@ -1,9 +1,4 @@
-<script setup>
-definePageMeta({
-	layout: 'admin',
-});
-const vesselStore = useVesselStore();
-</script>
+<script setup></script>
 
 <template>
 	<div>

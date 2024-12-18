@@ -1,11 +1,7 @@
-<script setup>
-definePageMeta({
-  layout: "admin",
-});
-</script>
+<script setup></script>
 
 <template>
-  <UContainer>
-    <TableBottles />
-  </UContainer>
+	<UContainer>
+		<TableBottles />
+	</UContainer>
 </template>

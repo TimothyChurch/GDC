@@ -1,6 +1,6 @@
 <script setup lang="ts">
 // Access needed stores
-const productionsStore = useProductionsStore();
+const productionsStore = uesProductionStore();
 const vesselStore = useVesselStore();
 const bottleStore = useBottleStore();
 const itemStore = useItemStore();

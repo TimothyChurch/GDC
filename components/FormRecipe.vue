@@ -86,7 +86,7 @@ const saveRecipe = () => {
 			<UFormGroup label="Volumne Unit">
 				<USelectMenu
 					v-model="recipeStore.recipe.volumeUnit"
-					:options="['gal', 'L']" />
+					:options="volumeUnits" />
 			</UFormGroup>
 			<UTable
 				:rows="recipeItemsRows"

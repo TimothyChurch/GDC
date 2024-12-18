@@ -2,6 +2,8 @@
 const itemStore = useItemStore();
 const contactStore = useContactStore();
 
+const router = useRouter();
+
 const search = ref('');
 const filteredType = ref('');
 
@@ -32,6 +34,11 @@ const columns = [
 
 const items = (row) => [
 	[
+		{
+			label: 'Details',
+			icon: 'i-heroicons-info-circle-20-solid',
+			click: () => router.push(`/admin/items/${row._id}`),
+		},
 		{
 			label: 'Edit',
 			icon: 'i-heroicons-pencil-square-20-solid',

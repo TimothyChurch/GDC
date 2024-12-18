@@ -8,7 +8,6 @@ const columns = [
 		key: 'date',
 		label: 'Date',
 	},
-	{ key: 'items', label: 'Items', expandable: true },
 	{
 		key: 'actions',
 	},
@@ -33,16 +32,26 @@ const expand = ref({
 	row: {},
 });
 
+const itemColumns = [
+	{
+		key: 'item',
+		label: 'Item',
+	},
+	{
+		key: 'quantity',
+		label: 'Quantity',
+	},
+];
 // CRUD Functions
 
 const addItem = () => {
 	inventoryStore.resetInventory();
-	formSelection.value = 'FormInventoryBase';
+	formSelection.value = 'FormInventory';
 	toggleFormModal();
 };
 const editItem = (row: Inventory) => {
 	inventoryStore.inventory = row;
-	formSelection.value = 'FormInventoryBase';
+	formSelection.value = 'FormInventory';
 	toggleFormModal();
 };
 const deleteItem = (row: Inventory) => {
@@ -57,7 +66,19 @@ const deleteItem = (row: Inventory) => {
 			:columns="columns"
 			v-model:expand="expand">
 			<template #expand="{ row }">
-				<UTable :rows="row.items" />
+				<UTable
+					:rows="Object.entries(row.items)"
+					:columns="itemColumns">
+					<template #item-data="{ row }">
+						<div>{{ getInventoryNameById(row[0]) }}</div>
+					</template>
+					<template #quantity-data="{ row }">
+						<div>{{ row[1] }}</div>
+					</template>
+				</UTable>
+			</template>
+			<template #date-data="{ row }">
+				{{ new Date(row.date).toLocaleDateString() }}
 			</template>
 			<template #actions-header>
 				<UButton

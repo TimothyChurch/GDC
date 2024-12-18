@@ -74,6 +74,12 @@ export const usePurchaseOrderStore = defineStore('purchaseOrders', () => {
 		return purchaseOrders.value.find((po) => po._id.toString() === id);
 	};
 
+	const getPurchaseOrdersByItemId = (id: string) => {
+		return purchaseOrders.value.filter((po) => {
+			return po.items.some((item) => item.item.toString() === id);
+		});
+	};
+
 	return {
 		purchaseOrders,
 		purchaseOrder,
@@ -83,5 +89,6 @@ export const usePurchaseOrderStore = defineStore('purchaseOrders', () => {
 		resetCurrentPurchaseOrder,
 		getPurchaseOrderByVendor,
 		getPurchaseOrderById,
+		getPurchaseOrdersByItemId,
 	};
 });

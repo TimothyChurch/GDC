@@ -1,4 +1,4 @@
-import type { Inventory, InventoryItems } from '~/types';
+import type { Inventory } from '~/types';
 import type { ObjectId } from 'mongoose';
 
 export const useInventoryStore = defineStore('inventories', () => {
@@ -50,6 +50,10 @@ export const useInventoryStore = defineStore('inventories', () => {
 		return;
 	};
 
+	const getInventoriesByItemId = (id: string) => {
+		return inventories.value.filter((i) => Object.keys(i.items).includes(id));
+	};
+
 	return {
 		inventories,
 		inventory,
@@ -57,5 +61,6 @@ export const useInventoryStore = defineStore('inventories', () => {
 		updateInventory,
 		resetInventory,
 		deleteInventory,
+		getInventoriesByItemId,
 	};
 });

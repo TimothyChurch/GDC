@@ -125,3 +125,10 @@ export const recipePrice = (recipe: Recipe | string | ObjectId) => {
 	);
 	return total.value;
 };
+
+export const getInventoryNameById = (id: string) => {
+	const itemStore = useItemStore();
+	const bottleStore = useBottleStore();
+
+	return itemStore.getItemById(id)?.name || bottleStore.getBottleById(id)?.name;
+};
