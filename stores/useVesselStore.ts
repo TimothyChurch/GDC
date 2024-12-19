@@ -21,6 +21,12 @@ export const useVesselStore = defineStore('vessels', () => {
 			cost: undefined as unknown as number,
 		},
 		contents: [],
+		current: {
+			volume: 0,
+			volumeUnit: '',
+			abv: 0,
+			value: 0,
+		},
 		cost: undefined as unknown as number,
 	});
 	const fermenters = computed(() =>
@@ -55,7 +61,25 @@ export const useVesselStore = defineStore('vessels', () => {
 		}
 	};
 
+	const setVessel = (id: string) => {
+		vessel.value = vessels.value.find((v) => v._id.toString() === id) as Vessel;
+	};
+
 	const updateVessel = async (): Promise<void> => {
+		if (vessel.value.contents.length > 0) {
+			vessel.value.current = {
+				volume: vessel.value.contents.reduce((acc, c) => acc + c.volume, 0),
+				volumeUnit: vessel.value.contents[0].volumeUnit,
+				abv:
+					vessel.value.contents
+						.map((c) => {
+							return (c.abv * c.volume) / 100;
+						})
+						.reduce((acc, curr) => acc + curr, 0) /
+					vessel.value.contents.length,
+				value: vessel.value.contents.reduce((acc, c) => acc + c.value, 0),
+			};
+		}
 		if (!vessel.value._id) {
 			try {
 				const response = await $fetch('/api/vessel/create', {
@@ -113,8 +137,25 @@ export const useVesselStore = defineStore('vessels', () => {
 				char: '',
 				cost: undefined as unknown as number,
 			},
+			current: {
+				volume: 0,
+				volumeUnit: '',
+				abv: 0,
+				value: 0,
+			},
 			contents: [],
 			cost: undefined as unknown as number,
+		};
+	};
+
+	const emptyVessel = (id: string) => {
+		setVessel(id);
+		vessel.value.contents = [];
+		vessel.value.current = {
+			volume: 0,
+			volumeUnit: '',
+			abv: 0,
+			value: 0,
 		};
 	};
 
@@ -132,10 +173,12 @@ export const useVesselStore = defineStore('vessels', () => {
 		tanks,
 		barrels,
 		getVessels,
+		setVessel,
 		getVesselById,
 		updateVessel,
 		deleteVessel,
 		resetVessel,
+		emptyVessel,
 		getVesselByType,
 	};
 });

@@ -4,10 +4,7 @@ export interface Batch {
 	_id: ObjectId;
 	recipe: ObjectId;
 	recipeCost: number;
-	status: {
-		stage: string;
-		vessel: string;
-	};
+	status: string;
 	batchSize: number;
 	batchSizeUnit: string;
 	batchCost: number;
@@ -18,6 +15,12 @@ export interface Batch {
 	};
 	fermenting: {
 		vessel: ObjectId;
+		readings: {
+			date: Date;
+			temperature: number;
+			temperatureUnit: string;
+			gravity: number;
+		}[];
 		notes: string;
 	};
 	distilling: {
@@ -177,12 +180,17 @@ export interface Vessel {
 		cost: number;
 	};
 	contents: Contents[];
+	current: {
+		volume: number;
+		volumeUnit: string;
+		abv: number;
+		value: number;
+	};
 	cost: number;
 }
 
 export interface Contents {
 	batch: ObjectId;
-	type: string;
 	volume: number;
 	volumeUnit: string;
 	abv: number;

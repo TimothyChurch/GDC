@@ -16,14 +16,8 @@ export const Batch = defineMongooseModel({
 			required: true,
 		},
 		status: {
-			stage: {
-				type: String,
-				required: true,
-			},
-			vessel: {
-				type: String,
-				required: false,
-			},
+			type: String,
+			required: false,
 		},
 		batchSize: {
 			type: Number,
@@ -48,6 +42,9 @@ export const Batch = defineMongooseModel({
 			vessel: {
 				type: Schema.Types.ObjectId,
 				ref: 'Vessel',
+			},
+			readings: {
+				type: Array,
 			},
 			notes: String,
 		},

@@ -10,10 +10,7 @@ export const useBatchStore = defineStore('batches', () => {
 		_id: undefined as unknown as ObjectId,
 		recipe: undefined as unknown as ObjectId,
 		recipeCost: undefined as unknown as number,
-		status: {
-			stage: '',
-			vessel: '',
-		},
+		status: '',
 		batchSize: undefined as unknown as number,
 		batchSizeUnit: undefined as unknown as string,
 		batchCost: undefined as unknown as number,
@@ -24,6 +21,7 @@ export const useBatchStore = defineStore('batches', () => {
 		},
 		fermenting: {
 			vessel: undefined as unknown as ObjectId,
+			readings: [],
 			notes: '',
 		},
 		distilling: {
@@ -84,22 +82,22 @@ export const useBatchStore = defineStore('batches', () => {
 	});
 
 	const upcomingBatches = computed(() =>
-		batches.value.filter((batch) => batch.status.stage === 'Upcoming')
+		batches.value.filter((batch) => batch.status == 'Upcoming')
 	);
 	const brewingBatches = computed(() =>
-		batches.value.filter((batch) => batch.status.stage === 'Brewing')
+		batches.value.filter((batch) => batch.status == 'Brewing')
 	);
 	const fermentingBatches = computed(() =>
-		batches.value.filter((batch) => batch.status.stage === 'Fermenting')
+		batches.value.filter((batch) => batch.status == 'Fermenting')
 	);
 	const distillingBatches = computed(() =>
-		batches.value.filter((batch) => batch.status.stage === 'Distilling')
+		batches.value.filter((batch) => batch.status == 'Distilling')
 	);
 	const storedBatches = computed(() =>
-		batches.value.filter((batch) => batch.status.stage === 'Storage')
+		batches.value.filter((batch) => batch.status == 'Storage')
 	);
 	const barreledBatches = computed(() =>
-		batches.value.filter((batch) => batch.status.stage === 'Barreled')
+		batches.value.filter((batch) => batch.status == 'Barreled')
 	);
 
 	// Actions
@@ -136,10 +134,7 @@ export const useBatchStore = defineStore('batches', () => {
 			_id: undefined as unknown as ObjectId,
 			recipe: undefined as unknown as ObjectId,
 			recipeCost: undefined as unknown as number,
-			status: {
-				stage: '',
-				vessel: '',
-			},
+			status: '',
 			batchSize: undefined as unknown as number,
 			batchSizeUnit: undefined as unknown as string,
 			batchCost: undefined as unknown as number,
@@ -150,6 +145,7 @@ export const useBatchStore = defineStore('batches', () => {
 			},
 			fermenting: {
 				vessel: undefined as unknown as ObjectId,
+				readings: [],
 				notes: '',
 			},
 			distilling: {
@@ -216,27 +212,27 @@ export const useBatchStore = defineStore('batches', () => {
 	};
 
 	const getBatchByStatus = (status: string): Batch[] => {
-		return batches.value.filter((b) => b.status?.stage === status);
+		return batches.value.filter((b) => b.status === status);
 	};
 
 	const batchStages = () => {
 		const statusOptions = [
-			{ stage: 'Upcoming', vessel: '' },
-			{ stage: 'Brewing', vessel: 'Mash Tun' },
-			{ stage: 'Fermenting', vessel: 'Fermenter' },
-			{ stage: 'Distilling', vessel: 'Still' },
-			{ stage: 'Storage', vessel: 'Tank' },
-			{ stage: 'Barrelled', vessel: 'Barrel' },
-			{ stage: 'Bottled', vessel: '' },
+			'Upcoming',
+			'Brewing',
+			'Fermenting',
+			'Distilling',
+			'Storage',
+			'Barrelled',
+			'Bottled',
 		];
-		batches.value.forEach((batch) => {
-			if (
-				batch.status?.stage &&
-				!statusOptions.some((b) => b.stage === batch.status?.stage)
-			) {
-				statusOptions.push(batch.status);
-			}
-		});
+		// batches.value.forEach((batch) => {
+		// 	if (
+		// 		batch.status?.stage &&
+		// 		!statusOptions.some((b) => b.stage === batch.status?.stage)
+		// 	) {
+		// 		statusOptions.push(batch.status);
+		// 	}
+		// });
 		return statusOptions;
 	};
 

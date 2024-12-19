@@ -1,16 +1,21 @@
 <script setup>
+const router = useRouter();
 const batchStore = useBatchStore();
 const recipeStore = useRecipeStore();
 const vesselStore = useVesselStore();
 
 const columns = [
 	{ key: 'recipe', label: 'Recipe' },
-	{ key: 'brewing', label: 'Brew Date' },
+	{ key: 'batchCost', label: 'Batch Costs' },
 	{ key: 'status', label: 'Status' },
 	{ key: 'actions' },
 ];
 const items = (row) => [
 	[
+		{
+			label: 'Details',
+			click: () => router.push(`/admin/batch/${row._id}`),
+		},
 		{
 			label: 'Edit',
 			icon: 'i-heroicons-pencil-square-20-solid',
@@ -46,8 +51,8 @@ const deleteItem = (row) => {
 			<template #recipe-data="{ row }">
 				{{ recipeStore.getRecipeById(row.recipe)?.name }}
 			</template>
-			<template #status-data="{ row }">
-				{{ row.status?.stage }}
+			<template #batchCost-data="{ row }">
+				{{ Dollar.format(row.batchCost) }}
 			</template>
 			<template #actions-header>
 				<UButton

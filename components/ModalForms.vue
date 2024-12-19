@@ -5,7 +5,7 @@ const isOpen = ref(formModalStatus);
 <template>
 	<UModal
 		v-model="isOpen"
-		:ui="{ container: 'sm:items-start w-full' }">
+		:ui="{ container: 'sm:items-start', width: 'sm:max-w-full w-auto' }">
 		<div class="p-3 w-full">
 			<FormBatch v-if="formSelection == 'FormBatch'" />
 			<FormBottle v-if="formSelection == 'FormBottle'" />

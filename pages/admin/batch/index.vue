@@ -2,7 +2,6 @@
 
 <template>
 	<div>
-		<FormBatch />
 		<TableBatches />
 	</div>
 </template>

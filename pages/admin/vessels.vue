@@ -2,6 +2,7 @@
 
 <template>
 	<div>
+		<VesselTransfer />
 		<TableVessels />
 	</div>
 </template>

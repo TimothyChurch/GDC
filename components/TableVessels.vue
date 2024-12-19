@@ -13,8 +13,8 @@ const columns = [
 		sortable: true,
 	},
 	{
-		key: 'stats',
-		label: 'Weight',
+		key: 'current',
+		label: 'Current',
 	},
 	{
 		key: 'actions',
@@ -23,6 +23,10 @@ const columns = [
 
 const items = (row) => [
 	[
+		{
+			label: 'Empty Vessel',
+			click: () => vesselStore.emptyVessel(row._id),
+		},
 		{
 			label: 'Edit',
 			icon: 'i-heroicons-pencil-square-20-solid',
@@ -35,6 +39,7 @@ const items = (row) => [
 		},
 	],
 ];
+
 const addVessel = () => {
 	vesselStore.resetVessel();
 	formSelection.value = 'FormVessel';

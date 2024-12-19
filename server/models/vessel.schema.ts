@@ -47,6 +47,24 @@ export const Vessel = defineMongooseModel({
 			type: Array,
 			required: false,
 		},
+		current: {
+			volume: {
+				type: Number,
+				required: false,
+			},
+			volumeUnit: {
+				type: String,
+				required: false,
+			},
+			abv: {
+				type: Number,
+				required: false,
+			},
+			value: {
+				type: Number,
+				required: false,
+			},
+		},
 		cost: {
 			type: Number,
 			required: false,

@@ -1,8 +1,8 @@
 <script setup lang="ts">
 const links = [
 	{
-		label: 'Profile',
-		to: '/admin',
+		label: 'Dashboard',
+		to: '/admin/dashboard',
 	},
 	{
 		label: 'Batch',
