@@ -18,10 +18,9 @@ const batches = (id) => {
 					<template #header>
 						<h2>{{ still.name }}</h2>
 					</template>
-					<DashboardBatchCard
-						v-if="batches(still._id)"
-						:batchId="batches(still._id)?._id" />
-					<div v-else>Empty</div>
+					<div v-for="content in still.contents">
+						<DashboardBatchCard :batchId="content.batch" />
+					</div>
 				</UCard>
 			</div>
 		</div>

@@ -10,9 +10,9 @@ export const useBatchStore = defineStore('batches', () => {
 		_id: undefined as unknown as ObjectId,
 		recipe: undefined as unknown as ObjectId,
 		recipeCost: undefined as unknown as number,
-		status: '',
+		status: 'Upcoming',
 		batchSize: undefined as unknown as number,
-		batchSizeUnit: undefined as unknown as string,
+		batchSizeUnit: 'gallon' as unknown as string,
 		batchCost: undefined as unknown as number,
 		brewing: {
 			vessel: undefined as unknown as ObjectId,
@@ -106,6 +106,12 @@ export const useBatchStore = defineStore('batches', () => {
 		batches.value = response as Batch[];
 	};
 
+	const setBatch = (id: string): void => {
+		batch.value = batches.value.find(
+			(batch) => batch._id.toString() === id
+		) as Batch;
+	};
+
 	const updateBatch = async (): Promise<void> => {
 		if (!batch.value._id) {
 			await $fetch('/api/batch/create', {
@@ -134,9 +140,9 @@ export const useBatchStore = defineStore('batches', () => {
 			_id: undefined as unknown as ObjectId,
 			recipe: undefined as unknown as ObjectId,
 			recipeCost: undefined as unknown as number,
-			status: '',
+			status: 'Upcoming',
 			batchSize: undefined as unknown as number,
-			batchSizeUnit: undefined as unknown as string,
+			batchSizeUnit: 'gallon' as unknown as string,
 			batchCost: undefined as unknown as number,
 			brewing: {
 				vessel: undefined as unknown as ObjectId,
@@ -258,6 +264,7 @@ export const useBatchStore = defineStore('batches', () => {
 		storedBatches,
 		barreledBatches,
 		getBatches,
+		setBatch,
 		updateBatch,
 		deleteBatch,
 		resetBatch,

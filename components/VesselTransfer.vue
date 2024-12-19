@@ -8,9 +8,11 @@ const destinationVessel = ref();
 
 const transfer = ref({
 	volume: 0 as unknown as number,
-	volumeUnit: undefined,
+	volumeUnit: undefined as unknown as string,
+	abv: 0 as unknown as number,
 	value: undefined as unknown as number,
 });
+
 const value: Ref<number> = computed(() => {
 	const value = vesselStore.vessel.contents.reduce(
 		(sum, batch) => sum + batch.value,
@@ -25,27 +27,6 @@ const value: Ref<number> = computed(() => {
 	transfer.value.value = newValue;
 	return newValue;
 });
-const transferBatch = () => {
-	const contents = vesselStore.vessel.contents;
-	if (transfer.value.volume == vesselStore.vessel.current.volume) {
-		vesselStore.vessel.contents = [];
-		vesselStore.vessel.current = {
-			volume: 0,
-			volumeUnit: '',
-			abv: 0,
-			value: 0,
-		};
-	} else {
-		vesselStore.vessel.current.volume -= transfer.value.volume;
-		vesselStore.vessel.current.value -= transfer.value.value;
-	}
-	// vesselStore.updateVessel();
-	vesselStore.setVessel(destinationVessel.value._id);
-	vesselStore.vessel.contents.push(...contents);
-	vesselStore.vessel.current.volume = transfer.value?.volume;
-	vesselStore.vessel.current.value = transfer.value?.value;
-	// vesselStore.updateVessel();
-};
 </script>
 
 <template>
@@ -96,6 +77,10 @@ const transferBatch = () => {
 					</div>
 				</template>
 				<div class="flex flex-col gap-3">
+					<UButton
+						@click="fullTransfer(vesselStore.vessel._id, destinationVessel._id)"
+						>Full Transfer</UButton
+					>
 					<UInput
 						v-model="transfer.volume"
 						type="number"
@@ -107,7 +92,16 @@ const transferBatch = () => {
 					<div>
 						{{ Dollar.format(value) }}
 					</div>
-					<UButton @click="transferBatch">Transfer</UButton>
+					<UButton
+						@click="
+							transferBatch(
+								vesselStore.vessel._id,
+								destinationVessel._id,
+								transfer
+							)
+						"
+						>Transfer</UButton
+					>
 				</div>
 			</UCard>
 		</div>

@@ -62,6 +62,7 @@ export const useVesselStore = defineStore('vessels', () => {
 	};
 
 	const setVessel = (id: string) => {
+		resetVessel();
 		vessel.value = vessels.value.find((v) => v._id.toString() === id) as Vessel;
 	};
 
@@ -93,16 +94,11 @@ export const useVesselStore = defineStore('vessels', () => {
 			}
 		} else {
 			try {
-				const response = await $fetch(`/api/vessel/${vessel.value._id}`, {
+				await $fetch(`/api/vessel/${vessel.value._id}`, {
 					method: 'PUT',
 					body: vessel.value,
 				});
-				const index = vessels.value.findIndex(
-					(v) => v._id === vessel.value._id
-				);
-				if (index !== -1) {
-					vessels.value[index] = response as Vessel;
-				}
+
 				resetVessel();
 			} catch (error) {
 				console.error('Error updating vessel:', error);
@@ -157,6 +153,7 @@ export const useVesselStore = defineStore('vessels', () => {
 			abv: 0,
 			value: 0,
 		};
+		updateVessel();
 	};
 
 	// Getters

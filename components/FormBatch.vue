@@ -1,7 +1,6 @@
 <script setup>
 const batchStore = useBatchStore();
 const recipeStore = useRecipeStore();
-const vesselStore = useVesselStore();
 
 const price = computed(() => {
 	if (batchStore.batch.recipe) {
@@ -14,6 +13,7 @@ const price = computed(() => {
 const recipe = computed(() => {
 	return recipeStore.getRecipeById(batchStore.batch.recipe);
 });
+
 const scaling = computed(() => {
 	if (recipe.value?.volumeUnit && batchStore.batch.batchSizeUnit) {
 		return convertUnitRatio(
@@ -26,7 +26,7 @@ const scaledPrice = computed(() => {
 	return (
 		(recipePrice(recipe.value) *
 			(batchStore.batch.batchSize / recipe.value?.volume)) /
-		scaling.value
+			scaling.value || 0
 	);
 });
 const saveBatch = async () => {
@@ -34,6 +34,7 @@ const saveBatch = async () => {
 		batchStore.batch.recipeCost = recipePrice(batchStore.batch.recipe);
 	batchStore.batch.batchCost = scaledPrice.value;
 	batchStore.updateBatch();
+	toggleFormModal();
 };
 </script>
 
@@ -64,12 +65,6 @@ const saveBatch = async () => {
 				<UFormGroup label="Batch Cost">{{
 					Dollar.format(scaledPrice)
 				}}</UFormGroup>
-				<UFormGroup label="Status">
-					<USelectMenu
-						v-model="batchStore.batch.status"
-						:options="batchStore.batchStages()"
-						option-attribute="stage" />
-				</UFormGroup>
 				<UButton @click="saveBatch()"> Save </UButton>
 			</div>
 		</div>
