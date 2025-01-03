@@ -19,12 +19,12 @@ const items = computed(() => {
 	<div>
 		<h1 class="font-bold text-xl">Brewing</h1>
 		<div class="flex">
-			{{ vesselStore.mashTuns.map((m) => m._id) }}
 			<div v-for="mashTun in vesselStore.mashTuns">
 				<UCard>
 					<template #header>
 						{{ mashTun.name }}
 					</template>
+					{{ mashTun.contents }}
 					<div v-for="batch in mashTun.contents">
 						<div class="flex flex-col gap-3 items-center">
 							<DashboardBatchCard :batchId="batch.batch" />

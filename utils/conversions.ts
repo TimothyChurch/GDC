@@ -1,8 +1,11 @@
-export const convertUnitRatio = (fromUnit, toUnit) => {
+export const convertUnitRatio = (fromUnit: string, toUnit: string) => {
 	if (!fromUnit || !toUnit || fromUnit === toUnit) {
 		return 1;
 	}
-	const conversionRates = {
+	interface ConversionRates {
+		[key: string]: { [key: string]: number };
+	}
+	const conversionRates: ConversionRates = {
 		// Volume Measurements
 		'fl oz': { cup: 0.125, gallon: 0.0078125, mL: 29.5735, L: 0.0295735 },
 		cup: { 'fl oz': 8, gallon: 0.0625, mL: 236.588, L: 0.236588 },
@@ -20,22 +23,6 @@ export const convertUnitRatio = (fromUnit, toUnit) => {
 		count: { each: 1, bottle: 1, count: 1 },
 	};
 	return conversionRates[fromUnit][toUnit] as number;
-};
-
-export const literToGallon = (liter: number) => {
-	return liter * 0.264172;
-};
-
-export const gallonToLiter = (gallon: number) => {
-	return gallon * 3.78541;
-};
-
-export const lbToKg = (lb: number) => {
-	return lb * 0.453592;
-};
-
-export const kgToLb = (kg: number) => {
-	return kg * 2.20462;
 };
 
 export const metricWeightToVolume = (weight: number, abv: number) => {

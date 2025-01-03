@@ -1,12 +1,11 @@
 <script setup>
-import { differenceInDays } from 'date-fns';
-
 const route = useRoute();
 const bottleStore = useBottleStore();
 const productionStore = uesProductionStore();
 const inventoryStore = useInventoryStore();
 
 const bottle = computed(() => bottleStore.getBottleById(route.params._id));
+
 const productions = computed(() =>
 	productionStore.productions
 		.filter((p) => p.bottle === route.params._id)
@@ -25,13 +24,10 @@ const inventory = computed(() =>
 		.sort((a, b) => a.date.getTime() - b.date.getTime())
 );
 
-const total = computed(() => {
-	const totalProduction = ref(0);
-	productions.value.forEach((p) => (totalProduction.value += p?.quantity));
-	return totalProduction.value;
-});
-const totalDays = computed(() => {
-	return differenceInDays(new Date(), productions.value[0].date);
+const stockCheck = computed(() => {
+	if (bottle.value) {
+		return bottleStockCheck(bottle.value?._id);
+	}
 });
 </script>
 
@@ -41,11 +37,11 @@ const totalDays = computed(() => {
 			<template #header>
 				<h1>{{ bottle?.name }}</h1>
 			</template>
-			{{ bottle }}
-			<p>Current Inventory: {{ inventory[inventory.length - 1].quantity }}</p>
+			<p>Current Inventory: {{ stockCheck?.currentStock }}</p>
+			{{ stockCheck }}
 			<p>
 				Average monthly use:
-				{{ (((total - inventory.pop()?.quantity) / totalDays) * 30).toFixed() }}
+				{{ (stockCheck?.averageDaily * 30).toFixed() }}
 			</p>
 		</UCard>
 		<UCard>
@@ -54,7 +50,7 @@ const totalDays = computed(() => {
 			</template>
 			<div v-for="entry in inventory">
 				<p>
-					{{ entry.date.toLocaleDateString() }}: {{ entry.quantity }} bottles
+					{{ entry?.date.toLocaleDateString() }}: {{ entry?.quantity }} bottles
 				</p>
 			</div>
 		</UCard>
@@ -64,7 +60,7 @@ const totalDays = computed(() => {
 			</template>
 			<div v-for="entry in productions">
 				<p>
-					{{ entry.date.toLocaleDateString() }}: {{ entry.quantity }} bottles
+					{{ entry?.date.toLocaleDateString() }}: {{ entry?.quantity }} bottles
 				</p>
 			</div>
 		</UCard>

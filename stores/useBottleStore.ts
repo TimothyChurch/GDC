@@ -18,6 +18,12 @@ export const useBottleStore = defineStore('bottles', () => {
 		return;
 	};
 
+	const setBottle = (id: string | ObjectId) => {
+		bottle.value = bottles.value.find(
+			(b) => b._id.toString() === id
+		) as unknown as Bottle;
+	};
+
 	const resetBottle = () => {
 		bottle.value = {
 			_id: undefined as unknown as ObjectId,
@@ -84,6 +90,7 @@ export const useBottleStore = defineStore('bottles', () => {
 		bottles,
 		bottle,
 		getBottles,
+		setBottle,
 		resetBottle,
 		updateBottle,
 		deleteBottle,

@@ -1,12 +1,12 @@
 <script setup>
 const batchStore = useBatchStore();
+const recipeStore = useRecipeStore();
 const vesselStore = useVesselStore();
 
-const batches = (id) => {
-	return batchStore.fermentingBatches.find(
-		(batch) => batch.fermenting.vessel == id
-	);
+const batch = (id) => {
+	return;
 };
+
 const items = computed(() => {
 	return [
 		vesselStore.stills.map((stills) => {
@@ -17,6 +17,18 @@ const items = computed(() => {
 		}),
 	];
 });
+
+const fermenters = computed(() => {
+	return vesselStore.fermenters.map((fermenter) => {
+		fermenter.contents.forEach((content, index) => {
+			fermenter.contents[index] = {
+				...content,
+				batch: batchStore.getBatchById(content.batch),
+			};
+		});
+		return fermenter;
+	});
+});
 </script>
 
 <template>
@@ -26,28 +38,36 @@ const items = computed(() => {
 			<div v-for="fermenter in vesselStore.fermenters">
 				<UCard>
 					<template #header>
-						<h2>{{ fermenter.name }}</h2>
+						<div class="flex justify-between">
+							<h1>{{ fermenter.name }}</h1>
+							<h1>
+								{{
+									recipeStore.getRecipeById(
+										batchStore.getBatchById(fermenter.contents[0]?.batch)
+											?.recipe
+									)?.name
+								}}
+							</h1>
+						</div>
 					</template>
-					<div v-for="content in fermenter.contents">
-						<div class="flex flex-col gap-3 items-center">
-							<DashboardBatchCard :batchId="content.batch" />
-							<UDropdown :items="items">
+					<div class="flex flex-col gap-3 items-center">
+						{{ fermenter.contents }}
+						<UDropdown :items="items">
+							<UButton
+								color="black"
+								variant="outline"
+								>Start Distilling</UButton
+							>
+							<template #item="{ item }">
 								<UButton
 									color="black"
-									variant="outline"
-									>Start Distilling</UButton
+									variant="ghost"
+									class="w-full"
+									@click="fullTransfer(fermenter._id, item.value)"
+									>{{ item.label }}</UButton
 								>
-								<template #item="{ item }">
-									<UButton
-										color="black"
-										variant="ghost"
-										class="w-full"
-										@click="fullTransfer(fermenter._id, item.value)"
-										>{{ item.label }}</UButton
-									>
-								</template>
-							</UDropdown>
-						</div>
+							</template>
+						</UDropdown>
 					</div>
 				</UCard>
 			</div>

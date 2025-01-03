@@ -53,19 +53,6 @@ export const latestPrice = (item: Item | string): number => {
 	return 0;
 };
 
-export const currentStock = (item: Item) => {
-	const inventoryStore = useInventoryStore();
-
-	const sortedInventory = inventoryStore.inventories.sort(
-		(a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()
-	);
-
-	for (let i in sortedInventory) {
-		if (sortedInventory[i].items[item._id.toString()])
-			return sortedInventory[i].items[item._id.toString()];
-	}
-};
-
 export const recipePrice = (recipe: Recipe | string | ObjectId) => {
 	const itemStore = useItemStore();
 	const recipeStore = useRecipeStore();
@@ -124,11 +111,4 @@ export const recipePrice = (recipe: Recipe | string | ObjectId) => {
 		}
 	);
 	return total.value;
-};
-
-export const getInventoryNameById = (id: string) => {
-	const itemStore = useItemStore();
-	const bottleStore = useBottleStore();
-
-	return itemStore.getItemById(id)?.name || bottleStore.getBottleById(id)?.name;
 };

@@ -190,7 +190,7 @@ export interface Vessel {
 }
 
 export interface Contents {
-	batch: ObjectId;
+	batch: ObjectId | string;
 	volume: number;
 	volumeUnit: string;
 	abv: number;
