@@ -16,8 +16,12 @@ export const useRecipeStore = defineStore('recipes', () => {
 
 	// CRUD actions
 	const getRecipes = async (): Promise<void> => {
-		const response = await $fetch('/api/recipe');
-		recipes.value = response as Recipe[];
+		try {
+			const response = await $fetch('/api/recipe');
+			recipes.value = response as Recipe[];
+		} catch (e) {
+			console.error('Error fetching recipes:', e);
+		}
 	};
 
 	const updateRecipe = async (): Promise<void> => {

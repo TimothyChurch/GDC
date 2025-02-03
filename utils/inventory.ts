@@ -2,28 +2,6 @@ import type { ObjectId } from 'mongoose';
 import type { Item } from '~/types';
 import { differenceInDays } from 'date-fns';
 
-export const bottelAverageUsage = (bottleId: string | ObjectId) => {
-	const bottleStore = useBottleStore();
-	const inventoryStore = useInventoryStore();
-	const productionStore = uesProductionStore();
-
-	bottleStore.setBottle(bottleId);
-
-	const inventories = inventoryStore.inventories
-		.filter((i) => Object.keys(i.items).includes(bottleId.toString()))
-		.map((i) => ({
-			_id: i._id,
-			date: i.date,
-			quantity: i.items[bottleId.toString()],
-		}));
-
-	const inventoriesByDate = inventories.sort(
-		(a, b) => new Date(a.date).getTime() - new Date(b.date).getTime()
-	);
-
-	return inventoriesByDate;
-};
-
 export const bottleStockCheck = (id: string | ObjectId) => {
 	const bottleStore = useBottleStore();
 	const productionStore = uesProductionStore();

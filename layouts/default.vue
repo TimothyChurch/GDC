@@ -1,7 +1,7 @@
 <template>
-    <div class="h-screen flex flex-col">
-      <SiteHeader />
-      <slot />
-      <SiteFooter />
-    </div>
-  </template>
+	<div class="h-screen w-screen flex flex-col">
+		<SiteHeader />
+		<slot />
+		<SiteFooter />
+	</div>
+</template>

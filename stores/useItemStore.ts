@@ -12,6 +12,7 @@ export const useItemStore = defineStore('items', () => {
 		inventoryUnit: '',
 		purchaseHistory: [],
 		inventoryHistory: [],
+		brand: '',
 	});
 
 	// CRUD actions
@@ -58,6 +59,7 @@ export const useItemStore = defineStore('items', () => {
 			inventoryUnit: '',
 			purchaseHistory: [],
 			inventoryHistory: [],
+			brand: '',
 		};
 	};
 
