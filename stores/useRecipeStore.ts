@@ -12,6 +12,7 @@ export const useRecipeStore = defineStore('recipes', () => {
 		volume: 0,
 		volumeUnit: '',
 		items: [],
+		directions: '',
 	});
 
 	// CRUD actions
@@ -49,6 +50,7 @@ export const useRecipeStore = defineStore('recipes', () => {
 			volume: 0,
 			volumeUnit: '',
 			items: [],
+			directions: '',
 		};
 	};
 

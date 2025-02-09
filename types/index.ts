@@ -162,6 +162,7 @@ export interface Recipe {
 	volume: number;
 	volumeUnit: string;
 	items: { item: ObjectId; amount: number; unit: string }[];
+	directions: string;
 }
 
 export interface Vessel {

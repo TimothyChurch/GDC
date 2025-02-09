@@ -14,7 +14,6 @@ export const bottleStockCheck = (id: string | ObjectId) => {
 				p.bottle.toString() == bottle._id.toString()
 		)
 		.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
-	console.log(selectedProductions);
 	const totalProduced = selectedProductions.reduce(
 		(sum: number, p) => sum + p.quantity,
 		0

@@ -7,7 +7,8 @@ const rows = computed(() => {
 		return {
 			_id: item._id,
 			name: item.name,
-			vendor: contactStore.getContactById(item.vendor.toString())?.businessName,
+			vendor: contactStore.getContactById(item.vendor?.toString())
+				?.businessName,
 			price: `${Dollar.format(latestPrice(item) as number)} / ${
 				item.inventoryUnit
 			}`,

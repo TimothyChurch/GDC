@@ -2,7 +2,7 @@
 
 <template>
 	<div classs="flex">
-		test
+		<ChartAllBottlesInventory />
 		<TableInventoryItems />
 		<TableInventoryBottles />
 	</div>

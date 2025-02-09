@@ -49,7 +49,7 @@ const saveRecipe = () => {
 };
 </script>
 <template>
-	<UContainer>
+	<UContainer class="min-w-5xl">
 		<UForm
 			class="grid grid-cols-2 gap-3"
 			:state="recipeStore.recipe">
@@ -103,7 +103,7 @@ const saveRecipe = () => {
 						icon="i-heroicons-solid-trash" />
 				</template>
 			</UTable>
-			<div class="grid grid-cols-3 gap-3 justify-between col-span-2">
+			<div class="flex gap-3 justify-between col-span-2">
 				<UFormGroup label="Name">
 					<USelectMenu
 						:options="itemStore.items"
@@ -111,7 +111,9 @@ const saveRecipe = () => {
 						option-attribute="name"
 						value-attribute="_id"
 						placeholder="Select item"
-						searchable />
+						clear-search-on-close
+						searchable
+						creatable />
 				</UFormGroup>
 				<UFormGroup label="Amount">
 					<UInput
@@ -119,18 +121,19 @@ const saveRecipe = () => {
 						type="number" />
 				</UFormGroup>
 				<UFormGroup label="Unit">
-					<div class="flex gap-3">
-						<USelectMenu
-							v-model="newitem.unit"
-							:options="allUnits"
-							searchable />
-
-						<UButton
-							@click="additem"
-							icon="i-heroicons-solid-plus" />
-					</div>
+					<USelectMenu
+						v-model="newitem.unit"
+						:options="allUnits"
+						placeholder="Unit"
+						searchable />
 				</UFormGroup>
+				<UButton
+					@click="additem"
+					icon="i-heroicons-solid-plus" />
 			</div>
+			<UFormGroup label="Directions">
+				<UTextarea v-model="recipeStore.recipe.directions" />
+			</UFormGroup>
 			<UButton
 				@click="saveRecipe()"
 				class="my-5 col-span-2"

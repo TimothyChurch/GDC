@@ -11,7 +11,6 @@ const save = () => {
 
 <template>
 	<div class="flex flex-col gap-3">
-		{{ bottleStore.bottle }}
 		<UFormGroup
 			label="Name"
 			name="name">
@@ -26,8 +25,9 @@ const save = () => {
 		<UFormGroup
 			label="Recipe"
 			name="recipe">
-			<USelect
+			<USelectMenu
 				:options="recipeStore.recipes"
+				searchable
 				option-attribute="name"
 				value-attribute="_id"
 				v-model="bottleStore.bottle.recipe" />

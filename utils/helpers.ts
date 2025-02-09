@@ -1,4 +1,4 @@
-import type { Item, Recipe } from '~/types';
+import type { Item, Recipe, Bottle } from '~/types';
 import type { ObjectId } from 'mongoose';
 
 export const latestPrice = (item: Item | string): number => {
@@ -111,4 +111,17 @@ export const recipePrice = (recipe: Recipe | string | ObjectId) => {
 		}
 	);
 	return total.value;
+};
+
+export const latestProduction = (bottle: string | ObjectId) => {
+	const productionStore = uesProductionStore();
+	const sortedProductions = productionStore.productions.sort(
+		(a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()
+	);
+	const lastProduction = sortedProductions.find((p) => p.bottle == bottle);
+	return lastProduction;
+};
+
+export const bottleCost = (bottle: string | ObjectId) => {
+	return latestProduction(bottle)?.bottleCost;
 };

@@ -3,6 +3,19 @@ const router = useRouter();
 // Bottle Store
 
 const bottleStore = useBottleStore();
+const recipeStore = useRecipeStore();
+
+const bottles = computed(() => {
+	return bottleStore.bottles.map((bottle) => {
+		return {
+			...bottle,
+			inventory: bottleStockCheck(bottle._id).currentStock,
+			class: recipeStore.getRecipeById(bottle.recipe)?.class,
+			type: recipeStore.getRecipeById(bottle.recipe)?.type,
+			cost: Dollar.format(bottleCost(bottle._id)),
+		};
+	});
+});
 
 // Table Parameters
 
@@ -13,22 +26,28 @@ const columns = [
 		sortable: true,
 	},
 	{
-		key: 'abv',
-		label: 'ABV',
+		key: 'class',
+		label: 'Class',
 	},
 	{
 		key: 'type',
 		label: 'Type',
 	},
 	{
-		key: 'recipe',
-		label: 'Recipe',
+		key: 'abv',
+		label: 'ABV',
 	},
 	{
 		key: 'cost',
 		label: 'Cost',
 	},
+
 	{ key: 'price', label: 'Price' },
+	{
+		key: 'inventory',
+		label: 'Inventory',
+		sortable: true,
+	},
 	{
 		key: 'actions',
 	},
@@ -75,13 +94,22 @@ const editItem = (row) => {
 const deleteItem = async (id) => {
 	await bottleStore.deleteBottle(id);
 };
+
 const searchFilter = ref('');
 const rows = computed(() => {
-	const filtered = ref(bottleStore.bottles);
+	const filtered = ref([]);
 	if (searchFilter.value != '') {
-		filtered.value = filtered.value.filter((bottle) =>
-			bottle.name.toLowerCase().includes(searchFilter.value.toLowerCase())
-		);
+		filtered.value = bottles.value.filter((bottle) => {
+			return (
+				bottle.name.toLowerCase().includes(searchFilter.value.toLowerCase()) ||
+				bottle.class
+					?.toLowerCase()
+					.includes(searchFilter.value.toLowerCase()) ||
+				bottle.type?.toLowerCase().includes(searchFilter.value.toLowerCase())
+			);
+		});
+	} else {
+		filtered.value = bottles.value;
 	}
 	return filtered.value.slice(
 		(page.value - 1) * pageCount.value,
@@ -92,6 +120,7 @@ const rows = computed(() => {
 
 <template>
 	<div class="flex flex-col">
+		{{ rows[0] }}
 		<UInput
 			v-model="searchFilter"
 			placeholder="Search..." />
