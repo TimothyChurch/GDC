@@ -1,5 +1,9 @@
-<script setup></script>
+<script setup>
+const cocktailStore = useCocktailStore();
+</script>
 
 <template>
-	<TableInventoryInputs />
+	<div>
+		<TableCocktails />
+	</div>
 </template>

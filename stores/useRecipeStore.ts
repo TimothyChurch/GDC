@@ -24,6 +24,7 @@ export const useRecipeStore = defineStore('recipes', () => {
 			console.error('Error fetching recipes:', e);
 		}
 	};
+	getRecipes();
 
 	const updateRecipe = async (): Promise<void> => {
 		if (!recipe.value._id) {

@@ -22,6 +22,7 @@ export const usePurchaseOrderStore = defineStore('purchaseOrders', () => {
 			console.error('Error fetching purchase orders:', error);
 		}
 	};
+	getPurchaseOrders();
 
 	const updatePurchaseOrder = async (): Promise<PurchaseOrder> => {
 		const response = ref();

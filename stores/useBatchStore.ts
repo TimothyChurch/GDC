@@ -105,6 +105,7 @@ export const useBatchStore = defineStore('batches', () => {
 		const response = await $fetch('/api/batch');
 		batches.value = response as Batch[];
 	};
+	getBatches();
 
 	const setBatch = (id: string): void => {
 		batch.value = batches.value.find(

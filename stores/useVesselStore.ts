@@ -52,6 +52,7 @@ export const useVesselStore = defineStore('vessels', () => {
 			console.error('Error fetching vessels:', error);
 		}
 	};
+	getVessels();
 
 	const getVesselById = (id: string) => {
 		try {

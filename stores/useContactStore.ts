@@ -25,6 +25,7 @@ export const useContactStore = defineStore('contacts', () => {
 			console.error('Error fetching contacts:', error);
 		}
 	};
+	getContacts();
 
 	const checkContacts = () => {
 		if (!contacts.value.length) {

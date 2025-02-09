@@ -1,8 +1,4 @@
-<script setup>
-onMounted(() => {
-	initializeStores();
-});
-</script>
+<script setup></script>
 
 <template>
 	<div class="flex flex-col w-screen h-screen w-max-screen h-max-screen">

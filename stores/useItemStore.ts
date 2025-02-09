@@ -24,6 +24,7 @@ export const useItemStore = defineStore('items', () => {
 			console.error('Error fetching items:', e);
 		}
 	};
+	getItems();
 
 	const setItem = (id: string) => {
 		const foundItem = items.value.find((i) => i._id.toString() === id);

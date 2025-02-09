@@ -15,6 +15,7 @@ export const useInventoryStore = defineStore('inventories', () => {
 		inventories.value = response as Inventory[];
 		return;
 	};
+	getInventories();
 
 	const updateInventory = async (): Promise<void> => {
 		if (!inventory.value._id) {

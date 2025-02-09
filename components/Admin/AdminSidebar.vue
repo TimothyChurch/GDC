@@ -44,5 +44,8 @@ const links = [
 </script>
 
 <template>
-	<div class="w-80 max-w-80 p-3"><UVerticalNavigation :links="links" /></div>
+	<div class="w-80 max-w-80 p-3">
+		<UVerticalNavigation :links="links" />
+		<NuxtLink to="/">Main Site</NuxtLink>
+	</div>
 </template>

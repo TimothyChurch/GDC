@@ -30,6 +30,7 @@ export const uesProductionStore = defineStore('productions', () => {
 			console.error('Error fetching productions:', error);
 		}
 	};
+	getProductions();
 
 	const getProductionById = async (id: string): Promise<void> => {
 		try {

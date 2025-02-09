@@ -17,6 +17,7 @@ export const useBottleStore = defineStore('bottles', () => {
 		sortBottles();
 		return;
 	};
+	getBottles();
 
 	const setBottle = (id: string | ObjectId) => {
 		bottle.value = bottles.value.find(
