@@ -14,15 +14,15 @@ const filteredItems = computed(() => {
 			(item) => item.type === filteredType.value
 		);
 	}
-	return firstFilter.value.filter(
-		(item) =>
-			item.name.toLowerCase().includes(search.value.toLowerCase()) ||
-			item.type.toLowerCase().includes(search.value.toLowerCase()) ||
-			contactStore
-				.getContactById(item.vendor)
-				.businessName.toLowerCase()
-				.includes(search.value.toLowerCase())
-	);
+	const secondFilter = ref(firstFilter.value);
+	if (search.value != '') {
+		secondFilter.value = secondFilter.value.filter(
+			(item) =>
+				item.name.toLowerCase().includes(search.value.toLowerCase()) ||
+				item.type.toLowerCase().includes(search.value.toLowerCase())
+		);
+	}
+	return secondFilter.value;
 });
 
 const columns = [

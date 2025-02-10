@@ -1,10 +1,30 @@
 <script setup lang="ts">
-import { ref, computed } from 'vue';
-
+import type { ObjectId } from 'mongodb';
 const cocktailStore = useCocktailStore();
 
+const itemStore = useItemStore();
+const bottleStore = useBottleStore();
+
+const options = [...itemStore.items, ...bottleStore.bottles];
+
+const newOption = computed({
+	get: () => newIngredient.value.item,
+	set: async (newOption) => {
+		if (
+			itemStore.getItemById(newOption.toString()) ||
+			bottleStore.getBottleById(newOption.toString())
+		) {
+			newIngredient.value.item = newOption;
+		} else {
+			itemStore.item.name = newOption.toString();
+			newIngredient.value.item = (await itemStore.updateItem())
+				._id as unknown as ObjectId;
+		}
+	},
+});
+
 const newIngredient = ref({
-	item: '',
+	item: undefined as unknown as ObjectId,
 	amount: 0,
 	unit: '',
 });
@@ -15,8 +35,16 @@ const menuOptions = ['main', 'seasonal', 'shots', 'off menu'];
 const units = ['oz', 'ml', 'dash', 'barspoon', 'each'];
 
 const addIngredient = () => {
-	cocktailStore.cocktail.ingredients.push({ ...newIngredient.value });
-	newIngredient.value = { item: '', amount: 0, unit: '' };
+	cocktailStore.cocktail.ingredients.push({
+		item: newIngredient.value.item,
+		amount: newIngredient.value.amount,
+		unit: newIngredient.value.unit,
+	});
+	newIngredient.value = {
+		item: undefined as unknown as ObjectId,
+		amount: 0,
+		unit: '',
+	};
 	let newItemElement = document.getElementById('newItem');
 	if (newItemElement) {
 		newItemElement.focus();
@@ -50,7 +78,8 @@ const saveCocktail = async () => {
 					v-model="cocktailStore.cocktail.glassware"
 					:options="glasswareOptions" />
 			</UFormGroup>
-
+			{{ newOption }}
+			{{ newIngredient.item }}
 			<UFormGroup
 				label="Ingredients"
 				name="ingredings">
@@ -58,32 +87,66 @@ const saveCocktail = async () => {
 					v-for="(ingredient, index) in cocktailStore.cocktail.ingredients"
 					:key="index"
 					class="flex items-center space-x-2 mb-2">
-					<UInput
-						id="item"
-						v-model="ingredient.item" />
+					<USelectMenu
+						v-model="ingredient.item"
+						value-attribute="_id"
+						option-attribute="name"
+						:options="options"
+						searchable
+						creatable
+						class="flex flex-grow"
+						><template #label>
+							{{
+								ingredient.item
+									? itemStore.getItemById(ingredient.item?.toString())?.name ||
+									  bottleStore.getBottleById(ingredient.item?.toString())?.name
+									: 'Select Item'
+							}}</template
+						></USelectMenu
+					>
 					<UInput
 						v-model.number="ingredient.amount"
-						type="number" />
+						type="number"
+						class="max-w-20" />
 					<USelect
 						v-model="ingredient.unit"
-						:options="units" />
+						:options="units"
+						class="max-w-20" />
 					<UButton
 						color="red"
 						@click="removeIngredient(index)"
-						>Remove</UButton
-					>
+						icon="i-heroicons-trash-20-solid" />
 				</div>
-				<div class="flex items-center space-x-2">
-					<UInput
+				<div class="flex space-x-2">
+					<USelectMenu
 						id="newItem"
-						v-model="newIngredient.item" />
+						v-model="newOption"
+						value-attribute="_id"
+						option-attribute="name"
+						:options="options"
+						searchable
+						creatable
+						class="flex flex-grow">
+						<template #label>
+							{{
+								newOption
+									? itemStore.getItemById(newOption?.toString())?.name ||
+									  bottleStore.getBottleById(newOption?.toString())?.name
+									: 'Select Item'
+							}}</template
+						>
+					</USelectMenu>
 					<UInput
 						v-model.number="newIngredient.amount"
-						type="number" />
+						type="number"
+						class="flex flex-shrink max-w-20" />
 					<USelect
 						v-model="newIngredient.unit"
-						:options="units" />
-					<UButton @click="addIngredient">Add Ingredient</UButton>
+						:options="units"
+						class="max-w-20" />
+					<UButton
+						@click="addIngredient"
+						icon="i-heroicons-plus" />
 				</div>
 			</UFormGroup>
 

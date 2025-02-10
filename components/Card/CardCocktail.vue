@@ -1,16 +1,12 @@
 <script setup lang="ts">
 import type { Cocktail } from '~/types';
 
-const props = defineProps<{
+defineProps<{
 	cocktail: Cocktail;
 }>();
 
 const itemStore = useItemStore();
-
-const getIngredientName = (itemId: string) => {
-	const item = itemStore.getItemById(itemId);
-	return item ? item.name : 'Unknown Item';
-};
+const bottleStore = useBottleStore();
 </script>
 
 <template>
@@ -30,9 +26,9 @@ const getIngredientName = (itemId: string) => {
 			<div class="flex flex-col">
 				<div
 					v-for="ingredient in cocktail.ingredients"
-					:key="ingredient.item"
 					class="text-sm flex">
-					{{ ingredient.item }}
+					{{ itemStore.getItemById(ingredient.item.toString())?.name
+					}}{{ bottleStore.getBottleById(ingredient.item.toString())?.name }}
 				</div>
 			</div>
 		</div>

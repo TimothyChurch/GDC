@@ -35,20 +35,22 @@ export const useItemStore = defineStore('items', () => {
 		}
 	};
 
-	const updateItem = async (): Promise<void> => {
+	const updateItem = async (): Promise<Item> => {
+		let response;
 		if (!item.value._id) {
-			await $fetch('/api/item/create', {
+			response = await $fetch('/api/item/create', {
 				method: 'POST',
 				body: JSON.stringify(item.value),
 			});
 		} else {
-			await $fetch(`/api/item/${item.value._id}`, {
+			response = await $fetch(`/api/item/${item.value._id}`, {
 				method: 'PUT',
 				body: JSON.stringify(item.value),
 			});
 		}
 		getItems();
 		resetItem();
+		return response as Item;
 	};
 
 	const resetItem = (): void => {

@@ -1,5 +1,4 @@
 import { defineMongooseModel } from '#nuxt/mongoose';
-import type { ObjectId } from 'mongoose';
 
 export const Item = defineMongooseModel({
 	name: 'Item',
@@ -16,11 +15,9 @@ export const Item = defineMongooseModel({
 		},
 		brand: {
 			type: String,
-			required: false,
 		},
 		inventoryUnit: {
 			type: String,
-			required: true,
 		},
 		purchaseHistory: {
 			type: Array,

@@ -27,6 +27,7 @@ export const useCocktailStore = defineStore('cocktails', () => {
 		} catch (e) {
 			console.error('Error fetching cocktails:', e);
 		}
+		sortCocktails();
 	};
 	getCocktails();
 
@@ -87,6 +88,20 @@ export const useCocktailStore = defineStore('cocktails', () => {
 				c.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
 				c.menu.toLowerCase().includes(searchTerm.toLowerCase())
 		);
+	};
+
+	const sortCocktails = () => {
+		cocktails.value.sort((a, b) => {
+			const nameA = a.name.toUpperCase();
+			const nameB = b.name.toUpperCase();
+			if (nameA < nameB) {
+				return -1;
+			}
+			if (nameA > nameB) {
+				return 1;
+			}
+			return 0;
+		});
 	};
 
 	return {

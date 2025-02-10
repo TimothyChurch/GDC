@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import type { Cocktail } from '~/types';
 
-const props = defineProps<{
+defineProps<{
 	cocktails: Cocktail[];
 }>();
 </script>
@@ -9,7 +9,7 @@ const props = defineProps<{
 <template>
 	<div>
 		<div class="grid grid-cols-6 gap-3">
-			<div v-for="cocktail in props.cocktails">
+			<div v-for="cocktail in cocktails">
 				<CardCocktail :cocktail="cocktail" />
 			</div>
 		</div>
