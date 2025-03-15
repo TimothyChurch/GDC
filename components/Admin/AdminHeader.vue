@@ -1,4 +1,5 @@
 <script setup>
+const { user, authorized } = useAuth();
 const items = () => [
 	[
 		{
@@ -63,7 +64,7 @@ const items = () => [
 
 <template>
 	<div class="flex justify-between p-3 h-14">
-		<div>Profile Area</div>
+		<div>Profile Area {{ (user, authorized) }}</div>
 		<AdminSearch />
 		<div name="Right Nav">
 			<UDropdown :items="items()">

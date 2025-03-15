@@ -21,6 +21,7 @@
 		"date-fns": "^2.30.0",
 		"nuxt": "^3.14.159",
 		"nuxt-mongoose": "^1.0.6",
+		"nuxt-storage": "^1.2.2",
 		"pinia": "^2.2.6",
 		"socket.io": "^4.8.1",
 		"v-calendar": "^3.1.2",

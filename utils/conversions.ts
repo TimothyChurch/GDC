@@ -9,9 +9,17 @@ export const convertUnitRatio = (fromUnit: string, toUnit: string) => {
 		// Volume Measurements
 		'fl oz': { cup: 0.125, gallon: 0.0078125, mL: 29.5735, L: 0.0295735 },
 		cup: { 'fl oz': 8, gallon: 0.0625, mL: 236.588, L: 0.236588 },
+		gal: { 'fl oz': 128, cup: 16, mL: 3785.41, L: 3.78541 },
 		gallon: { 'fl oz': 128, cup: 16, mL: 3785.41, L: 3.78541 },
 		mL: { 'fl oz': 0.033814, cup: 0.00422675, gallon: 0.000264172, L: 0.001 },
-		L: { 'fl oz': 33.814, cup: 4.22675, gallon: 0.264172, mL: 1000 },
+		L: {
+			'fl oz': 33.814,
+			cup: 4.22675,
+			gal: 0.264172,
+			gallon: 0.264172,
+			mL: 1000,
+			L: 1,
+		},
 		// Weight Measurements
 		oz: { lb: 0.0625, g: 28.3495, kg: 0.0283495 },
 		lb: { oz: 16, g: 453.592, kg: 0.453592 },
@@ -41,6 +49,7 @@ export const metricWeightToVolume = (weight: number, abv: number) => {
 };
 
 export const imperialWeightToVolume = (weight: number, abv: number) => {
+	console.log('weight', weight, 'abv', abv);
 	const densityWater = 8.33;
 	const densityAlcohol = 6.5;
 	let mixtureAbv = 0;

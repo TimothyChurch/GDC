@@ -1,6 +1,4 @@
-<script setup>
-const cocktailStore = useCocktailStore();
-</script>
+<script setup></script>
 
 <template>
 	<div>
