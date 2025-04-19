@@ -1,16 +1,12 @@
-<script setup>
-const { login, user } = useAuth();
-const run = async () => {
-	await login('Timothy@GalvestonDistillingCo.com', 'EircAvis1989');
-};
-</script>
+<script setup></script>
 
 <template>
-	<div>
-		<h1>Index Page</h1>
-		{{ user }}
-		<UButton @click="run">Testing</UButton>
-		<FormUser />
-		<LandingProducts />
-	</div>
+  <div class="flex flex-col gap-2">
+    <h1 class="flex justify-center text-3xl border-b-2 pb-3 text-center">
+      A small, craft distillery focused on inovation, experimentation, and the
+      pursuit of quality spirits
+    </h1>
+    <SiteHero />
+    <LandingProducts />
+  </div>
 </template>

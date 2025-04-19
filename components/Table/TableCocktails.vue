@@ -74,18 +74,15 @@ onMounted(() => {
 		</UTable>
 
 		<UModal v-model="isModalOpen">
-			<UCard>
-				<template #header>
-					<h3 class="text-xl font-semibold">
+					<h3 class="text-xl font-semibold p-3 text-center">
 						{{ editingCocktail ? 'Edit Cocktail' : 'Add New Cocktail' }}
 					</h3>
-				</template>
 				<FormCocktail
 					:edit-mode="!!editingCocktail"
 					:cocktail-id="editingCocktail?._id"
 					@save="handleSave"
 					@cancel="closeModal" />
-			</UCard>
+
 		</UModal>
 	</div>
 </template>

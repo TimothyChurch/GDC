@@ -104,6 +104,10 @@ export const useCocktailStore = defineStore('cocktails', () => {
 		});
 	};
 
+	const cocktailCost = (cocktail: Cocktail | string): number => {
+		return 0
+	}
+
 	return {
 		cocktails,
 		cocktail,

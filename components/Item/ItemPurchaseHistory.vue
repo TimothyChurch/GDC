@@ -23,12 +23,22 @@ const columns = [
 const selectedItem = (row) => {
 	return row.items.filter((item) => item.item === route.params._id)[0];
 };
+
+// Update purchase
+const newPurchaseOrder = () => {
+	purchaseOrderStore.resetCurrentPurchaseOrder();
+	formSelection.value = 'FormPurchaseOrder';
+	toggleFormModal();
+}
 </script>
 
 <template>
 	<UCard>
 		<template #header>
+			<div class="flex justify-between">
 			<h1 class="font-bold text-xl">Purchase History</h1>
+			<UButton @click="newPurchaseOrder()">Add Purchase History</UButton>
+		</div>
 		</template>
 		<UTable
 			:rows="purchaseOrders"

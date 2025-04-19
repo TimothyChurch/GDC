@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { PurchaseOrderItem } from "~/types";
+import type { PurchaseOrderItem, Item } from "~/types";
 const contactStore = useContactStore();
 const itemStore = useItemStore();
 const purchaseOrderStore = usePurchaseOrderStore();
@@ -69,7 +69,7 @@ const submitForm = async () => {
   purchaseOrderStore.purchaseOrder.total = total.value.value;
   const data = await purchaseOrderStore.updatePurchaseOrder();
   data.items.forEach((item) => {
-    itemStore.item = itemStore.items.find((i) => i._id === item.item);
+    itemStore.item = itemStore.items.find((i) => i._id === item.item) as Item
     itemStore.item.purchaseHistory.push(data._id);
     itemStore.updateItem();
   });
@@ -158,12 +158,12 @@ const submitForm = async () => {
       v-if="additionalItem"
       class="flex flex-wrap justify-between my-3 gap-3">
       <UFormGroup label="Item">
-        <USelect
-          :options="
-            itemStore.items.filter(
-              (i) => i.vendor === purchaseOrderStore.purchaseOrder.vendor
-            )
-          "
+        <USelectMenu
+          :options="itemStore.items"
+          :search-input="{
+            placeholder: 'Filter...',
+            icon: 'i-lucide-search'
+          }"
           v-model="newItem.item"
           option-attribute="name"
           value-attribute="_id" />

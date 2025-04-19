@@ -4,17 +4,19 @@ const contactStore = useContactStore();
 
 const router = useRouter();
 
+const allItems = ref()
+allItems.value = itemStore.items.map((item) => ({...item, price: Dollar.format(itemStore.latestPrice(item._id)) }));
+
 const search = ref('');
 const filteredType = ref('');
 
 const filteredItems = computed(() => {
-	const firstFilter = ref(itemStore.items);
 	if (filteredType.value != '') {
-		firstFilter.value = firstFilter.value.filter(
+		allItems.value = allItems.value.filter(
 			(item) => item.type === filteredType.value
 		);
 	}
-	const secondFilter = ref(firstFilter.value);
+	const secondFilter = ref(allItems.value);
 	if (search.value != '') {
 		secondFilter.value = secondFilter.value.filter(
 			(item) =>
@@ -29,6 +31,8 @@ const columns = [
 	{ key: 'name', label: 'Name', sortable: true },
 	{ key: 'type', label: 'Type', sortable: true },
 	{ key: 'vendor', label: 'Vendor', sortable: true },
+	{ key: 'price', label: 'Price', sortable: true },
+	{ key: 'inventoryUnit', label: 'Unit'},
 	{ key: 'actions', label: 'Actions' },
 ];
 
@@ -66,6 +70,9 @@ const editItem = (row) => {
 const deleteItem = async (id) => {
 	await itemStore.deleteItem(id);
 };
+const onSelect = (row) => {
+	router.push(`/admin/items/${row._id}`);
+}
 </script>
 
 <template>
@@ -73,9 +80,11 @@ const deleteItem = async (id) => {
 		<UInput
 			v-model="search"
 			placeholder="Search items..." />
+			{{ filteredItems[2] }}
 		<UTable
 			:rows="filteredItems"
-			:columns="columns">
+			:columns="columns"
+			@select="onSelect">
 			<template #actions-header>
 				<UButton
 					color="gray"

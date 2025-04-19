@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import type { ObjectId } from 'mongodb';
 const cocktailStore = useCocktailStore();
+import type { Item } from '../types';
 
 const itemStore = useItemStore();
 const bottleStore = useBottleStore();
@@ -36,7 +37,7 @@ const units = ['oz', 'ml', 'dash', 'barspoon', 'each'];
 
 const addIngredient = () => {
 	cocktailStore.cocktail.ingredients.push({
-		item: newIngredient.value.item,
+		item: newIngredient.value.item as Item,
 		amount: newIngredient.value.amount,
 		unit: newIngredient.value.unit,
 	});
@@ -64,7 +65,8 @@ const saveCocktail = async () => {
 	<UCard>
 		<UForm
 			:state="cocktailStore.cocktail"
-			@submit="saveCocktail">
+			@submit="saveCocktail"
+			class="flex flex-col gap-2">
 			<UFormGroup
 				label="Name"
 				name="name">
@@ -78,8 +80,6 @@ const saveCocktail = async () => {
 					v-model="cocktailStore.cocktail.glassware"
 					:options="glasswareOptions" />
 			</UFormGroup>
-			{{ newOption }}
-			{{ newIngredient.item }}
 			<UFormGroup
 				label="Ingredients"
 				name="ingredings">

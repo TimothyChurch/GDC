@@ -7,7 +7,7 @@ const products = [
 		price: '$75',
 		href: '#',
 		imageSrc:
-			'https://tailwindui.com/plus/img/ecommerce-images/home-page-04-trending-product-02.jpg',
+			'https://barschool.b-cdn.net/wp-content/uploads/2022/11/Liquor-vs-Liqueur.jpg',
 		imageAlt: 'Hand stitched, orange leather long wallet.',
 	},
 	{
@@ -17,7 +17,7 @@ const products = [
 		price: '$75',
 		href: '#',
 		imageSrc:
-			'https://tailwindui.com/plus/img/ecommerce-images/home-page-04-trending-product-02.jpg',
+			'https://barschool.b-cdn.net/wp-content/uploads/2022/11/Liquor-vs-Liqueur.jpg',
 		imageAlt: 'Hand stitched, orange leather long wallet.',
 	},
 	{
@@ -27,7 +27,7 @@ const products = [
 		price: '$75',
 		href: '#',
 		imageSrc:
-			'https://tailwindui.com/plus/img/ecommerce-images/home-page-04-trending-product-02.jpg',
+			'https://barschool.b-cdn.net/wp-content/uploads/2022/11/Liquor-vs-Liqueur.jpg',
 		imageAlt: 'Hand stitched, orange leather long wallet.',
 	},
 	{
@@ -37,18 +37,18 @@ const products = [
 		price: '$75',
 		href: '#',
 		imageSrc:
-			'https://tailwindui.com/plus/img/ecommerce-images/home-page-04-trending-product-02.jpg',
+			'https://barschool.b-cdn.net/wp-content/uploads/2022/11/Liquor-vs-Liqueur.jpg',
 		imageAlt: 'Hand stitched, orange leather long wallet.',
 	},
 ];
 </script>
 
 <template>
-	<div class="bg-white">
+	<div>
 		<div
 			class="mx-auto max-w-2xl px-4 py-16 sm:px-6 sm:py-24 lg:max-w-7xl lg:px-8">
 			<div class="md:flex md:items-center md:justify-between">
-				<h2 class="text-2xl font-bold tracking-tight text-gray-900">
+				<h2 class="text-2xl font-bold tracking-tight text-gray-900 dark:text-gray-200">
 					Trending products
 				</h2>
 				<NuxtLink

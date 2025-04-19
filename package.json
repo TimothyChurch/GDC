@@ -19,7 +19,7 @@
 		"@vueuse/nuxt": "^11.2.0",
 		"chart.js": "^4.4.7",
 		"date-fns": "^2.30.0",
-		"nuxt": "^3.14.159",
+		"nuxt": "^3.16.1",
 		"nuxt-mongoose": "^1.0.6",
 		"nuxt-storage": "^1.2.2",
 		"pinia": "^2.2.6",
