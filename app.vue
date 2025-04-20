@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import "~/assets/main.css";
 
-const { getStoredUser, user } = useAuth();
-getStoredUser();
+const { login } = useAuth();
+login();
 
 useHead({
   title: "Galveston Distilling Co",
