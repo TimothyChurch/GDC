@@ -26,15 +26,11 @@ const password = ref("");
 const error = ref("");
 
 const handleLogin = async () => {
+  console.log("email:", email.value, "password:", password.value);
   user.value.email = email.value;
   user.value.password = password.value;
   try {
     await login();
-    if (user.value.authenticated) {
-      router.push("/admin/dashboard");
-    } else {
-      error.value = "Login failed. Please check your credentials.";
-    }
   } catch (e) {
     console.error("Login error:", e);
     error.value = "An error occurred during login. Please try again.";
@@ -59,7 +55,7 @@ const handleLogin = async () => {
       >
         <UFormGroup label="Email address" name="email">
           <UInput
-            v-model="email"
+            v-model="user.email"
             type="email"
             autocomplete="email"
             required
@@ -68,7 +64,7 @@ const handleLogin = async () => {
         </UFormGroup>
         <UFormGroup label="Password" name="password">
           <UInput
-            v-model="password"
+            v-model="user.password"
             type="password"
             autocomplete="current-password"
             required

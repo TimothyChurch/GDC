@@ -1,4 +1,5 @@
 export default defineNuxtRouteMiddleware((to, from) => {
+  const { login } = useAuth();
   const user = useCookie("user", {
     default: () => ({
       email: "",
@@ -7,6 +8,7 @@ export default defineNuxtRouteMiddleware((to, from) => {
       data: {},
     }),
   });
+  login();
   if (user.value.authenticated) {
     console.log("User is authenticated");
     return;

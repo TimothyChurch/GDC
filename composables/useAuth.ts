@@ -1,4 +1,5 @@
 export const useAuth = () => {
+  const router = useRouter();
   const login = async () => {
     const user = useCookie("user", {
       default: () => ({
@@ -25,6 +26,7 @@ export const useAuth = () => {
       if (data.length > 0) {
         user.value.authenticated = true;
         user.value.data = data[0];
+        router.push("/admin/dashboard");
         return true;
       }
     }
