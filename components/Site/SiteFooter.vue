@@ -1,7 +1,9 @@
 <script setup></script>
 
 <template>
-  <div class="max-w-screen py-8 grid grid-cols-3 w-full justify-around">
+  <div
+    class="max-w-screen py-8 hidden sm:grid grid-cols-3 w-full justify-around"
+  >
     <div class="flex flex-col gap-2 text-center">
       <span class="text-2xl font-bold">Location:</span>
       <span>2618 Market St.</span>

@@ -1,16 +1,22 @@
-<script setup>
+<script setup lang="ts">
 const route = useRoute();
 const navList = [
-  { name: "Home", link: "/" },
-  { name: "Menu", link: "/menu" },
-  { name: "Bottles", link: "/bottles" },
-  { name: "Events", link: "/events" },
+  { label: "Home", link: "/", icon: "carbon:home" },
+  { label: "Menu", link: "/menu", icon: "carbon:menu" },
+  { label: "Bottles", link: "/bottles", icon: "carbon:wine-bottle" },
+  { label: "Events", link: "/events", icon: "carbon:calendar" },
 ];
+const mobileNav = ref([
+  { label: "Home", link: "/", icon: "i-carbon-home" },
+  { label: "Menu", link: "/menu", icon: "i-carbon-menu" },
+  { label: "Bottles", link: "/bottles", icon: "i-carbon-wine-bottle" },
+  { label: "Events", link: "/events", icon: "i-carbon-calendar" },
+]);
 </script>
 
 <template>
   <div>
-    <div class="max-w-screen grid grid-cols-3 justify-around">
+    <div class="max-w-screen grid grid-cols-2 lg:grid-cols-3 justify-around">
       <div
         name="Navbar"
         class="gap-5 font-bold text-2xl hidden md:flex justify-center"
@@ -18,12 +24,12 @@ const navList = [
         <div v-for="i in navList" class="flex items-center">
           <NuxtLink :to="i.link">
             <h1 :class="i.link === route.path ? 'text' : 'shadow'">
-              {{ i.name }}
+              {{ i.label }}
             </h1>
           </NuxtLink>
         </div>
       </div>
-      <div class="flex flex-col items-center">
+      <div class="hidden lg:flex flex-col items-center">
         <img
           src="/images/Logo.png"
           alt="Galveston Distilling Company"
@@ -39,6 +45,20 @@ const navList = [
           <Icon name="carbon:user" />
         </NuxtLink>
       </div>
+    </div>
+    <div class="max-w-screen flex justify-around">
+      <UDropdownMenu
+        :items="mobileNav"
+        :content="{
+          align: 'center',
+          side: 'bottom',
+        }"
+        :ui="{
+          content: 'w-48',
+        }"
+      >
+        <UButton icon="i-carbon-menu" class="h-12 w-12" variant="ghost" />
+      </UDropdownMenu>
     </div>
   </div>
 </template>

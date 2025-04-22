@@ -1,6 +1,4 @@
 <script setup lang="ts">
-import "~/assets/main.css";
-
 const { login } = useAuth();
 login();
 
@@ -27,9 +25,9 @@ useHead({
 </script>
 
 <template>
-  <div class="flex w-screen h-screen font-sans">
+  <UApp class="flex w-screen h-screen font-sans">
     <NuxtLayout>
       <NuxtPage class="grow overflow-y-auto p-3" />
     </NuxtLayout>
-  </div>
+  </UApp>
 </template>
