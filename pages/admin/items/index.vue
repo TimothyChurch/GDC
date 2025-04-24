@@ -1,7 +1,11 @@
-<script setup></script>
+<script setup lang="ts">
+const showForm = ref(false);
+</script>
 
 <template>
-	<div>
-		<TableItems />
-	</div>
+  <div>
+    <UButton @click="showForm = !showForm">Push me</UButton>
+    <FormItem v-if="showForm" />
+    <TableItems />
+  </div>
 </template>

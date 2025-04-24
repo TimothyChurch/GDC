@@ -1,204 +1,191 @@
 <script setup lang="ts">
-import type { ObjectId } from 'mongodb';
+import type { ObjectId } from "mongodb";
 const cocktailStore = useCocktailStore();
-import type { Item } from '../types';
 
 const itemStore = useItemStore();
 const bottleStore = useBottleStore();
 
 const options = [...itemStore.items, ...bottleStore.bottles];
 
-const newOption = computed({
-	get: () => newIngredient.value.item,
-	set: async (newOption) => {
-		if (
-			itemStore.getItemById(newOption.toString()) ||
-			bottleStore.getBottleById(newOption.toString())
-		) {
-			newIngredient.value.item = newOption;
-		} else {
-			itemStore.item.name = newOption.toString();
-			newIngredient.value.item = (await itemStore.updateItem())
-				._id as unknown as ObjectId;
-		}
-	},
-});
+const newItem = (item: string) => {
+  console.log("New item:", item);
+  itemStore.item.name = item;
+  console.log(itemStore.item);
+  itemStore.updateItem();
+  console.log("New item added");
+};
 
 const newIngredient = ref({
-	item: undefined as unknown as ObjectId,
-	amount: 0,
-	unit: '',
+  item: undefined as unknown,
+  amount: 0,
+  unit: "",
 });
 
-const glasswareOptions = ['Highball', 'Lowball', 'Martini', 'Mug'];
-const menuOptions = ['main', 'seasonal', 'shots', 'off menu'];
+const glasswareOptions = [
+  "Highball",
+  "Lowball",
+  "Martini",
+  "Mug",
+  "Shot glass",
+  "Glencairn",
+];
+const menuOptions = ["main", "seasonal", "shots", "off menu"];
 
-const units = ['oz', 'ml', 'dash', 'barspoon', 'each'];
+const units = ["oz", "ml", "dash", "barspoon", "each"];
 
 const addIngredient = () => {
-	cocktailStore.cocktail.ingredients.push({
-		item: newIngredient.value.item as Item,
-		amount: newIngredient.value.amount,
-		unit: newIngredient.value.unit,
-	});
-	newIngredient.value = {
-		item: undefined as unknown as ObjectId,
-		amount: 0,
-		unit: '',
-	};
-	let newItemElement = document.getElementById('newItem');
-	if (newItemElement) {
-		newItemElement.focus();
-	}
+  cocktailStore.cocktail.ingredients.push({
+    item: newIngredient.value.item as unknown as ObjectId,
+    amount: newIngredient.value.amount,
+    unit: newIngredient.value.unit,
+  });
+  newIngredient.value = {
+    item: undefined as unknown,
+    amount: 0,
+    unit: "",
+  };
+  let newItemElement = document.getElementById("newItem");
+  if (newItemElement) {
+    newItemElement.focus();
+  }
 };
 
 const removeIngredient = (index: number) => {
-	cocktailStore.cocktail.ingredients.splice(index, 1);
+  cocktailStore.cocktail.ingredients.splice(index, 1);
 };
 
 const saveCocktail = async () => {
-	await cocktailStore.updateCocktail();
+  await cocktailStore.updateCocktail();
 };
 </script>
 
 <template>
-	<UCard>
-		<UForm
-			:state="cocktailStore.cocktail"
-			@submit="saveCocktail"
-			class="flex flex-col gap-2">
-			<UFormGroup
-				label="Name"
-				name="name">
-				<UInput v-model="cocktailStore.cocktail.name" />
-			</UFormGroup>
+  <UContainer class="flex justify-around p-5">
+    <UCard class="w-fit">
+      <template #header>
+        <h1>NEW COCKTAIL</h1>
+      </template>
+      <UForm
+        :state="cocktailStore.cocktail"
+        @submit="saveCocktail"
+        class="grid grid-cols-6 gap-2 max-w-lg"
+      >
+        <UFormField label="Name" name="name" class="col-span-2">
+          <UInput v-model="cocktailStore.cocktail.name" class="w-full" />
+        </UFormField>
 
-			<UFormGroup
-				label="Glassware"
-				name="glassware">
-				<USelect
-					v-model="cocktailStore.cocktail.glassware"
-					:options="glasswareOptions" />
-			</UFormGroup>
-			<UFormGroup
-				label="Ingredients"
-				name="ingredings">
-				<div
-					v-for="(ingredient, index) in cocktailStore.cocktail.ingredients"
-					:key="index"
-					class="flex items-center space-x-2 mb-2">
-					<USelectMenu
-						v-model="ingredient.item"
-						value-attribute="_id"
-						option-attribute="name"
-						:options="options"
-						searchable
-						creatable
-						class="flex flex-grow"
-						><template #label>
-							{{
-								ingredient.item
-									? itemStore.getItemById(ingredient.item?.toString())?.name ||
-									  bottleStore.getBottleById(ingredient.item?.toString())?.name
-									: 'Select Item'
-							}}</template
-						></USelectMenu
-					>
-					<UInput
-						v-model.number="ingredient.amount"
-						type="number"
-						class="max-w-20" />
-					<USelect
-						v-model="ingredient.unit"
-						:options="units"
-						class="max-w-20" />
-					<UButton
-						color="red"
-						@click="removeIngredient(index)"
-						icon="i-heroicons-trash-20-solid" />
-				</div>
-				<div class="flex space-x-2">
-					<USelectMenu
-						id="newItem"
-						v-model="newOption"
-						value-attribute="_id"
-						option-attribute="name"
-						:options="options"
-						searchable
-						creatable
-						class="flex flex-grow">
-						<template #label>
-							{{
-								newOption
-									? itemStore.getItemById(newOption?.toString())?.name ||
-									  bottleStore.getBottleById(newOption?.toString())?.name
-									: 'Select Item'
-							}}</template
-						>
-					</USelectMenu>
-					<UInput
-						v-model.number="newIngredient.amount"
-						type="number"
-						class="flex flex-shrink max-w-20" />
-					<USelect
-						v-model="newIngredient.unit"
-						:options="units"
-						class="max-w-20" />
-					<UButton
-						@click="addIngredient"
-						icon="i-heroicons-plus" />
-				</div>
-			</UFormGroup>
+        <UFormField label="Glassware" name="glassware" class="col-span-2">
+          <USelect
+            v-model="cocktailStore.cocktail.glassware"
+            :items="glasswareOptions"
+            class="w-full"
+          />
+        </UFormField>
+        <UFormField label="Menu" name="menu" class="col-span-2">
+          <USelect
+            v-model="cocktailStore.cocktail.menu"
+            :items="menuOptions"
+            class="w-full"
+          />
+        </UFormField>
+        <UFormField label="Recipe" name="ingredients" class="col-span-6">
+          <div class="col-span-6 grid grid-cols-6">
+            <h1 class="col-span-3 font-bold text-xl">Ingredient</h1>
+            <h1 class="font-bold text-xl">Amount</h1>
+            <h1 class="font-bold text-xl">Unit</h1>
+            <span></span>
+          </div>
+          <div
+            v-for="(ingredient, index) in cocktailStore.cocktail.ingredients"
+            :key="index"
+            class="grid grid-cols-6 items-center space-x-2 mb-2"
+          >
+            <span class="col-span-3">
+              {{
+                itemStore.getItemById(ingredient.item as unknown as string)
+                  ?.name
+              }}
+            </span>
+            <span> {{ ingredient.amount }}</span
+            ><span>{{ ingredient.unit }} </span>
+            <UButton
+              color="error"
+              @click="removeIngredient(index)"
+              icon="i-heroicons-trash-20-solid"
+              class="w-fit"
+            />
+          </div>
+          <div class="grid grid-cols-6 space-x-2">
+            <USelectMenu
+              id="newItem"
+              v-model="newIngredient.item"
+              value-key="id"
+              :items="itemStore.itemNameId"
+              class="flex flex-grow col-span-3"
+              create-item
+              @create="newItem"
+            >
+            </USelectMenu>
+            <UInput
+              v-model.number="newIngredient.amount"
+              type="number"
+              class="flex flex-shrink max-w-20"
+            />
+            <USelect
+              v-model="newIngredient.unit"
+              :items="units"
+              class="max-w-20"
+            />
+            <UButton
+              @click="addIngredient"
+              icon="i-heroicons-plus"
+              class="w-fit"
+            />
+          </div>
+        </UFormField>
 
-			<UFormGroup
-				label="Cost"
-				name="cost">
-				<UInput
-					v-model.number="cocktailStore.cocktail.cost"
-					type="number"
-					step="0.01" />
-			</UFormGroup>
+        <UFormField label="Cost" name="cost" class="col-span-3">
+          <UInput
+            v-model.number="cocktailStore.cocktail.cost"
+            type="number"
+            step="0.01"
+            icon="i-lucide-dollar-sign"
+          />
+        </UFormField>
 
-			<UFormGroup
-				label="Price"
-				name="price">
-				<UInput
-					v-model.number="cocktailStore.cocktail.price"
-					type="number"
-					step="0.01" />
-			</UFormGroup>
+        <UFormField label="Price" name="price" class="col-span-3">
+          <UInput
+            v-model.number="cocktailStore.cocktail.price"
+            type="number"
+            step="0.01"
+            icon="i-lucide-dollar-sign"
+          />
+        </UFormField>
 
-			<UFormGroup
-				label="Menu"
-				name="menu">
-				<USelect
-					v-model="cocktailStore.cocktail.menu"
-					:options="menuOptions" />
-			</UFormGroup>
+        <UFormField label="Description" name="description" class="col-span-3">
+          <UTextarea v-model="cocktailStore.cocktail.description" />
+        </UFormField>
 
-			<UFormGroup
-				label="Description"
-				name="description">
-				<UTextarea v-model="cocktailStore.cocktail.description" />
-			</UFormGroup>
+        <UFormField label="Directions" name="directions" class="col-span-3">
+          <UTextarea v-model="cocktailStore.cocktail.directions" />
+        </UFormField>
 
-			<UFormGroup
-				label="Directions"
-				name="directions">
-				<UTextarea v-model="cocktailStore.cocktail.directions" />
-			</UFormGroup>
-
-			<div class="flex justify-end space-x-2 mt-4">
-				<UButton color="gray">Cancel</UButton>
-				<UButton
-					type="submit"
-					color="primary"
-					>{{
-						cocktailStore.cocktail._id ? 'Update' : 'Create'
-					}}
-					Cocktail</UButton
-				>
-			</div>
-		</UForm>
-	</UCard>
+        <div class="flex justify-center space-x-2 mt-4 col-span-6">
+          <UButton color="error">Cancel</UButton>
+          <UButton type="submit" color="primary"
+            >{{
+              cocktailStore.cocktail._id ? "Update" : "Create"
+            }}
+            Cocktail</UButton
+          >
+        </div>
+      </UForm>
+      <div v-for="ingredient in cocktailStore.cocktail.ingredients">
+        <div>
+          Ingredient:
+          {{ itemStore.getItemById(ingredient.item as unknown as string) }}
+        </div>
+      </div>
+    </UCard>
+  </UContainer>
 </template>

@@ -6,7 +6,6 @@
       A small, craft distillery focused on innovation, experimentation, and the
       pursuit of quality spirits
     </h1>
-    <SiteTest />
     <SiteHero />
   </div>
 </template>

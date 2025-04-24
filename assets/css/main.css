@@ -1,6 +1,7 @@
 @import "tailwindcss";
+@import "@nuxt/ui";
 
-:root {
+/* :root {
   --bg: light-dark(#f3e2c6, #1a120c);
   --text: light-dark(#3f2b1d, #f3e2c6);
   --accent: light-dark(#3f2b1d, #d6b169);
@@ -10,52 +11,12 @@
   --font-primary: "Merriweather", serif;
   --transition: 0.3s ease-in-out;
 }
-
-body {
-  background-color: var(--bg);
-  color: var(--text);
-  font-family: var(--font-primary);
-  transition: background-color var(--transition), color var(--transition);
-}
-
-header {
-  background-color: var(--shadow);
-  border-bottom: 4px solid var(--accent);
-  padding: 1rem 2rem;
-  text-align: center;
-}
-
-h1,
-h2,
-h3,
-h4 {
-  color: var(--accent);
-  font-weight: bold;
-  border-color: var(--border);
-  font-family: "Cormorant Garamond", serif;
-}
-
-a {
-  color: var(--accent);
-  text-decoration: none;
-  transition: color var(--transition);
-}
-
-a:hover {
-  color: var(--shadow);
-}
-
-button {
-  background-color: var(--accent);
-  color: var(--bg);
-  border: none;
-  padding: 0.5rem 1rem;
-  cursor: pointer;
-  font-weight: bold;
-  transition: background-color var(--transition);
-}
-
-button:hover {
-  background-color: var(--shadow);
-  color: var(--text);
-}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #1a120c;
+    --text: #f3e2c6;
+    --accent: #d6b169;
+    --shadow: #3f2b1d;
+    --border: #b88a4f;
+  }
+} */

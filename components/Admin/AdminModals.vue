@@ -4,6 +4,6 @@
   <div>
     <ModalDeleteWarning />
     <ModalForms />
-    <ModalCalculators />
+    <!-- <ModalCalculators /> -->
   </div>
 </template>

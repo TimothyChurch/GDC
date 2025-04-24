@@ -7,16 +7,22 @@ const navList = [
   { label: "Events", link: "/events", icon: "carbon:calendar" },
 ];
 const mobileNav = ref([
-  { label: "Home", link: "/", icon: "i-carbon-home" },
-  { label: "Menu", link: "/menu", icon: "i-carbon-menu" },
-  { label: "Bottles", link: "/bottles", icon: "i-carbon-wine-bottle" },
-  { label: "Events", link: "/events", icon: "i-carbon-calendar" },
+  { label: "Home", to: "/", icon: "i-carbon-home" },
+  { label: "Menu", to: "/menu", icon: "i-carbon-menu" },
+  {
+    label: "Bottles",
+    to: "/bottles",
+    icon: "i-carbon-bottles-01",
+  },
+  { label: "Events", to: "/events", icon: "i-carbon-calendar" },
 ]);
 </script>
 
 <template>
   <div>
-    <div class="max-w-screen grid grid-cols-2 lg:grid-cols-3 justify-around">
+    <div
+      class="max-w-screen grid grid-cols-2 lg:grid-cols-3 justify-around py-3 lg:py-0"
+    >
       <div
         name="Navbar"
         class="gap-5 font-bold text-2xl hidden md:flex justify-center"
@@ -46,18 +52,15 @@ const mobileNav = ref([
         </NuxtLink>
       </div>
     </div>
-    <div class="max-w-screen flex justify-around">
+    <div class="max-w-screen flex justify-around md:hidden">
       <UDropdownMenu
+        size="xl"
         :items="mobileNav"
         :content="{
           align: 'center',
-          side: 'bottom',
-        }"
-        :ui="{
-          content: 'w-48',
         }"
       >
-        <UButton icon="i-carbon-menu" class="h-12 w-12" variant="ghost" />
+        <UButton icon="i-carbon-menu" variant="ghost" size="xl"> </UButton>
       </UDropdownMenu>
     </div>
   </div>

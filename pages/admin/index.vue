@@ -1,7 +1,5 @@
 <script setup></script>
 
 <template>
-	<div>
-		<TableCocktails />
-	</div>
+  <div>test</div>
 </template>
