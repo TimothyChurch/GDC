@@ -1,6 +1,6 @@
 export const liquorClasses = [
   {
-    class: "Neutral Spirits or Alcohol;",
+    class: "Neutral Spirits or Alcohol",
     definition:
       "Spirits distilled from any material at or above 95% alcohol by volume (190 proof), and if bottled, bottled at not less than 40% alcohol by volume (80 proof)",
     types: [

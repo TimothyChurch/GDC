@@ -3,9 +3,16 @@ import type { ObjectId } from "mongodb";
 const cocktailStore = useCocktailStore();
 
 const itemStore = useItemStore();
-const bottleStore = useBottleStore();
 
-const options = [...itemStore.items, ...bottleStore.bottles];
+const cost = computed(() => {
+  return cocktailStore.cocktail.ingredients.reduce(
+    (total: number, ingredient: { item: ObjectId; amount: number }) => {
+      let cost = itemStore.getPriceById(ingredient.item.toString()) || 0;
+      return total + ingredient.amount * cost;
+    },
+    0
+  ) as unknown as number;
+});
 
 const newItem = (item: string) => {
   console.log("New item:", item);
@@ -35,7 +42,7 @@ const units = ["oz", "ml", "dash", "barspoon", "each"];
 
 const addIngredient = () => {
   cocktailStore.cocktail.ingredients.push({
-    item: newIngredient.value.item as unknown as ObjectId,
+    item: newIngredient.value.item,
     amount: newIngredient.value.amount,
     unit: newIngredient.value.unit,
   });
@@ -56,15 +63,13 @@ const removeIngredient = (index: number) => {
 
 const saveCocktail = async () => {
   await cocktailStore.updateCocktail();
+  cocktailModalOpen.value = false;
 };
 </script>
 
 <template>
   <UContainer class="flex justify-around p-5">
     <UCard class="w-fit">
-      <template #header>
-        <h1>NEW COCKTAIL</h1>
-      </template>
       <UForm
         :state="cocktailStore.cocktail"
         @submit="saveCocktail"
@@ -118,7 +123,7 @@ const saveCocktail = async () => {
           <div class="grid grid-cols-6 space-x-2">
             <USelectMenu
               id="newItem"
-              v-model="newIngredient.item"
+              v-model="newIngredient.item as string"
               value-key="id"
               :items="itemStore.itemNameId"
               class="flex flex-grow col-span-3"
@@ -144,15 +149,13 @@ const saveCocktail = async () => {
           </div>
         </UFormField>
 
-        <UFormField label="Cost" name="cost" class="col-span-3">
-          <UInput
-            v-model.number="cocktailStore.cocktail.cost"
-            type="number"
-            step="0.01"
-            icon="i-lucide-dollar-sign"
-          />
+        <UFormField label="Cost" name="cost" class="col-span-1">
+          {{ Dollar.format(cost) }}
         </UFormField>
 
+        <UFormField label="Price Estimage" name="priceRange" class="col-span-2">
+          {{ Dollar.format(((cost - 1.5) / 2.5) * 4 + 7) }}
+        </UFormField>
         <UFormField label="Price" name="price" class="col-span-3">
           <UInput
             v-model.number="cocktailStore.cocktail.price"
@@ -171,7 +174,6 @@ const saveCocktail = async () => {
         </UFormField>
 
         <div class="flex justify-center space-x-2 mt-4 col-span-6">
-          <UButton color="error">Cancel</UButton>
           <UButton type="submit" color="primary"
             >{{
               cocktailStore.cocktail._id ? "Update" : "Create"
@@ -180,12 +182,6 @@ const saveCocktail = async () => {
           >
         </div>
       </UForm>
-      <div v-for="ingredient in cocktailStore.cocktail.ingredients">
-        <div>
-          Ingredient:
-          {{ itemStore.getItemById(ingredient.item as unknown as string) }}
-        </div>
-      </div>
     </UCard>
   </UContainer>
 </template>

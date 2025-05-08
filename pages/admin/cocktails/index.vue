@@ -1,8 +1,8 @@
 <script lang="ts"></script>
 
 <template>
-  <div>
-    Cocktail page
-    <FormCocktail />
+  <div class="flex flex-col">
+    <!-- <FormCocktail /> -->
+    <TableCocktails />
   </div>
 </template>

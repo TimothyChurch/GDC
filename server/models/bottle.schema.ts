@@ -7,16 +7,36 @@ export const Bottle = defineMongooseModel({
       type: String,
       required: true,
     },
+    class: {
+      type: String,
+      required: false,
+    },
     type: {
       type: String,
-      required: true,
+      required: false,
     },
     abv: {
       type: Number,
       required: false,
     },
+    price: {
+      type: Number,
+      required: false,
+    },
+    img: {
+      type: String,
+      required: false,
+    },
+    description: {
+      type: String,
+      required: false,
+    },
     recipe: {
       type: String,
+      required: false,
+    },
+    inStock: {
+      type: Boolean,
       required: false,
     },
   },

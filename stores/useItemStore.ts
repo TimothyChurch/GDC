@@ -147,6 +147,10 @@ export const useItemStore = defineStore("items", () => {
     return items.value.map((i) => ({ id: i._id.toString(), label: i.name }));
   });
 
+  const getPriceById = (id: string) => {
+    return items.value.find((i) => i._id.toString() === id)?.pricePerUnit;
+  };
+
   return {
     items,
     item,
@@ -160,5 +164,6 @@ export const useItemStore = defineStore("items", () => {
     search,
     latestPrice,
     itemNameId,
+    getPriceById,
   };
 });

@@ -66,7 +66,7 @@ const items = () => [
   <div class="flex justify-between p-3 h-14 bg-[var(--shadow)]">
     <div>Profile Area {{ (user, authorized) }}</div>
     <!-- <AdminSearch /> -->
-    <div name="Right Nav">
+    <div name="Right Nav" class="flex">
       <UDropdownMenu :items="items()">
         <UButton
           color="gray"

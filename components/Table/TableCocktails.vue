@@ -1,88 +1,149 @@
 <script setup lang="ts">
-import { ref } from 'vue';
-import type { Cocktail } from '~/types';
+import type { TableColumn } from "@nuxt/ui";
+import type { Cocktail } from "~/types";
+import type { Row } from "@tanstack/vue-table";
 
 const cocktailStore = useCocktailStore();
-const isModalOpen = ref(false);
-const editingCocktail = ref<Cocktail | null>(null);
 
-const columns = [
-	{ key: 'name', label: 'Name' },
-	{ key: 'glassware', label: 'Glassware' },
-	{ key: 'price', label: 'Price' },
-	{ key: 'menu', label: 'Menu' },
-	{ key: 'actions', label: 'Actions' },
+const UButton = resolveComponent("UButton");
+const UDropdownMenu = resolveComponent("UDropdownMenu");
+
+const toast = useToast();
+
+const search = ref("");
+
+const columns: TableColumn<Cocktail>[] = [
+  {
+    id: "expand",
+    cell: ({ row }) =>
+      h(UButton, {
+        color: "neutral",
+        variant: "ghost",
+        icon: "i-lucide-chevron-down",
+        square: true,
+        "aria-label": "Expand",
+        ui: {
+          leadingIcon: [
+            "transition-transform",
+            row.getIsExpanded() ? "duration-200 rotate-180" : "",
+          ],
+        },
+        onClick: () => row.toggleExpanded(),
+      }),
+  },
+  {
+    accessorKey: "name",
+    header: "Name",
+  },
+  {
+    accessorKey: "glassware",
+    header: "Glassware",
+  },
+  {
+    accessorKey: "cost",
+    header: "Cost",
+    cell: ({ row }) =>
+      Dollar.format(cocktailStore.cocktailCost(row.original._id.toString())),
+  },
+  {
+    header: "Approx Price",
+    cell: ({ row }) =>
+      Dollar.format(
+        ((cocktailStore.cocktailCost(row.original._id.toString()) - 1.5) /
+          2.5) *
+          4 +
+          7
+      ),
+  },
+  {
+    accessorKey: "price",
+    header: "Price",
+    cell: ({ row }) => Dollar.format(row.original.price),
+  },
+  {
+    id: "actions",
+    cell: ({ row }) => {
+      return h(
+        "div",
+        { class: "text-right" },
+        h(
+          UDropdownMenu,
+          {
+            content: {
+              align: "end",
+            },
+            items: getRowItems(row),
+            "aria-label": "Actions dropdown",
+          },
+          () =>
+            h(UButton, {
+              icon: "i-lucide-ellipsis-vertical",
+              color: "neutral",
+              variant: "ghost",
+              class: "ml-auto",
+              "aria-label": "Actions dropdown",
+            })
+        )
+      );
+    },
+  },
 ];
 
-const openModal = (cocktail: Cocktail | null = null) => {
-	if (cocktail) {
-		cocktailStore.cocktail = cocktail;
-	}
-	isModalOpen.value = true;
+function getRowItems(row: Row<Cocktail>) {
+  return [
+    {
+      label: "Edit cocktail",
+      onSelect() {
+        cocktailStore.setCocktail(row.original._id.toString());
+        openModal();
+      },
+    },
+    {
+      label: "Delete cocktail",
+      variant: "danger",
+      onClick() {
+        cocktailStore.deleteCocktail(row.original._id.toString());
+        toast.add({
+          title: "Cocktail deleted!",
+          color: "error",
+          icon: "i-lucide-trash",
+        });
+      },
+    },
+  ];
+}
+// Modal component info
+import { ModalCocktail } from "#components";
+const overlay = useOverlay();
+const modal = overlay.create(ModalCocktail);
+const newCocktail = () => {
+  cocktailStore.resetCocktail();
+  openModal();
 };
-
-const closeModal = () => {
-	editingCocktail.value = null;
-	isModalOpen.value = false;
-};
-
-const handleSave = () => {
-	cocktailStore.getCocktails();
-	closeModal();
-};
-
-const handleDelete = async (cocktail: Cocktail) => {
-	if (confirm(`Are you sure you want to delete ${cocktail.name}?`)) {
-		await cocktailStore.deleteCocktail(cocktail._id.toString());
-		cocktailStore.getCocktails();
-	}
-};
-
-onMounted(() => {
-	cocktailStore.getCocktails();
-});
+const openModal = async () => await modal.open();
 </script>
 
 <template>
-	<div>
-		<h1 class="text-2xl font-bold mb-4">Cocktail Management</h1>
-		<UButton
-			class="mb-4"
-			color="primary"
-			@click="openModal()">
-			Add New Cocktail
-		</UButton>
-		<UTable
-			:columns="columns"
-			:rows="cocktailStore.cocktails">
-			<template #price-data="{ row }">
-				{{ Dollar.format(row.price) }}
-			</template>
-			<template #actions-data="{ row }">
-				<UButton
-					color="primary"
-					variant="soft"
-					icon="i-heroicons-pencil-square"
-					class="mr-2"
-					@click="openModal(row)" />
-				<UButton
-					color="red"
-					variant="soft"
-					icon="i-heroicons-trash"
-					@click="handleDelete(row)" />
-			</template>
-		</UTable>
-
-		<UModal v-model="isModalOpen">
-					<h3 class="text-xl font-semibold p-3 text-center">
-						{{ editingCocktail ? 'Edit Cocktail' : 'Add New Cocktail' }}
-					</h3>
-				<FormCocktail
-					:edit-mode="!!editingCocktail"
-					:cocktail-id="editingCocktail?._id"
-					@save="handleSave"
-					@cancel="closeModal" />
-
-		</UModal>
-	</div>
+  <div>
+    <div class="flex justify-between">
+      <UInput v-model="search" placeholder="Search cocktails" class="mb-4" />
+      <UButton
+        icon="i-heroicons-plus-circle"
+        size="xl"
+        @click="newCocktail"
+        variant="ghost"
+        >Add Cocktail</UButton
+      >
+    </div>
+    <!-- {{ cocktailStore.cocktails }} -->
+    <UTable
+      :global-filter="search"
+      :data="cocktailStore.cocktails"
+      :columns="columns"
+    >
+      <template #expanded="{ row }">
+        <TableCocktailExpand :ingredients="row.original.ingredients" />
+      </template>
+    </UTable>
+  </div>
 </template>

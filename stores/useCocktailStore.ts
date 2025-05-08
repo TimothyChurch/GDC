@@ -1,122 +1,140 @@
-import { defineStore } from 'pinia';
-import { ref } from 'vue';
-import type { Cocktail } from '~/types';
-import type { ObjectId } from 'mongoose';
+import { defineStore } from "pinia";
+import { ref } from "vue";
+import type { Cocktail } from "~/types";
+import type { ObjectId } from "mongoose";
 
-export const useCocktailStore = defineStore('cocktails', () => {
-	// State
-	const cocktails = ref<Cocktail[]>([]);
-	const cocktail = ref<Cocktail>({
-		_id: undefined as unknown as ObjectId,
-		name: '',
-		glassware: '',
-		ingredients: [],
-		cost: 0,
-		price: 0,
-		menu: '',
-		description: '',
-		directions: '',
-	});
-	// Getters
+export const useCocktailStore = defineStore("cocktails", () => {
+  // State
+  const cocktails = ref<Cocktail[]>([]);
+  const cocktail = ref<Cocktail>({
+    _id: undefined as unknown as ObjectId,
+    name: "",
+    glassware: "",
+    ingredients: [],
+    cost: 0,
+    price: 0,
+    menu: "",
+    description: "",
+    directions: "",
+  });
 
-	// CRUD actions
-	const getCocktails = async (): Promise<void> => {
-		try {
-			const response = await $fetch('/api/cocktail');
-			cocktails.value = response as Cocktail[];
-		} catch (e) {
-			console.error('Error fetching cocktails:', e);
-		}
-		sortCocktails();
-	};
-	getCocktails();
+  const itemStore = useItemStore();
 
-	const setCocktail = (id: string) => {
-		const foundCocktail = cocktails.value.find((c) => c._id.toString() === id);
-		if (foundCocktail) {
-			cocktail.value = foundCocktail;
-		} else {
-			console.error(`Cocktail with ID ${id} not found.`);
-		}
-	};
+  // Getters
 
-	const updateCocktail = async (): Promise<void> => {
-		if (!cocktail.value._id) {
-			await $fetch('/api/cocktail/create', {
-				method: 'POST',
-				body: JSON.stringify(cocktail.value),
-			});
-		} else {
-			await $fetch(`/api/cocktail/${cocktail.value._id}`, {
-				method: 'PUT',
-				body: JSON.stringify(cocktail.value),
-			});
-		}
-		getCocktails();
-		resetCocktail();
-	};
+  // CRUD actions
+  const getCocktails = async (): Promise<void> => {
+    try {
+      const response = await $fetch("/api/cocktail");
+      cocktails.value = response as Cocktail[];
+    } catch (e) {
+      console.error("Error fetching cocktails:", e);
+    }
+    sortCocktails();
+  };
+  getCocktails();
 
-	const resetCocktail = (): void => {
-		cocktail.value = {
-			_id: undefined as unknown as ObjectId,
-			name: '',
-			glassware: '',
-			ingredients: [],
-			cost: 0,
-			price: 0,
-			menu: '',
-			description: '',
-			directions: '',
-		};
-	};
+  const setCocktail = (id: string) => {
+    const foundCocktail = cocktails.value.find((c) => c._id.toString() === id);
+    if (foundCocktail) {
+      cocktail.value = foundCocktail;
+    } else {
+      console.error(`Cocktail with ID ${id} not found.`);
+    }
+  };
 
-	const deleteCocktail = async (id: string): Promise<void> => {
-		await $fetch(`/api/cocktail/${id}`, {
-			method: 'DELETE',
-		});
-		await getCocktails();
-	};
+  const updateCocktail = async (): Promise<void> => {
+    if (!cocktail.value._id) {
+      await $fetch("/api/cocktail/create", {
+        method: "POST",
+        body: JSON.stringify(cocktail.value),
+      });
+    } else {
+      await $fetch(`/api/cocktail/${cocktail.value._id}`, {
+        method: "PUT",
+        body: JSON.stringify(cocktail.value),
+      });
+    }
+    getCocktails();
+    resetCocktail();
+  };
 
-	const getCocktailById = (id: string): Cocktail | undefined => {
-		return cocktails.value.find((c) => c._id.toString() === id);
-	};
+  const resetCocktail = (): void => {
+    cocktail.value = {
+      _id: undefined as unknown as ObjectId,
+      name: "",
+      glassware: "",
+      ingredients: [],
+      cost: 0,
+      price: 0,
+      menu: "",
+      description: "",
+      directions: "",
+    };
+  };
 
-	const search = (searchTerm: string): Cocktail[] => {
-		return cocktails.value.filter(
-			(c) =>
-				c.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-				c.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
-				c.menu.toLowerCase().includes(searchTerm.toLowerCase())
-		);
-	};
+  const deleteCocktail = async (id: string): Promise<void> => {
+    await $fetch(`/api/cocktail/${id}`, {
+      method: "DELETE",
+    });
+    await getCocktails();
+  };
 
-	const sortCocktails = () => {
-		cocktails.value.sort((a, b) => {
-			const nameA = a.name.toUpperCase();
-			const nameB = b.name.toUpperCase();
-			if (nameA < nameB) {
-				return -1;
-			}
-			if (nameA > nameB) {
-				return 1;
-			}
-			return 0;
-		});
-	};
+  const getCocktailById = (id: string): Cocktail | undefined => {
+    return cocktails.value.find((c) => c._id.toString() === id);
+  };
 
-	const cocktailCost = (cocktail: Cocktail | string): number => {
-		return 0
-	}
+  const search = (searchTerm: string): Cocktail[] => {
+    return cocktails.value.filter(
+      (c) =>
+        c.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        c.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        c.menu.toLowerCase().includes(searchTerm.toLowerCase())
+    );
+  };
 
-	return {
-		cocktails,
-		cocktail,
-		getCocktails,
-		setCocktail,
-		updateCocktail,
-		resetCocktail,
-		deleteCocktail,
-		getCocktailById,
-		search,
-	};
+  const sortCocktails = () => {
+    cocktails.value.sort((a, b) => {
+      const nameA = a.name.toUpperCase();
+      const nameB = b.name.toUpperCase();
+      if (nameA < nameB) {
+        return -1;
+      }
+      if (nameA > nameB) {
+        return 1;
+      }
+      return 0;
+    });
+  };
+
+  const cocktailCost = (cocktail: Cocktail | string): number => {
+    const selectedCocktail = ref();
+    if (typeof cocktail === "string") {
+      selectedCocktail.value = cocktails.value.find(
+        (c) => c._id.toString() === cocktail
+      );
+    } else {
+      selectedCocktail.value = cocktail;
+    }
+    return selectedCocktail.value.ingredients.reduce(
+      (total: number, ingredient: { item: ObjectId; amount: number }) => {
+        let cost = itemStore.getPriceById(ingredient.item.toString()) || 0;
+        return total + ingredient.amount * cost;
+      },
+      0
+    );
+  };
+
+  return {
+    cocktails,
+    cocktail,
+    getCocktails,
+    setCocktail,
+    updateCocktail,
+    resetCocktail,
+    deleteCocktail,
+    getCocktailById,
+    search,
+    cocktailCost,
+  };
 });

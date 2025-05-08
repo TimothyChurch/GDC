@@ -81,7 +81,7 @@ const columns: TableColumn<Item>[] = [
       });
     },
     cell: ({ row }) => {
-      if (row.getValue("pricePerUnit") > 0) {
+      if ((row.getValue("pricePerUnit") as unknown as number) > 0) {
         return (
           Dollar.format(row.getValue("pricePerUnit")) +
           " / " +
@@ -92,18 +92,27 @@ const columns: TableColumn<Item>[] = [
       }
     },
   },
+  {
+    header: "Actions",
+  },
 ];
 
-const onSelect = (row) => {
+const onSelect = (row: { original: { _id: any } }) => {
   console.log(row.original._id);
   router.push(`items/${row.original._id}`);
 };
+const globalFilter = ref("");
 </script>
 
 <template>
   <UContainer>
-    {{ itemStore.items[0] }}
-    <UTable :data="itemStore.items" :columns="columns" @select="onSelect">
+    <UInput v-model="globalFilter" placeholder="Search items..." />
+    <UTable
+      v-model:global-filter="globalFilter"
+      :data="itemStore.items"
+      :columns="columns"
+      @select="onSelect"
+    >
     </UTable>
   </UContainer>
 </template>
