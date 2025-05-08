@@ -1,13 +1,14 @@
 <script setup lang="ts">
 import type { TableColumn } from "@nuxt/ui";
 import type { Item } from "~/types";
+import type { Row } from "@tanstack/vue-table";
 
 const itemStore = useItemStore();
 const contactStore = useContactStore();
 
 const UButton = resolveComponent("UButton");
-
-const router = useRouter();
+const UDropdownMenu = resolveComponent("UDropdownMenu");
+const toast = useToast();
 
 const columns: TableColumn<Item>[] = [
   {
@@ -93,14 +94,68 @@ const columns: TableColumn<Item>[] = [
     },
   },
   {
-    header: "Actions",
+    id: "actions",
+    cell: ({ row }) => {
+      return h(
+        "div",
+        { class: "text-right" },
+        h(
+          UDropdownMenu,
+          {
+            content: {
+              align: "end",
+            },
+            items: getRowItems(row),
+            "aria-label": "Actions dropdown",
+          },
+          () =>
+            h(UButton, {
+              icon: "i-lucide-ellipsis-vertical",
+              color: "neutral",
+              variant: "ghost",
+              class: "ml-auto",
+              "aria-label": "Actions dropdown",
+            })
+        )
+      );
+    },
   },
 ];
 
-const onSelect = (row: { original: { _id: any } }) => {
-  console.log(row.original._id);
-  router.push(`items/${row.original._id}`);
+function getRowItems(row: Row<Item>) {
+  return [
+    {
+      label: "Edit item",
+      onSelect() {
+        itemStore.setItem(row.original._id.toString());
+        openModal();
+      },
+    },
+    {
+      label: "Delete item",
+      variant: "danger",
+      onClick() {
+        itemStore.deleteItem(row.original._id.toString());
+        toast.add({
+          title: "Cocktail item!",
+          color: "error",
+          icon: "i-lucide-trash",
+        });
+      },
+    },
+  ];
+}
+
+// Modal component info
+import { ModalItem } from "#components";
+const overlay = useOverlay();
+const modal = overlay.create(ModalItem);
+const newCocktail = () => {
+  itemStore.resetItem();
+  openModal();
 };
+const openModal = async () => await modal.open();
+
 const globalFilter = ref("");
 </script>
 
@@ -111,7 +166,6 @@ const globalFilter = ref("");
       v-model:global-filter="globalFilter"
       :data="itemStore.items"
       :columns="columns"
-      @select="onSelect"
     >
     </UTable>
   </UContainer>
