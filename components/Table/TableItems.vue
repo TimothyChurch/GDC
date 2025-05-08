@@ -150,7 +150,7 @@ function getRowItems(row: Row<Item>) {
 import { ModalItem } from "#components";
 const overlay = useOverlay();
 const modal = overlay.create(ModalItem);
-const newCocktail = () => {
+const newItem = () => {
   itemStore.resetItem();
   openModal();
 };
@@ -161,7 +161,16 @@ const globalFilter = ref("");
 
 <template>
   <UContainer>
-    <UInput v-model="globalFilter" placeholder="Search items..." />
+    <div class="flex justify-between">
+      <UInput v-model="globalFilter" placeholder="Search items..." />
+      <UButton
+        icon="i-heroicons-plus-circle"
+        size="xl"
+        @click="newItem"
+        variant="ghost"
+        >Add Item</UButton
+      >
+    </div>
     <UTable
       v-model:global-filter="globalFilter"
       :data="itemStore.items"
