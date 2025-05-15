@@ -23,10 +23,9 @@ const bottleStore = useBottleStore();
     <div>
       <p class="text-sm text-gray-600">{{ cocktail.description }}</p>
 
-      <div class="flex flex-col">
+      <div class="grid">
         <div v-for="ingredient in cocktail.ingredients" class="text-sm flex">
-          {{ itemStore.getItemById(ingredient.item.toString())?.name
-          }}{{ bottleStore.getBottleById(ingredient.item.toString())?.name }}
+          {{ itemStore.getItemById(ingredient.item.toString())?.name }}
         </div>
       </div>
     </div>

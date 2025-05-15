@@ -1,13 +1,25 @@
 <script setup lang="ts">
+import type { Cocktail } from "~/types";
+import type { ObjectId } from "mongodb";
 const cocktailStore = useCocktailStore();
+const itemStore = useItemStore();
 
 const search = ref("");
 
 const filteredCocktails = computed(() => {
-  return cocktailStore.cocktails.filter((cocktail) =>
-    cocktail.name.toLowerCase().includes(search.value.toLowerCase())
+  return cocktailStore.cocktails.filter(
+    (cocktail) =>
+      cocktail.name.toLowerCase().includes(search.value.toLowerCase()) ||
+      cocktail.ingredients.some((ingredient) =>
+        itemStore
+          .getItemById(ingredient.item as unknown as string)
+          ?.name.toLowerCase()
+          .includes(search.value.toLowerCase())
+      )
   );
 });
+const menuFilter = computed(() => {});
+const ingredientFilter = computed(() => {});
 </script>
 
 <template>
@@ -29,8 +41,8 @@ const filteredCocktails = computed(() => {
       </template>
     </UInput>
     <div class="grid grid-cols-6 gap-3">
-      <div v-for="cocktail in cocktailStore.cocktails">
-        <CardCocktail :cocktail="cocktail" />
+      <div v-for="cocktail in filteredCocktails">
+        <CardCocktail :cocktail="cocktail as Cocktail" />
       </div>
     </div>
   </div>
