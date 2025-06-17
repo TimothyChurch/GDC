@@ -5,6 +5,10 @@ const links = [
     to: "/admin/cocktails",
   },
   {
+    label: "Cocktail Cheat Sheets",
+    to: "/admin/cocktails/grid",
+  },
+  {
     label: "Bottles",
     to: "/admin/bottles",
   },

@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import type { Cocktail } from "~/types";
 import type { ObjectId } from "mongodb";
+import { UContainer } from "#components";
 const cocktailStore = useCocktailStore();
 const itemStore = useItemStore();
 
@@ -23,7 +24,7 @@ const ingredientFilter = computed(() => {});
 </script>
 
 <template>
-  <div class="flex flex-col gap-3">
+  <UContainer class="flex flex-col gap-3">
     <UInput
       type="text"
       v-model="search"
@@ -40,10 +41,10 @@ const ingredientFilter = computed(() => {});
         />
       </template>
     </UInput>
-    <div class="grid grid-cols-6 gap-3">
+    <div class="grid grid-cols-2 gap-6">
       <div v-for="cocktail in filteredCocktails">
         <CardCocktail :cocktail="cocktail as Cocktail" />
       </div>
     </div>
-  </div>
+  </UContainer>
 </template>

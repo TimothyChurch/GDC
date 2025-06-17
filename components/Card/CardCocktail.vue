@@ -1,50 +1,36 @@
 <script setup lang="ts">
 import type { Cocktail } from "~/types";
 
-defineProps<{
+const props = defineProps<{
   cocktail: Cocktail;
 }>();
 
 const itemStore = useItemStore();
-const bottleStore = useBottleStore();
+const cocktailIngredients = computed(() => {
+  const ingredientString = ref("");
+  props.cocktail.ingredients.forEach((ingredient) => {
+    ingredientString.value += `${
+      itemStore.getItemById(ingredient.item.toString())?.name
+    }, `;
+  });
+  ingredientString.value = ingredientString.value.slice(0, -2); // Remove trailing comma and space
+  return ingredientString;
+});
 </script>
 
 <template>
-  <UCard class="h-full bg-[var(--shadow)]">
-    <template #header>
-      <div class="flex justify-between items-center">
-        <h3 class="text-lg font-semibold">{{ cocktail.name }}</h3>
-        <span class="text-lg font-bold">{{
-          Dollar.format(cocktail.price)
-        }}</span>
-      </div>
-    </template>
-
+  <div>
     <div>
-      <p class="text-sm text-gray-600">{{ cocktail.description }}</p>
-
-      <div class="grid">
-        <div v-for="ingredient in cocktail.ingredients" class="text-sm flex">
-          {{ itemStore.getItemById(ingredient.item.toString())?.name }}
-        </div>
+      <div class="flex justify-between text-2xl">
+        <h1>{{ cocktail.name }}</h1>
+        <h1>{{ Dollar.format(cocktail.price) }}</h1>
       </div>
-    </div>
-
-    <template #footer>
-      <p class="text-sm text-gray-500">
-        Served in: {{ cocktail.glassware }} Glass
+      <p class="text-sm py-2">
+        {{ cocktailIngredients }}
+        <!-- {{ itemStore.getItemById(ingredient.item)?.name }} -->
       </p>
-    </template>
-  </UCard>
+    </div>
+  </div>
 </template>
 
-<style scoped>
-.u-card {
-  display: flex;
-  flex-direction: column;
-}
-
-.u-card__body {
-  flex-grow: 1;
-}
-</style>
+<style scoped></style>
