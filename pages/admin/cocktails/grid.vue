@@ -17,7 +17,7 @@ const printCocktails = () => {
         <UButton @click="selectedCocktails = []">Clear Selection</UButton>
       </div>
       <div id="sheet" class="print:text-black">
-        <div class="grid grid-cols-4 w-[210mm]">
+        <div class="grid grid-cols-4 w-[200mm]">
           <div
             v-for="cocktail in selectedCocktails"
             :key="cocktail._id.toString()"
