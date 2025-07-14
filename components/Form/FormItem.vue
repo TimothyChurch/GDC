@@ -3,9 +3,13 @@ const itemStore = useItemStore();
 const contactStore = useContactStore();
 
 const addType = (type) => {
-  console.log(type);
   itemInventoryTypes.value.push(type);
   itemStore.item.type = type;
+};
+const addVendor = (vendor) => {
+  contactStore.contact.businessName = vendor;
+  contactStore.contact.type = "Vendor";
+  contactStore.updateContact();
 };
 const handleSubmit = () => {
   itemStore.updateItem();
@@ -37,12 +41,14 @@ const handleSubmit = () => {
           />
         </UFormField>
         <UFormField label="Vendor" class="w-48 col-span-3">
-          <USelect
+          <USelectMenu
             v-model="itemStore.item.vendor"
             :items="contactStore.getVendors()"
             label-key="businessName"
             value-key="_id"
             class="w-full"
+            create-item
+            @create="addVendor"
           />
         </UFormField>
         <UFormField label="Inventory Unit" class="w-48 col-span-3">

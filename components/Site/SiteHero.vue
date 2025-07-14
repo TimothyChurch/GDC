@@ -7,26 +7,8 @@
         class="px-6 pb-24 pt-10 sm:pb-32 lg:col-span-7 lg:px-0 lg:pb-48 lg:pt-40 xl:col-span-6"
       >
         <div class="mx-auto max-w-lg lg:mx-0">
-          <img
-            class="h-11"
-            src="public/favicon.ico"
-            alt="Galveston Craft Spirits"
-          />
-          <div class="hidden sm:mt-32 sm:flex lg:mt-16">
-            <div
-              class="relative rounded-full px-3 py-1 text-sm/6 text-gray-500 ring-1 ring-gray-900/10 hover:ring-gray-900/20"
-            >
-              New Release: Galveston Storm Surge Gin
-              <a
-                href="#"
-                class="whitespace-nowrap font-semibold text-indigo-600"
-                ><span class="absolute inset-0" aria-hidden="true" />Learn more
-                <span aria-hidden="true">&rarr;</span></a
-              >
-            </div>
-          </div>
           <h1
-            class="mt-24 text-pretty text-5xl font-semibold tracking-tight sm:mt-10 sm:text-7xl"
+            class="text-pretty text-5xl font-semibold tracking-tight sm:mt-10 sm:text-7xl"
           >
             Crafting Spirits with Island Flair
           </h1>

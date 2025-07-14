@@ -1,22 +1,17 @@
 @import "tailwindcss";
 @import "@nuxt/ui";
 
-/* :root {
-  --bg: light-dark(#f3e2c6, #1a120c);
-  --text: light-dark(#3f2b1d, #f3e2c6);
-  --accent: light-dark(#3f2b1d, #d6b169);
-  --shadow: light-dark(#b88a4f, #3f2b1d);
-  --border: light-dark(#1a120c, #b88a4f);
-
-  --font-primary: "Merriweather", serif;
-  --transition: 0.3s ease-in-out;
+.dark {
+  --ui-bg: #1a120c;
+  --ui-text: #f3e2c6;
+  --ui-accent: #d6b169;
+  --ui-shadow: #b88a4f;
+  --ui-border: #b88a4f;
 }
-@media (prefers-color-scheme: dark) {
-  :root {
-    --bg: #1a120c;
-    --text: #f3e2c6;
-    --accent: #d6b169;
-    --shadow: #3f2b1d;
-    --border: #b88a4f;
-  }
-} */
+html {
+  --ui-bg: #f3e2c6;
+  --ui-text: #3f2b1d;
+  --ui-accent: #d6b169;
+  --ui-shadow: #b88a4f;
+  --ui-border: #b88a4f;
+}

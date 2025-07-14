@@ -52,7 +52,17 @@ const mobileNav = ref([
         </NuxtLink>
       </div>
     </div>
-    <div class="max-w-screen flex justify-around md:hidden">
+
+    <div
+      class="max-w-screen flex flex-col items-center justify-around md:hidden"
+    >
+      <div class="flex flex-col items-center">
+        <img
+          src="/images/Logo.png"
+          alt="Galveston Distilling Company"
+          class="h-48 px-2"
+        />
+      </div>
       <UDropdownMenu
         size="xl"
         :items="mobileNav"
@@ -60,7 +70,9 @@ const mobileNav = ref([
           align: 'center',
         }"
       >
-        <UButton icon="i-carbon-menu" variant="ghost" size="xl"> </UButton>
+        <UButton icon="i-carbon-menu" variant="ghost" size="xl" color="neutral"
+          >Menu</UButton
+        >
       </UDropdownMenu>
     </div>
   </div>

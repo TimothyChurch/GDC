@@ -38,7 +38,7 @@ const columns: TableColumn<Item>[] = [
       return h(UButton, {
         color: "neutral",
         variant: "ghost",
-        label: "Name",
+        label: "Type",
         icon: isSorted
           ? isSorted === "asc"
             ? "i-lucide-arrow-up-narrow-wide"

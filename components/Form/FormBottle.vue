@@ -2,7 +2,12 @@
 const bottleStore = useBottleStore();
 const recipeStore = useRecipeStore();
 
+const newType = (type) => {
+  bottleStore.bottle.type = type;
+};
+
 const saveBottle = async () => {
+  console.log("Saving bottle...");
   await bottleStore.updateBottle();
 };
 </script>
@@ -44,9 +49,11 @@ const saveBottle = async () => {
           :items="
             liquorClasses
               .filter((i) => i.class === bottleStore.bottle.class)[0]
-              .types.map((i) => i.type)
+              ?.types.map((i) => i.type)
           "
           class="w-full"
+          create-item
+          @create="newType"
         />
       </UFormField>
       <UFormField label="ABV" name="abv" class="col-span-2">
