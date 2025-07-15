@@ -18,6 +18,7 @@ export default defineEventHandler(async (event) => {
       return_url: `${process.env.DOMAIN}/return?session_id={CHECKOUT_SESSION_ID}`,
     });
 
+    console.log("Created checkout session:", session);
     return {
       clientSecret: session.client_secret,
     };

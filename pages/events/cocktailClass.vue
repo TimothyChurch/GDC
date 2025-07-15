@@ -2,28 +2,20 @@
 const { loadStripe } = useClientStripe();
 const nuxtApp = useNuxtApp();
 const stripePromise = loadStripe(nuxtApp.$config.public.stripe.key);
-
-// Element to mount Checkout
-const checkoutElementRef = ref(null);
-const clientSecret = ref(null);
-
-// Function to fetch client secret from your server
+const clientSecret = process.env.STRIPE_SECRET_KEY;
+console.log("clientSecret", clientSecret);
 const fetchClientSecret = async () => {
-  const clientSecret = await createCheckoutSession();
-  return clientSecret;
+  const clientSecret = await $fetch("/api/stripe/create-checkout-session");
+  console.log("clientSecret", await clientSecret.json());
+  return clientSecret.json().client_secret;
 };
 
 // Initialize and mount Checkout
 onMounted(async () => {
   const stripe = await stripePromise;
-
-  const checkout = await stripe.initCheckout({
-    fetchClientSecret,
+  stripe.initEmbeddedCheckout({
+    clientSecret,
   });
-  console.log("testing");
-  //   console.log("checkout Object" + checkout);
-
-  //   checkout.mount("#checkout-element");
 });
 </script>
 

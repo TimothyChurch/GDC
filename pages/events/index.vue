@@ -6,6 +6,9 @@
       <div>
         Cocktail Classes
         <UButton to="/events/cocktailClass">Cocktail Classes</UButton>
+        <UButton to="https://buy.stripe.com/cNi00ka2A2XBg5NdgbcMM00"
+          >Pay for class</UButton
+        >
       </div>
       <div>Tours</div>
       <div>Weekly Specials</div>
