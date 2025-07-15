@@ -25,7 +25,7 @@ const mobileNav = ref([
     >
       <div
         name="Navbar"
-        class="gap-5 font-bold text-2xl hidden md:flex justify-center"
+        class="gap-5 font-bold text-2xl hidden lg:flex justify-center"
       >
         <div v-for="i in navList" class="flex items-center">
           <NuxtLink :to="i.link">
@@ -42,7 +42,7 @@ const mobileNav = ref([
           class="h-48 px-2"
         />
       </div>
-      <div class="text-2xl my-auto mx-5 hidden md:flex gap-3 justify-end">
+      <div class="text-2xl my-auto mx-5 hidden lg:flex gap-3 justify-end">
         <a @click="toggleDark()">
           <Icon :name="isDark ? 'carbon:moon' : 'carbon:sun'" />
         </a>
@@ -54,7 +54,7 @@ const mobileNav = ref([
     </div>
 
     <div
-      class="max-w-screen flex flex-col items-center justify-around md:hidden"
+      class="max-w-screen flex flex-col items-center justify-around lg:hidden"
     >
       <div class="flex flex-col items-center">
         <img

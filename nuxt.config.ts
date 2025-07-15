@@ -9,9 +9,10 @@ export default defineNuxtConfig({
     "nuxt-mongoose",
     "@pinia/nuxt",
     "@nuxt/test-utils/module",
+    "@unlok-co/nuxt-stripe",
   ],
   mongoose: {
-    uri: "mongodb+srv://TChurch:EricAvis1989@galvestondistillingco.pjkvjym.mongodb.net/",
+    uri: process.env.MONGODB_URI,
     options: {},
     modelsDir: "models",
     devtools: true,
@@ -22,5 +23,19 @@ export default defineNuxtConfig({
   css: ["~/assets/css/main.css"],
   vite: {
     plugins: [tailwindcss()],
+  },
+  runtimeConfig: {
+    // Server
+    stripe: {
+      key: process.env.STRIPE_SECRET_KEY,
+      options: {},
+    },
+    // Client
+    public: {
+      stripe: {
+        key: process.env.STRIPE_PUBLIC_KEY,
+        options: {},
+      },
+    },
   },
 });
