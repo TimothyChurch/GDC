@@ -19,13 +19,13 @@ const mobileNav = ref([
 </script>
 
 <template>
-  <div>
+  <UContainer>
     <div
       class="max-w-screen grid grid-cols-2 lg:grid-cols-3 justify-around py-3 lg:py-0"
     >
       <div
         name="Navbar"
-        class="gap-5 font-bold text-2xl hidden lg:flex justify-center"
+        class="gap-5 font-bold text-2xl hidden lg:flex justify-start"
       >
         <div v-for="i in navList" class="flex items-center">
           <NuxtLink :to="i.link">
@@ -39,9 +39,10 @@ const mobileNav = ref([
         <img
           src="/images/Logo.png"
           alt="Galveston Distilling Company"
-          class="h-48 px-2"
+          class="h-36 px-2"
         />
       </div>
+
       <div class="text-2xl my-auto mx-5 hidden lg:flex gap-3 justify-end">
         <a @click="toggleDark()">
           <Icon :name="isDark ? 'carbon:moon' : 'carbon:sun'" />
@@ -53,9 +54,7 @@ const mobileNav = ref([
       </div>
     </div>
 
-    <div
-      class="max-w-screen flex flex-col items-center justify-around lg:hidden"
-    >
+    <div class="max-w-screen flex flex-col items-center justify-end lg:hidden">
       <div class="flex flex-col items-center">
         <img
           src="/images/Logo.png"
@@ -75,5 +74,5 @@ const mobileNav = ref([
         >
       </UDropdownMenu>
     </div>
-  </div>
+  </UContainer>
 </template>

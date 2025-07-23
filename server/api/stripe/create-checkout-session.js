@@ -10,7 +10,7 @@ export default defineEventHandler(async (event) => {
       ui_mode: "embedded",
       line_items: [
         {
-          price: "price_YOUR_PRICE_ID", // Replace with your actual price ID
+          price: "price_1RkyNhKIquLNl1bagG6fkPuB",
           quantity: 1,
         },
       ],

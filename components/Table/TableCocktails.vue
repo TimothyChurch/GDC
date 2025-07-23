@@ -124,8 +124,19 @@ const openModal = async () => await modal.open();
 </script>
 
 <template>
-  <div>
-    <div class="flex justify-between">
+  <UTable
+    sticky
+    :global-filter="search"
+    :data="cocktailStore.cocktails"
+    :columns="columns"
+    class="max-h-full"
+  >
+    <template #expanded="{ row }">
+      <TableCocktailExpand :ingredients="row.original.ingredients" />
+    </template>
+  </UTable>
+  <!-- <UContainer>
+    <div class="sticky top-0 flex justify-between">
       <UInput v-model="search" placeholder="Search cocktails" class="mb-4" />
       <UButton
         icon="i-heroicons-plus-circle"
@@ -135,15 +146,17 @@ const openModal = async () => await modal.open();
         >Add Cocktail</UButton
       >
     </div>
-    <!-- {{ cocktailStore.cocktails }} -->
-    <UTable
-      :global-filter="search"
-      :data="cocktailStore.cocktails"
-      :columns="columns"
-    >
-      <template #expanded="{ row }">
-        <TableCocktailExpand :ingredients="row.original.ingredients" />
-      </template>
-    </UTable>
-  </div>
+    <div class="overflow-y-auto">
+      <UTable
+        sticky
+        :global-filter="search"
+        :data="cocktailStore.cocktails"
+        :columns="columns"
+      >
+        <template #expanded="{ row }">
+          <TableCocktailExpand :ingredients="row.original.ingredients" />
+        </template>
+      </UTable>
+    </div>
+  </UContainer> -->
 </template>

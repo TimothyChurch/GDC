@@ -1,7 +1,7 @@
 <script setup></script>
 
 <template>
-  <div class="relative">
+  <UContainer class="relative">
     <div class="mx-auto max-w-7xl lg:grid lg:grid-cols-12 lg:gap-x-8 lg:px-8">
       <div
         class="px-6 pb-24 pt-10 sm:pb-32 lg:col-span-7 lg:px-0 lg:pb-48 lg:pt-40 xl:col-span-6"
@@ -42,5 +42,5 @@
         />
       </div>
     </div>
-  </div>
+  </UContainer>
 </template>

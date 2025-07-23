@@ -12,6 +12,7 @@ export default defineNuxtConfig({
     "@pinia/nuxt",
     "@nuxt/test-utils/module",
     "@unlok-co/nuxt-stripe",
+    "nuxt-meta-pixel",
   ],
   mongoose: {
     uri: process.env.NUXT_ENV_MONGODB_URI,
@@ -37,6 +38,9 @@ export default defineNuxtConfig({
       stripe: {
         key: process.env.STRIPE_PUBLIC_KEY,
         options: {},
+      },
+      metapixel: {
+        default: { id: "1254208522870414" },
       },
     },
   },

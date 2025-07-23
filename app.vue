@@ -22,7 +22,9 @@ useHead({
 </script>
 
 <template>
-  <UApp class="flex w-screen h-screen font-sans">
+  <UApp
+    class="flex w-screen h-screen max-h-screen max-w-screen overflow-y-hidden font-sans"
+  >
     <NuxtLayout>
       <NuxtPage class="grow overflow-y-auto p-3" />
     </NuxtLayout>

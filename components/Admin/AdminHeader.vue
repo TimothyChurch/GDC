@@ -67,14 +67,20 @@ const items = () => [
     <div>Profile Area {{ (user, authorized) }}</div>
     <!-- <AdminSearch /> -->
     <div name="Right Nav" class="flex">
-      <UDropdownMenu :items="items()">
+      <UButton
+        color="gray"
+        variant="ghost"
+        icon="i-heroicons-bug-ant-solid"
+        size="xl"
+      />
+      <!-- <UDropdownMenu :items="items()">
         <UButton
           color="gray"
           variant="ghost"
           icon="i-heroicons-plus-circle"
           size="xl"
         />
-      </UDropdownMenu>
+      </UDropdownMenu> -->
       <ModalCalculators />
     </div>
   </div>

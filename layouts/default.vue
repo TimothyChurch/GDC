@@ -12,7 +12,9 @@ onMounted(() => {
 </script>
 
 <template>
-  <div class="h-screen w-screen flex flex-col">
+  <div
+    class="h-screen w-screen max-h-screen max-w-screen flex flex-col overflow-clip"
+  >
     <SiteHeader />
     <slot />
     <SiteFooter />
