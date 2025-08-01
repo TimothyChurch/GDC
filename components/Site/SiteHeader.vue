@@ -4,7 +4,7 @@ const navList = [
   { label: "Home", link: "/", icon: "carbon:home" },
   { label: "Menu", link: "/menu", icon: "carbon:menu" },
   { label: "Bottles", link: "/bottles", icon: "carbon:wine-bottle" },
-  { label: "Events", link: "/events", icon: "carbon:calendar" },
+  // { label: "Events", link: "/events", icon: "carbon:calendar" },
 ];
 const mobileNav = ref([
   { label: "Home", to: "/", icon: "i-carbon-home" },
@@ -14,7 +14,7 @@ const mobileNav = ref([
     to: "/bottles",
     icon: "i-carbon-bottles-01",
   },
-  { label: "Events", to: "/events", icon: "i-carbon-calendar" },
+  // { label: "Events", to: "/events", icon: "i-carbon-calendar" },
 ]);
 </script>
 
