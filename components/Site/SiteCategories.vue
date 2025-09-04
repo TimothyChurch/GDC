@@ -1,30 +1,25 @@
 <script setup>
 const categories = [
   {
-    name: "Handcrafted Collection",
-    href: "#",
-    imageSrc:
-      "https://tailwindcss.com/plus-assets/img/ecommerce-images/home-page-01-collection-01.jpg",
-    imageAlt:
-      "Brown leather key ring with brass metal loops and rivets on wood table.",
+    name: "Cocktail Collection",
+    href: "/menu",
+    imageSrc: "/images/cocktail.jpg",
+    imageAlt: "Whiskey sour in front of Barley",
     description:
       "Keep your phone, keys, and wallet together, so you can lose everything at once.",
   },
   {
-    name: "Organized Desk Collection",
-    href: "#",
-    imageSrc:
-      "https://tailwindcss.com/plus-assets/img/ecommerce-images/home-page-01-collection-02.jpg",
-    imageAlt:
-      "Natural leather mouse pad on white desk next to porcelain mug and keyboard.",
+    name: "Bottles",
+    href: "/bottles",
+    imageSrc: "/images/absinthe.jpg",
+    imageAlt: "Absinthe Bottle",
     description:
       "The rest of the house will still be a mess, but your desk will look great.",
   },
   {
-    name: "Focus Collection",
-    href: "#",
-    imageSrc:
-      "https://tailwindcss.com/plus-assets/img/ecommerce-images/home-page-01-collection-03.jpg",
+    name: "Events",
+    href: "/events",
+    imageSrc: "/images/class.jpg",
     imageAlt:
       "Person placing task list card into walnut card holder next to felt carrying case on leather desk pad.",
     description:
@@ -37,21 +32,13 @@ const categories = [
   <div
     class="mx-auto max-w-xl px-4 py-16 sm:px-6 sm:py-24 lg:max-w-7xl lg:px-8"
   >
-    <h2 class="text-2xl font-bold tracking-tight text-gray-900">
-      Shop by Collection
-    </h2>
-    <p class="mt-4 text-base text-gray-500">
-      Each season, we collaborate with world-class designers to create a
-      collection inspired by the natural world.
-    </p>
-
     <div
       class="mt-10 space-y-12 lg:grid lg:grid-cols-3 lg:space-y-0 lg:gap-x-8"
     >
-      <a
+      <NuxtLink
         v-for="category in categories"
         :key="category.name"
-        :href="category.href"
+        :to="category.href"
         class="group block"
       >
         <img
@@ -62,8 +49,10 @@ const categories = [
         <h3 class="mt-4 text-base font-semibold text-gray-900">
           {{ category.name }}
         </h3>
-        <p class="mt-2 text-sm text-gray-500">{{ category.description }}</p>
-      </a>
+        <p class="mt-2 text-sm text-gray-500">
+          {{ category.description }}
+        </p>
+      </NuxtLink>
     </div>
   </div>
 </template>

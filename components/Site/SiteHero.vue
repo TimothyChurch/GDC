@@ -6,7 +6,7 @@
       <div
         class="px-6 pb-24 pt-10 sm:pb-32 lg:col-span-7 lg:px-0 lg:pb-48 lg:pt-40 xl:col-span-6"
       >
-        <div class="mx-auto max-w-lg lg:mx-0">
+        <div class="flex flex-col items-center mx-auto max-w-lg lg:mx-0">
           <h1
             class="text-pretty text-5xl font-semibold tracking-tight sm:mt-10 sm:text-7xl"
           >
@@ -21,13 +21,10 @@
             embody the rich history and vibrant culture of our coastal home.
           </p>
           <div class="mt-10 flex items-center gap-x-6">
-            <a
-              href="#"
+            <NuxtLink
+              to="/bottles"
               class="rounded-md bg-indigo-600 px-3.5 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
-              >Explore Our Spirits</a
-            >
-            <a href="#" class="text-sm/6 font-semibold text-gray-900"
-              >Book a Tour <span aria-hidden="true">→</span></a
+              >Explore Our Spirits</NuxtLink
             >
           </div>
         </div>
@@ -37,7 +34,7 @@
       >
         <img
           class="aspect-[3/2] w-full bg-gray-50 object-cover lg:absolute lg:inset-0 lg:aspect-auto lg:h-full"
-          src="public/images/20231017_104945.jpg"
+          src="public/images/hero.jpg"
           alt="Galveston Craft Spirits Distillery"
         />
       </div>
