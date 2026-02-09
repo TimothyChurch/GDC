@@ -1,11 +1,10 @@
-import type { ObjectId } from 'mongoose';
 import type { Contact } from '~/types';
 
 export const useContactStore = defineStore('contacts', () => {
 	// State
 	const contacts = ref<Contact[]>([]);
 	const contact = ref<Contact>({
-		_id: undefined as unknown as ObjectId,
+		_id: '',
 		firstName: '',
 		lastName: '',
 		businessName: '',
@@ -50,7 +49,7 @@ export const useContactStore = defineStore('contacts', () => {
 
 	const resetContact = (): void => {
 		contact.value = {
-			_id: undefined as unknown as ObjectId,
+			_id: '',
 			firstName: '',
 			lastName: '',
 			businessName: '',
@@ -72,7 +71,7 @@ export const useContactStore = defineStore('contacts', () => {
 	// Getters
 	const getContactById = (id: string): Contact | undefined => {
 		checkContacts();
-		return contacts.value.find((c) => c._id.toString() === id);
+		return contacts.value.find((c) => c._id === id);
 	};
 
 	const getVendors = () => {
@@ -83,9 +82,9 @@ export const useContactStore = defineStore('contacts', () => {
 	const search = (searchTerm: string): Contact[] => {
 		return contacts.value.filter(
 			(c) =>
-				c.firstName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-				c.lastName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-				c.businessName.toLowerCase().includes(searchTerm.toLowerCase())
+				c.firstName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+				c.lastName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+				c.businessName?.toLowerCase().includes(searchTerm.toLowerCase())
 		);
 	};
 

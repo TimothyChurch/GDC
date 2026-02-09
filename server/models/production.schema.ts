@@ -1,4 +1,7 @@
 import { defineMongooseModel } from '#nuxt/mongoose';
+import mongoose from 'mongoose';
+
+const { Schema } = mongoose;
 
 export const Production = defineMongooseModel({
 	name: 'Production',
@@ -7,34 +10,32 @@ export const Production = defineMongooseModel({
 			type: Date,
 			required: true,
 		},
-		vessel: {
-			type: Array,
-			required: true,
-			items: {
-				type: String,
+		vessel: [
+			{
+				type: Schema.Types.ObjectId,
 				ref: 'Vessel',
 			},
-		},
+		],
 		bottle: {
-			type: String,
+			type: Schema.Types.ObjectId,
+			ref: 'Bottle',
 			required: true,
 		},
 		bottling: {
-			type: Object,
-			required: true,
-			schema: {
-				glassware: {
-					type: String,
-					required: true,
-				},
-				cap: {
-					type: String,
-					required: true,
-				},
-				label: {
-					type: String,
-					required: true,
-				},
+			glassware: {
+				type: Schema.Types.ObjectId,
+				ref: 'Item',
+				required: true,
+			},
+			cap: {
+				type: Schema.Types.ObjectId,
+				ref: 'Item',
+				required: true,
+			},
+			label: {
+				type: Schema.Types.ObjectId,
+				ref: 'Item',
+				required: true,
 			},
 		},
 		quantity: {

@@ -1,8 +1,5 @@
 <script setup lang="ts">
 import "./assets/css/main.css";
-const { login } = useAuth();
-login();
-
 useHead({
   title: "Galveston Distilling Co",
   meta: [

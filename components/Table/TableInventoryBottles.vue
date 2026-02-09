@@ -30,20 +30,19 @@ const columns = [
 <template>
 	<div>
 		<UTable
-			:rows="rows"
-			:columns="columns">
-			<template #stock-data="{ row }">
+			:data="bottleStore.bottles">
+			<!-- <template #stock-data="{ row }">
 				<div
 					v-if="bottleStockCheck(row._id).lowStock"
 					class="text-xl font-bold text-red-600">
 					{{ bottleStockCheck(row._id).currentStock }}
 				</div>
-			</template>
-			<template #actions-data="{ row }">
+			</template> -->
+			<!-- <template #actions-data="{ row }">
 				<NuxtLink :to="`/admin/bottles/${row._id}`">
 					<UButton>Open</UButton>
 				</NuxtLink>
-			</template>
+			</template> -->
 		</UTable>
 	</div>
 </template>

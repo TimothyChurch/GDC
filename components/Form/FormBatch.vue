@@ -1,6 +1,14 @@
-<script setup>
+<script setup lang="ts">
+import * as yup from 'yup';
+
 const batchStore = useBatchStore();
 const recipeStore = useRecipeStore();
+
+const schema = yup.object({
+	recipe: yup.string().required('Recipe is required'),
+	batchSize: yup.number().positive('Must be greater than 0').required('Batch size is required'),
+	batchSizeUnit: yup.string().required('Unit is required'),
+});
 
 const price = computed(() => {
 	if (batchStore.batch.recipe) {
@@ -40,17 +48,20 @@ const saveBatch = async () => {
 
 <template>
 	<div>
-		<div>
+		<UForm
+			:schema="schema"
+			:state="batchStore.batch"
+			@submit="saveBatch">
 			<div class="grid grid-flow-col auto-cols-auto gap-3">
-				<UFormGroup label="Recipe">
+				<UFormField label="Recipe" name="recipe">
 					<USelect
 						v-model="batchStore.batch.recipe"
 						:options="recipeStore.recipes"
 						option-attribute="name"
 						value-attribute="_id" />
-				</UFormGroup>
-				<UFormGroup label="Recipe Cost"> {{ price }} </UFormGroup>
-				<UFormGroup label="Batch Size">
+				</UFormField>
+				<UFormField label="Recipe Cost"> {{ price }} </UFormField>
+				<UFormField label="Batch Size" name="batchSize">
 					<UButtonGroup>
 						<UInput
 							v-model="batchStore.batch.batchSize"
@@ -61,12 +72,12 @@ const saveBatch = async () => {
 							:options="volumeUnits"
 							placeholder="unit" />
 					</UButtonGroup>
-				</UFormGroup>
-				<UFormGroup label="Batch Cost">{{
-					Dollar.format(scaledPrice)
-				}}</UFormGroup>
-				<UButton @click="saveBatch()"> Save </UButton>
+				</UFormField>
+				<UFormField label="Batch Cost">
+					{{ Dollar.format(scaledPrice) }}
+				</UFormField>
+				<UButton type="submit"> Save </UButton>
 			</div>
-		</div>
+		</UForm>
 	</div>
 </template>

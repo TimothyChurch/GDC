@@ -1,4 +1,6 @@
 <script setup>
+const router = useRouter();
+
 const bottleStore = useBottleStore();
 const searchFilter = ref("");
 // Modal component info
@@ -12,8 +14,9 @@ const newBottle = () => {
 const openModal = async () => await modal.open();
 //
 const onSelect = (row) => {
-  bottleStore.selectBottle(row.original._id);
-  openModal();
+  // bottleStore.selectBottle(row.original._id);
+  // openModal();
+  router.push('/admin/bottles/' + row.original._id);
 };
 </script>
 

@@ -1,8 +1,9 @@
 <script setup lang="ts">
 import { useWebSocket } from '@vueuse/core';
 
+const runtimeConfig = useRuntimeConfig();
 const { status, data, send, open, close } = useWebSocket(
-	'ws://192.168.50.88:1880/ws'
+	runtimeConfig.public.wsUrl as string
 );
 
 const statusColor = computed(() => {
@@ -50,7 +51,6 @@ watch(
 		inputData.mashTun.agitator,
 	],
 	() => {
-		console.log('testing');
 		if (!inputData.kettle.status) {
 			inputData.kettle.power = 0;
 			inputData.kettle.reflux = 100;

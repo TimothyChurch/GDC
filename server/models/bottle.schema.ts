@@ -1,4 +1,7 @@
 import { defineMongooseModel } from "#nuxt/mongoose";
+import mongoose from "mongoose";
+
+const { Schema } = mongoose;
 
 export const Bottle = defineMongooseModel({
   name: "Bottle",
@@ -32,7 +35,8 @@ export const Bottle = defineMongooseModel({
       required: false,
     },
     recipe: {
-      type: String,
+      type: Schema.Types.ObjectId,
+      ref: "Recipe",
       required: false,
     },
     inStock: {

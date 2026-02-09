@@ -1,5 +1,8 @@
 <script setup>
-const { user, authorized } = useAuth();
+const { logout } = useAuth();
+const user = useCookie("user", {
+  default: () => ({ email: "", authenticated: false, data: {} }),
+});
 const items = () => [
   [
     {
@@ -64,7 +67,10 @@ const items = () => [
 
 <template>
   <div class="flex justify-between p-3 h-14 bg-[var(--shadow)]">
-    <div>Profile Area {{ (user, authorized) }}</div>
+    <div class="flex items-center gap-2">
+      <span>{{ user.email }}</span>
+      <UButton color="gray" variant="ghost" size="sm" @click="logout">Logout</UButton>
+    </div>
     <!-- <AdminSearch /> -->
     <div name="Right Nav" class="flex">
       <UButton

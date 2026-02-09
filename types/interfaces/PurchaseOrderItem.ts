@@ -1,7 +1,5 @@
-import type { ObjectId } from 'mongoose';
-
 export interface PurchaseOrderItem {
-	item: ObjectId;
+	item: string;
 	quantity: number;
 	size: number;
 	sizeUnit: string;

@@ -1,4 +1,7 @@
 import { defineMongooseModel } from '#nuxt/mongoose';
+import mongoose from 'mongoose';
+
+const { Schema } = mongoose;
 
 export const Vessel = defineMongooseModel({
 	name: 'Vessel',
@@ -43,10 +46,18 @@ export const Vessel = defineMongooseModel({
 				required: false,
 			},
 		},
-		contents: {
-			type: Array,
-			required: false,
-		},
+		contents: [
+			{
+				batch: {
+					type: Schema.Types.ObjectId,
+					ref: 'Batch',
+				},
+				volume: Number,
+				volumeUnit: String,
+				abv: Number,
+				value: Number,
+			},
+		],
 		current: {
 			volume: {
 				type: Number,

@@ -1,4 +1,7 @@
 import { defineMongooseModel } from "#nuxt/mongoose";
+import mongoose from "mongoose";
+
+const { Schema } = mongoose;
 
 export const PurchaseOrder = defineMongooseModel({
   name: "PurchaseOrder",
@@ -8,40 +11,35 @@ export const PurchaseOrder = defineMongooseModel({
       required: true,
     },
     vendor: {
-      type: String,
+      type: Schema.Types.ObjectId,
+      ref: "Contact",
       required: true,
     },
-
-    items: {
-      type: Array,
-      required: true,
-      items: {
-        type: Object,
-        required: true,
-        schema: {
-          item: {
-            type: String,
-            required: true,
-          },
-          quantity: {
-            type: Number,
-            required: true,
-          },
-          size: {
-            type: Number,
-            required: true,
-          },
-          sizeUnit: {
-            type: String,
-            required: true,
-          },
-          price: {
-            type: Number,
-            required: true,
-          },
+    items: [
+      {
+        item: {
+          type: Schema.Types.ObjectId,
+          ref: "Item",
+          required: true,
+        },
+        quantity: {
+          type: Number,
+          required: true,
+        },
+        size: {
+          type: Number,
+          required: true,
+        },
+        sizeUnit: {
+          type: String,
+          required: true,
+        },
+        price: {
+          type: Number,
+          required: true,
         },
       },
-    },
+    ],
     total: {
       type: Number,
       required: true,

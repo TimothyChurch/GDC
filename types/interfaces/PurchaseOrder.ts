@@ -1,10 +1,9 @@
-import type { ObjectId } from 'mongoose';
-import { PurchaseOrderItem } from './PurchaseOrderItem';
+import type { PurchaseOrderItem } from './PurchaseOrderItem';
 
 export interface PurchaseOrder {
-	_id: ObjectId;
+	_id: string;
 	status: string;
-	vendor: ObjectId;
+	vendor: string;
 	items: PurchaseOrderItem[];
 	total: number;
 	date: Date;

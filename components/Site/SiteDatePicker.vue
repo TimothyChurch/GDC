@@ -2,6 +2,7 @@
 import { format } from 'date-fns';
 
 const model = defineModel();
+const open = ref(false);
 
 const buttonLabel = () => {
 	if (!model.value) {
@@ -13,32 +14,23 @@ const buttonLabel = () => {
 	return format(model.value, 'd MMM, yyy');
 };
 
-const buttonClick = () => {
-	if (model.value) {
-		model.value = new Date(model);
-	} else {
-		model.value = new Date();
-	}
-};
 </script>
 
 <template>
-	<UPopover :popper="{ placement: 'bottom-start' }">
+	<UPopover v-model:open="open">
 		<UButtonGroup>
 			<UButton
 				icon="i-heroicons-calendar-days-20-solid"
-				:label="buttonLabel()"
-				@click="buttonClick()" />
+				:label="buttonLabel()" />
 			<UButton
 				icon="i-heroicons-x-mark"
 				@click="model = null" />
 		</UButtonGroup>
 
-		<template #panel="{ close }">
+		<template #content>
 			<DatePicker
 				v-model="model"
-				is-required
-				@close="close" />
+				is-required />
 		</template>
 	</UPopover>
 </template>

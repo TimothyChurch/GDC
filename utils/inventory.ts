@@ -1,18 +1,14 @@
-import type { ObjectId } from 'mongoose';
 import type { Item } from '~/types';
 import { differenceInDays } from 'date-fns';
 
-export const bottleStockCheck = (id: string | ObjectId) => {
+export const bottleStockCheck = (id: string) => {
 	const bottleStore = useBottleStore();
-	const productionStore = uesProductionStore();
+	const productionStore = useProductionStore();
 
-	const bottle = bottleStore.getBottleById(id.toString());
+	const bottle = bottleStore.getBottleById(id);
 
 	const selectedProductions = productionStore.productions
-		.filter(
-			(p: { bottle: { toString: () => string } }) =>
-				p.bottle.toString() == bottle._id.toString()
-		)
+		.filter((p) => p.bottle === bottle._id)
 		.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
 	const totalProduced = selectedProductions.reduce(
 		(sum: number, p) => sum + p.quantity,
@@ -41,7 +37,7 @@ export const currentStock = (item: Item) => {
 	);
 
 	for (let i in sortedInventory) {
-		if (sortedInventory[i].items[item._id.toString()])
-			return sortedInventory[i].items[item._id.toString()];
+		if (sortedInventory[i].item === item._id)
+			return sortedInventory[i].quantity;
 	}
 };

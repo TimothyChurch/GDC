@@ -1,27 +1,26 @@
-import type { ObjectId } from 'mongoose';
-import { Contents } from './Contents';
+import type { Contents } from './Contents';
 
 export interface Vessel {
-	_id: ObjectId;
+	_id: string;
 	name: string;
 	type: string;
 	stats: {
-		weight: number;
-		weightUnit: string;
-		volume: number;
-		volumeUnit: string;
+		weight?: number;
+		weightUnit?: string;
+		volume?: number;
+		volumeUnit?: string;
 	};
 	barrel: {
-		size: string;
-		char: string;
-		cost: number;
+		size?: string;
+		char?: string;
+		cost?: number;
 	};
-	contents: Contents[];
+	contents?: Contents[];
 	current: {
-		volume: number;
-		volumeUnit: string;
-		abv: number;
-		value: number;
+		volume?: number;
+		volumeUnit?: string;
+		abv?: number;
+		value?: number;
 	};
-	cost: number;
+	cost?: number;
 }

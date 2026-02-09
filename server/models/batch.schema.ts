@@ -43,9 +43,14 @@ export const Batch = defineMongooseModel({
 				type: Schema.Types.ObjectId,
 				ref: 'Vessel',
 			},
-			readings: {
-				type: Array,
-			},
+			readings: [
+				{
+					date: Date,
+					temperature: Number,
+					temperatureUnit: String,
+					gravity: Number,
+				},
+			],
 			notes: String,
 		},
 		distilling: {

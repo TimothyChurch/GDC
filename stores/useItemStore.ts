@@ -1,14 +1,13 @@
-import type { ObjectId } from "mongoose";
 import type { Item } from "~/types";
 
 export const useItemStore = defineStore("items", () => {
   // State
   const items = ref<Item[]>([]);
   const item = ref<Item>({
-    _id: undefined as unknown as ObjectId,
+    _id: '',
     name: "",
     type: "",
-    vendor: undefined as unknown as ObjectId,
+    vendor: '',
     inventoryUnit: "",
     purchaseHistory: [],
     inventoryHistory: [],
@@ -28,7 +27,7 @@ export const useItemStore = defineStore("items", () => {
   getItems();
 
   const setItem = (id: string) => {
-    const foundItem = items.value.find((i) => i._id.toString() === id);
+    const foundItem = items.value.find((i) => i._id === id);
     if (foundItem) {
       item.value = foundItem;
     } else {
@@ -56,10 +55,10 @@ export const useItemStore = defineStore("items", () => {
 
   const resetItem = (): void => {
     item.value = {
-      _id: undefined as unknown as ObjectId,
+      _id: '',
       name: "",
       type: "",
-      vendor: undefined as unknown as ObjectId,
+      vendor: '',
       inventoryUnit: "",
       purchaseHistory: [],
       inventoryHistory: [],
@@ -76,19 +75,19 @@ export const useItemStore = defineStore("items", () => {
   };
 
   const getItemById = (id: string): Item | undefined => {
-    return items.value.find((ing) => ing._id.toString() === id);
+    return items.value.find((ing) => ing._id === id);
   };
 
   const nameById = (id: string) => {
-    return items.value.find((ing) => ing._id.toString() == id)?.name;
+    return items.value.find((ing) => ing._id === id)?.name;
   };
 
   const search = (searchTerm: string): Item[] => {
     return items.value.filter(
       (i) =>
         i.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        i.type.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        i.vendor.toString().includes(searchTerm.toLowerCase())
+        i.type?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        i.vendor?.toLowerCase().includes(searchTerm.toLowerCase())
     );
   };
 
@@ -144,11 +143,11 @@ export const useItemStore = defineStore("items", () => {
   };
 
   const itemNameId = computed(() => {
-    return items.value.map((i) => ({ id: i._id.toString(), label: i.name }));
+    return items.value.map((i) => ({ id: i._id, label: i.name }));
   });
 
   const getPriceById = (id: string) => {
-    return items.value.find((i) => i._id.toString() === id)?.pricePerUnit;
+    return items.value.find((i) => i._id === id)?.pricePerUnit;
   };
 
   return {

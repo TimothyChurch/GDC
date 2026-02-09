@@ -41,7 +41,7 @@ const save = () => {
           <div v-if="!editing">
             {{
               contactStore.getContactById(
-                itemStore.item.vendor as unknown as ObjectId
+                itemStore.item.vendor as string
               )?.businessName
             }}
           </div>

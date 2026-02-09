@@ -1,5 +1,7 @@
 import { defineMongooseModel } from '#nuxt/mongoose';
-import { ObjectId } from 'mongodb';
+import mongoose from 'mongoose';
+
+const { Schema } = mongoose;
 
 export const Cocktail = defineMongooseModel({
 	name: 'Cocktail',
@@ -15,7 +17,8 @@ export const Cocktail = defineMongooseModel({
 		ingredients: [
 			{
 				item: {
-					type: ObjectId,
+					type: Schema.Types.ObjectId,
+					ref: 'Item',
 					required: true,
 				},
 				amount: {
@@ -48,5 +51,9 @@ export const Cocktail = defineMongooseModel({
 			type: String,
 			required: true,
 		},
+		visible: {
+			type: Boolean,
+			required: true,
+		}
 	},
 });

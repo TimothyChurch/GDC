@@ -1,12 +1,11 @@
-import type { PurchaseOrder, PurchaseOrderItem } from '~/types';
-import type { ObjectId } from 'mongoose';
+import type { PurchaseOrder } from '~/types';
 
 export const usePurchaseOrderStore = defineStore('purchaseOrders', () => {
 	// State
 	const purchaseOrders = ref<PurchaseOrder[]>([]);
 	const purchaseOrder = ref<PurchaseOrder>({
-		_id: undefined as unknown as ObjectId,
-		vendor: '' as unknown as ObjectId,
+		_id: '',
+		vendor: '',
 		status: '',
 		items: [],
 		total: 0,
@@ -55,8 +54,8 @@ export const usePurchaseOrderStore = defineStore('purchaseOrders', () => {
 
 	const resetCurrentPurchaseOrder = (): void => {
 		purchaseOrder.value = {
-			_id: undefined as unknown as ObjectId,
-			vendor: '' as unknown as ObjectId,
+			_id: '',
+			vendor: '',
 			status: '',
 			items: [],
 			total: 0,
@@ -67,17 +66,17 @@ export const usePurchaseOrderStore = defineStore('purchaseOrders', () => {
 	// Getters
 	const getPurchaseOrderByVendor = (vendorId: string): PurchaseOrder[] => {
 		return purchaseOrders.value.filter(
-			(po) => po.vendor.toString() === vendorId
+			(po) => po.vendor === vendorId
 		);
 	};
 
 	const getPurchaseOrderById = (id: string) => {
-		return purchaseOrders.value.find((po) => po._id.toString() === id);
+		return purchaseOrders.value.find((po) => po._id === id);
 	};
 
 	const getPurchaseOrdersByItemId = (id: string) => {
 		return purchaseOrders.value.filter((po) => {
-			return po.items.some((item) => item.item.toString() === id);
+			return po.items.some((item) => item.item === id);
 		});
 	};
 

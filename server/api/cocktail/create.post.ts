@@ -1,13 +1,14 @@
 import { Cocktail } from '~/server/models/cocktail.schema';
 
 export default defineEventHandler(async (event) => {
+	const body = await readBody(event);
+	await validateBody(body, cocktailCreateSchema);
+	const sanitized = sanitize(body);
 	try {
-		const body = await readBody(event);
-		const newCocktail = new Cocktail(body);
+		const newCocktail = new Cocktail(sanitized);
 		await newCocktail.save();
 		return newCocktail;
 	} catch (error) {
-		console.error('Error creating cocktail:', error);
 		throw createError({
 			statusCode: 500,
 			statusMessage: 'Error creating cocktail',

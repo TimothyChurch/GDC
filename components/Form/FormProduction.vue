@@ -1,11 +1,20 @@
 <script setup lang="ts">
+import * as yup from 'yup';
+
 // Access needed stores
-const productionsStore = uesProductionStore();
+const productionsStore = useProductionStore();
 const vesselStore = useVesselStore();
 const bottleStore = useBottleStore();
 const itemStore = useItemStore();
 const recipeStore = useRecipeStore();
 const batchStore = useBatchStore();
+
+const schema = yup.object({
+	date: yup.date().required('Production date is required'),
+	bottle: yup.string().required('Bottle is required'),
+	quantity: yup.number().positive('Must be greater than 0').required('Quantity is required'),
+});
+
 // Labels for vessels based on their contents
 const vesselLabels = computed(() => {
 	const vessels = vesselStore.vessels.filter(
@@ -17,7 +26,6 @@ const vesselLabels = computed(() => {
 		if (vessel.contents.length === 0) {
 			return { _id: vessel._id, name: vessel.name + ' - empty' };
 		}
-		vessel.name + ' - empty';
 		const recipeNames = vessel.contents.map((content: { batch: string }) => {
 			const batch = batchStore.getBatchById(content.batch);
 			const recipe = recipeStore.getRecipeById(
@@ -69,13 +77,6 @@ const productionCost = computed(() => {
 		barrelCost.value +
 		(bottleCost + capCost + labelCost) * productionsStore.production.quantity;
 
-	console.log(
-		`Total Cost: $${totalCost.toFixed(
-			2
-		)}  - Batch Cost: $${batchCost.value.toFixed(
-			2
-		)}  - Barrel Cost: $${barrelCost.value.toFixed(2)}`
-	);
 	return totalCost;
 });
 // Filter vessels based on selected IDs
@@ -100,11 +101,14 @@ const saveProduction = () => {
 
 <template>
 	<div>
-		<UForm :state="productionsStore.production">
-			<UFormGroup label="Production Date">
+		<UForm
+			:schema="schema"
+			:state="productionsStore.production"
+			@submit="saveProduction">
+			<UFormField label="Production Date" name="date">
 				<SiteDatePicker v-model="productionsStore.production.date" />
-			</UFormGroup>
-			<UFormGroup label="Vessels">
+			</UFormField>
+			<UFormField label="Vessels" name="vessel">
 				<USelectMenu
 					v-model="productionsStore.production.vessel"
 					:options="vesselLabels"
@@ -118,62 +122,62 @@ const saveProduction = () => {
 						}}</span>
 					</template>
 				</USelectMenu>
-			</UFormGroup>
-			<UFormGroup label="Bottle">
+			</UFormField>
+			<UFormField label="Bottle" name="bottle">
 				<USelectMenu
 					v-model="productionsStore.production.bottle"
 					:options="bottleStore.bottles"
 					option-attribute="name"
 					value-attribute="_id"
 					searchable />
-			</UFormGroup>
-			<UFormGroup label="Glassware">
+			</UFormField>
+			<UFormField label="Glassware" name="bottling.glassware">
 				<USelectMenu
 					v-model="productionsStore.production.bottling.glassware"
 					:options="
 						itemStore.items.filter(
-							(item) => item.type.toLowerCase() === 'glass bottle'
+							(item) => item.type?.toLowerCase() === 'glass bottle'
 						)
 					"
 					option-attribute="name"
 					value-attribute="_id" />
-			</UFormGroup>
-			<UFormGroup label="Cap">
+			</UFormField>
+			<UFormField label="Cap" name="bottling.cap">
 				<USelect
 					v-model="productionsStore.production.bottling.cap"
 					:options="
 						itemStore.items.filter(
-							(item) => item.type.toLowerCase() === 'bottle cap'
+							(item) => item.type?.toLowerCase() === 'bottle cap'
 						)
 					"
 					option-attribute="name"
 					value-attribute="_id" />
-			</UFormGroup>
-			<UFormGroup label="Label">
+			</UFormField>
+			<UFormField label="Label" name="bottling.label">
 				<USelectMenu
 					v-model="productionsStore.production.bottling.label"
 					:options="
 						itemStore.items.filter(
-							(item) => item.type.toLowerCase() === 'label'
+							(item) => item.type?.toLowerCase() === 'label'
 						)
 					"
 					option-attribute="name"
 					value-attribute="_id" />
-			</UFormGroup>
-			<UFormGroup label="Quantity">
+			</UFormField>
+			<UFormField label="Quantity" name="quantity">
 				<UInput
 					v-model="productionsStore.production.quantity"
 					type="number" />
-			</UFormGroup>
-			<UFormGroup label="Production Cost">
+			</UFormField>
+			<UFormField label="Production Cost">
 				{{ Dollar.format(productionCost) }}
-			</UFormGroup>
-			<UFormGroup label="Bottle Cost">
+			</UFormField>
+			<UFormField label="Bottle Cost">
 				{{
 					Dollar.format(productionCost / productionsStore.production.quantity)
 				}}
-			</UFormGroup>
-			<UButton @click="saveProduction">Submit</UButton>
+			</UFormField>
+			<UButton type="submit">Submit</UButton>
 		</UForm>
 	</div>
 </template>

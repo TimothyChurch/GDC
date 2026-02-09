@@ -1,83 +1,82 @@
 import { defineStore } from 'pinia';
 import { ref } from 'vue';
 import type { Batch, Recipe } from '~/types';
-import type { ObjectId } from 'mongoose';
 
 export const useBatchStore = defineStore('batches', () => {
 	// State
 	const batches = ref<Batch[]>([]);
 	const batch = ref<Batch>({
-		_id: undefined as unknown as ObjectId,
-		recipe: undefined as unknown as ObjectId,
+		_id: '',
+		recipe: '',
 		recipeCost: undefined as unknown as number,
 		status: 'Upcoming',
 		batchSize: undefined as unknown as number,
-		batchSizeUnit: 'gallon' as unknown as string,
-		batchCost: undefined as unknown as number,
+		batchSizeUnit: 'gallon',
+		batchCost: undefined,
 		brewing: {
-			vessel: undefined as unknown as ObjectId,
-			date: undefined as unknown as Date,
+			vessel: undefined,
+			date: undefined,
 			notes: '',
 		},
 		fermenting: {
-			vessel: undefined as unknown as ObjectId,
+			vessel: undefined,
 			readings: [],
 			notes: '',
 		},
 		distilling: {
-			vessel: undefined as unknown as ObjectId,
-			date: undefined as unknown as Date,
+			vessel: undefined,
+			date: undefined,
 			additions: {
 				tails: {
-					volume: undefined as unknown as number,
+					volume: undefined,
 					volumeUnit: '',
-					abv: undefined as unknown as number,
+					abv: undefined,
 				},
 			},
 			collected: {
 				heads: {
-					vessel: undefined as unknown as ObjectId,
-					volume: undefined as unknown as number,
+					vessel: undefined,
+					volume: undefined,
 					volumeUnit: '',
-					abv: undefined as unknown as number,
+					abv: undefined,
 				},
 				hearts: {
-					vessel: undefined as unknown as ObjectId,
-					volume: undefined as unknown as number,
+					vessel: undefined,
+					volume: undefined,
 					volumeUnit: '',
-					abv: undefined as unknown as number,
+					abv: undefined,
 				},
 				tails: {
-					vessel: undefined as unknown as ObjectId,
-					volume: undefined as unknown as number,
+					vessel: undefined,
+					volume: undefined,
 					volumeUnit: '',
-					abv: undefined as unknown as number,
+					abv: undefined,
 				},
 				total: {
-					volume: undefined as unknown as number,
+					volume: undefined,
 					volumeUnit: '',
-					abv: undefined as unknown as number,
+					abv: undefined,
 				},
 			},
 			notes: '',
 		},
 		barreled: {
-			vessel: undefined as unknown as ObjectId,
+			vessel: undefined,
 			entry: {
-				date: undefined as unknown as Date,
-				volume: undefined as unknown as number,
+				date: undefined,
+				volume: undefined,
 				volumeUnit: '',
-				abv: undefined as unknown as number,
+				abv: undefined,
 			},
 			exit: {
-				date: undefined as unknown as Date,
-				volume: undefined as unknown as number,
+				date: undefined,
+				volume: undefined,
 				volumeUnit: '',
-				abv: undefined as unknown as number,
+				abv: undefined,
 			},
 		},
 		bottled: {
-			productionRecord: undefined as unknown as ObjectId,
+			productionRecord: undefined,
 		},
 	});
 
@@ -109,7 +108,7 @@ export const useBatchStore = defineStore('batches', () => {
 
 	const setBatch = (id: string): void => {
 		batch.value = batches.value.find(
-			(batch) => batch._id.toString() === id
+			(batch) => batch._id === id
 		) as Batch;
 	};
 
@@ -138,84 +137,84 @@ export const useBatchStore = defineStore('batches', () => {
 
 	const resetBatch = (): void => {
 		batch.value = {
-			_id: undefined as unknown as ObjectId,
-			recipe: undefined as unknown as ObjectId,
+			_id: '',
+			recipe: '',
 			recipeCost: undefined as unknown as number,
 			status: 'Upcoming',
 			batchSize: undefined as unknown as number,
-			batchSizeUnit: 'gallon' as unknown as string,
-			batchCost: undefined as unknown as number,
+			batchSizeUnit: 'gallon',
+			batchCost: undefined,
 			brewing: {
-				vessel: undefined as unknown as ObjectId,
-				date: undefined as unknown as Date,
+				vessel: undefined,
+				date: undefined,
 				notes: '',
 			},
 			fermenting: {
-				vessel: undefined as unknown as ObjectId,
+				vessel: undefined,
 				readings: [],
 				notes: '',
 			},
 			distilling: {
-				vessel: undefined as unknown as ObjectId,
-				date: undefined as unknown as Date,
+				vessel: undefined,
+				date: undefined,
 				additions: {
 					tails: {
-						volume: undefined as unknown as number,
+						volume: undefined,
 						volumeUnit: '',
-						abv: undefined as unknown as number,
+						abv: undefined,
 					},
 				},
 				collected: {
 					heads: {
-						vessel: undefined as unknown as ObjectId,
-						volume: undefined as unknown as number,
+						vessel: undefined,
+						volume: undefined,
 						volumeUnit: '',
-						abv: undefined as unknown as number,
+						abv: undefined,
 					},
 					hearts: {
-						vessel: undefined as unknown as ObjectId,
-						volume: undefined as unknown as number,
+						vessel: undefined,
+						volume: undefined,
 						volumeUnit: '',
-						abv: undefined as unknown as number,
+						abv: undefined,
 					},
 					tails: {
-						vessel: undefined as unknown as ObjectId,
-						volume: undefined as unknown as number,
+						vessel: undefined,
+						volume: undefined,
 						volumeUnit: '',
-						abv: undefined as unknown as number,
+						abv: undefined,
 					},
 					total: {
-						volume: undefined as unknown as number,
+						volume: undefined,
 						volumeUnit: '',
-						abv: undefined as unknown as number,
+						abv: undefined,
 					},
 				},
 				notes: '',
 			},
 			barreled: {
-				vessel: undefined as unknown as ObjectId,
+				vessel: undefined,
 				entry: {
-					date: undefined as unknown as Date,
-					volume: undefined as unknown as number,
+					date: undefined,
+					volume: undefined,
 					volumeUnit: '',
-					abv: undefined as unknown as number,
+					abv: undefined,
 				},
 				exit: {
-					date: undefined as unknown as Date,
-					volume: undefined as unknown as number,
+					date: undefined,
+					volume: undefined,
 					volumeUnit: '',
-					abv: undefined as unknown as number,
+					abv: undefined,
 				},
 			},
 			bottled: {
-				productionRecord: undefined as unknown as ObjectId,
+				productionRecord: undefined,
 			},
 		};
 	};
 
 	// Getters
 	const getBatchById = (id: string): Batch | undefined => {
-		return batches.value.find((b) => b._id.toString() === id);
+		return batches.value.find((b) => b._id === id);
 	};
 
 	const getBatchByStatus = (status: string): Batch[] => {
@@ -223,7 +222,7 @@ export const useBatchStore = defineStore('batches', () => {
 	};
 
 	const batchStages = () => {
-		const statusOptions = [
+		return [
 			'Upcoming',
 			'Brewing',
 			'Fermenting',
@@ -232,26 +231,14 @@ export const useBatchStore = defineStore('batches', () => {
 			'Barrelled',
 			'Bottled',
 		];
-		// batches.value.forEach((batch) => {
-		// 	if (
-		// 		batch.status?.stage &&
-		// 		!statusOptions.some((b) => b.stage === batch.status?.stage)
-		// 	) {
-		// 		statusOptions.push(batch.status);
-		// 	}
-		// });
-		return statusOptions;
 	};
 
 	const getRecipeNameByBatchId = (id: string): string | undefined => {
 		const recipeStore = useRecipeStore();
 		const batch = getBatchById(id);
 		if (batch && batch.recipe) {
-			const recipe = recipeStore.getRecipeById(
-				batch.recipe.toString()
-			) as Recipe;
-			console.log(recipe);
-			return recipe.name;
+			const recipe = recipeStore.getRecipeById(batch.recipe) as Recipe;
+			return recipe?.name;
 		}
 	};
 

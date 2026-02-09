@@ -1,18 +1,17 @@
 <script setup lang="ts">
-import type { ObjectId } from 'mongoose';
 const bottleStore = useBottleStore();
 bottleStore.getBottles();
 const inventoryStore = useInventoryStore();
 
-const bottles = ref([]) as Ref<
+const bottles = ref<
 	Array<{
-		_id: string | ObjectId;
+		_id: string;
 		bottle: string;
 		bar: number;
 		office: number;
 		boxed: number;
 	}>
->;
+>([]);
 watch(
 	() => bottleStore.bottles,
 	() => {
@@ -38,15 +37,16 @@ const filteredBottles = computed(() => {
 
 const submitInventory = () => {
 	const date = new Date();
-	const inventory = ref();
+	const inventory = ref<Record<string, number>>({});
 	bottles.value.forEach((bottle) => {
-		inventory.value[bottle._id.toString()] =
+		inventory.value[bottle._id] =
 			bottle.bar + bottle.office + bottle.boxed * 12;
 	});
 	inventoryStore.inventory = {
-		_id: undefined as unknown as ObjectId,
+		_id: '',
 		date: date,
-		items: inventory.value,
+		item: '',
+		quantity: 0,
 	};
 	inventoryStore.updateInventory();
 };
@@ -71,7 +71,7 @@ const submitInventory = () => {
 						@click="search = ''" />
 				</template>
 			</UInput>
-			<UButton>Submit Inventory</UButton>
+			<UButton @click="submitInventory">Submit Inventory</UButton>
 		</div>
 		<div class="grid grid-cols-6 gap-3 text-center text-xl font-bold underline">
 			<div class="col-span-2">

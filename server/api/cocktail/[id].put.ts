@@ -1,10 +1,11 @@
 import { Cocktail } from '~/server/models/cocktail.schema';
 
 export default defineEventHandler(async (event) => {
+	const id = event.context.params?.id;
+	const body = await readBody(event);
+	const sanitized = sanitize(body);
 	try {
-		const id = event.context.params?.id;
-		const body = await readBody(event);
-		const updatedCocktail = await Cocktail.findByIdAndUpdate(id, body, {
+		const updatedCocktail = await Cocktail.findByIdAndUpdate(id, sanitized, {
 			new: true,
 		});
 		if (!updatedCocktail) {
@@ -15,7 +16,6 @@ export default defineEventHandler(async (event) => {
 		}
 		return updatedCocktail;
 	} catch (error) {
-		console.error('Error updating cocktail:', error);
 		throw createError({
 			statusCode: 500,
 			statusMessage: 'Error updating cocktail',

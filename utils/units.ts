@@ -24,7 +24,7 @@ export const itemInventoryTypes = computed(() => {
 	const filteredItems = itemStore.items.filter((item) => item.type);
 	const allTypes = ref([]) as Ref<string[]>;
 	filteredItems.forEach((item) => {
-		if (!allTypes.value.includes(item.type)) {
+		if (item.type && !allTypes.value.includes(item.type)) {
 			allTypes.value.push(item.type);
 		}
 	});

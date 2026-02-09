@@ -1,20 +1,19 @@
 import { defineStore } from 'pinia';
 import { ref } from 'vue';
 import type { Production } from '~/types';
-import type { ObjectId } from 'mongoose';
 
-export const uesProductionStore = defineStore('productions', () => {
+export const useProductionStore = defineStore('productions', () => {
 	// State
 	const productions = ref<Production[]>([]);
 	const production = ref<Production>({
-		_id: undefined as unknown as ObjectId,
+		_id: '',
 		date: new Date(),
 		vessel: [],
-		bottle: undefined as unknown as ObjectId,
+		bottle: '',
 		bottling: {
-			glassware: undefined as unknown as ObjectId,
-			cap: undefined as unknown as ObjectId,
-			label: undefined as unknown as ObjectId,
+			glassware: '',
+			cap: '',
+			label: '',
 		},
 		quantity: 0,
 		productionCost: 0,
@@ -83,7 +82,7 @@ export const uesProductionStore = defineStore('productions', () => {
 				method: 'DELETE',
 			});
 			productions.value = productions.value.filter(
-				(p) => p._id.toString() !== id
+				(p) => p._id !== id
 			);
 		} catch (error) {
 			console.error('Error deleting production:', error);
@@ -92,14 +91,14 @@ export const uesProductionStore = defineStore('productions', () => {
 
 	const resetProduction = (): void => {
 		production.value = {
-			_id: undefined as unknown as ObjectId,
+			_id: '',
 			date: new Date(),
 			vessel: [],
-			bottle: undefined as unknown as ObjectId,
+			bottle: '',
 			bottling: {
-				glassware: undefined as unknown as ObjectId,
-				cap: undefined as unknown as ObjectId,
-				label: undefined as unknown as ObjectId,
+				glassware: '',
+				cap: '',
+				label: '',
 			},
 			quantity: 0,
 			productionCost: 0,
@@ -110,7 +109,7 @@ export const uesProductionStore = defineStore('productions', () => {
 	// Getters
 	const getProductionsByDate = (date: Date): Production[] => {
 		return productions.value.filter(
-			(p) => p.date.toDateString() === date.toDateString()
+			(p) => new Date(p.date).toDateString() === date.toDateString()
 		);
 	};
 

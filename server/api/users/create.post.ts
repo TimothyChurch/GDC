@@ -1,8 +1,18 @@
+import bcrypt from "bcrypt";
+
 export default defineEventHandler(async (event) => {
 	const body = await readBody(event);
+	const validated = await validateBody(body, userCreateSchema);
+	const sanitized = sanitize(validated);
 	try {
-		return await new User(body).save();
+		sanitized.password = await bcrypt.hash(sanitized.password, 10);
+		const user = await new User(sanitized).save();
+		const { password, ...userWithoutPassword } = user.toObject();
+		return userWithoutPassword;
 	} catch (error) {
-		return error;
+		throw createError({
+			statusCode: 500,
+			statusMessage: "Failed to create user",
+		});
 	}
 });

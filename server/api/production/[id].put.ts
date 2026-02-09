@@ -1,8 +1,9 @@
 export default defineEventHandler(async (event) => {
+	const id = event.context.params?.id;
+	const body = await readBody(event);
+	const sanitized = sanitize(body);
 	try {
-		const id = event.context.params?.id;
-		const body = await readBody(event);
-		const updatedProduction = await Production.findByIdAndUpdate(id, body, {
+		const updatedProduction = await Production.findByIdAndUpdate(id, sanitized, {
 			new: true,
 		});
 		if (!updatedProduction) {
@@ -13,7 +14,6 @@ export default defineEventHandler(async (event) => {
 		}
 		return updatedProduction;
 	} catch (error) {
-		console.error(error);
 		throw createError({
 			statusCode: 500,
 			statusMessage: 'Server error occurred while updating the production.',

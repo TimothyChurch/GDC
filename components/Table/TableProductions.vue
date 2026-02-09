@@ -1,6 +1,6 @@
 <script setup>
 // Access needed stores
-const productionsStore = uesProductionStore();
+const productionsStore = useProductionStore();
 const vesselStore = useVesselStore();
 const bottlestore = useBottleStore();
 // Columns for table data

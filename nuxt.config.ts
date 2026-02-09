@@ -42,6 +42,7 @@ export default defineNuxtConfig({
       metapixel: {
         default: { id: "1254208522870414" },
       },
+      wsUrl: process.env.NUXT_PUBLIC_WS_URL || "ws://localhost:1880/ws",
     },
   },
 });

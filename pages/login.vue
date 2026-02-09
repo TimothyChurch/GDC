@@ -1,14 +1,10 @@
 <script setup lang="ts">
-import { ref } from "vue";
-import { useRouter } from "vue-router";
-
 const router = useRouter();
 const { login } = useAuth();
 
 const user = useCookie("user", {
   default: () => ({
     email: "",
-    password: "",
     authenticated: false,
     data: {},
   }),
@@ -21,18 +17,17 @@ onMounted(() => {
 });
 
 const email = ref("");
-
 const password = ref("");
 const error = ref("");
 
 const handleLogin = async () => {
-  console.log("email:", email.value, "password:", password.value);
-  user.value.email = email.value;
-  user.value.password = password.value;
+  error.value = "";
   try {
-    await login();
+    const success = await login(email.value, password.value);
+    if (!success) {
+      error.value = "Invalid email or password.";
+    }
   } catch (e) {
-    console.error("Login error:", e);
     error.value = "An error occurred during login. Please try again.";
   }
 };
@@ -55,7 +50,7 @@ const handleLogin = async () => {
       >
         <UFormGroup label="Email address" name="email">
           <UInput
-            v-model="user.email"
+            v-model="email"
             type="email"
             autocomplete="email"
             required
@@ -64,7 +59,7 @@ const handleLogin = async () => {
         </UFormGroup>
         <UFormGroup label="Password" name="password">
           <UInput
-            v-model="user.password"
+            v-model="password"
             type="password"
             autocomplete="current-password"
             required

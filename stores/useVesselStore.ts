@@ -1,24 +1,23 @@
 import { defineStore } from 'pinia';
-import type { ObjectId } from 'mongoose';
 import type { Vessel } from '~/types';
 
 export const useVesselStore = defineStore('vessels', () => {
 	// State
 	const vessels = ref<Vessel[]>([]);
 	const vessel = ref<Vessel>({
-		_id: undefined as unknown as ObjectId,
+		_id: '',
 		name: '',
 		type: '',
 		stats: {
-			weight: undefined as unknown as number,
+			weight: undefined,
 			weightUnit: '',
-			volume: undefined as unknown as number,
+			volume: undefined,
 			volumeUnit: '',
 		},
 		barrel: {
 			size: '',
 			char: '',
-			cost: undefined as unknown as number,
+			cost: undefined,
 		},
 		contents: [],
 		current: {
@@ -27,7 +26,7 @@ export const useVesselStore = defineStore('vessels', () => {
 			abv: 0,
 			value: 0,
 		},
-		cost: undefined as unknown as number,
+		cost: undefined,
 	});
 	const fermenters = computed(() =>
 		vessels.value.filter((v) => v.type === 'Fermenter')
@@ -56,7 +55,7 @@ export const useVesselStore = defineStore('vessels', () => {
 
 	const getVesselById = (id: string) => {
 		try {
-			return vessels.value.find((v) => v._id.toString() === id);
+			return vessels.value.find((v) => v._id === id);
 		} catch (error) {
 			console.error('Error fetching vessel:', error);
 		}
@@ -64,11 +63,11 @@ export const useVesselStore = defineStore('vessels', () => {
 
 	const setVessel = (id: string) => {
 		resetVessel();
-		vessel.value = vessels.value.find((v) => v._id.toString() === id) as Vessel;
+		vessel.value = vessels.value.find((v) => v._id === id) as Vessel;
 	};
 
 	const updateVessel = async (): Promise<void> => {
-		if (vessel.value.contents.length > 0) {
+		if (vessel.value.contents && vessel.value.contents.length > 0) {
 			vessel.value.current = {
 				volume: vessel.value.contents.reduce((acc, c) => acc + c.volume, 0),
 				volumeUnit: vessel.value.contents[0].volumeUnit,
@@ -112,7 +111,7 @@ export const useVesselStore = defineStore('vessels', () => {
 			await $fetch(`/api/vessel/${id}`, {
 				method: 'DELETE',
 			});
-			vessels.value = vessels.value.filter((v) => v._id.toString() !== id);
+			vessels.value = vessels.value.filter((v) => v._id !== id);
 		} catch (error) {
 			console.error('Error deleting vessel:', error);
 		}
@@ -120,19 +119,19 @@ export const useVesselStore = defineStore('vessels', () => {
 
 	const resetVessel = (): void => {
 		vessel.value = {
-			_id: undefined as unknown as ObjectId,
+			_id: '',
 			name: '',
 			type: '',
 			stats: {
-				weight: undefined as unknown as number,
+				weight: undefined,
 				weightUnit: '',
-				volume: undefined as unknown as number,
+				volume: undefined,
 				volumeUnit: '',
 			},
 			barrel: {
 				size: '',
 				char: '',
-				cost: undefined as unknown as number,
+				cost: undefined,
 			},
 			current: {
 				volume: 0,
@@ -141,7 +140,7 @@ export const useVesselStore = defineStore('vessels', () => {
 				value: 0,
 			},
 			contents: [],
-			cost: undefined as unknown as number,
+			cost: undefined,
 		};
 	};
 

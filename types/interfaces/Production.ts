@@ -1,14 +1,12 @@
-import type { ObjectId } from 'mongoose';
-
 export interface Production {
-	_id: ObjectId;
+	_id: string;
 	date: Date;
-	vessel: ObjectId[];
-	bottle: ObjectId;
+	vessel: string[];
+	bottle: string;
 	bottling: {
-		glassware: ObjectId;
-		cap: ObjectId;
-		label: ObjectId;
+		glassware: string;
+		cap: string;
+		label: string;
 	};
 	quantity: number;
 	productionCost: number;

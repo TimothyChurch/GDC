@@ -1,36 +1,43 @@
 export const useAuth = () => {
   const router = useRouter();
-  const login = async () => {
+
+  const login = async (email: string, password: string) => {
     const user = useCookie("user", {
       default: () => ({
         email: "",
-        password: "",
         authenticated: false,
         data: {},
       }),
+      sameSite: "strict" as const,
+      secure: true,
     });
 
     if (user.value.authenticated) {
-      return;
-    } else {
-      console.log("Logging in...");
-      console.log("User:", user.value.password);
-      const data = (await $fetch("/api/users/find", {
-        method: "PUT",
-        body: JSON.stringify({
-          email: user.value.email,
-          password: user.value.password,
-        }),
-      })) as unknown as Array<{ _id: string; email: string; password: string }>;
-      console.log(data);
-      if (data.length > 0) {
-        user.value.authenticated = true;
-        user.value.data = data[0];
-        router.push("/admin/dashboard");
-        return true;
-      }
+      return true;
     }
+
+    const data = (await $fetch("/api/users/find", {
+      method: "PUT",
+      body: JSON.stringify({ email, password }),
+    })) as unknown as Array<{ _id: string; email: string; password: string }>;
+
+    if (data.length > 0) {
+      const { password: _, ...userData } = data[0];
+      user.value.authenticated = true;
+      user.value.email = email;
+      user.value.data = userData;
+      router.push("/admin/dashboard");
+      return true;
+    }
+
     return false;
   };
-  return { login };
+
+  const logout = () => {
+    const user = useCookie("user");
+    user.value = null;
+    router.push("/login");
+  };
+
+  return { login, logout };
 };

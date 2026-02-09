@@ -1,13 +1,12 @@
-import type { ObjectId } from 'mongoose';
-
 export interface Cocktail {
-	_id: ObjectId;
+	_id: string;
 	name: string;
 	glassware: string;
-	ingredients: { item: ObjectId; amount: number; unit: string }[];
-	cost: number;
+	ingredients: { item: string; amount: number; unit: string }[];
+	cost?: number;
 	price: number;
-	menu: string;
-	description: string;
+	menu?: string;
+	description?: string;
 	directions: string;
+	visible: boolean;
 }

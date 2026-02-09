@@ -1,7 +1,5 @@
-import type { ObjectId } from 'mongoose';
-
 export interface Contents {
-	batch: ObjectId | string;
+	batch: string;
 	volume: number;
 	volumeUnit: string;
 	abv: number;

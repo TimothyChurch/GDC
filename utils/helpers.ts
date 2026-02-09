@@ -1,5 +1,4 @@
 import type { Item, Recipe, Bottle } from '~/types';
-import type { ObjectId } from 'mongoose';
 
 export const latestPrice = (item: Item | string): number => {
 	// Initialize stores and set up ref
@@ -53,7 +52,7 @@ export const latestPrice = (item: Item | string): number => {
 	return 0;
 };
 
-export const recipePrice = (recipe: Recipe | string | ObjectId) => {
+export const recipePrice = (recipe: Recipe | string) => {
 	const itemStore = useItemStore();
 	const recipeStore = useRecipeStore();
 	const selectedRecipe = ref();
@@ -113,8 +112,8 @@ export const recipePrice = (recipe: Recipe | string | ObjectId) => {
 	return total.value;
 };
 
-export const latestProduction = (bottle: string | ObjectId) => {
-	const productionStore = uesProductionStore();
+export const latestProduction = (bottle: string) => {
+	const productionStore = useProductionStore();
 	const sortedProductions = productionStore.productions.sort(
 		(a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()
 	);
@@ -122,6 +121,6 @@ export const latestProduction = (bottle: string | ObjectId) => {
 	return lastProduction;
 };
 
-export const bottleCost = (bottle: string | ObjectId) => {
+export const bottleCost = (bottle: string) => {
 	return latestProduction(bottle)?.bottleCost;
 };

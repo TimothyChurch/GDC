@@ -61,6 +61,10 @@ const columns: TableColumn<Cocktail>[] = [
     cell: ({ row }) => Dollar.format(row.original.price),
   },
   {
+    accessorKey: "visible",
+    header: "Visible",
+    cell: ({ row }) => (row.original.visible ? "Yes" : "No")  },
+  {
     id: "actions",
     cell: ({ row }) => {
       return h(

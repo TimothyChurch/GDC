@@ -1,14 +1,13 @@
 import type { Bottle } from "~/types";
-import type { ObjectId } from "mongoose";
 
 export const useBottleStore = defineStore("bottles", () => {
   const bottles = ref<Bottle[]>([]);
   const bottle = ref<Bottle>({
-    _id: undefined as unknown as ObjectId,
+    _id: '',
     name: "",
     type: "bottle",
     abv: 0,
-    recipe: "" as unknown as ObjectId,
+    recipe: '',
     class: "",
     price: 0,
     img: "",
@@ -24,19 +23,19 @@ export const useBottleStore = defineStore("bottles", () => {
   };
   getBottles();
 
-  const setBottle = (id: string | ObjectId) => {
+  const setBottle = (id: string) => {
     bottle.value = bottles.value.find(
-      (b) => b._id.toString() === id
-    ) as unknown as Bottle;
+      (b) => b._id === id
+    ) as Bottle;
   };
 
   const resetBottle = () => {
     bottle.value = {
-      _id: undefined as unknown as ObjectId,
+      _id: '',
       name: "",
       type: "bottle",
       abv: 0,
-      recipe: "" as unknown as ObjectId,
+      recipe: '',
       class: "",
       price: 0,
       img: "",
@@ -62,7 +61,7 @@ export const useBottleStore = defineStore("bottles", () => {
     return;
   };
 
-  const deleteBottle = async (id: any): Promise<void> => {
+  const deleteBottle = async (id: string): Promise<void> => {
     await $fetch(`/api/bottle/${id}`, {
       method: "DELETE",
     });
@@ -89,12 +88,12 @@ export const useBottleStore = defineStore("bottles", () => {
   };
 
   const getBottleById = (id: string): Bottle =>
-    bottles.value.find((b) => b._id.toString() === id) as unknown as Bottle;
+    bottles.value.find((b) => b._id === id) as Bottle;
 
   const selectBottle = (id: string) => {
     bottle.value = bottles.value.find(
-      (b) => b._id.toString() === id
-    ) as unknown as Bottle;
+      (b) => b._id === id
+    ) as Bottle;
   };
 
   return {

@@ -1,10 +1,11 @@
 import { Vessel } from '~/server/models/vessel.schema';
 
 export default defineEventHandler(async (event) => {
+	const id = event.context.params?.id;
+	const body = await readBody(event);
+	const sanitized = sanitize(body);
 	try {
-		const id = event.context.params?.id;
-		const body = await readBody(event);
-		const updatedVessel = await Vessel.findByIdAndUpdate(id, body, {
+		const updatedVessel = await Vessel.findByIdAndUpdate(id, sanitized, {
 			new: true,
 		});
 		if (!updatedVessel) {
@@ -15,7 +16,6 @@ export default defineEventHandler(async (event) => {
 		}
 		return updatedVessel;
 	} catch (error) {
-		console.error(error);
 		throw createError({
 			statusCode: 500,
 			statusMessage: 'Server error occurred while updating the vessel.',

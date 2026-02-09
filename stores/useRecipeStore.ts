@@ -1,11 +1,10 @@
-import type { ObjectId } from "mongoose";
 import type { Recipe } from "~/types";
 
 export const useRecipeStore = defineStore("recipes", () => {
   // State
   const recipes = ref<Recipe[]>([]);
   const recipe = ref<Recipe>({
-    _id: undefined as unknown as ObjectId,
+    _id: '',
     name: "",
     class: "",
     type: "",
@@ -44,7 +43,7 @@ export const useRecipeStore = defineStore("recipes", () => {
 
   const resetRecipe = (): void => {
     recipe.value = {
-      _id: undefined as unknown as ObjectId,
+      _id: '',
       name: "",
       class: "",
       type: "",
@@ -67,7 +66,7 @@ export const useRecipeStore = defineStore("recipes", () => {
   };
 
   const getRecipeById = (id: string): Recipe | undefined => {
-    return recipes.value.find((rec) => rec._id.toString() === id);
+    return recipes.value.find((rec) => rec._id === id);
   };
 
   return {

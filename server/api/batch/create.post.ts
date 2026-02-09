@@ -1,16 +1,17 @@
 import { Batch } from "~/server/models/batch.schema";
 
 export default defineEventHandler(async (event) => {
-  try {
-    const body = await readBody(event);
-    const newBatch = new Batch(body);
-    await newBatch.save();
-    return newBatch;
-  } catch (error) {
-    console.error(error);
-    throw createError({
-      statusCode: 500,
-      statusMessage: "Server error occurred while creating a new batch.",
-    });
-  }
+	const body = await readBody(event);
+	await validateBody(body, batchCreateSchema);
+	const sanitized = sanitize(body);
+	try {
+		const newBatch = new Batch(sanitized);
+		await newBatch.save();
+		return newBatch;
+	} catch (error) {
+		throw createError({
+			statusCode: 500,
+			statusMessage: "Server error occurred while creating a new batch.",
+		});
+	}
 });

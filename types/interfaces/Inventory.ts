@@ -1,7 +1,7 @@
-import type { ObjectId } from 'mongoose';
-
 export interface Inventory {
-	_id: ObjectId;
+	_id: string;
 	date: Date;
-	items: { [itemId: string]: number };
+	item: string;
+	location?: string;
+	quantity: number;
 }

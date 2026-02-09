@@ -1,13 +1,12 @@
 import { defineStore } from "pinia";
 import { ref } from "vue";
 import type { Cocktail } from "~/types";
-import type { ObjectId } from "mongoose";
 
 export const useCocktailStore = defineStore("cocktails", () => {
   // State
   const cocktails = ref<Cocktail[]>([]);
   const cocktail = ref<Cocktail>({
-    _id: undefined as unknown as ObjectId,
+    _id: '',
     name: "",
     glassware: "",
     ingredients: [],
@@ -16,11 +15,10 @@ export const useCocktailStore = defineStore("cocktails", () => {
     menu: "",
     description: "",
     directions: "",
+    visible: true,
   });
 
   const itemStore = useItemStore();
-
-  // Getters
 
   // CRUD actions
   const getCocktails = async (): Promise<void> => {
@@ -35,7 +33,7 @@ export const useCocktailStore = defineStore("cocktails", () => {
   getCocktails();
 
   const setCocktail = (id: string) => {
-    const foundCocktail = cocktails.value.find((c) => c._id.toString() === id);
+    const foundCocktail = cocktails.value.find((c) => c._id === id);
     if (foundCocktail) {
       cocktail.value = foundCocktail;
     } else {
@@ -61,7 +59,7 @@ export const useCocktailStore = defineStore("cocktails", () => {
 
   const resetCocktail = (): void => {
     cocktail.value = {
-      _id: undefined as unknown as ObjectId,
+      _id: '',
       name: "",
       glassware: "",
       ingredients: [],
@@ -70,6 +68,7 @@ export const useCocktailStore = defineStore("cocktails", () => {
       menu: "",
       description: "",
       directions: "",
+      visible: true,
     };
   };
 
@@ -81,15 +80,15 @@ export const useCocktailStore = defineStore("cocktails", () => {
   };
 
   const getCocktailById = (id: string): Cocktail | undefined => {
-    return cocktails.value.find((c) => c._id.toString() === id);
+    return cocktails.value.find((c) => c._id === id);
   };
 
   const search = (searchTerm: string): Cocktail[] => {
     return cocktails.value.filter(
       (c) =>
         c.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        c.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        c.menu.toLowerCase().includes(searchTerm.toLowerCase())
+        c.description?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        c.menu?.toLowerCase().includes(searchTerm.toLowerCase())
     );
   };
 
@@ -111,14 +110,14 @@ export const useCocktailStore = defineStore("cocktails", () => {
     const selectedCocktail = ref();
     if (typeof cocktail === "string") {
       selectedCocktail.value = cocktails.value.find(
-        (c) => c._id.toString() === cocktail
+        (c) => c._id === cocktail
       );
     } else {
       selectedCocktail.value = cocktail;
     }
     return selectedCocktail.value.ingredients.reduce(
-      (total: number, ingredient: { item: ObjectId; amount: number }) => {
-        let cost = itemStore.getPriceById(ingredient.item.toString()) || 0;
+      (total: number, ingredient: { item: string; amount: number }) => {
+        let cost = itemStore.getPriceById(ingredient.item) || 0;
         return total + ingredient.amount * cost;
       },
       0

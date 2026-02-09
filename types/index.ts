@@ -4,7 +4,6 @@ import type { Cocktail } from './interfaces/Cocktail';
 import type { Contact } from './interfaces/Contact';
 import type { Contents } from './interfaces/Contents';
 import type { Inventory } from './interfaces/Inventory';
-import type { InventoryItems } from './interfaces/InventoryItems';
 import type { Item } from './interfaces/Item';
 import type { Production } from './interfaces/Production';
 import type { PurchaseOrder } from './interfaces/PurchaseOrder';
@@ -18,7 +17,6 @@ export type {
 	Cocktail,
 	Contact,
 	Inventory,
-	InventoryItems,
 	Item,
 	Production,
 	PurchaseOrder,
