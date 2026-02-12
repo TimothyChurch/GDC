@@ -4,11 +4,10 @@ import type { Cocktail } from "~/types";
 import type { Row } from "@tanstack/vue-table";
 
 const cocktailStore = useCocktailStore();
+const { confirm } = useDeleteConfirm();
 
 const UButton = resolveComponent("UButton");
 const UDropdownMenu = resolveComponent("UDropdownMenu");
-
-const toast = useToast();
 
 const search = ref("");
 
@@ -105,13 +104,11 @@ function getRowItems(row: Row<Cocktail>) {
     {
       label: "Delete cocktail",
       variant: "danger",
-      onClick() {
-        cocktailStore.deleteCocktail(row.original._id.toString());
-        toast.add({
-          title: "Cocktail deleted!",
-          color: "error",
-          icon: "i-lucide-trash",
-        });
+      async onClick() {
+        const confirmed = await confirm("Cocktail", row.original.name);
+        if (confirmed) {
+          cocktailStore.deleteCocktail(row.original._id.toString());
+        }
       },
     },
   ];
@@ -133,34 +130,12 @@ const openModal = async () => await modal.open();
     :global-filter="search"
     :data="cocktailStore.cocktails"
     :columns="columns"
+    :loading="cocktailStore.loading"
+    :empty="{ icon: 'i-lucide-wine', label: 'No cocktails found' }"
     class="max-h-full"
   >
     <template #expanded="{ row }">
       <TableCocktailExpand :ingredients="row.original.ingredients" />
     </template>
   </UTable>
-  <!-- <UContainer>
-    <div class="sticky top-0 flex justify-between">
-      <UInput v-model="search" placeholder="Search cocktails" class="mb-4" />
-      <UButton
-        icon="i-heroicons-plus-circle"
-        size="xl"
-        @click="newCocktail"
-        variant="ghost"
-        >Add Cocktail</UButton
-      >
-    </div>
-    <div class="overflow-y-auto">
-      <UTable
-        sticky
-        :global-filter="search"
-        :data="cocktailStore.cocktails"
-        :columns="columns"
-      >
-        <template #expanded="{ row }">
-          <TableCocktailExpand :ingredients="row.original.ingredients" />
-        </template>
-      </UTable>
-    </div>
-  </UContainer> -->
 </template>

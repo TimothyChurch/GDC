@@ -177,7 +177,7 @@ const saveProduction = () => {
 					Dollar.format(productionCost / productionsStore.production.quantity)
 				}}
 			</UFormField>
-			<UButton type="submit">Submit</UButton>
+			<UButton type="submit" :loading="productionsStore.saving">Submit</UButton>
 		</UForm>
 	</div>
 </template>

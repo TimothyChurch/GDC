@@ -3,6 +3,7 @@ const router = useRouter();
 const batchStore = useBatchStore();
 const recipeStore = useRecipeStore();
 const vesselStore = useVesselStore();
+const { confirm } = useDeleteConfirm();
 
 const columns = [
 	{ key: 'recipe', label: 'Recipe' },
@@ -38,8 +39,11 @@ const editItem = (row) => {
 	formSelection.value = 'FormBatch';
 	toggleFormModal();
 };
-const deleteItem = (row) => {
-	batchStore.deleteBatch(row._id.toString());
+const deleteItem = async (row) => {
+	const confirmed = await confirm('Batch', recipeStore.getRecipeById(row.recipe)?.name);
+	if (confirmed) {
+		batchStore.deleteBatch(row._id.toString());
+	}
 };
 </script>
 
@@ -47,7 +51,13 @@ const deleteItem = (row) => {
 	<div>
 		<UTable
 			:rows="batchStore.batches"
-			:columns="columns">
+			:columns="columns"
+			:loading="batchStore.loading">
+			<template #empty-state>
+				<div class="flex flex-col items-center justify-center py-6 gap-3">
+					<span class="text-sm text-gray-500">No batches found</span>
+				</div>
+			</template>
 			<template #recipe-data="{ row }">
 				{{ recipeStore.getRecipeById(row.recipe)?.name }}
 			</template>

@@ -2,8 +2,12 @@ import { defineStore } from 'pinia';
 import type { Vessel } from '~/types';
 
 export const useVesselStore = defineStore('vessels', () => {
+	const toast = useToast();
+
 	// State
 	const vessels = ref<Vessel[]>([]);
+	const loading = ref(false);
+	const saving = ref(false);
 	const vessel = ref<Vessel>({
 		_id: '',
 		name: '',
@@ -44,11 +48,14 @@ export const useVesselStore = defineStore('vessels', () => {
 
 	// Actions
 	const getVessels = async (): Promise<void> => {
+		loading.value = true;
 		try {
 			const response = await $fetch('/api/vessel');
 			vessels.value = response as Vessel[];
 		} catch (error) {
 			console.error('Error fetching vessels:', error);
+		} finally {
+			loading.value = false;
 		}
 	};
 	getVessels();
@@ -81,39 +88,42 @@ export const useVesselStore = defineStore('vessels', () => {
 				value: vessel.value.contents.reduce((acc, c) => acc + c.value, 0),
 			};
 		}
-		if (!vessel.value._id) {
-			try {
+		saving.value = true;
+		try {
+			const isNew = !vessel.value._id;
+			if (isNew) {
 				const response = await $fetch('/api/vessel/create', {
 					method: 'POST',
 					body: vessel.value,
 				});
 				vessels.value.push(response as Vessel);
-				resetVessel();
-			} catch (error) {
-				console.error('Error creating vessel:', error);
-			}
-		} else {
-			try {
+			} else {
 				await $fetch(`/api/vessel/${vessel.value._id}`, {
 					method: 'PUT',
 					body: vessel.value,
 				});
-
-				resetVessel();
-			} catch (error) {
-				console.error('Error updating vessel:', error);
 			}
+			toast.add({ title: `Vessel ${isNew ? 'created' : 'updated'}`, color: 'success', icon: 'i-lucide-check-circle' });
+			resetVessel();
+		} catch (error: any) {
+			toast.add({ title: 'Failed to save vessel', description: error?.data?.message, color: 'error', icon: 'i-lucide-alert-circle' });
+		} finally {
+			saving.value = false;
 		}
 	};
 
 	const deleteVessel = async (id: string): Promise<void> => {
+		saving.value = true;
 		try {
 			await $fetch(`/api/vessel/${id}`, {
 				method: 'DELETE',
 			});
 			vessels.value = vessels.value.filter((v) => v._id !== id);
-		} catch (error) {
-			console.error('Error deleting vessel:', error);
+			toast.add({ title: 'Vessel deleted', color: 'success', icon: 'i-lucide-check-circle' });
+		} catch (error: any) {
+			toast.add({ title: 'Failed to delete vessel', description: error?.data?.message, color: 'error', icon: 'i-lucide-alert-circle' });
+		} finally {
+			saving.value = false;
 		}
 	};
 
@@ -164,6 +174,8 @@ export const useVesselStore = defineStore('vessels', () => {
 	return {
 		vessels,
 		vessel,
+		loading,
+		saving,
 		fermenters,
 		mashTuns,
 		stills,

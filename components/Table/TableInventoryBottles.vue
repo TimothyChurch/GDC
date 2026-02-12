@@ -30,7 +30,9 @@ const columns = [
 <template>
 	<div>
 		<UTable
-			:data="bottleStore.bottles">
+			:data="bottleStore.bottles"
+			:loading="bottleStore.loading"
+			:empty="{ icon: 'i-lucide-wine', label: 'No bottles found' }">
 			<!-- <template #stock-data="{ row }">
 				<div
 					v-if="bottleStockCheck(row._id).lowStock"

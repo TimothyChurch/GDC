@@ -129,7 +129,7 @@ const saveRecipe = () => {
 			<UFormField label="Directions" name="directions">
 				<UTextarea v-model="recipeStore.recipe.directions" />
 			</UFormField>
-			<UButton type="submit" class="my-5 col-span-2">Save Recipe</UButton>
+			<UButton type="submit" :loading="recipeStore.saving" class="my-5 col-span-2">Save Recipe</UButton>
 		</UForm>
 	</UContainer>
 </template>

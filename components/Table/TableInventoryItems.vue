@@ -52,7 +52,13 @@ const columns = [
 		</UButtonGroup>
 		<UTable
 			:rows="filteredRows"
-			:columns="columns">
+			:columns="columns"
+			:loading="itemStore.loading">
+			<template #empty-state>
+				<div class="flex flex-col items-center justify-center py-6 gap-3">
+					<span class="text-sm text-gray-500">No inventory items found</span>
+				</div>
+			</template>
 		</UTable>
 	</div>
 </template>

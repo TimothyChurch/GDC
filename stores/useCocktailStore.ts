@@ -3,8 +3,12 @@ import { ref } from "vue";
 import type { Cocktail } from "~/types";
 
 export const useCocktailStore = defineStore("cocktails", () => {
+  const toast = useToast();
+
   // State
   const cocktails = ref<Cocktail[]>([]);
+  const loading = ref(false);
+  const saving = ref(false);
   const cocktail = ref<Cocktail>({
     _id: '',
     name: "",
@@ -22,11 +26,14 @@ export const useCocktailStore = defineStore("cocktails", () => {
 
   // CRUD actions
   const getCocktails = async (): Promise<void> => {
+    loading.value = true;
     try {
       const response = await $fetch("/api/cocktail");
       cocktails.value = response as Cocktail[];
     } catch (e) {
       console.error("Error fetching cocktails:", e);
+    } finally {
+      loading.value = false;
     }
     sortCocktails();
   };
@@ -42,19 +49,28 @@ export const useCocktailStore = defineStore("cocktails", () => {
   };
 
   const updateCocktail = async (): Promise<void> => {
-    if (!cocktail.value._id) {
-      await $fetch("/api/cocktail/create", {
-        method: "POST",
-        body: JSON.stringify(cocktail.value),
-      });
-    } else {
-      await $fetch(`/api/cocktail/${cocktail.value._id}`, {
-        method: "PUT",
-        body: JSON.stringify(cocktail.value),
-      });
+    saving.value = true;
+    try {
+      const isNew = !cocktail.value._id;
+      if (isNew) {
+        await $fetch("/api/cocktail/create", {
+          method: "POST",
+          body: JSON.stringify(cocktail.value),
+        });
+      } else {
+        await $fetch(`/api/cocktail/${cocktail.value._id}`, {
+          method: "PUT",
+          body: JSON.stringify(cocktail.value),
+        });
+      }
+      toast.add({ title: `Cocktail ${isNew ? 'created' : 'updated'}`, color: 'success', icon: 'i-lucide-check-circle' });
+      getCocktails();
+      resetCocktail();
+    } catch (error: any) {
+      toast.add({ title: 'Failed to save cocktail', description: error?.data?.message, color: 'error', icon: 'i-lucide-alert-circle' });
+    } finally {
+      saving.value = false;
     }
-    getCocktails();
-    resetCocktail();
   };
 
   const resetCocktail = (): void => {
@@ -73,10 +89,18 @@ export const useCocktailStore = defineStore("cocktails", () => {
   };
 
   const deleteCocktail = async (id: string): Promise<void> => {
-    await $fetch(`/api/cocktail/${id}`, {
-      method: "DELETE",
-    });
-    await getCocktails();
+    saving.value = true;
+    try {
+      await $fetch(`/api/cocktail/${id}`, {
+        method: "DELETE",
+      });
+      toast.add({ title: 'Cocktail deleted', color: 'success', icon: 'i-lucide-check-circle' });
+      await getCocktails();
+    } catch (error: any) {
+      toast.add({ title: 'Failed to delete cocktail', description: error?.data?.message, color: 'error', icon: 'i-lucide-alert-circle' });
+    } finally {
+      saving.value = false;
+    }
   };
 
   const getCocktailById = (id: string): Cocktail | undefined => {
@@ -127,6 +151,8 @@ export const useCocktailStore = defineStore("cocktails", () => {
   return {
     cocktails,
     cocktail,
+    loading,
+    saving,
     getCocktails,
     setCocktail,
     updateCocktail,

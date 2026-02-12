@@ -2,6 +2,7 @@
 const purchaseOrderStore = usePurchaseOrderStore();
 const contactStore = useContactStore();
 const itemStore = useItemStore();
+const { confirm } = useDeleteConfirm();
 
 const columns = [
 	{
@@ -60,7 +61,7 @@ const actionItems = (row) => [
 		{
 			label: 'Delete',
 			icon: 'i-heroicons-trash-20-solid',
-			click: () => deletePurchaseOrder(row._id),
+			click: () => deletePurchaseOrder(row),
 		},
 	],
 ];
@@ -74,8 +75,12 @@ const editPurchaseOrder = (row) => {
 	formSelection.value = 'FormPurchaseOrder';
 	toggleFormModal();
 };
-const deletePurchaseOrder = (id) => {
-	purchaseOrderStore.deletePurchaseOrder(id);
+const deletePurchaseOrder = async (row) => {
+	const vendorName = contactStore.getContactById(row.vendor)?.businessName || 'this order';
+	const confirmed = await confirm('Purchase Order', vendorName);
+	if (confirmed) {
+		purchaseOrderStore.deletePurchaseOrder(row._id);
+	}
 };
 </script>
 
@@ -84,7 +89,13 @@ const deletePurchaseOrder = (id) => {
 		<UTable
 			:rows="purchaseOrderStore.purchaseOrders"
 			:columns="columns"
+			:loading="purchaseOrderStore.loading"
 			v-model:expand="expand">
+			<template #empty-state>
+				<div class="flex flex-col items-center justify-center py-6 gap-3">
+					<span class="text-sm text-gray-500">No purchase orders found</span>
+				</div>
+			</template>
 			<template #vendor-data="{ row }">
 				<span v-if="contactStore.getContactById(row.vendor)?.firstName">
 					{{ contactStore.getContactById(row.vendor).firstName }}

@@ -186,7 +186,7 @@ const submitForm = async () => {
     </div>
     <UDivider />
     <div class="flex justify-center my-3">
-      <UButton color="primary" @click="submitForm"> Submit </UButton>
+      <UButton color="primary" :loading="purchaseOrderStore.saving" @click="submitForm"> Submit </UButton>
     </div>
   </div>
 </template>

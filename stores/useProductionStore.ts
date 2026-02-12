@@ -3,8 +3,12 @@ import { ref } from 'vue';
 import type { Production } from '~/types';
 
 export const useProductionStore = defineStore('productions', () => {
+	const toast = useToast();
+
 	// State
 	const productions = ref<Production[]>([]);
+	const loading = ref(false);
+	const saving = ref(false);
 	const production = ref<Production>({
 		_id: '',
 		date: new Date(),
@@ -22,11 +26,14 @@ export const useProductionStore = defineStore('productions', () => {
 
 	// Actions
 	const getProductions = async (): Promise<void> => {
+		loading.value = true;
 		try {
 			const response = await $fetch('/api/production');
 			productions.value = response as Production[];
 		} catch (error) {
 			console.error('Error fetching productions:', error);
+		} finally {
+			loading.value = false;
 		}
 	};
 	getProductions();
@@ -43,19 +50,16 @@ export const useProductionStore = defineStore('productions', () => {
 	const createProduction = async (): Promise<void> => {};
 
 	const updateProduction = async (): Promise<void> => {
-		if (!production.value._id) {
-			try {
+		saving.value = true;
+		try {
+			const isNew = !production.value._id;
+			if (isNew) {
 				const response = await $fetch('/api/production/create', {
 					method: 'POST',
 					body: production.value,
 				});
 				productions.value.push(response as Production);
-				resetProduction();
-			} catch (error) {
-				console.error('Error creating production:', error);
-			}
-		} else {
-			try {
+			} else {
 				const response = await $fetch(
 					`/api/production/${production.value._id}`,
 					{
@@ -69,14 +73,18 @@ export const useProductionStore = defineStore('productions', () => {
 				if (index !== -1) {
 					productions.value[index] = response as Production;
 				}
-				resetProduction();
-			} catch (error) {
-				console.error('Error updating production:', error);
 			}
+			toast.add({ title: `Production ${isNew ? 'created' : 'updated'}`, color: 'success', icon: 'i-lucide-check-circle' });
+			resetProduction();
+		} catch (error: any) {
+			toast.add({ title: 'Failed to save production', description: error?.data?.message, color: 'error', icon: 'i-lucide-alert-circle' });
+		} finally {
+			saving.value = false;
 		}
 	};
 
 	const deleteProduction = async (id: string): Promise<void> => {
+		saving.value = true;
 		try {
 			await $fetch(`/api/production/${id}`, {
 				method: 'DELETE',
@@ -84,8 +92,11 @@ export const useProductionStore = defineStore('productions', () => {
 			productions.value = productions.value.filter(
 				(p) => p._id !== id
 			);
-		} catch (error) {
-			console.error('Error deleting production:', error);
+			toast.add({ title: 'Production deleted', color: 'success', icon: 'i-lucide-check-circle' });
+		} catch (error: any) {
+			toast.add({ title: 'Failed to delete production', description: error?.data?.message, color: 'error', icon: 'i-lucide-alert-circle' });
+		} finally {
+			saving.value = false;
 		}
 	};
 
@@ -116,6 +127,8 @@ export const useProductionStore = defineStore('productions', () => {
 	return {
 		productions,
 		production,
+		loading,
+		saving,
 		getProductions,
 		getProductionById,
 		createProduction,

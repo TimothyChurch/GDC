@@ -60,7 +60,7 @@ const submitForm = () => {
 			<UFormField label="Phone" name="phone" class="col-span-1">
 				<UInput v-model="contactStore.contact.phone" type="tel" />
 			</UFormField>
-			<UButton type="submit">Submit</UButton>
+			<UButton type="submit" :loading="contactStore.saving">Submit</UButton>
 		</UForm>
 	</UContainer>
 </template>

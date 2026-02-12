@@ -1,7 +1,11 @@
 import type { Bottle } from "~/types";
 
 export const useBottleStore = defineStore("bottles", () => {
+  const toast = useToast();
+
   const bottles = ref<Bottle[]>([]);
+  const loading = ref(false);
+  const saving = ref(false);
   const bottle = ref<Bottle>({
     _id: '',
     name: "",
@@ -16,10 +20,16 @@ export const useBottleStore = defineStore("bottles", () => {
   });
 
   const getBottles = async (): Promise<void> => {
-    const response = await $fetch("/api/bottle");
-    bottles.value = response as Bottle[];
-    sortBottles();
-    return;
+    loading.value = true;
+    try {
+      const response = await $fetch("/api/bottle");
+      bottles.value = response as Bottle[];
+      sortBottles();
+    } catch (e) {
+      console.error("Error fetching bottles:", e);
+    } finally {
+      loading.value = false;
+    }
   };
   getBottles();
 
@@ -42,31 +52,45 @@ export const useBottleStore = defineStore("bottles", () => {
       description: "",
       inStock: true,
     };
-    return;
   };
 
   const updateBottle = async (): Promise<void> => {
-    if (!bottle.value._id) {
-      await $fetch("/api/bottle/create", {
-        method: "POST",
-        body: JSON.stringify(bottle.value),
-      });
-    } else {
-      await $fetch(`/api/bottle/${bottle.value?._id}`, {
-        method: "PUT",
-        body: JSON.stringify(bottle.value),
-      });
+    saving.value = true;
+    try {
+      const isNew = !bottle.value._id;
+      if (isNew) {
+        await $fetch("/api/bottle/create", {
+          method: "POST",
+          body: JSON.stringify(bottle.value),
+        });
+      } else {
+        await $fetch(`/api/bottle/${bottle.value?._id}`, {
+          method: "PUT",
+          body: JSON.stringify(bottle.value),
+        });
+      }
+      toast.add({ title: `Bottle ${isNew ? 'created' : 'updated'}`, color: 'success', icon: 'i-lucide-check-circle' });
+      getBottles();
+    } catch (error: any) {
+      toast.add({ title: 'Failed to save bottle', description: error?.data?.message, color: 'error', icon: 'i-lucide-alert-circle' });
+    } finally {
+      saving.value = false;
     }
-    getBottles();
-    return;
   };
 
   const deleteBottle = async (id: string): Promise<void> => {
-    await $fetch(`/api/bottle/${id}`, {
-      method: "DELETE",
-    });
-    getBottles();
-    return;
+    saving.value = true;
+    try {
+      await $fetch(`/api/bottle/${id}`, {
+        method: "DELETE",
+      });
+      toast.add({ title: 'Bottle deleted', color: 'success', icon: 'i-lucide-check-circle' });
+      getBottles();
+    } catch (error: any) {
+      toast.add({ title: 'Failed to delete bottle', description: error?.data?.message, color: 'error', icon: 'i-lucide-alert-circle' });
+    } finally {
+      saving.value = false;
+    }
   };
 
   const sortBottles = () => {
@@ -99,6 +123,8 @@ export const useBottleStore = defineStore("bottles", () => {
   return {
     bottles,
     bottle,
+    loading,
+    saving,
     getBottles,
     setBottle,
     resetBottle,

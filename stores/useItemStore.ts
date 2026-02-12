@@ -1,8 +1,12 @@
 import type { Item } from "~/types";
 
 export const useItemStore = defineStore("items", () => {
+  const toast = useToast();
+
   // State
   const items = ref<Item[]>([]);
+  const loading = ref(false);
+  const saving = ref(false);
   const item = ref<Item>({
     _id: '',
     name: "",
@@ -17,11 +21,14 @@ export const useItemStore = defineStore("items", () => {
 
   // CRUD actions
   const getItems = async (): Promise<void> => {
+    loading.value = true;
     try {
       const response = await $fetch("/api/item");
       items.value = response as Item[];
     } catch (e) {
       console.error("Error fetching items:", e);
+    } finally {
+      loading.value = false;
     }
   };
   getItems();
@@ -36,21 +43,31 @@ export const useItemStore = defineStore("items", () => {
   };
 
   const updateItem = async (): Promise<Item> => {
-    let response;
-    if (!item.value._id) {
-      response = await $fetch("/api/item/create", {
-        method: "POST",
-        body: JSON.stringify(item.value),
-      });
-    } else {
-      response = await $fetch(`/api/item/${item.value._id}`, {
-        method: "PUT",
-        body: JSON.stringify(item.value),
-      });
+    saving.value = true;
+    try {
+      let response;
+      const isNew = !item.value._id;
+      if (isNew) {
+        response = await $fetch("/api/item/create", {
+          method: "POST",
+          body: JSON.stringify(item.value),
+        });
+      } else {
+        response = await $fetch(`/api/item/${item.value._id}`, {
+          method: "PUT",
+          body: JSON.stringify(item.value),
+        });
+      }
+      toast.add({ title: `Item ${isNew ? 'created' : 'updated'}`, color: 'success', icon: 'i-lucide-check-circle' });
+      getItems();
+      resetItem();
+      return response as Item;
+    } catch (error: any) {
+      toast.add({ title: 'Failed to save item', description: error?.data?.message, color: 'error', icon: 'i-lucide-alert-circle' });
+      throw error;
+    } finally {
+      saving.value = false;
     }
-    getItems();
-    resetItem();
-    return response as Item;
   };
 
   const resetItem = (): void => {
@@ -68,10 +85,18 @@ export const useItemStore = defineStore("items", () => {
   };
 
   const deleteItem = async (id: string): Promise<void> => {
-    await $fetch(`/api/item/${id}`, {
-      method: "DELETE",
-    });
-    await getItems();
+    saving.value = true;
+    try {
+      await $fetch(`/api/item/${id}`, {
+        method: "DELETE",
+      });
+      toast.add({ title: 'Item deleted', color: 'success', icon: 'i-lucide-check-circle' });
+      await getItems();
+    } catch (error: any) {
+      toast.add({ title: 'Failed to delete item', description: error?.data?.message, color: 'error', icon: 'i-lucide-alert-circle' });
+    } finally {
+      saving.value = false;
+    }
   };
 
   const getItemById = (id: string): Item | undefined => {
@@ -153,6 +178,8 @@ export const useItemStore = defineStore("items", () => {
   return {
     items,
     item,
+    loading,
+    saving,
     getItems,
     setItem,
     updateItem,

@@ -163,7 +163,7 @@ const saveCocktail = async () => {
 				</UFormField>
 
 				<div class="flex justify-center space-x-2 mt-4 col-span-6">
-					<UButton type="submit" color="primary">
+					<UButton type="submit" color="primary" :loading="cocktailStore.saving">
 						{{ cocktailStore.cocktail._id ? "Update" : "Create" }} Cocktail
 					</UButton>
 				</div>

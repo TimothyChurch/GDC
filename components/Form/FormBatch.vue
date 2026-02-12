@@ -76,7 +76,7 @@ const saveBatch = async () => {
 				<UFormField label="Batch Cost">
 					{{ Dollar.format(scaledPrice) }}
 				</UFormField>
-				<UButton type="submit"> Save </UButton>
+				<UButton type="submit" :loading="batchStore.saving"> Save </UButton>
 			</div>
 		</UForm>
 	</div>

@@ -1,6 +1,7 @@
 <script setup>
 const contactStore = useContactStore();
 contactStore.getContacts();
+const { confirm } = useDeleteConfirm();
 
 const columns = [
   {
@@ -29,7 +30,7 @@ const items = (row) => [
     {
       label: "Delete",
       icon: "i-heroicons-trash-20-solid",
-      click: () => deleteItem(row._id),
+      click: () => deleteItem(row),
     },
   ],
 ];
@@ -44,8 +45,12 @@ const editItem = (row) => {
   toggleFormModal();
 };
 
-const deleteItem = (row) => {
-  contactStore.deleteContact(row._id);
+const deleteItem = async (row) => {
+  const name = row.businessName || `${row.firstName} ${row.lastName}`;
+  const confirmed = await confirm('Contact', name);
+  if (confirmed) {
+    contactStore.deleteContact(row._id);
+  }
 };
 </script>
 
@@ -54,8 +59,14 @@ const deleteItem = (row) => {
     <UTable
       :rows="contactStore.contacts"
       :columns="columns"
+      :loading="contactStore.loading"
       v-model:expand="expand"
     >
+      <template #empty-state>
+        <div class="flex flex-col items-center justify-center py-6 gap-3">
+          <span class="text-sm text-gray-500">No contacts found</span>
+        </div>
+      </template>
       <template #expand="{ row }">
         <div class="flex gap-3 justify-around">
           <UFormGroup label="Website">

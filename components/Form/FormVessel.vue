@@ -83,6 +83,7 @@ const submitForm = () => {
 				variant="ghost"
 				icon="i-heroicons-check-circle"
 				color="gray"
+				:loading="vesselStore.saving"
 				>Submit</UButton
 			>
 		</UForm>

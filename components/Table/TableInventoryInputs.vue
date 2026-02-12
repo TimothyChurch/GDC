@@ -2,6 +2,7 @@
 import type { Inventory } from '~/types';
 
 const inventoryStore = useInventoryStore();
+const { confirm } = useDeleteConfirm();
 
 const columns = [
 	{
@@ -54,8 +55,11 @@ const editItem = (row: Inventory) => {
 	formSelection.value = 'FormInventory';
 	toggleFormModal();
 };
-const deleteItem = (row: Inventory) => {
-	inventoryStore.deleteInventory(row._id.toString());
+const deleteItem = async (row: Inventory) => {
+	const confirmed = await confirm('Inventory Record');
+	if (confirmed) {
+		inventoryStore.deleteInventory(row._id.toString());
+	}
 };
 </script>
 
@@ -64,7 +68,13 @@ const deleteItem = (row: Inventory) => {
 		<UTable
 			:rows="inventoryStore.inventories"
 			:columns="columns"
+			:loading="inventoryStore.loading"
 			v-model:expand="expand">
+			<template #empty-state>
+				<div class="flex flex-col items-center justify-center py-6 gap-3">
+					<span class="text-sm text-gray-500">No inventory records found</span>
+				</div>
+			</template>
 			<template #expand="{ row }">
 				<UTable
 					:rows="Object.entries(row.items)"

@@ -69,7 +69,7 @@ const handleSubmit = () => {
 						class="w-full" />
 				</UFormField>
 				<div class="flex justify-around col-span-6">
-					<UButton type="submit">Add item</UButton>
+					<UButton type="submit" :loading="itemStore.saving">Add item</UButton>
 				</div>
 			</UForm>
 		</UCard>

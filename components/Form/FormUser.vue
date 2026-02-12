@@ -1,6 +1,8 @@
 <script setup lang="ts">
 import * as yup from 'yup';
 
+const toast = useToast();
+
 const schema = yup.object({
 	firstName: yup.string().required('First name is required'),
 	lastName: yup.string().required('Last name is required'),
@@ -9,6 +11,7 @@ const schema = yup.object({
 	phoneNumber: yup.string(),
 });
 
+const saving = ref(false);
 const newUser = ref({
 	firstName: '',
 	lastName: '',
@@ -18,11 +21,13 @@ const newUser = ref({
 });
 
 const handleSubmit = async () => {
+	saving.value = true;
 	try {
 		await $fetch('/api/users/create', {
 			method: 'POST',
 			body: JSON.stringify(newUser.value),
 		});
+		toast.add({ title: 'User created', color: 'success', icon: 'i-lucide-check-circle' });
 		newUser.value = {
 			firstName: '',
 			lastName: '',
@@ -30,8 +35,10 @@ const handleSubmit = async () => {
 			password: '',
 			phoneNumber: '',
 		};
-	} catch (error) {
-		console.error('Error creating user:', error);
+	} catch (error: any) {
+		toast.add({ title: 'Failed to create user', description: error?.data?.message, color: 'error', icon: 'i-lucide-alert-circle' });
+	} finally {
+		saving.value = false;
 	}
 };
 </script>
@@ -58,7 +65,7 @@ const handleSubmit = async () => {
 			<UFormField label="Phone Number" name="phoneNumber">
 				<UInput v-model="newUser.phoneNumber" placeholder="Enter phone number" />
 			</UFormField>
-			<UButton type="submit" color="primary" class="mt-4">
+			<UButton type="submit" color="primary" :loading="saving" class="mt-4">
 				Create User
 			</UButton>
 		</UForm>

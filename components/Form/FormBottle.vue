@@ -70,7 +70,7 @@ const saveBottle = async () => {
 				<UTextarea v-model="bottleStore.bottle.description" class="w-full" />
 			</UFormField>
 			<div class="col-span-12 justify-around flex">
-				<UButton type="submit">Submit</UButton>
+				<UButton type="submit" :loading="bottleStore.saving">Submit</UButton>
 			</div>
 		</UForm>
 	</div>

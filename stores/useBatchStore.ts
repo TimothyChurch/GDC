@@ -3,8 +3,12 @@ import { ref } from 'vue';
 import type { Batch, Recipe } from '~/types';
 
 export const useBatchStore = defineStore('batches', () => {
+	const toast = useToast();
+
 	// State
 	const batches = ref<Batch[]>([]);
+	const loading = ref(false);
+	const saving = ref(false);
 	const batch = ref<Batch>({
 		_id: '',
 		recipe: '',
@@ -101,8 +105,15 @@ export const useBatchStore = defineStore('batches', () => {
 
 	// Actions
 	const getBatches = async (): Promise<void> => {
-		const response = await $fetch('/api/batch');
-		batches.value = response as Batch[];
+		loading.value = true;
+		try {
+			const response = await $fetch('/api/batch');
+			batches.value = response as Batch[];
+		} catch (e) {
+			console.error('Error fetching batches:', e);
+		} finally {
+			loading.value = false;
+		}
 	};
 	getBatches();
 
@@ -113,26 +124,43 @@ export const useBatchStore = defineStore('batches', () => {
 	};
 
 	const updateBatch = async (): Promise<void> => {
-		if (!batch.value._id) {
-			await $fetch('/api/batch/create', {
-				method: 'POST',
-				body: JSON.stringify(batch.value),
-			});
-		} else {
-			await $fetch(`/api/batch/${batch.value._id}`, {
-				method: 'PUT',
-				body: JSON.stringify(batch.value),
-			});
+		saving.value = true;
+		try {
+			const isNew = !batch.value._id;
+			if (isNew) {
+				await $fetch('/api/batch/create', {
+					method: 'POST',
+					body: JSON.stringify(batch.value),
+				});
+			} else {
+				await $fetch(`/api/batch/${batch.value._id}`, {
+					method: 'PUT',
+					body: JSON.stringify(batch.value),
+				});
+			}
+			toast.add({ title: `Batch ${isNew ? 'created' : 'updated'}`, color: 'success', icon: 'i-lucide-check-circle' });
+			await getBatches();
+			resetBatch();
+		} catch (error: any) {
+			toast.add({ title: 'Failed to save batch', description: error?.data?.message, color: 'error', icon: 'i-lucide-alert-circle' });
+		} finally {
+			saving.value = false;
 		}
-		await getBatches();
-		resetBatch();
 	};
 
 	const deleteBatch = async (id: string): Promise<void> => {
-		await $fetch(`/api/batch/${id}`, {
-			method: 'DELETE',
-		});
-		await getBatches();
+		saving.value = true;
+		try {
+			await $fetch(`/api/batch/${id}`, {
+				method: 'DELETE',
+			});
+			toast.add({ title: 'Batch deleted', color: 'success', icon: 'i-lucide-check-circle' });
+			await getBatches();
+		} catch (error: any) {
+			toast.add({ title: 'Failed to delete batch', description: error?.data?.message, color: 'error', icon: 'i-lucide-alert-circle' });
+		} finally {
+			saving.value = false;
+		}
 	};
 
 	const resetBatch = (): void => {
@@ -245,6 +273,8 @@ export const useBatchStore = defineStore('batches', () => {
 	return {
 		batches,
 		batch,
+		loading,
+		saving,
 		upcomingBatches,
 		brewingBatches,
 		fermentingBatches,

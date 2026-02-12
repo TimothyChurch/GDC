@@ -39,6 +39,8 @@ const onSelect = (row) => {
     <UTable
       :data="bottleStore.bottles"
       :global-filter="searchFilter"
+      :loading="bottleStore.loading"
+      :empty="{ icon: 'i-lucide-wine', label: 'No bottles found' }"
       @select="onSelect"
     />
   </div>

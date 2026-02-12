@@ -3,6 +3,7 @@
 const productionsStore = useProductionStore();
 const vesselStore = useVesselStore();
 const bottlestore = useBottleStore();
+const { confirm } = useDeleteConfirm();
 // Columns for table data
 const columns = [
 	{ key: 'date', label: 'Date', sortable: true },
@@ -38,7 +39,7 @@ const items = (row) => [
 		{
 			label: 'Delete',
 			icon: 'i-heroicons-trash-20-solid',
-			click: () => deleteItem(row._id),
+			click: () => deleteItem(row),
 		},
 	],
 ];
@@ -54,8 +55,11 @@ const editItem = (row) => {
 	toggleFormModal();
 };
 
-const deleteItem = async (id) => {
-	await productionsStore.deleteProduction(id);
+const deleteItem = async (row) => {
+	const confirmed = await confirm('Production', bottlestore.getName(row.bottle));
+	if (confirmed) {
+		await productionsStore.deleteProduction(row._id);
+	}
 };
 </script>
 
@@ -63,7 +67,13 @@ const deleteItem = async (id) => {
 	<div>
 		<UTable
 			:rows="rows"
-			:columns="columns">
+			:columns="columns"
+			:loading="productionsStore.loading">
+			<template #empty-state>
+				<div class="flex flex-col items-center justify-center py-6 gap-3">
+					<span class="text-sm text-gray-500">No productions found</span>
+				</div>
+			</template>
 			<template #date-data="{ row }">
 				{{
 					new Date(row.date).toLocaleString('en-US', {

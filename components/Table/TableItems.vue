@@ -5,10 +5,10 @@ import type { Row } from "@tanstack/vue-table";
 
 const itemStore = useItemStore();
 const contactStore = useContactStore();
+const { confirm } = useDeleteConfirm();
 
 const UButton = resolveComponent("UButton");
 const UDropdownMenu = resolveComponent("UDropdownMenu");
-const toast = useToast();
 
 const columns: TableColumn<Item>[] = [
   {
@@ -134,13 +134,11 @@ function getRowItems(row: Row<Item>) {
     {
       label: "Delete item",
       variant: "danger",
-      onClick() {
-        itemStore.deleteItem(row.original._id.toString());
-        toast.add({
-          title: "Cocktail item!",
-          color: "error",
-          icon: "i-lucide-trash",
-        });
+      async onClick() {
+        const confirmed = await confirm("Item", row.original.name);
+        if (confirmed) {
+          itemStore.deleteItem(row.original._id.toString());
+        }
       },
     },
   ];
@@ -175,6 +173,8 @@ const globalFilter = ref("");
       v-model:global-filter="globalFilter"
       :data="itemStore.items"
       :columns="columns"
+      :loading="itemStore.loading"
+      :empty="{ icon: 'i-lucide-package', label: 'No items found' }"
     >
     </UTable>
   </UContainer>

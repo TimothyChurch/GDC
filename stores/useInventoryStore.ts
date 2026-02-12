@@ -1,9 +1,12 @@
 import type { Inventory } from "~/types";
 
 export const useInventoryStore = defineStore("inventories", () => {
+  const toast = useToast();
+
   // State
-  const itemInventories = ref<Inventory[]>([]);
   const inventories = ref<Inventory[]>([]);
+  const loading = ref(false);
+  const saving = ref(false);
   const inventory = ref<Inventory>({
     _id: '',
     date: new Date(),
@@ -12,9 +15,15 @@ export const useInventoryStore = defineStore("inventories", () => {
   });
   // CRUD actions
   const getInventories = async (): Promise<void> => {
-    const response = await $fetch("/api/inventory");
-    inventories.value = response as Inventory[];
-    return;
+    loading.value = true;
+    try {
+      const response = await $fetch("/api/inventory");
+      inventories.value = response as Inventory[];
+    } catch (e) {
+      console.error("Error fetching inventories:", e);
+    } finally {
+      loading.value = false;
+    }
   };
   getInventories();
 
@@ -23,20 +32,28 @@ export const useInventoryStore = defineStore("inventories", () => {
   };
 
   const updateInventory = async (): Promise<void> => {
-    if (!inventory.value._id) {
-      await $fetch("/api/inventory/create", {
-        method: "POST",
-        body: JSON.stringify(inventory.value),
-      });
-    } else {
-      await $fetch(`/api/inventory/${inventory.value._id}`, {
-        method: "PUT",
-        body: JSON.stringify(inventory.value),
-      });
+    saving.value = true;
+    try {
+      const isNew = !inventory.value._id;
+      if (isNew) {
+        await $fetch("/api/inventory/create", {
+          method: "POST",
+          body: JSON.stringify(inventory.value),
+        });
+      } else {
+        await $fetch(`/api/inventory/${inventory.value._id}`, {
+          method: "PUT",
+          body: JSON.stringify(inventory.value),
+        });
+      }
+      toast.add({ title: `Inventory ${isNew ? 'created' : 'updated'}`, color: 'success', icon: 'i-lucide-check-circle' });
+      getInventories();
+      resetInventory();
+    } catch (error: any) {
+      toast.add({ title: 'Failed to save inventory', description: error?.data?.message, color: 'error', icon: 'i-lucide-alert-circle' });
+    } finally {
+      saving.value = false;
     }
-    getInventories();
-    resetInventory();
-    return;
   };
 
   const resetInventory = () => {
@@ -46,20 +63,28 @@ export const useInventoryStore = defineStore("inventories", () => {
       item: "",
       quantity: 0,
     };
-    return;
   };
 
   const deleteInventory = async (id: string): Promise<void> => {
-    await $fetch(`/api/inventory/${id}`, {
-      method: "DELETE",
-    });
-    getInventories();
-    return;
+    saving.value = true;
+    try {
+      await $fetch(`/api/inventory/${id}`, {
+        method: "DELETE",
+      });
+      toast.add({ title: 'Inventory record deleted', color: 'success', icon: 'i-lucide-check-circle' });
+      getInventories();
+    } catch (error: any) {
+      toast.add({ title: 'Failed to delete inventory record', description: error?.data?.message, color: 'error', icon: 'i-lucide-alert-circle' });
+    } finally {
+      saving.value = false;
+    }
   };
 
   return {
     inventories,
     inventory,
+    loading,
+    saving,
     getInventories,
     getInventoriesByItem,
     updateInventory,

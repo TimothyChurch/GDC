@@ -1,6 +1,5 @@
 <script setup>
 const vesselStore = useVesselStore();
-const { confirm } = useDeleteConfirm();
 
 const columns = [
 	{
@@ -36,7 +35,7 @@ const items = (row) => [
 		{
 			label: 'Delete',
 			icon: 'i-heroicons-trash-20-solid',
-			click: () => deleteVessel(row),
+			click: () => deleteVessel(row._id),
 		},
 	],
 ];
@@ -51,11 +50,8 @@ const editVessel = (row) => {
 	formSelection.value = 'FormVessel';
 	toggleFormModal();
 };
-const deleteVessel = async (row) => {
-	const confirmed = await confirm('Vessel', row.name);
-	if (confirmed) {
-		vesselStore.deleteVessel(row._id);
-	}
+const deleteVessel = (row) => {
+	vesselStore.deleteVessel(row._id);
 };
 </script>
 
@@ -63,13 +59,7 @@ const deleteVessel = async (row) => {
 	<div>
 		<UTable
 			:rows="vesselStore.vessels"
-			:columns="columns"
-			:loading="vesselStore.loading">
-			<template #empty-state>
-				<div class="flex flex-col items-center justify-center py-6 gap-3">
-					<span class="text-sm text-gray-500">No vessels found</span>
-				</div>
-			</template>
+			:columns="columns">
 			<template #actions-header>
 				<UButton
 					color="gray"

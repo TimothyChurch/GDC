@@ -2,7 +2,6 @@
 
 <template>
   <div>
-    <ModalDeleteWarning />
     <ModalForms />
     <!-- <ModalCalculators /> -->
   </div>

@@ -1,8 +1,12 @@
 import type { Contact } from '~/types';
 
 export const useContactStore = defineStore('contacts', () => {
+	const toast = useToast();
+
 	// State
 	const contacts = ref<Contact[]>([]);
+	const loading = ref(false);
+	const saving = ref(false);
 	const contact = ref<Contact>({
 		_id: '',
 		firstName: '',
@@ -17,11 +21,14 @@ export const useContactStore = defineStore('contacts', () => {
 
 	// CRUD actions
 	const getContacts = async (): Promise<void> => {
+		loading.value = true;
 		try {
 			const response = await $fetch('/api/contact');
 			contacts.value = response as Contact[];
 		} catch (error) {
 			console.error('Error fetching contacts:', error);
+		} finally {
+			loading.value = false;
 		}
 	};
 	getContacts();
@@ -32,19 +39,28 @@ export const useContactStore = defineStore('contacts', () => {
 		}
 	};
 	const updateContact = async (): Promise<void> => {
-		if (!contact.value._id) {
-			await $fetch('/api/contact/create', {
-				method: 'POST',
-				body: JSON.stringify(contact.value),
-			});
-		} else {
-			await $fetch(`/api/contact/${contact.value._id}`, {
-				method: 'PUT',
-				body: JSON.stringify(contact.value),
-			});
+		saving.value = true;
+		try {
+			const isNew = !contact.value._id;
+			if (isNew) {
+				await $fetch('/api/contact/create', {
+					method: 'POST',
+					body: JSON.stringify(contact.value),
+				});
+			} else {
+				await $fetch(`/api/contact/${contact.value._id}`, {
+					method: 'PUT',
+					body: JSON.stringify(contact.value),
+				});
+			}
+			toast.add({ title: `Contact ${isNew ? 'created' : 'updated'}`, color: 'success', icon: 'i-lucide-check-circle' });
+			await getContacts();
+			resetContact();
+		} catch (error: any) {
+			toast.add({ title: 'Failed to save contact', description: error?.data?.message, color: 'error', icon: 'i-lucide-alert-circle' });
+		} finally {
+			saving.value = false;
 		}
-		await getContacts();
-		resetContact();
 	};
 
 	const resetContact = (): void => {
@@ -62,10 +78,18 @@ export const useContactStore = defineStore('contacts', () => {
 	};
 
 	const deleteContact = async (id: string): Promise<void> => {
-		await $fetch(`/api/contact/${id}`, {
-			method: 'DELETE',
-		});
-		await getContacts();
+		saving.value = true;
+		try {
+			await $fetch(`/api/contact/${id}`, {
+				method: 'DELETE',
+			});
+			toast.add({ title: 'Contact deleted', color: 'success', icon: 'i-lucide-check-circle' });
+			await getContacts();
+		} catch (error: any) {
+			toast.add({ title: 'Failed to delete contact', description: error?.data?.message, color: 'error', icon: 'i-lucide-alert-circle' });
+		} finally {
+			saving.value = false;
+		}
 	};
 
 	// Getters
@@ -91,6 +115,8 @@ export const useContactStore = defineStore('contacts', () => {
 	return {
 		contacts,
 		contact,
+		loading,
+		saving,
 		getContacts,
 		updateContact,
 		deleteContact,

@@ -4,11 +4,10 @@ import type { Recipe } from "~/types";
 import type { Row } from "@tanstack/vue-table";
 
 const recipeStore = useRecipeStore();
+const { confirm } = useDeleteConfirm();
 
 const UButton = resolveComponent("UButton");
 const UDropdownMenu = resolveComponent("UDropdownMenu");
-
-const toast = useToast();
 
 const search = ref("");
 
@@ -80,22 +79,20 @@ const columns: TableColumn<Recipe>[] = [
 function getRowItems(row: Row<Recipe>) {
   return [
     {
-      label: "Edit cocktail",
+      label: "Edit recipe",
       onSelect() {
         recipeStore.setRecipe(row.original._id.toString());
         openModal();
       },
     },
     {
-      label: "Delete cocktail",
+      label: "Delete recipe",
       variant: "danger",
-      onClick() {
-        recipeStore.deleteRecipe(row.original._id.toString());
-        toast.add({
-          title: "Cocktail deleted!",
-          color: "error",
-          icon: "i-lucide-trash",
-        });
+      async onClick() {
+        const confirmed = await confirm("Recipe", row.original.name);
+        if (confirmed) {
+          recipeStore.deleteRecipe(row.original._id.toString());
+        }
       },
     },
   ];
@@ -113,7 +110,12 @@ const openModal = async () => await modal.open();
 
 <template>
   <div>
-    <UTable :data="recipeStore.recipes" :columns="columns">
+    <UTable
+      :data="recipeStore.recipes"
+      :columns="columns"
+      :loading="recipeStore.loading"
+      :empty="{ icon: 'i-lucide-book-open', label: 'No recipes found' }"
+    >
       <template #expanded="{ row }">
         <div v-for="item in row.original.items">
           {{ item }}
