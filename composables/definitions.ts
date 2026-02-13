@@ -1,3 +1,6 @@
+export const estimateCocktailPrice = (cost: number): number =>
+  ((cost - 1.5) / 2.5) * 4 + 7;
+
 export const liquorClasses = [
   {
     class: "Neutral Spirits or Alcohol",

@@ -19,9 +19,11 @@ onMounted(() => {
 const email = ref("");
 const password = ref("");
 const error = ref("");
+const loading = ref(false);
 
 const handleLogin = async () => {
   error.value = "";
+  loading.value = true;
   try {
     const success = await login(email.value, password.value);
     if (!success) {
@@ -29,6 +31,8 @@ const handleLogin = async () => {
     }
   } catch (e) {
     error.value = "An error occurred during login. Please try again.";
+  } finally {
+    loading.value = false;
   }
 };
 </script>
@@ -55,6 +59,7 @@ const handleLogin = async () => {
             autocomplete="email"
             required
             placeholder="Email address"
+            @input="error = ''"
           />
         </UFormField>
         <UFormField label="Password" name="password">
@@ -64,10 +69,11 @@ const handleLogin = async () => {
             autocomplete="current-password"
             required
             placeholder="Password"
+            @input="error = ''"
           />
         </UFormField>
         <div>
-          <UButton type="submit" color="primary" block> Sign in </UButton>
+          <UButton type="submit" color="primary" block :loading="loading" :disabled="loading"> Sign in </UButton>
         </div>
       </UForm>
       <p v-if="error" class="mt-2 text-center text-sm text-red-600">

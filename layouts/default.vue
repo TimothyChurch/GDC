@@ -1,22 +1,12 @@
-<script setup>
-import { ModalAge } from "#components";
-const overlay = useOverlay();
-const modal = overlay.create(ModalAge);
-onMounted(() => {
-  console.log(ageVerified);
-  if (!ageVerified.value) {
-    console.log("Age verification required");
-    modal.open();
-  }
-});
-</script>
+<script setup></script>
 
 <template>
-  <div
-    class="h-screen w-screen max-h-screen max-w-screen flex flex-col overflow-clip"
-  >
+  <div class="min-h-screen flex flex-col">
     <SiteHeader />
-    <slot />
+    <main class="flex-1">
+      <slot />
+    </main>
     <SiteFooter />
+    <ModalAge />
   </div>
 </template>

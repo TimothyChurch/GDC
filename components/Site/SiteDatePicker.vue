@@ -9,9 +9,9 @@ const buttonLabel = () => {
 		return 'Select a date';
 	}
 	if (typeof model.value == 'string') {
-		return format(new Date(model.value), 'd MMM, yyy');
+		return format(new Date(model.value), 'd MMM, yyyy');
 	}
-	return format(model.value, 'd MMM, yyy');
+	return format(model.value, 'd MMM, yyyy');
 };
 
 </script>

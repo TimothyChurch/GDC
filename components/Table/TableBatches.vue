@@ -71,38 +71,40 @@ const deleteItem = async (row) => {
 <template>
 	<div>
 		<UInput v-model="search" placeholder="Search batches..." class="mb-2" />
-		<UTable
-			:rows="rows"
-			:columns="columns"
-			:loading="batchStore.loading">
-			<template #empty-state>
-				<div class="flex flex-col items-center justify-center py-6 gap-3">
-					<span class="text-sm text-gray-500">No batches found</span>
-				</div>
-			</template>
-			<template #recipe-data="{ row }">
-				{{ recipeStore.getRecipeById(row.recipe)?.name }}
-			</template>
-			<template #batchCost-data="{ row }">
-				{{ Dollar.format(row.batchCost) }}
-			</template>
-			<template #actions-header>
-				<UButton
-					color="gray"
-					variant="ghost"
-					icon="i-heroicons-plus-20-solid"
-					@click="addItem()" />
-			</template>
-			<template #actions-data="{ row }">
-				<UDropdown :items="items(row)">
+		<div class="overflow-x-auto">
+			<UTable
+				:rows="rows"
+				:columns="columns"
+				:loading="batchStore.loading">
+				<template #empty-state>
+					<div class="flex flex-col items-center justify-center py-6 gap-3">
+						<span class="text-sm text-gray-500">No batches found</span>
+					</div>
+				</template>
+				<template #recipe-data="{ row }">
+					{{ recipeStore.getRecipeById(row.recipe)?.name }}
+				</template>
+				<template #batchCost-data="{ row }">
+					{{ Dollar.format(row.batchCost) }}
+				</template>
+				<template #actions-header>
 					<UButton
 						color="gray"
 						variant="ghost"
-						icon="i-heroicons-ellipsis-horizontal-20-solid" />
-				</UDropdown>
-			</template>
-		</UTable>
-		<div class="flex justify-between">
+						icon="i-heroicons-plus-20-solid"
+						@click="addItem()" />
+				</template>
+				<template #actions-data="{ row }">
+					<UDropdown :items="items(row)">
+						<UButton
+							color="gray"
+							variant="ghost"
+							icon="i-heroicons-ellipsis-horizontal-20-solid" />
+					</UDropdown>
+				</template>
+			</UTable>
+		</div>
+		<div class="flex flex-col sm:flex-row justify-between gap-2">
 			<UFormGroup label="Results per Page">
 				<USelect
 					:options="[5, 10, 20, 100]"

@@ -25,11 +25,11 @@ const saveBottle = async () => {
 			:schema="schema"
 			:state="bottleStore.bottle"
 			@submit="saveBottle"
-			class="grid grid-cols-12 gap-2">
-			<UFormField label="Name" name="name" class="col-span-5">
+			class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2">
+			<UFormField label="Name" name="name" class="sm:col-span-2">
 				<UInput v-model="bottleStore.bottle.name" class="w-full" />
 			</UFormField>
-			<UFormField label="Recipe" name="recipe" class="col-span-5">
+			<UFormField label="Recipe" name="recipe" class="sm:col-span-2">
 				<USelectMenu
 					:items="recipeStore.recipes"
 					searchable
@@ -38,16 +38,16 @@ const saveBottle = async () => {
 					v-model="bottleStore.bottle.recipe"
 					class="w-full" />
 			</UFormField>
-			<UFormField label="In Stock" class="col-span-2">
+			<UFormField label="In Stock">
 				<USwitch v-model="bottleStore.bottle.inStock" class="w-full" />
 			</UFormField>
-			<UFormField label="Class" class="col-span-4">
+			<UFormField label="Class">
 				<USelectMenu
 					v-model="bottleStore.bottle.class"
 					:items="liquorClasses.map((i) => i.class)"
 					class="w-full" />
 			</UFormField>
-			<UFormField label="Type" class="col-span-4">
+			<UFormField label="Type">
 				<USelectMenu
 					v-if="bottleStore.bottle.class != ''"
 					v-model="bottleStore.bottle.type"
@@ -60,16 +60,16 @@ const saveBottle = async () => {
 					create-item
 					@create="newType" />
 			</UFormField>
-			<UFormField label="ABV" name="abv" class="col-span-2">
+			<UFormField label="ABV" name="abv">
 				<UInput v-model="bottleStore.bottle.abv" />
 			</UFormField>
-			<UFormField label="Price" name="price" class="col-span-2">
+			<UFormField label="Price" name="price">
 				<UInput v-model="bottleStore.bottle.price" />
 			</UFormField>
-			<UFormField label="Description" name="description" class="col-span-12">
+			<UFormField label="Description" name="description" class="col-span-full">
 				<UTextarea v-model="bottleStore.bottle.description" class="w-full" />
 			</UFormField>
-			<div class="col-span-12 justify-around flex">
+			<div class="col-span-full justify-around flex">
 				<UButton type="submit" :loading="bottleStore.saving">Submit</UButton>
 			</div>
 		</UForm>

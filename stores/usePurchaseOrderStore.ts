@@ -33,26 +33,30 @@ export const usePurchaseOrderStore = defineStore('purchaseOrders', () => {
 	const updatePurchaseOrder = async (): Promise<PurchaseOrder> => {
 		saving.value = true;
 		try {
-			const response = ref();
+			let response;
 			const isNew = !purchaseOrder.value._id;
 			if (isNew) {
-				response.value = await $fetch('/api/purchaseOrder/create', {
+				response = await $fetch('/api/purchaseOrder/create', {
 					method: 'POST',
 					body: JSON.stringify(purchaseOrder.value),
 				});
+				purchaseOrders.value.push(response as PurchaseOrder);
 			} else {
-				response.value = await $fetch(
+				response = await $fetch(
 					`/api/purchaseOrder/${purchaseOrder.value._id}`,
 					{
 						method: 'PUT',
 						body: JSON.stringify(purchaseOrder.value),
 					}
 				);
+				const index = purchaseOrders.value.findIndex((po) => po._id === purchaseOrder.value._id);
+				if (index !== -1) {
+					purchaseOrders.value[index] = response as PurchaseOrder;
+				}
 			}
 			toast.add({ title: `Purchase order ${isNew ? 'created' : 'updated'}`, color: 'success', icon: 'i-lucide-check-circle' });
-			await getPurchaseOrders();
 			resetCurrentPurchaseOrder();
-			return response.value;
+			return response as PurchaseOrder;
 		} catch (error: any) {
 			toast.add({ title: 'Failed to save purchase order', description: error?.data?.message, color: 'error', icon: 'i-lucide-alert-circle' });
 			throw error;
@@ -67,8 +71,8 @@ export const usePurchaseOrderStore = defineStore('purchaseOrders', () => {
 			await $fetch(`/api/purchaseOrder/${id}`, {
 				method: 'DELETE',
 			});
+			purchaseOrders.value = purchaseOrders.value.filter((po) => po._id !== id);
 			toast.add({ title: 'Purchase order deleted', color: 'success', icon: 'i-lucide-check-circle' });
-			await getPurchaseOrders();
 		} catch (error: any) {
 			toast.add({ title: 'Failed to delete purchase order', description: error?.data?.message, color: 'error', icon: 'i-lucide-alert-circle' });
 		} finally {

@@ -81,62 +81,64 @@ const deleteItem = async (row) => {
 <template>
   <div>
     <UInput v-model="search" placeholder="Search contacts..." class="mb-2" />
-    <UTable
-      :rows="rows"
-      :columns="columns"
-      :loading="contactStore.loading"
-      v-model:expand="expand"
-    >
-      <template #empty-state>
-        <div class="flex flex-col items-center justify-center py-6 gap-3">
-          <span class="text-sm text-gray-500">No contacts found</span>
-        </div>
-      </template>
-      <template #expand="{ row }">
-        <div class="flex gap-3 justify-around">
-          <UFormGroup label="Website">
-            <a v-if="row.website" :href="row.website" target="_blank">{{
-              row.website
-            }}</a>
-            <div v-else>N/A</div>
-          </UFormGroup>
-          <UFormGroup label="Address">
-            <div v-if="row.address">{{ row.address }}</div>
-            <div v-else>N/A</div>
-          </UFormGroup>
-          <UFormGroup label="Email">
-            <div v-if="row.email">{{ row.email }}</div>
-            <div v-else>N/A</div>
-          </UFormGroup>
-          <UFormGroup label="Phone">
-            <div v-if="row.phone">{{ row.phone }}</div>
-            <div v-else>N/A</div>
-          </UFormGroup>
-        </div>
-      </template>
-      <template #name-data="{ row }">
-        <div v-if="row.firstName">{{ row.firstName }} {{ row.lastName }}</div>
-        <div v-if="row.businessName">{{ row.businessName }}</div>
-      </template>
-      <template #actions-header>
-        <UButton
-          color="gray"
-          variant="ghost"
-          icon="i-heroicons-plus-20-solid"
-          @click="addItem"
-        />
-      </template>
-      <template #actions-data="{ row }">
-        <UDropdown :items="items(row)">
+    <div class="overflow-x-auto">
+      <UTable
+        :rows="rows"
+        :columns="columns"
+        :loading="contactStore.loading"
+        v-model:expand="expand"
+      >
+        <template #empty-state>
+          <div class="flex flex-col items-center justify-center py-6 gap-3">
+            <span class="text-sm text-gray-500">No contacts found</span>
+          </div>
+        </template>
+        <template #expand="{ row }">
+          <div class="flex gap-3 justify-around">
+            <UFormGroup label="Website">
+              <a v-if="row.website" :href="row.website" target="_blank">{{
+                row.website
+              }}</a>
+              <div v-else>N/A</div>
+            </UFormGroup>
+            <UFormGroup label="Address">
+              <div v-if="row.address">{{ row.address }}</div>
+              <div v-else>N/A</div>
+            </UFormGroup>
+            <UFormGroup label="Email">
+              <div v-if="row.email">{{ row.email }}</div>
+              <div v-else>N/A</div>
+            </UFormGroup>
+            <UFormGroup label="Phone">
+              <div v-if="row.phone">{{ row.phone }}</div>
+              <div v-else>N/A</div>
+            </UFormGroup>
+          </div>
+        </template>
+        <template #name-data="{ row }">
+          <div v-if="row.firstName">{{ row.firstName }} {{ row.lastName }}</div>
+          <div v-if="row.businessName">{{ row.businessName }}</div>
+        </template>
+        <template #actions-header>
           <UButton
             color="gray"
             variant="ghost"
-            icon="i-heroicons-ellipsis-horizontal-20-solid"
+            icon="i-heroicons-plus-20-solid"
+            @click="addItem"
           />
-        </UDropdown>
-      </template>
-    </UTable>
-    <div class="flex justify-between">
+        </template>
+        <template #actions-data="{ row }">
+          <UDropdown :items="items(row)">
+            <UButton
+              color="gray"
+              variant="ghost"
+              icon="i-heroicons-ellipsis-horizontal-20-solid"
+            />
+          </UDropdown>
+        </template>
+      </UTable>
+    </div>
+    <div class="flex flex-col sm:flex-row justify-between gap-2">
       <UFormGroup label="Results per Page">
         <USelect
           :options="[5, 10, 20, 100]"

@@ -6,7 +6,7 @@
       class="mx-auto grid max-w-7xl grid-cols-1 gap-10 px-6 lg:grid-cols-12 lg:gap-8 lg:px-8"
     >
       <h2
-        class="max-w-xl text-3xl font-semibold tracking-tight text-balance text-gray-900 sm:text-4xl lg:col-span-7"
+        class="max-w-xl text-3xl font-semibold tracking-tight text-balance text-brown dark:text-parchment sm:text-4xl lg:col-span-7 font-[Cormorant_Garamond]"
       >
         Want product news and updates? Sign up for our newsletter.
       </h2>
@@ -19,21 +19,21 @@
             type="email"
             autocomplete="email"
             required=""
-            class="min-w-0 flex-auto rounded-md bg-white px-3.5 py-2 text-base text-gray-900 outline-1 -outline-offset-1 outline-gray-300 placeholder:text-gray-400 focus:outline-2 focus:-outline-offset-2 focus:outline-indigo-600 sm:text-sm/6"
+            class="min-w-0 flex-auto rounded-md bg-cream dark:bg-charcoal px-3.5 py-2 text-base text-brown dark:text-parchment outline-1 -outline-offset-1 outline-copper/30 placeholder:text-brown/40 dark:placeholder:text-parchment/40 focus:outline-2 focus:-outline-offset-2 focus:outline-gold sm:text-sm/6"
             placeholder="Enter your email"
           />
           <button
             type="submit"
-            class="flex-none rounded-md bg-indigo-600 px-3.5 py-2.5 text-sm font-semibold text-white shadow-xs hover:bg-indigo-500 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
+            class="flex-none rounded-md bg-gold px-3.5 py-2.5 text-sm font-semibold text-espresso shadow-xs hover:bg-copper transition-colors duration-300 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gold"
           >
             Subscribe
           </button>
         </div>
-        <p class="mt-4 text-sm/6 text-gray-900">
+        <p class="mt-4 text-sm/6 text-brown/70 dark:text-parchment/70">
           We care about your data. Read our
           <a
             href="#"
-            class="font-semibold whitespace-nowrap text-indigo-600 hover:text-indigo-500"
+            class="font-semibold whitespace-nowrap text-gold hover:text-copper transition-colors"
             >privacy policy</a
           >.
         </p>

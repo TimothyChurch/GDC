@@ -128,18 +128,22 @@ export const useBatchStore = defineStore('batches', () => {
 		try {
 			const isNew = !batch.value._id;
 			if (isNew) {
-				await $fetch('/api/batch/create', {
+				const response = await $fetch('/api/batch/create', {
 					method: 'POST',
 					body: JSON.stringify(batch.value),
 				});
+				batches.value.push(response as Batch);
 			} else {
-				await $fetch(`/api/batch/${batch.value._id}`, {
+				const response = await $fetch(`/api/batch/${batch.value._id}`, {
 					method: 'PUT',
 					body: JSON.stringify(batch.value),
 				});
+				const index = batches.value.findIndex((b) => b._id === batch.value._id);
+				if (index !== -1) {
+					batches.value[index] = response as Batch;
+				}
 			}
 			toast.add({ title: `Batch ${isNew ? 'created' : 'updated'}`, color: 'success', icon: 'i-lucide-check-circle' });
-			await getBatches();
 			resetBatch();
 		} catch (error: any) {
 			toast.add({ title: 'Failed to save batch', description: error?.data?.message, color: 'error', icon: 'i-lucide-alert-circle' });
@@ -154,8 +158,8 @@ export const useBatchStore = defineStore('batches', () => {
 			await $fetch(`/api/batch/${id}`, {
 				method: 'DELETE',
 			});
+			batches.value = batches.value.filter((b) => b._id !== id);
 			toast.add({ title: 'Batch deleted', color: 'success', icon: 'i-lucide-check-circle' });
-			await getBatches();
 		} catch (error: any) {
 			toast.add({ title: 'Failed to delete batch', description: error?.data?.message, color: 'error', icon: 'i-lucide-alert-circle' });
 		} finally {

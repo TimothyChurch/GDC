@@ -35,7 +35,7 @@ const submitForm = () => {
 			:schema="schema"
 			:state="contactStore.contact"
 			@submit="submitForm"
-			class="grid grid-cols-2 gap-3">
+			class="grid grid-cols-1 sm:grid-cols-2 gap-3">
 			<UFormField label="First Name" name="firstName" class="col-span-1">
 				<UInput v-model="contactStore.contact.firstName" type="text" />
 			</UFormField>

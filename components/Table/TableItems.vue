@@ -170,16 +170,18 @@ const pagination = ref({ pageIndex: 0, pageSize: 10 });
         >Add Item</UButton
       >
     </div>
-    <UTable
-      v-model:global-filter="globalFilter"
-      v-model:pagination="pagination"
-      :data="itemStore.items"
-      :columns="columns"
-      :loading="itemStore.loading"
-      :empty="{ icon: 'i-lucide-package', label: 'No items found' }"
-    >
-    </UTable>
-    <div class="flex justify-between items-center mt-2">
+    <div class="overflow-x-auto">
+      <UTable
+        v-model:global-filter="globalFilter"
+        v-model:pagination="pagination"
+        :data="itemStore.items"
+        :columns="columns"
+        :loading="itemStore.loading"
+        :empty="{ icon: 'i-lucide-package', label: 'No items found' }"
+      >
+      </UTable>
+    </div>
+    <div class="flex flex-col sm:flex-row justify-between items-center gap-2 mt-2">
       <UFormGroup label="Results per Page">
         <USelect
           :options="[5, 10, 20, 100]"

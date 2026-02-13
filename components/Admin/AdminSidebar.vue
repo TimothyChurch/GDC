@@ -1,4 +1,12 @@
 <script setup lang="ts">
+defineProps<{
+  sidebarOpen?: boolean;
+  collapsed?: boolean;
+}>();
+const emit = defineEmits<{ close: []; toggleCollapse: [] }>();
+
+const route = useRoute();
+
 const productionLinks = [
   {
     label: 'Dashboard',
@@ -80,27 +88,98 @@ const adminLinks = [
     to: '/admin/controls',
   },
 ];
+
+interface NavSection {
+  title: string;
+  links: { label: string; icon: string; to: string }[];
+}
+
+const sections: NavSection[] = [
+  { title: 'Production', links: productionLinks },
+  { title: 'Products', links: productLinks },
+  { title: 'Inventory', links: inventoryLinks },
+  { title: 'Admin', links: adminLinks },
+];
+
+const isActive = (to: string) => {
+  return route.path === to || route.path.startsWith(to + '/');
+};
 </script>
 
 <template>
-  <div class="w-80 max-w-80 p-3 flex flex-col gap-4">
-    <div>
-      <h3 class="text-xs font-semibold text-neutral-500 uppercase tracking-wider mb-1 px-2">Production</h3>
-      <UNavigationMenu orientation="vertical" :items="productionLinks" />
+  <nav
+    :class="[
+      'flex flex-col bg-charcoal border-r border-brown/30 overflow-y-auto overflow-x-hidden transition-all duration-300',
+      'fixed inset-y-0 left-0 z-40 lg:static lg:z-auto',
+      collapsed ? 'w-16' : 'w-64',
+      sidebarOpen ? 'flex' : 'hidden lg:flex'
+    ]"
+  >
+    <!-- Sidebar content -->
+    <div class="flex flex-col gap-1 p-3 flex-grow">
+      <template v-for="(section, sectionIdx) in sections" :key="section.title">
+        <!-- Section divider (not before first section) -->
+        <div v-if="sectionIdx > 0" class="my-2 border-t border-brown/20" />
+
+        <!-- Section header -->
+        <div
+          v-if="!collapsed"
+          class="px-3 pt-2 pb-1 text-[10px] font-semibold uppercase tracking-widest text-copper/60"
+        >
+          {{ section.title }}
+        </div>
+
+        <!-- Nav links -->
+        <NuxtLink
+          v-for="link in section.links"
+          :key="link.to"
+          :to="link.to"
+          :class="[
+            'group flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-all duration-200',
+            isActive(link.to)
+              ? 'bg-gold/15 text-gold border border-gold/20'
+              : 'text-parchment/60 hover:text-parchment hover:bg-brown/30 border border-transparent',
+            collapsed ? 'justify-center' : '',
+          ]"
+          @click="emit('close')"
+        >
+          <UIcon
+            :name="link.icon"
+            :class="[
+              'shrink-0 text-lg transition-colors duration-200',
+              isActive(link.to)
+                ? 'text-gold'
+                : 'text-parchment/40 group-hover:text-copper',
+            ]"
+          />
+          <span v-if="!collapsed" class="truncate">{{ link.label }}</span>
+        </NuxtLink>
+      </template>
     </div>
-    <div>
-      <h3 class="text-xs font-semibold text-neutral-500 uppercase tracking-wider mb-1 px-2">Products</h3>
-      <UNavigationMenu orientation="vertical" :items="productLinks" />
+
+    <!-- Bottom section -->
+    <div class="p-3 border-t border-brown/20">
+      <NuxtLink
+        to="/"
+        class="group flex items-center gap-3 px-3 py-2 rounded-lg text-sm text-parchment/50 hover:text-parchment hover:bg-brown/30 transition-all duration-200"
+        :class="collapsed ? 'justify-center' : ''"
+      >
+        <UIcon name="i-lucide-home" class="shrink-0 text-lg text-parchment/30 group-hover:text-copper" />
+        <span v-if="!collapsed">Main Site</span>
+      </NuxtLink>
+
+      <!-- Collapse toggle (desktop only) -->
+      <button
+        class="hidden lg:flex items-center gap-3 w-full px-3 py-2 mt-1 rounded-lg text-sm text-parchment/40 hover:text-parchment/70 hover:bg-brown/20 transition-all duration-200"
+        :class="collapsed ? 'justify-center' : ''"
+        @click="emit('toggleCollapse')"
+      >
+        <UIcon
+          :name="collapsed ? 'i-lucide-chevrons-right' : 'i-lucide-chevrons-left'"
+          class="shrink-0 text-lg"
+        />
+        <span v-if="!collapsed">Collapse</span>
+      </button>
     </div>
-    <div>
-      <h3 class="text-xs font-semibold text-neutral-500 uppercase tracking-wider mb-1 px-2">Inventory</h3>
-      <UNavigationMenu orientation="vertical" :items="inventoryLinks" />
-    </div>
-    <div>
-      <h3 class="text-xs font-semibold text-neutral-500 uppercase tracking-wider mb-1 px-2">Admin</h3>
-      <UNavigationMenu orientation="vertical" :items="adminLinks" />
-    </div>
-    <UDivider />
-    <UNavigationMenu orientation="vertical" :items="[{ label: 'Main Site', icon: 'i-lucide-home', to: '/' }]" />
-  </div>
+  </nav>
 </template>

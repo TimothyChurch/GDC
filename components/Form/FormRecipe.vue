@@ -56,13 +56,13 @@ const saveRecipe = () => {
 };
 </script>
 <template>
-	<UContainer class="min-w-5xl">
+	<UContainer>
 		<UForm
 			:schema="schema"
 			:state="recipeStore.recipe"
 			@submit="saveRecipe"
-			class="grid grid-cols-2 gap-3">
-			<UFormField label="Name" name="name" class="col-span-2">
+			class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+			<UFormField label="Name" name="name" class="col-span-full">
 				<UInput v-model="recipeStore.recipe.name" />
 			</UFormField>
 			<UFormField label="Class" name="class">
@@ -92,7 +92,7 @@ const saveRecipe = () => {
 			<UTable
 				:rows="recipeItemsRows"
 				:columns="recipeItemsColumns"
-				class="col-span-2">
+				class="col-span-full">
 				<template #_id-data="{ row }" :key="row._id">
 					{{ itemStore.nameById(row._id) }}
 				</template>

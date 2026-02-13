@@ -51,7 +51,6 @@ const total = computed(() => {
 // Items Table Actions
 
 const removeItem = (item: PurchaseOrderItem) => {
-  console.log("Removing item:", item);
   purchaseOrderStore.purchaseOrder.items.splice(
     purchaseOrderStore.purchaseOrder.items.indexOf(item),
     1

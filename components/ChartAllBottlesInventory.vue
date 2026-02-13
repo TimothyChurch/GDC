@@ -30,14 +30,17 @@ const chartData = computed(() => {
 });
 const chartOptions = ref({
 	responsive: true,
-	maintainAspectRatio: true,
+	maintainAspectRatio: false,
 });
 </script>
 
 <template>
-	<div>
-		<h1>Chart page</h1>
+	<div class="w-full h-80 md:h-96">
+		<div v-if="inventoryStore.loading" class="flex items-center justify-center h-full text-neutral-500">
+			Loading chart data...
+		</div>
 		<Line
+			v-else
 			:data="chartData"
 			:options="chartOptions" />
 	</div>

@@ -49,7 +49,6 @@ export const metricWeightToVolume = (weight: number, abv: number) => {
 };
 
 export const imperialWeightToVolume = (weight: number, abv: number) => {
-	console.log('weight', weight, 'abv', abv);
 	const densityWater = 8.33;
 	const densityAlcohol = 6.5;
 	let mixtureAbv = 0;

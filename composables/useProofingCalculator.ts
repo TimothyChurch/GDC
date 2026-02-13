@@ -56,7 +56,6 @@ export const useProofingCalculator = () => {
 				} else {
 					abv = initialAbv.value;
 				}
-				console.log(currentVolume.value);
 				const volume = parseFloat(
 					((abv * currentVolume.value.volume) / targetAbv.value).toFixed(2)
 				);

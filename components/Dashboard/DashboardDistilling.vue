@@ -1,27 +1,28 @@
-<script setup>
+<script setup lang="ts">
 const vesselStore = useVesselStore();
 </script>
 
 <template>
-	<div>
-		<h1 class="font-bold text-xl">Distilling</h1>
-		<div v-if="vesselStore.stills.length === 0" class="text-sm text-neutral-500 py-4">
-			No stills configured
-		</div>
-		<div v-else class="flex gap-3">
-			<div v-for="still in vesselStore.stills" :key="still._id">
-				<UCard>
-					<template #header>
-						<h2>{{ still.name }}</h2>
-					</template>
-					<div v-if="!still.contents || still.contents.length === 0" class="text-sm text-neutral-500">
-						Empty
-					</div>
-					<div v-for="content in still.contents" :key="content.batch">
-						<DashboardBatchCard :batchId="content.batch" />
-					</div>
-				</UCard>
-			</div>
-		</div>
-	</div>
+  <div>
+    <div class="flex items-center gap-2 mb-3">
+      <UIcon name="i-lucide-flask-conical" class="text-copper" />
+      <h3 class="text-sm font-bold text-parchment uppercase tracking-wider">Distilling</h3>
+    </div>
+    <div v-if="vesselStore.stills.length === 0" class="py-4 text-center">
+      <p class="text-xs text-parchment/30">No stills configured</p>
+    </div>
+    <div v-else class="flex flex-col gap-2">
+      <div v-for="still in vesselStore.stills" :key="still._id">
+        <div class="rounded-lg border border-brown/20 bg-brown/10 p-3">
+          <div class="text-xs font-semibold text-parchment/60 mb-2">{{ still.name }}</div>
+          <div v-if="!still.contents || still.contents.length === 0" class="text-xs text-parchment/25">
+            Empty
+          </div>
+          <div v-for="content in still.contents" :key="content.batch">
+            <DashboardBatchCard :batchId="content.batch" />
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
 </template>

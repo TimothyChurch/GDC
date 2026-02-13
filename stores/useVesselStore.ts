@@ -98,10 +98,14 @@ export const useVesselStore = defineStore('vessels', () => {
 				});
 				vessels.value.push(response as Vessel);
 			} else {
-				await $fetch(`/api/vessel/${vessel.value._id}`, {
+				const response = await $fetch(`/api/vessel/${vessel.value._id}`, {
 					method: 'PUT',
 					body: vessel.value,
 				});
+				const index = vessels.value.findIndex((v) => v._id === vessel.value._id);
+				if (index !== -1) {
+					vessels.value[index] = response as Vessel;
+				}
 			}
 			toast.add({ title: `Vessel ${isNew ? 'created' : 'updated'}`, color: 'success', icon: 'i-lucide-check-circle' });
 			resetVessel();
@@ -185,7 +189,6 @@ export const useVesselStore = defineStore('vessels', () => {
 		await updateVessel();
 		vessel.value = source;
 		await updateVessel();
-		await getVessels();
 
 		toast.add({ title: 'Transfer complete', color: 'success', icon: 'i-lucide-check-circle' });
 	};
@@ -225,7 +228,6 @@ export const useVesselStore = defineStore('vessels', () => {
 		await updateVessel();
 		vessel.value = source;
 		await updateVessel();
-		await getVessels();
 
 		toast.add({ title: 'Partial transfer complete', color: 'success', icon: 'i-lucide-check-circle' });
 	};
@@ -238,7 +240,6 @@ export const useVesselStore = defineStore('vessels', () => {
 
 		vessel.value = target;
 		await updateVessel();
-		await getVessels();
 	};
 
 	// Getters

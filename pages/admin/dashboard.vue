@@ -1,7 +1,9 @@
-<script lang="ts"></script>
+<script setup lang="ts">
+definePageMeta({
+  layout: 'admin',
+});
+</script>
 
 <template>
-	<div>
-		<AdminDashboard />
-	</div>
+  <AdminDashboard />
 </template>

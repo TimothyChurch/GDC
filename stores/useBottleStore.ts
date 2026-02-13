@@ -59,18 +59,23 @@ export const useBottleStore = defineStore("bottles", () => {
     try {
       const isNew = !bottle.value._id;
       if (isNew) {
-        await $fetch("/api/bottle/create", {
+        const response = await $fetch("/api/bottle/create", {
           method: "POST",
           body: JSON.stringify(bottle.value),
         });
+        bottles.value.push(response as Bottle);
       } else {
-        await $fetch(`/api/bottle/${bottle.value?._id}`, {
+        const response = await $fetch(`/api/bottle/${bottle.value?._id}`, {
           method: "PUT",
           body: JSON.stringify(bottle.value),
         });
+        const index = bottles.value.findIndex((b) => b._id === bottle.value._id);
+        if (index !== -1) {
+          bottles.value[index] = response as Bottle;
+        }
       }
       toast.add({ title: `Bottle ${isNew ? 'created' : 'updated'}`, color: 'success', icon: 'i-lucide-check-circle' });
-      getBottles();
+      sortBottles();
     } catch (error: any) {
       toast.add({ title: 'Failed to save bottle', description: error?.data?.message, color: 'error', icon: 'i-lucide-alert-circle' });
     } finally {
@@ -84,8 +89,8 @@ export const useBottleStore = defineStore("bottles", () => {
       await $fetch(`/api/bottle/${id}`, {
         method: "DELETE",
       });
+      bottles.value = bottles.value.filter((b) => b._id !== id);
       toast.add({ title: 'Bottle deleted', color: 'success', icon: 'i-lucide-check-circle' });
-      getBottles();
     } catch (error: any) {
       toast.add({ title: 'Failed to delete bottle', description: error?.data?.message, color: 'error', icon: 'i-lucide-alert-circle' });
     } finally {

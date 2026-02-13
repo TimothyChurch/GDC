@@ -37,15 +37,17 @@ const onSelect = (row) => {
         >Add Bottle</UButton
       >
     </div>
-    <UTable
-      :data="bottleStore.bottles"
-      v-model:global-filter="searchFilter"
-      v-model:pagination="pagination"
-      :loading="bottleStore.loading"
-      :empty="{ icon: 'i-lucide-wine', label: 'No bottles found' }"
-      @select="onSelect"
-    />
-    <div class="flex justify-between items-center mt-2">
+    <div class="overflow-x-auto">
+      <UTable
+        :data="bottleStore.bottles"
+        v-model:global-filter="searchFilter"
+        v-model:pagination="pagination"
+        :loading="bottleStore.loading"
+        :empty="{ icon: 'i-lucide-wine', label: 'No bottles found' }"
+        @select="onSelect"
+      />
+    </div>
+    <div class="flex flex-col sm:flex-row justify-between items-center gap-2 mt-2">
       <UFormGroup label="Results per Page">
         <USelect
           :options="[5, 10, 20, 100]"

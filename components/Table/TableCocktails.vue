@@ -137,21 +137,23 @@ const openModal = async () => await modal.open();
         >Add Cocktail</UButton
       >
     </div>
-    <UTable
-      sticky
-      v-model:global-filter="search"
-      v-model:pagination="pagination"
-      :data="cocktailStore.cocktails"
-      :columns="columns"
-      :loading="cocktailStore.loading"
-      :empty="{ icon: 'i-lucide-wine', label: 'No cocktails found' }"
-      class="max-h-full"
-    >
-      <template #expanded="{ row }">
-        <TableCocktailExpand :ingredients="row.original.ingredients" />
-      </template>
-    </UTable>
-    <div class="flex justify-between items-center mt-2">
+    <div class="overflow-x-auto">
+      <UTable
+        sticky
+        v-model:global-filter="search"
+        v-model:pagination="pagination"
+        :data="cocktailStore.cocktails"
+        :columns="columns"
+        :loading="cocktailStore.loading"
+        :empty="{ icon: 'i-lucide-wine', label: 'No cocktails found' }"
+        class="max-h-full"
+      >
+        <template #expanded="{ row }">
+          <TableCocktailExpand :ingredients="row.original.ingredients" />
+        </template>
+      </UTable>
+    </div>
+    <div class="flex flex-col sm:flex-row justify-between items-center gap-2 mt-2">
       <UFormGroup label="Results per Page">
         <USelect
           :options="[5, 10, 20, 100]"

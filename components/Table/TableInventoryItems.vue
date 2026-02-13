@@ -60,17 +60,19 @@ const columns = [
 				X
 			</UButton>
 		</UButtonGroup>
-		<UTable
-			:rows="paginatedRows"
-			:columns="columns"
-			:loading="itemStore.loading">
-			<template #empty-state>
-				<div class="flex flex-col items-center justify-center py-6 gap-3">
-					<span class="text-sm text-gray-500">No inventory items found</span>
-				</div>
-			</template>
-		</UTable>
-		<div class="flex justify-between">
+		<div class="overflow-x-auto">
+			<UTable
+				:rows="paginatedRows"
+				:columns="columns"
+				:loading="itemStore.loading">
+				<template #empty-state>
+					<div class="flex flex-col items-center justify-center py-6 gap-3">
+						<span class="text-sm text-gray-500">No inventory items found</span>
+					</div>
+				</template>
+			</UTable>
+		</div>
+		<div class="flex flex-col sm:flex-row justify-between gap-2">
 			<UFormGroup label="Results per Page">
 				<USelect
 					:options="[5, 10, 20, 100]"

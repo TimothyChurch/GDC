@@ -1,6 +1,17 @@
 @import "tailwindcss";
 @import "@nuxt/ui";
 
+@theme {
+  --color-parchment: #f3e2c6;
+  --color-espresso: #1a120c;
+  --color-brown: #3f2b1d;
+  --color-gold: #d6b169;
+  --color-copper: #b88a4f;
+  --color-amber: #c8944a;
+  --color-charcoal: #2a1f17;
+  --color-cream: #faf5ed;
+}
+
 .dark {
   --ui-bg: #1a120c;
   --ui-text: #f3e2c6;
@@ -14,4 +25,5 @@ html {
   --ui-accent: #d6b169;
   --ui-shadow: #b88a4f;
   --ui-border: #b88a4f;
+  scroll-behavior: smooth;
 }

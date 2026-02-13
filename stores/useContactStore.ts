@@ -43,18 +43,22 @@ export const useContactStore = defineStore('contacts', () => {
 		try {
 			const isNew = !contact.value._id;
 			if (isNew) {
-				await $fetch('/api/contact/create', {
+				const response = await $fetch('/api/contact/create', {
 					method: 'POST',
 					body: JSON.stringify(contact.value),
 				});
+				contacts.value.push(response as Contact);
 			} else {
-				await $fetch(`/api/contact/${contact.value._id}`, {
+				const response = await $fetch(`/api/contact/${contact.value._id}`, {
 					method: 'PUT',
 					body: JSON.stringify(contact.value),
 				});
+				const index = contacts.value.findIndex((c) => c._id === contact.value._id);
+				if (index !== -1) {
+					contacts.value[index] = response as Contact;
+				}
 			}
 			toast.add({ title: `Contact ${isNew ? 'created' : 'updated'}`, color: 'success', icon: 'i-lucide-check-circle' });
-			await getContacts();
 			resetContact();
 		} catch (error: any) {
 			toast.add({ title: 'Failed to save contact', description: error?.data?.message, color: 'error', icon: 'i-lucide-alert-circle' });
@@ -83,8 +87,8 @@ export const useContactStore = defineStore('contacts', () => {
 			await $fetch(`/api/contact/${id}`, {
 				method: 'DELETE',
 			});
+			contacts.value = contacts.value.filter((c) => c._id !== id);
 			toast.add({ title: 'Contact deleted', color: 'success', icon: 'i-lucide-check-circle' });
-			await getContacts();
 		} catch (error: any) {
 			toast.add({ title: 'Failed to delete contact', description: error?.data?.message, color: 'error', icon: 'i-lucide-alert-circle' });
 		} finally {

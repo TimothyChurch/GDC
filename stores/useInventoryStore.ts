@@ -36,18 +36,22 @@ export const useInventoryStore = defineStore("inventories", () => {
     try {
       const isNew = !inventory.value._id;
       if (isNew) {
-        await $fetch("/api/inventory/create", {
+        const response = await $fetch("/api/inventory/create", {
           method: "POST",
           body: JSON.stringify(inventory.value),
         });
+        inventories.value.push(response as Inventory);
       } else {
-        await $fetch(`/api/inventory/${inventory.value._id}`, {
+        const response = await $fetch(`/api/inventory/${inventory.value._id}`, {
           method: "PUT",
           body: JSON.stringify(inventory.value),
         });
+        const index = inventories.value.findIndex((i) => i._id === inventory.value._id);
+        if (index !== -1) {
+          inventories.value[index] = response as Inventory;
+        }
       }
       toast.add({ title: `Inventory ${isNew ? 'created' : 'updated'}`, color: 'success', icon: 'i-lucide-check-circle' });
-      getInventories();
       resetInventory();
     } catch (error: any) {
       toast.add({ title: 'Failed to save inventory', description: error?.data?.message, color: 'error', icon: 'i-lucide-alert-circle' });
@@ -71,8 +75,8 @@ export const useInventoryStore = defineStore("inventories", () => {
       await $fetch(`/api/inventory/${id}`, {
         method: "DELETE",
       });
+      inventories.value = inventories.value.filter((i) => i._id !== id);
       toast.add({ title: 'Inventory record deleted', color: 'success', icon: 'i-lucide-check-circle' });
-      getInventories();
     } catch (error: any) {
       toast.add({ title: 'Failed to delete inventory record', description: error?.data?.message, color: 'error', icon: 'i-lucide-alert-circle' });
     } finally {

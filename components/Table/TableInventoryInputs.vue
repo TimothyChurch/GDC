@@ -87,48 +87,50 @@ const deleteItem = async (row: Inventory) => {
 <template>
 	<div>
 		<UInput v-model="search" placeholder="Search by date..." class="mb-2" />
-		<UTable
-			:rows="rows"
-			:columns="columns"
-			:loading="inventoryStore.loading"
-			v-model:expand="expand">
-			<template #empty-state>
-				<div class="flex flex-col items-center justify-center py-6 gap-3">
-					<span class="text-sm text-gray-500">No inventory records found</span>
-				</div>
-			</template>
-			<template #expand="{ row }">
-				<UTable
-					:rows="Object.entries(row.items)"
-					:columns="itemColumns">
-					<template #item-data="{ row }">
-						<div>{{ getInventoryNameById(row[0]) }}</div>
-					</template>
-					<template #quantity-data="{ row }">
-						<div>{{ row[1] }}</div>
-					</template>
-				</UTable>
-			</template>
-			<template #date-data="{ row }">
-				{{ new Date(row.date).toLocaleDateString() }}
-			</template>
-			<template #actions-header>
-				<UButton
-					color="gray"
-					variant="ghost"
-					icon="i-heroicons-plus-20-solid"
-					@click="addItem()" />
-			</template>
-			<template #actions-data="{ row }">
-				<UDropdown :items="items(row)">
+		<div class="overflow-x-auto">
+			<UTable
+				:rows="rows"
+				:columns="columns"
+				:loading="inventoryStore.loading"
+				v-model:expand="expand">
+				<template #empty-state>
+					<div class="flex flex-col items-center justify-center py-6 gap-3">
+						<span class="text-sm text-gray-500">No inventory records found</span>
+					</div>
+				</template>
+				<template #expand="{ row }">
+					<UTable
+						:rows="Object.entries(row.items)"
+						:columns="itemColumns">
+						<template #item-data="{ row }">
+							<div>{{ getInventoryNameById(row[0]) }}</div>
+						</template>
+						<template #quantity-data="{ row }">
+							<div>{{ row[1] }}</div>
+						</template>
+					</UTable>
+				</template>
+				<template #date-data="{ row }">
+					{{ new Date(row.date).toLocaleDateString() }}
+				</template>
+				<template #actions-header>
 					<UButton
 						color="gray"
 						variant="ghost"
-						icon="i-heroicons-ellipsis-horizontal-20-solid" />
-				</UDropdown>
-			</template>
-		</UTable>
-		<div class="flex justify-between">
+						icon="i-heroicons-plus-20-solid"
+						@click="addItem()" />
+				</template>
+				<template #actions-data="{ row }">
+					<UDropdown :items="items(row)">
+						<UButton
+							color="gray"
+							variant="ghost"
+							icon="i-heroicons-ellipsis-horizontal-20-solid" />
+					</UDropdown>
+				</template>
+			</UTable>
+		</div>
+		<div class="flex flex-col sm:flex-row justify-between gap-2">
 			<UFormGroup label="Results per Page">
 				<USelect
 					:options="[5, 10, 20, 100]"

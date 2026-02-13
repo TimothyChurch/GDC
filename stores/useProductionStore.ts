@@ -47,8 +47,6 @@ export const useProductionStore = defineStore('productions', () => {
 		}
 	};
 
-	const createProduction = async (): Promise<void> => {};
-
 	const updateProduction = async (): Promise<void> => {
 		saving.value = true;
 		try {
@@ -131,7 +129,6 @@ export const useProductionStore = defineStore('productions', () => {
 		saving,
 		getProductions,
 		getProductionById,
-		createProduction,
 		updateProduction,
 		deleteProduction,
 		resetProduction,

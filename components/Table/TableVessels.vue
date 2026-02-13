@@ -81,32 +81,34 @@ const deleteVessel = async (row) => {
 <template>
 	<div>
 		<UInput v-model="search" placeholder="Search vessels..." class="mb-2" />
-		<UTable
-			:rows="rows"
-			:columns="columns"
-			:loading="vesselStore.loading">
-			<template #empty-state>
-				<div class="flex flex-col items-center justify-center py-6 gap-3">
-					<span class="text-sm text-gray-500">No vessels found</span>
-				</div>
-			</template>
-			<template #actions-header>
-				<UButton
-					color="gray"
-					variant="ghost"
-					icon="i-heroicons-plus-20-solid"
-					@click="addVessel()" />
-			</template>
-			<template #actions-data="{ row }">
-				<UDropdown :items="items(row)">
+		<div class="overflow-x-auto">
+			<UTable
+				:rows="rows"
+				:columns="columns"
+				:loading="vesselStore.loading">
+				<template #empty-state>
+					<div class="flex flex-col items-center justify-center py-6 gap-3">
+						<span class="text-sm text-gray-500">No vessels found</span>
+					</div>
+				</template>
+				<template #actions-header>
 					<UButton
 						color="gray"
 						variant="ghost"
-						icon="i-heroicons-ellipsis-horizontal-20-solid" />
-				</UDropdown>
-			</template>
-		</UTable>
-		<div class="flex justify-between">
+						icon="i-heroicons-plus-20-solid"
+						@click="addVessel()" />
+				</template>
+				<template #actions-data="{ row }">
+					<UDropdown :items="items(row)">
+						<UButton
+							color="gray"
+							variant="ghost"
+							icon="i-heroicons-ellipsis-horizontal-20-solid" />
+					</UDropdown>
+				</template>
+			</UTable>
+		</div>
+		<div class="flex flex-col sm:flex-row justify-between gap-2">
 			<UFormGroup label="Results per Page">
 				<USelect
 					:options="[5, 10, 20, 100]"

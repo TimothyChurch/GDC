@@ -121,21 +121,23 @@ const openModal = async () => await modal.open();
         >Add Recipe</UButton
       >
     </div>
-    <UTable
-      v-model:global-filter="search"
-      v-model:pagination="pagination"
-      :data="recipeStore.recipes"
-      :columns="columns"
-      :loading="recipeStore.loading"
-      :empty="{ icon: 'i-lucide-book-open', label: 'No recipes found' }"
-    >
-      <template #expanded="{ row }">
-        <div v-for="item in row.original.items" :key="item._id">
-          {{ item }}
-        </div>
-      </template>
-    </UTable>
-    <div class="flex justify-between items-center mt-2">
+    <div class="overflow-x-auto">
+      <UTable
+        v-model:global-filter="search"
+        v-model:pagination="pagination"
+        :data="recipeStore.recipes"
+        :columns="columns"
+        :loading="recipeStore.loading"
+        :empty="{ icon: 'i-lucide-book-open', label: 'No recipes found' }"
+      >
+        <template #expanded="{ row }">
+          <div v-for="item in row.original.items" :key="item._id">
+            {{ item }}
+          </div>
+        </template>
+      </UTable>
+    </div>
+    <div class="flex flex-col sm:flex-row justify-between items-center gap-2 mt-2">
       <UFormGroup label="Results per Page">
         <USelect
           :options="[5, 10, 20, 100]"

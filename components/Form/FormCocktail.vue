@@ -71,29 +71,29 @@ const saveCocktail = async () => {
 
 <template>
 	<UContainer class="flex justify-around p-5">
-		<UCard class="w-fit">
+		<UCard>
 			<UForm
 				:schema="schema"
 				:state="cocktailStore.cocktail"
 				@submit="saveCocktail"
-				class="grid grid-cols-6 gap-2 max-w-lg">
-				<UFormField label="Name" name="name" class="col-span-2">
+				class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-6 gap-2">
+				<UFormField label="Name" name="name" class="md:col-span-2">
 					<UInput v-model="cocktailStore.cocktail.name" class="w-full" />
 				</UFormField>
 
-				<UFormField label="Glassware" name="glassware" class="col-span-2">
+				<UFormField label="Glassware" name="glassware" class="md:col-span-2">
 					<USelect
 						v-model="cocktailStore.cocktail.glassware"
 						:items="glasswareOptions"
 						class="w-full" />
 				</UFormField>
-				<UFormField label="Menu" name="menu" class="col-span-2">
+				<UFormField label="Menu" name="menu" class="md:col-span-2">
 					<USelect
 						v-model="cocktailStore.cocktail.menu"
 						:items="menuOptions"
 						class="w-full" />
 				</UFormField>
-				<UFormField label="Recipe" name="ingredients" class="col-span-6">
+				<UFormField label="Recipe" name="ingredients" class="col-span-full">
 					<div class="col-span-6 grid grid-cols-6">
 						<h1 class="col-span-3 font-bold text-xl">Ingredient</h1>
 						<h1 class="font-bold text-xl">Amount</h1>
@@ -139,14 +139,14 @@ const saveCocktail = async () => {
 					</div>
 				</UFormField>
 
-				<UFormField label="Cost" name="cost" class="col-span-1">
+				<UFormField label="Cost" name="cost">
 					{{ Dollar.format(cost) }}
 				</UFormField>
 
-				<UFormField label="Price Estimate" name="priceRange" class="col-span-2">
-					{{ Dollar.format(((cost - 1.5) / 2.5) * 4 + 7) }}
+				<UFormField label="Price Estimate" name="priceRange" class="md:col-span-2">
+					{{ Dollar.format(estimateCocktailPrice(cost)) }}
 				</UFormField>
-				<UFormField label="Price" name="price" class="col-span-3">
+				<UFormField label="Price" name="price" class="md:col-span-3">
 					<UInput
 						v-model.number="cocktailStore.cocktail.price"
 						type="number"
@@ -154,15 +154,15 @@ const saveCocktail = async () => {
 						icon="i-lucide-dollar-sign" />
 				</UFormField>
 
-				<UFormField label="Description" name="description" class="col-span-3">
+				<UFormField label="Description" name="description" class="sm:col-span-1 md:col-span-3">
 					<UTextarea v-model="cocktailStore.cocktail.description" />
 				</UFormField>
 
-				<UFormField label="Directions" name="directions" class="col-span-3">
+				<UFormField label="Directions" name="directions" class="sm:col-span-1 md:col-span-3">
 					<UTextarea v-model="cocktailStore.cocktail.directions" />
 				</UFormField>
 
-				<div class="flex justify-center space-x-2 mt-4 col-span-6">
+				<div class="flex justify-center space-x-2 mt-4 col-span-full">
 					<UButton type="submit" color="primary" :loading="cocktailStore.saving">
 						{{ cocktailStore.cocktail._id ? "Update" : "Create" }} Cocktail
 					</UButton>

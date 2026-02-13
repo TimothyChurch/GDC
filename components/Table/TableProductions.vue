@@ -72,58 +72,60 @@ const deleteItem = async (row) => {
 <template>
 	<div>
 		<UInput v-model="search" placeholder="Search productions..." class="mb-2" />
-		<UTable
-			:rows="rows"
-			:columns="columns"
-			:loading="productionsStore.loading">
-			<template #empty-state>
-				<div class="flex flex-col items-center justify-center py-6 gap-3">
-					<span class="text-sm text-gray-500">No productions found</span>
-				</div>
-			</template>
-			<template #date-data="{ row }">
-				{{
-					new Date(row.date).toLocaleString('en-US', {
-						year: 'numeric',
-						month: 'long',
-						day: 'numeric',
-					})
-				}}
-			</template>
-			<template #vessel-data="{ row }">
-				{{
-					vesselStore.vessels
-						.filter((vessel) => row.vessel.includes(vessel._id))
-						.map((vessel) => vessel.name)
-						.join(', ')
-				}}
-			</template>
-			<template #bottle-data="{ row }">
-				{{ bottlestore.getName(row.bottle) }}
-			</template>
-			<template #productionCost-data="{ row }">
-				{{ Dollar.format(row.productionCost) }}
-			</template>
-			<template #bottleCost-data="{ row }">
-				{{ Dollar.format(row.bottleCost) }}
-			</template>
-			<template #actions-header>
-				<UButton
-					color="gray"
-					variant="ghost"
-					icon="i-heroicons-plus-20-solid"
-					@click="newItem" />
-			</template>
-			<template #actions-data="{ row }">
-				<UDropdown :items="items(row)">
+		<div class="overflow-x-auto">
+			<UTable
+				:rows="rows"
+				:columns="columns"
+				:loading="productionsStore.loading">
+				<template #empty-state>
+					<div class="flex flex-col items-center justify-center py-6 gap-3">
+						<span class="text-sm text-gray-500">No productions found</span>
+					</div>
+				</template>
+				<template #date-data="{ row }">
+					{{
+						new Date(row.date).toLocaleString('en-US', {
+							year: 'numeric',
+							month: 'long',
+							day: 'numeric',
+						})
+					}}
+				</template>
+				<template #vessel-data="{ row }">
+					{{
+						vesselStore.vessels
+							.filter((vessel) => row.vessel.includes(vessel._id))
+							.map((vessel) => vessel.name)
+							.join(', ')
+					}}
+				</template>
+				<template #bottle-data="{ row }">
+					{{ bottlestore.getName(row.bottle) }}
+				</template>
+				<template #productionCost-data="{ row }">
+					{{ Dollar.format(row.productionCost) }}
+				</template>
+				<template #bottleCost-data="{ row }">
+					{{ Dollar.format(row.bottleCost) }}
+				</template>
+				<template #actions-header>
 					<UButton
 						color="gray"
 						variant="ghost"
-						icon="i-heroicons-ellipsis-horizontal-20-solid" />
-				</UDropdown>
-			</template>
-		</UTable>
-		<div class="flex justify-between">
+						icon="i-heroicons-plus-20-solid"
+						@click="newItem" />
+				</template>
+				<template #actions-data="{ row }">
+					<UDropdown :items="items(row)">
+						<UButton
+							color="gray"
+							variant="ghost"
+							icon="i-heroicons-ellipsis-horizontal-20-solid" />
+					</UDropdown>
+				</template>
+			</UTable>
+		</div>
+		<div class="flex flex-col sm:flex-row justify-between gap-2">
 			<UFormGroup label="Results per Page">
 				<USelect
 					:options="[5, 10, 20, 100]"

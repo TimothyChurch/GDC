@@ -26,19 +26,19 @@ const handleSubmit = () => {
 
 <template>
 	<UContainer class="flex justify-around p-5">
-		<UCard class="w-fit">
+		<UCard>
 			<UForm
 				:schema="schema"
 				:state="itemStore.item"
 				@submit="handleSubmit"
-				class="grid grid-cols-6 gap-3 max-w-lg">
-				<UFormField label="Name" name="name" class="col-span-3">
+				class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-6 gap-3">
+				<UFormField label="Name" name="name" class="md:col-span-3">
 					<UInput v-model="itemStore.item.name" placeholder="Name" />
 				</UFormField>
-				<UFormField label="Brand" name="brand" class="col-span-3">
+				<UFormField label="Brand" name="brand" class="md:col-span-3">
 					<UInput v-model="itemStore.item.brand" placeholder="Brand" />
 				</UFormField>
-				<UFormField label="Type" name="type" class="w-48 col-span-3">
+				<UFormField label="Type" name="type" class="md:col-span-3">
 					<USelectMenu
 						v-model="itemStore.item.type"
 						:items="itemInventoryTypes"
@@ -46,7 +46,7 @@ const handleSubmit = () => {
 						@create="addType"
 						class="w-full" />
 				</UFormField>
-				<UFormField label="Vendor" name="vendor" class="w-48 col-span-3">
+				<UFormField label="Vendor" name="vendor" class="md:col-span-3">
 					<USelectMenu
 						v-model="itemStore.item.vendor"
 						:items="contactStore.getVendors()"
@@ -56,19 +56,19 @@ const handleSubmit = () => {
 						create-item
 						@create="addVendor" />
 				</UFormField>
-				<UFormField label="Inventory Unit" name="inventoryUnit" class="w-48 col-span-3">
+				<UFormField label="Inventory Unit" name="inventoryUnit" class="md:col-span-3">
 					<USelect
 						v-model="itemStore.item.inventoryUnit"
 						:items="allUnits"
 						class="w-full" />
 				</UFormField>
-				<UFormField label="Price per Inventory Unit" name="pricePerUnit" class="w-48 col-span-3">
+				<UFormField label="Price per Inventory Unit" name="pricePerUnit" class="md:col-span-3">
 					<UInput
 						type="number"
 						v-model="itemStore.item.pricePerUnit"
 						class="w-full" />
 				</UFormField>
-				<div class="flex justify-around col-span-6">
+				<div class="flex justify-around col-span-full">
 					<UButton type="submit" :loading="itemStore.saving">Add item</UButton>
 				</div>
 			</UForm>

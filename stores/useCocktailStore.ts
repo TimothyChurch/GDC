@@ -53,18 +53,23 @@ export const useCocktailStore = defineStore("cocktails", () => {
     try {
       const isNew = !cocktail.value._id;
       if (isNew) {
-        await $fetch("/api/cocktail/create", {
+        const response = await $fetch("/api/cocktail/create", {
           method: "POST",
           body: JSON.stringify(cocktail.value),
         });
+        cocktails.value.push(response as Cocktail);
       } else {
-        await $fetch(`/api/cocktail/${cocktail.value._id}`, {
+        const response = await $fetch(`/api/cocktail/${cocktail.value._id}`, {
           method: "PUT",
           body: JSON.stringify(cocktail.value),
         });
+        const index = cocktails.value.findIndex((c) => c._id === cocktail.value._id);
+        if (index !== -1) {
+          cocktails.value[index] = response as Cocktail;
+        }
       }
       toast.add({ title: `Cocktail ${isNew ? 'created' : 'updated'}`, color: 'success', icon: 'i-lucide-check-circle' });
-      getCocktails();
+      sortCocktails();
       resetCocktail();
     } catch (error: any) {
       toast.add({ title: 'Failed to save cocktail', description: error?.data?.message, color: 'error', icon: 'i-lucide-alert-circle' });
@@ -94,8 +99,8 @@ export const useCocktailStore = defineStore("cocktails", () => {
       await $fetch(`/api/cocktail/${id}`, {
         method: "DELETE",
       });
+      cocktails.value = cocktails.value.filter((c) => c._id !== id);
       toast.add({ title: 'Cocktail deleted', color: 'success', icon: 'i-lucide-check-circle' });
-      await getCocktails();
     } catch (error: any) {
       toast.add({ title: 'Failed to delete cocktail', description: error?.data?.message, color: 'error', icon: 'i-lucide-alert-circle' });
     } finally {

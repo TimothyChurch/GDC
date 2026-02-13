@@ -52,14 +52,18 @@ export const useItemStore = defineStore("items", () => {
           method: "POST",
           body: JSON.stringify(item.value),
         });
+        items.value.push(response as Item);
       } else {
         response = await $fetch(`/api/item/${item.value._id}`, {
           method: "PUT",
           body: JSON.stringify(item.value),
         });
+        const index = items.value.findIndex((i) => i._id === item.value._id);
+        if (index !== -1) {
+          items.value[index] = response as Item;
+        }
       }
       toast.add({ title: `Item ${isNew ? 'created' : 'updated'}`, color: 'success', icon: 'i-lucide-check-circle' });
-      getItems();
       resetItem();
       return response as Item;
     } catch (error: any) {
@@ -90,8 +94,8 @@ export const useItemStore = defineStore("items", () => {
       await $fetch(`/api/item/${id}`, {
         method: "DELETE",
       });
+      items.value = items.value.filter((i) => i._id !== id);
       toast.add({ title: 'Item deleted', color: 'success', icon: 'i-lucide-check-circle' });
-      await getItems();
     } catch (error: any) {
       toast.add({ title: 'Failed to delete item', description: error?.data?.message, color: 'error', icon: 'i-lucide-alert-circle' });
     } finally {

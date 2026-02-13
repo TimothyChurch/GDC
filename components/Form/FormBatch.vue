@@ -52,7 +52,7 @@ const saveBatch = async () => {
 			:schema="schema"
 			:state="batchStore.batch"
 			@submit="saveBatch">
-			<div class="grid grid-flow-col auto-cols-auto gap-3">
+			<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
 				<UFormField label="Recipe" name="recipe">
 					<USelect
 						v-model="batchStore.batch.recipe"
