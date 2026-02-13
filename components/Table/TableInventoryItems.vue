@@ -29,10 +29,20 @@ const filteredRows = computed(() => {
 	}
 });
 
+const page = ref(1);
+const pageCount = ref(10);
+
+const paginatedRows = computed(() => {
+	return filteredRows.value.slice(
+		(page.value - 1) * pageCount.value,
+		page.value * pageCount.value
+	);
+});
+
 const columns = [
-	{ key: 'name', label: 'Name' },
-	{ key: 'type', label: 'Type' },
-	{ key: 'vendor', label: 'Vendor' },
+	{ key: 'name', label: 'Name', sortable: true },
+	{ key: 'type', label: 'Type', sortable: true },
+	{ key: 'vendor', label: 'Vendor', sortable: true },
 	{ key: 'price', label: 'Price / Unit' },
 	{ key: 'stock', label: 'Stock' },
 ];
@@ -51,7 +61,7 @@ const columns = [
 			</UButton>
 		</UButtonGroup>
 		<UTable
-			:rows="filteredRows"
+			:rows="paginatedRows"
 			:columns="columns"
 			:loading="itemStore.loading">
 			<template #empty-state>
@@ -60,5 +70,18 @@ const columns = [
 				</div>
 			</template>
 		</UTable>
+		<div class="flex justify-between">
+			<UFormGroup label="Results per Page">
+				<USelect
+					:options="[5, 10, 20, 100]"
+					v-model="pageCount" />
+			</UFormGroup>
+			<div class="flex justify-end px-3 py-3.5 border-t border-gray-200 dark:border-gray-700">
+				<UPagination
+					v-model="page"
+					:page-count="pageCount"
+					:total="filteredRows.length" />
+			</div>
+		</div>
 	</div>
 </template>

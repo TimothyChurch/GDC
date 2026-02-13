@@ -3,39 +3,40 @@ const batchStore = useBatchStore();
 const recipeStore = useRecipeStore();
 const vesselStore = useVesselStore();
 
-const batch = (id) => {
-	return;
-};
-
 const items = computed(() => {
 	return [
-		vesselStore.stills.map((stills) => {
+		vesselStore.stills.map((still) => {
 			return {
-				label: stills.name,
-				value: stills._id,
+				label: still.name,
+				value: still._id,
 			};
 		}),
 	];
 });
 
-const fermenters = computed(() => {
-	return vesselStore.fermenters.map((fermenter) => {
-		fermenter.contents.forEach((content, index) => {
-			fermenter.contents[index] = {
-				...content,
-				batch: batchStore.getBatchById(content.batch),
-			};
+const startDistilling = async (fermenterId, stillId) => {
+	const fermenter = vesselStore.getVesselById(fermenterId);
+	const batchIds = fermenter?.contents?.map((c) => c.batch) || [];
+
+	await vesselStore.fullTransfer(fermenterId, stillId);
+
+	for (const batchId of batchIds) {
+		await batchStore.advanceBatchStatus(batchId, 'Distilling', {
+			vessel: stillId,
+			date: new Date(),
 		});
-		return fermenter;
-	});
-});
+	}
+};
 </script>
 
 <template>
 	<div>
 		<h1 class="font-bold text-xl">Fermenters</h1>
-		<div class="grid grid-flow-col auto-cols-auto gap-3">
-			<div v-for="fermenter in vesselStore.fermenters">
+		<div v-if="vesselStore.fermenters.length === 0" class="text-sm text-neutral-500 py-4">
+			No fermenters configured
+		</div>
+		<div v-else class="grid grid-flow-col auto-cols-auto gap-3">
+			<div v-for="fermenter in vesselStore.fermenters" :key="fermenter._id">
 				<UCard>
 					<template #header>
 						<div class="flex justify-between">
@@ -43,27 +44,32 @@ const fermenters = computed(() => {
 							<h1>
 								{{
 									recipeStore.getRecipeById(
-										batchStore.getBatchById(fermenter.contents[0]?.batch)
+										batchStore.getBatchById(fermenter.contents?.[0]?.batch)
 											?.recipe
 									)?.name
 								}}
 							</h1>
 						</div>
 					</template>
-					<div class="flex flex-col gap-3 items-center">
-						{{ fermenter.contents }}
+					<div v-if="!fermenter.contents || fermenter.contents.length === 0" class="text-sm text-neutral-500">
+						Empty
+					</div>
+					<div v-else class="flex flex-col gap-3 items-center">
+						<div v-for="content in fermenter.contents" :key="content.batch" class="text-sm">
+							<span>{{ content.volume }} {{ content.volumeUnit }}</span>
+						</div>
 						<UDropdown :items="items">
 							<UButton
-								color="black"
+								color="neutral"
 								variant="outline"
 								>Start Distilling</UButton
 							>
 							<template #item="{ item }">
 								<UButton
-									color="black"
+									color="neutral"
 									variant="ghost"
 									class="w-full"
-									@click="fullTransfer(fermenter._id, item.value)"
+									@click="startDistilling(fermenter._id, item.value)"
 									>{{ item.label }}</UButton
 								>
 							</template>

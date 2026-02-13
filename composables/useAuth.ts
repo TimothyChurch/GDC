@@ -12,6 +12,9 @@ export const useAuth = () => {
       secure: true,
     });
 
+    console.log("Current user state:", user.value);
+    console.log("Attempting login with email:", email);
+
     if (user.value.authenticated) {
       return true;
     }

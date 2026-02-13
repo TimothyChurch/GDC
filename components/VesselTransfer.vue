@@ -4,7 +4,6 @@ const recipeStore = useRecipeStore();
 const vesselStore = useVesselStore();
 
 const destinationVessel = ref();
-// TODO Add ability for transfer units to be different
 
 const transfer = ref({
 	volume: 0 as unknown as number,
@@ -14,19 +13,34 @@ const transfer = ref({
 });
 
 const value: Ref<number> = computed(() => {
-	const value = vesselStore.vessel.contents.reduce(
+	const val = vesselStore.vessel.contents?.reduce(
 		(sum, batch) => sum + batch.value,
 		0
-	);
-	const volume = vesselStore.vessel.contents.reduce(
+	) || 0;
+	const volume = vesselStore.vessel.contents?.reduce(
 		(sum, batch) => sum + batch.volume,
 		0
-	);
-	const valueUnit = value / volume;
+	) || 0;
+	if (volume <= 0) return 0;
+	const valueUnit = val / volume;
 	const newValue = transfer.value.volume * valueUnit;
 	transfer.value.value = newValue;
 	return newValue;
 });
+
+const onFullTransfer = async () => {
+	if (!vesselStore.vessel._id || !destinationVessel.value?._id) return;
+	await vesselStore.fullTransfer(vesselStore.vessel._id, destinationVessel.value._id);
+};
+
+const onPartialTransfer = async () => {
+	if (!vesselStore.vessel._id || !destinationVessel.value?._id) return;
+	await vesselStore.transferBatch(
+		vesselStore.vessel._id,
+		destinationVessel.value._id,
+		transfer.value
+	);
+};
 </script>
 
 <template>
@@ -36,14 +50,13 @@ const value: Ref<number> = computed(() => {
 			:options="vesselStore.vessels"
 			placeholder="Select a vessel"
 			option-attribute="name" />
-		{{ transfer }}
-		<div class="flex gap-3">
+		<div class="flex gap-3 mt-4">
 			<UCard>
 				<template #header>
 					<h1>Source Vessel: {{ vesselStore.vessel.name }}</h1>
 				</template>
 				<h1 class="font-bold text-lg">Initial Fill</h1>
-				<div v-for="batch in vesselStore.vessel.contents">
+				<div v-for="batch in vesselStore.vessel.contents" :key="batch.batch">
 					<div>
 						Recipe:
 						{{
@@ -77,10 +90,7 @@ const value: Ref<number> = computed(() => {
 					</div>
 				</template>
 				<div class="flex flex-col gap-3">
-					<UButton
-						@click="fullTransfer(vesselStore.vessel._id, destinationVessel._id)"
-						>Full Transfer</UButton
-					>
+					<UButton @click="onFullTransfer">Full Transfer</UButton>
 					<UInput
 						v-model="transfer.volume"
 						type="number"
@@ -92,16 +102,7 @@ const value: Ref<number> = computed(() => {
 					<div>
 						{{ Dollar.format(value) }}
 					</div>
-					<UButton
-						@click="
-							transferBatch(
-								vesselStore.vessel._id,
-								destinationVessel._id,
-								transfer
-							)
-						"
-						>Transfer</UButton
-					>
+					<UButton @click="onPartialTransfer">Transfer</UButton>
 				</div>
 			</UCard>
 		</div>

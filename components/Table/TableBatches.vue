@@ -5,10 +5,31 @@ const recipeStore = useRecipeStore();
 const vesselStore = useVesselStore();
 const { confirm } = useDeleteConfirm();
 
+const search = ref('');
+const page = ref(1);
+const pageCount = ref(10);
+
+const filteredData = computed(() => {
+	if (!search.value) return batchStore.batches;
+	const q = search.value.toLowerCase();
+	return batchStore.batches.filter((batch) => {
+		const recipeName = recipeStore.getRecipeById(batch.recipe)?.name?.toLowerCase() || '';
+		const status = batch.status?.toLowerCase() || '';
+		return recipeName.includes(q) || status.includes(q);
+	});
+});
+
+const rows = computed(() => {
+	return filteredData.value.slice(
+		(page.value - 1) * pageCount.value,
+		page.value * pageCount.value
+	);
+});
+
 const columns = [
-	{ key: 'recipe', label: 'Recipe' },
-	{ key: 'batchCost', label: 'Batch Costs' },
-	{ key: 'status', label: 'Status' },
+	{ key: 'recipe', label: 'Recipe', sortable: true },
+	{ key: 'batchCost', label: 'Batch Costs', sortable: true },
+	{ key: 'status', label: 'Status', sortable: true },
 	{ key: 'actions' },
 ];
 const items = (row) => [
@@ -49,8 +70,9 @@ const deleteItem = async (row) => {
 
 <template>
 	<div>
+		<UInput v-model="search" placeholder="Search batches..." class="mb-2" />
 		<UTable
-			:rows="batchStore.batches"
+			:rows="rows"
 			:columns="columns"
 			:loading="batchStore.loading">
 			<template #empty-state>
@@ -80,5 +102,18 @@ const deleteItem = async (row) => {
 				</UDropdown>
 			</template>
 		</UTable>
+		<div class="flex justify-between">
+			<UFormGroup label="Results per Page">
+				<USelect
+					:options="[5, 10, 20, 100]"
+					v-model="pageCount" />
+			</UFormGroup>
+			<div class="flex justify-end px-3 py-3.5 border-t border-gray-200 dark:border-gray-700">
+				<UPagination
+					v-model="page"
+					:page-count="pageCount"
+					:total="filteredData.length" />
+			</div>
+		</div>
 	</div>
 </template>

@@ -240,6 +240,58 @@ export const useBatchStore = defineStore('batches', () => {
 		};
 	};
 
+	const startBrewing = async (batchId: string, vesselId: string): Promise<void> => {
+		const vesselStore = useVesselStore();
+		const target = batches.value.find((b) => b._id === batchId);
+		if (!target) return;
+
+		target.status = 'Brewing';
+		target.brewing = {
+			...target.brewing,
+			vessel: vesselId,
+			date: new Date(),
+		};
+		batch.value = target;
+		await updateBatch();
+
+		// Add batch contents to the mash tun
+		await vesselStore.addContents(vesselId, {
+			batch: batchId,
+			volume: target.batchSize || 0,
+			volumeUnit: target.batchSizeUnit || 'gallon',
+			abv: 0,
+			value: target.batchCost || 0,
+		});
+	};
+
+	const advanceBatchStatus = async (batchId: string, newStatus: string, stageData?: { vessel?: string; date?: Date }): Promise<void> => {
+		const target = batches.value.find((b) => b._id === batchId);
+		if (!target) return;
+
+		target.status = newStatus;
+
+		const statusFieldMap: Record<string, string> = {
+			Brewing: 'brewing',
+			Fermenting: 'fermenting',
+			Distilling: 'distilling',
+			Storage: 'storage',
+			Barreled: 'barreled',
+			Bottled: 'bottled',
+		};
+
+		const stageKey = statusFieldMap[newStatus];
+		if (stageKey && stageData) {
+			const stage = (target as any)[stageKey];
+			if (stage) {
+				if (stageData.vessel !== undefined) stage.vessel = stageData.vessel;
+				if (stageData.date !== undefined) stage.date = stageData.date;
+			}
+		}
+
+		batch.value = target;
+		await updateBatch();
+	};
+
 	// Getters
 	const getBatchById = (id: string): Batch | undefined => {
 		return batches.value.find((b) => b._id === id);
@@ -290,5 +342,7 @@ export const useBatchStore = defineStore('batches', () => {
 		getBatchByStatus,
 		batchStages,
 		getRecipeNameByBatchId,
+		startBrewing,
+		advanceBatchStatus,
 	};
 });

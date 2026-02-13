@@ -14,16 +14,22 @@ const columns = [
 	{ key: 'bottleCost', label: 'Bottle Cost' },
 	{ key: 'actions', label: 'Actions' },
 ];
-// Table pagination
+// Table search and pagination
+const search = ref('');
 const page = ref(1);
 const pageCount = ref(10);
 
+const filteredData = computed(() => {
+	if (!search.value) return productionsStore.productions;
+	const q = search.value.toLowerCase();
+	return productionsStore.productions.filter((p) => {
+		const bottleName = bottlestore.getName(p.bottle)?.toLowerCase() || '';
+		return bottleName.includes(q);
+	});
+});
+
 const rows = computed(() => {
-	productionsStore.productions.map((production) => ({
-		...production,
-		date: new Date(production.date),
-	}));
-	return productionsStore.productions.slice(
+	return filteredData.value.slice(
 		(page.value - 1) * pageCount.value,
 		page.value * pageCount.value
 	);
@@ -65,6 +71,7 @@ const deleteItem = async (row) => {
 
 <template>
 	<div>
+		<UInput v-model="search" placeholder="Search productions..." class="mb-2" />
 		<UTable
 			:rows="rows"
 			:columns="columns"
@@ -127,7 +134,7 @@ const deleteItem = async (row) => {
 				<UPagination
 					v-model="page"
 					:page-count="pageCount"
-					:total="productionsStore.productions.length" />
+					:total="filteredData.length" />
 			</div>
 		</div>
 	</div>

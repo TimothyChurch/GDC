@@ -3,6 +3,7 @@ const router = useRouter();
 
 const bottleStore = useBottleStore();
 const searchFilter = ref("");
+const pagination = ref({ pageIndex: 0, pageSize: 10 });
 // Modal component info
 import { ModalBottle } from "#components";
 const overlay = useOverlay();
@@ -38,10 +39,24 @@ const onSelect = (row) => {
     </div>
     <UTable
       :data="bottleStore.bottles"
-      :global-filter="searchFilter"
+      v-model:global-filter="searchFilter"
+      v-model:pagination="pagination"
       :loading="bottleStore.loading"
       :empty="{ icon: 'i-lucide-wine', label: 'No bottles found' }"
       @select="onSelect"
     />
+    <div class="flex justify-between items-center mt-2">
+      <UFormGroup label="Results per Page">
+        <USelect
+          :options="[5, 10, 20, 100]"
+          :model-value="pagination.pageSize"
+          @update:model-value="pagination = { ...pagination, pageSize: Number($event), pageIndex: 0 }" />
+      </UFormGroup>
+      <UPagination
+        :model-value="pagination.pageIndex + 1"
+        @update:model-value="pagination = { ...pagination, pageIndex: $event - 1 }"
+        :page-count="pagination.pageSize"
+        :total="bottleStore.bottles.length" />
+    </div>
   </div>
 </template>

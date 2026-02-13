@@ -10,6 +10,7 @@ const UButton = resolveComponent("UButton");
 const UDropdownMenu = resolveComponent("UDropdownMenu");
 
 const search = ref("");
+const pagination = ref({ pageIndex: 0, pageSize: 10 });
 
 const columns: TableColumn<Recipe>[] = [
   {
@@ -110,17 +111,42 @@ const openModal = async () => await modal.open();
 
 <template>
   <div>
+    <div class="flex justify-between mb-2">
+      <UInput v-model="search" placeholder="Search recipes..." />
+      <UButton
+        icon="i-heroicons-plus-circle"
+        size="xl"
+        @click="newRecipe"
+        variant="ghost"
+        >Add Recipe</UButton
+      >
+    </div>
     <UTable
+      v-model:global-filter="search"
+      v-model:pagination="pagination"
       :data="recipeStore.recipes"
       :columns="columns"
       :loading="recipeStore.loading"
       :empty="{ icon: 'i-lucide-book-open', label: 'No recipes found' }"
     >
       <template #expanded="{ row }">
-        <div v-for="item in row.original.items">
+        <div v-for="item in row.original.items" :key="item._id">
           {{ item }}
         </div>
       </template>
     </UTable>
+    <div class="flex justify-between items-center mt-2">
+      <UFormGroup label="Results per Page">
+        <USelect
+          :options="[5, 10, 20, 100]"
+          :model-value="pagination.pageSize"
+          @update:model-value="pagination = { ...pagination, pageSize: Number($event), pageIndex: 0 }" />
+      </UFormGroup>
+      <UPagination
+        :model-value="pagination.pageIndex + 1"
+        @update:model-value="pagination = { ...pagination, pageIndex: $event - 1 }"
+        :page-count="pagination.pageSize"
+        :total="recipeStore.recipes.length" />
+    </div>
   </div>
 </template>

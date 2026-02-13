@@ -1,5 +1,5 @@
 import { defineStore } from 'pinia';
-import type { Vessel } from '~/types';
+import type { Vessel, Contents } from '~/types';
 
 export const useVesselStore = defineStore('vessels', () => {
 	const toast = useToast();
@@ -166,6 +166,81 @@ export const useVesselStore = defineStore('vessels', () => {
 		updateVessel();
 	};
 
+	const fullTransfer = async (sourceId: string, destId: string): Promise<void> => {
+		const source = vessels.value.find((v) => v._id === sourceId);
+		const dest = vessels.value.find((v) => v._id === destId);
+		if (!source || !dest) return;
+
+		const sourceContents = source.contents || [];
+		const destContents = dest.contents || [];
+
+		// Append source contents to destination
+		dest.contents = [...destContents, ...sourceContents];
+		// Clear source
+		source.contents = [];
+		source.current = { volume: 0, volumeUnit: '', abv: 0, value: 0 };
+
+		// Save both vessels
+		vessel.value = dest;
+		await updateVessel();
+		vessel.value = source;
+		await updateVessel();
+		await getVessels();
+
+		toast.add({ title: 'Transfer complete', color: 'success', icon: 'i-lucide-check-circle' });
+	};
+
+	const transferBatch = async (sourceId: string, destId: string, transfer: { volume: number; volumeUnit: string; abv: number; value: number }): Promise<void> => {
+		const source = vessels.value.find((v) => v._id === sourceId);
+		const dest = vessels.value.find((v) => v._id === destId);
+		if (!source || !dest) return;
+
+		const sourceContents = source.contents || [];
+		const totalSourceVolume = sourceContents.reduce((acc, c) => acc + c.volume, 0);
+		if (totalSourceVolume <= 0) return;
+
+		const ratio = transfer.volume / totalSourceVolume;
+		const newDestContents: Contents[] = [];
+
+		// Split each content entry proportionally
+		sourceContents.forEach((content) => {
+			const transferVolume = content.volume * ratio;
+			content.volume -= transferVolume;
+			content.value -= content.value * ratio;
+			newDestContents.push({
+				batch: content.batch,
+				volume: transferVolume,
+				volumeUnit: content.volumeUnit,
+				abv: content.abv,
+				value: content.value > 0 ? (content.value / (1 - ratio)) * ratio : 0,
+			});
+		});
+
+		// Remove empty contents from source
+		source.contents = sourceContents.filter((c) => c.volume > 0);
+		dest.contents = [...(dest.contents || []), ...newDestContents];
+
+		// Save both vessels
+		vessel.value = dest;
+		await updateVessel();
+		vessel.value = source;
+		await updateVessel();
+		await getVessels();
+
+		toast.add({ title: 'Partial transfer complete', color: 'success', icon: 'i-lucide-check-circle' });
+	};
+
+	const addContents = async (vesselId: string, contents: Contents): Promise<void> => {
+		const target = vessels.value.find((v) => v._id === vesselId);
+		if (!target) return;
+
+		target.contents = [...(target.contents || []), contents];
+
+		vessel.value = target;
+		await updateVessel();
+		await getVessels();
+	};
+
 	// Getters
 	const getVesselByType = (type: string): Vessel[] => {
 		return vessels.value.filter((v) => v.type === type);
@@ -189,5 +264,8 @@ export const useVesselStore = defineStore('vessels', () => {
 		resetVessel,
 		emptyVessel,
 		getVesselByType,
+		fullTransfer,
+		transferBatch,
+		addContents,
 	};
 });

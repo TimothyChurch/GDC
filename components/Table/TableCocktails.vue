@@ -10,6 +10,7 @@ const UButton = resolveComponent("UButton");
 const UDropdownMenu = resolveComponent("UDropdownMenu");
 
 const search = ref("");
+const pagination = ref({ pageIndex: 0, pageSize: 10 });
 
 const columns: TableColumn<Cocktail>[] = [
   {
@@ -125,17 +126,43 @@ const openModal = async () => await modal.open();
 </script>
 
 <template>
-  <UTable
-    sticky
-    :global-filter="search"
-    :data="cocktailStore.cocktails"
-    :columns="columns"
-    :loading="cocktailStore.loading"
-    :empty="{ icon: 'i-lucide-wine', label: 'No cocktails found' }"
-    class="max-h-full"
-  >
-    <template #expanded="{ row }">
-      <TableCocktailExpand :ingredients="row.original.ingredients" />
-    </template>
-  </UTable>
+  <div>
+    <div class="flex justify-between mb-2">
+      <UInput v-model="search" placeholder="Search cocktails..." />
+      <UButton
+        icon="i-heroicons-plus-circle"
+        size="xl"
+        @click="newCocktail"
+        variant="ghost"
+        >Add Cocktail</UButton
+      >
+    </div>
+    <UTable
+      sticky
+      v-model:global-filter="search"
+      v-model:pagination="pagination"
+      :data="cocktailStore.cocktails"
+      :columns="columns"
+      :loading="cocktailStore.loading"
+      :empty="{ icon: 'i-lucide-wine', label: 'No cocktails found' }"
+      class="max-h-full"
+    >
+      <template #expanded="{ row }">
+        <TableCocktailExpand :ingredients="row.original.ingredients" />
+      </template>
+    </UTable>
+    <div class="flex justify-between items-center mt-2">
+      <UFormGroup label="Results per Page">
+        <USelect
+          :options="[5, 10, 20, 100]"
+          :model-value="pagination.pageSize"
+          @update:model-value="pagination = { ...pagination, pageSize: Number($event), pageIndex: 0 }" />
+      </UFormGroup>
+      <UPagination
+        :model-value="pagination.pageIndex + 1"
+        @update:model-value="pagination = { ...pagination, pageIndex: $event - 1 }"
+        :page-count="pagination.pageSize"
+        :total="cocktailStore.cocktails.length" />
+    </div>
+  </div>
 </template>

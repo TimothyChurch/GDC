@@ -48,7 +48,7 @@ const handleLogin = async () => {
         @submit="handleLogin"
         class="mt-8 space-y-6"
       >
-        <UFormGroup label="Email address" name="email">
+        <UFormField label="Email address" name="email">
           <UInput
             v-model="email"
             type="email"
@@ -56,8 +56,8 @@ const handleLogin = async () => {
             required
             placeholder="Email address"
           />
-        </UFormGroup>
-        <UFormGroup label="Password" name="password">
+        </UFormField>
+        <UFormField label="Password" name="password">
           <UInput
             v-model="password"
             type="password"
@@ -65,7 +65,7 @@ const handleLogin = async () => {
             required
             placeholder="Password"
           />
-        </UFormGroup>
+        </UFormField>
         <div>
           <UButton type="submit" color="primary" block> Sign in </UButton>
         </div>

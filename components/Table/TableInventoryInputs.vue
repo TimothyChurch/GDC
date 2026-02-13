@@ -4,10 +4,31 @@ import type { Inventory } from '~/types';
 const inventoryStore = useInventoryStore();
 const { confirm } = useDeleteConfirm();
 
+const search = ref('');
+const page = ref(1);
+const pageCount = ref(10);
+
+const filteredData = computed(() => {
+	if (!search.value) return inventoryStore.inventories;
+	const q = search.value.toLowerCase();
+	return inventoryStore.inventories.filter((inv) => {
+		const dateStr = new Date(inv.date).toLocaleDateString().toLowerCase();
+		return dateStr.includes(q);
+	});
+});
+
+const rows = computed(() => {
+	return filteredData.value.slice(
+		(page.value - 1) * pageCount.value,
+		page.value * pageCount.value
+	);
+});
+
 const columns = [
 	{
 		key: 'date',
 		label: 'Date',
+		sortable: true,
 	},
 	{
 		key: 'actions',
@@ -65,8 +86,9 @@ const deleteItem = async (row: Inventory) => {
 
 <template>
 	<div>
+		<UInput v-model="search" placeholder="Search by date..." class="mb-2" />
 		<UTable
-			:rows="inventoryStore.inventories"
+			:rows="rows"
 			:columns="columns"
 			:loading="inventoryStore.loading"
 			v-model:expand="expand">
@@ -106,5 +128,18 @@ const deleteItem = async (row: Inventory) => {
 				</UDropdown>
 			</template>
 		</UTable>
+		<div class="flex justify-between">
+			<UFormGroup label="Results per Page">
+				<USelect
+					:options="[5, 10, 20, 100]"
+					v-model="pageCount" />
+			</UFormGroup>
+			<div class="flex justify-end px-3 py-3.5 border-t border-gray-200 dark:border-gray-700">
+				<UPagination
+					v-model="page"
+					:page-count="pageCount"
+					:total="filteredData.length" />
+			</div>
+		</div>
 	</div>
 </template>

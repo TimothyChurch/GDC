@@ -1,33 +1,53 @@
 <script setup lang="ts">
-import { format } from 'date-fns';
-// Access Needed Pinia Store
 const itemStore = useItemStore();
 const bottleStore = useBottleStore();
 const inventoryStore = useInventoryStore();
 
-const groups = ref([
-	{
-		id: 'bottles',
-		label: 'Bottles',
-		items: bottleStore.bottles.map((bottle) => {return {label: bottle.name}}),
-	},
-	{
-		id: 'items',
-		label: 'Items',
-		items: itemStore.items.map((item) => {return {label: item.name}}),
-	},
-])
+const itemOptions = computed(() => {
+	const bottles = bottleStore.bottles.map((bottle) => ({
+		label: bottle.name,
+		value: bottle._id,
+	}));
+	const items = itemStore.items.map((item) => ({
+		label: item.name,
+		value: item._id,
+	}));
+	return [...bottles, ...items];
+});
 
+const onSubmit = async () => {
+	await inventoryStore.updateInventory();
+};
 </script>
 
 <template>
-	<div>
-		<div class="flex gap-3">
-			<SiteDatePicker v-model="inventoryStore.inventory.date" />
-		</div>
-		<UCommandPalette
-			v-model="searchFilter" 
-			:groups="groups"
-			/>
+	<div class="flex flex-col gap-3">
+		<SiteDatePicker v-model="inventoryStore.inventory.date" />
+		<UFormGroup label="Item">
+			<USelectMenu
+				v-model="inventoryStore.inventory.item"
+				:options="itemOptions"
+				value-attribute="value"
+				option-attribute="label"
+				placeholder="Select an item"
+				searchable />
+		</UFormGroup>
+		<UFormGroup label="Quantity">
+			<UInput
+				v-model="inventoryStore.inventory.quantity"
+				type="number"
+				placeholder="Quantity" />
+		</UFormGroup>
+		<UFormGroup label="Location">
+			<UInput
+				v-model="inventoryStore.inventory.location"
+				placeholder="Location (optional)" />
+		</UFormGroup>
+		<UButton
+			@click="onSubmit"
+			:loading="inventoryStore.saving"
+			class="w-full justify-center">
+			Save Inventory
+		</UButton>
 	</div>
 </template>

@@ -155,6 +155,7 @@ const newItem = () => {
 const openModal = async () => await modal.open();
 
 const globalFilter = ref("");
+const pagination = ref({ pageIndex: 0, pageSize: 10 });
 </script>
 
 <template>
@@ -171,11 +172,25 @@ const globalFilter = ref("");
     </div>
     <UTable
       v-model:global-filter="globalFilter"
+      v-model:pagination="pagination"
       :data="itemStore.items"
       :columns="columns"
       :loading="itemStore.loading"
       :empty="{ icon: 'i-lucide-package', label: 'No items found' }"
     >
     </UTable>
+    <div class="flex justify-between items-center mt-2">
+      <UFormGroup label="Results per Page">
+        <USelect
+          :options="[5, 10, 20, 100]"
+          :model-value="pagination.pageSize"
+          @update:model-value="pagination = { ...pagination, pageSize: Number($event), pageIndex: 0 }" />
+      </UFormGroup>
+      <UPagination
+        :model-value="pagination.pageIndex + 1"
+        @update:model-value="pagination = { ...pagination, pageIndex: $event - 1 }"
+        :page-count="pagination.pageSize"
+        :total="itemStore.items.length" />
+    </div>
   </UContainer>
 </template>
