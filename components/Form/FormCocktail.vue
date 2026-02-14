@@ -154,6 +154,14 @@ const saveCocktail = async () => {
 						icon="i-lucide-dollar-sign" />
 				</UFormField>
 
+				<div class="col-span-full">
+					<FormImageUpload
+						v-model="cocktailStore.cocktail.img"
+						folder="cocktails"
+						label="Cocktail Photo"
+					/>
+				</div>
+
 				<UFormField label="Description" name="description" class="sm:col-span-1 md:col-span-3">
 					<UTextarea v-model="cocktailStore.cocktail.description" />
 				</UFormField>

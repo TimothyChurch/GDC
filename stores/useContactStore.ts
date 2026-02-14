@@ -5,6 +5,7 @@ export const useContactStore = defineStore('contacts', () => {
 
 	// State
 	const contacts = ref<Contact[]>([]);
+	const loaded = ref(false);
 	const loading = ref(false);
 	const saving = ref(false);
 	const contact = ref<Contact>({
@@ -26,12 +27,17 @@ export const useContactStore = defineStore('contacts', () => {
 			const response = await $fetch('/api/contact');
 			contacts.value = response as Contact[];
 		} catch (error) {
-			console.error('Error fetching contacts:', error);
 		} finally {
 			loading.value = false;
 		}
 	};
-	getContacts();
+
+	const ensureLoaded = async () => {
+		if (!loaded.value) {
+			await getContacts();
+			loaded.value = true;
+		}
+	};
 
 	const checkContacts = () => {
 		if (!contacts.value.length) {
@@ -119,8 +125,10 @@ export const useContactStore = defineStore('contacts', () => {
 	return {
 		contacts,
 		contact,
+		loaded,
 		loading,
 		saving,
+		ensureLoaded,
 		getContacts,
 		updateContact,
 		deleteContact,

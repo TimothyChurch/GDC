@@ -46,5 +46,12 @@ export const Recipe = defineMongooseModel({
 		directions: {
 			type: String,
 		},
+		notes: {
+			type: String,
+		},
+		targetAbv: {
+			type: Number,
+		},
 	},
+	options: { timestamps: true },
 });

@@ -14,6 +14,9 @@ const under21 = () => {
   <Teleport to="body">
     <div
       v-if="!ageVerified"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="age-modal-title"
       class="fixed inset-0 z-[100] flex items-center justify-center bg-espresso/95 backdrop-blur-sm"
     >
       <div class="bg-charcoal rounded-xl shadow-2xl border border-gold/20 max-w-md w-full mx-4 p-8 text-center">
@@ -24,7 +27,7 @@ const under21 = () => {
         />
 
         <template v-if="!denied">
-          <h2 class="font-[Cormorant_Garamond] text-2xl sm:text-3xl font-bold text-parchment mb-2">
+          <h2 id="age-modal-title" class="font-[Cormorant_Garamond] text-2xl sm:text-3xl font-bold text-parchment mb-2">
             Welcome
           </h2>
           <p class="text-parchment/70 mb-8">
@@ -56,7 +59,7 @@ const under21 = () => {
           <p class="text-parchment/70 mb-6">
             You must be 21 or older to access this site. Please visit again when you are of legal drinking age.
           </p>
-          <p class="text-parchment/40 text-sm">
+          <p class="text-parchment/60 text-sm">
             Enjoy responsibly.
           </p>
         </template>

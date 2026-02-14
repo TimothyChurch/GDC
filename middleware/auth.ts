@@ -1,15 +1,11 @@
-export default defineNuxtRouteMiddleware((to, from) => {
-  const user = useCookie("user", {
-    default: () => ({
-      email: "",
-      authenticated: false,
-      data: {},
-    }),
-  });
+export default defineNuxtRouteMiddleware(async () => {
+  const { user, fetchUser } = useAuth();
 
-  if (user.value.authenticated) {
-    return;
-  } else {
-    return navigateTo("/login");
+  if (!user.value) {
+    await fetchUser();
+  }
+
+  if (!user.value) {
+    return navigateTo('/login');
   }
 });

@@ -43,10 +43,10 @@ const isActive = (link: string) => {
         </div>
 
         <div class="flex items-center gap-4 justify-end text-xl">
-          <a @click="toggleDark()" class="text-parchment/70 hover:text-gold transition-colors cursor-pointer">
+          <a @click="toggleDark()" class="text-parchment/70 hover:text-gold transition-colors cursor-pointer" aria-label="Toggle dark mode">
             <Icon :name="isDark ? 'carbon:moon' : 'carbon:sun'" />
           </a>
-          <NuxtLink to="/admin" class="text-parchment/70 hover:text-gold transition-colors">
+          <NuxtLink to="/admin" class="text-parchment/70 hover:text-gold transition-colors" aria-label="Admin panel">
             <Icon name="carbon:user" />
           </NuxtLink>
         </div>

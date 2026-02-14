@@ -9,6 +9,7 @@ export const Production = defineMongooseModel({
 		date: {
 			type: Date,
 			required: true,
+			index: true,
 		},
 		vessel: [
 			{
@@ -20,6 +21,7 @@ export const Production = defineMongooseModel({
 			type: Schema.Types.ObjectId,
 			ref: 'Bottle',
 			required: true,
+			index: true,
 		},
 		bottling: {
 			glassware: {
@@ -51,4 +53,5 @@ export const Production = defineMongooseModel({
 			required: true,
 		},
 	},
+	options: { timestamps: true },
 });

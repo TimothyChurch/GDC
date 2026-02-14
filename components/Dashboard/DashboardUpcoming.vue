@@ -23,12 +23,12 @@ const onStartBrewing = async (batchId: string, vesselId: string) => {
     <div class="flex items-center gap-2 mb-3">
       <UIcon name="i-lucide-calendar-clock" class="text-blue-400" />
       <h3 class="text-sm font-bold text-parchment uppercase tracking-wider">Upcoming</h3>
-      <span v-if="batchStore.upcomingBatches.length > 0" class="text-xs text-parchment/30">
+      <span v-if="batchStore.upcomingBatches.length > 0" class="text-xs text-parchment/50">
         ({{ batchStore.upcomingBatches.length }})
       </span>
     </div>
     <div v-if="batchStore.upcomingBatches.length === 0" class="py-4 text-center">
-      <p class="text-xs text-parchment/30">No upcoming batches</p>
+      <p class="text-xs text-parchment/50">No upcoming batches</p>
     </div>
     <div v-else class="flex flex-col gap-3">
       <div v-for="batch in batchStore.upcomingBatches" :key="batch._id">

@@ -34,7 +34,7 @@ const monthlyMetrics = [
     <div class="flex items-center justify-between mb-4">
       <h2 class="text-lg font-bold text-parchment font-[Cormorant_Garamond]">Financial Overview</h2>
       <!-- PLACEHOLDER: Replace with real time period selector -->
-      <span class="text-[10px] uppercase tracking-wider text-parchment/30 bg-brown/20 px-2 py-1 rounded">
+      <span class="text-[10px] uppercase tracking-wider text-parchment/50 bg-brown/20 px-2 py-1 rounded">
         All Time
       </span>
     </div>
@@ -42,19 +42,19 @@ const monthlyMetrics = [
     <!-- Key metrics -->
     <div class="grid grid-cols-3 gap-3 mb-4">
       <div class="bg-brown/15 rounded-lg p-3 border border-brown/20">
-        <div class="text-xs text-parchment/40 mb-1">Est. Revenue</div>
+        <div class="text-xs text-parchment/60 mb-1">Est. Revenue</div>
         <div class="text-lg font-bold text-gold font-[Cormorant_Garamond]">
           {{ Dollar.format(estimatedRevenue) }}
         </div>
       </div>
       <div class="bg-brown/15 rounded-lg p-3 border border-brown/20">
-        <div class="text-xs text-parchment/40 mb-1">Total Costs</div>
+        <div class="text-xs text-parchment/60 mb-1">Total Costs</div>
         <div class="text-lg font-bold text-parchment font-[Cormorant_Garamond]">
           {{ Dollar.format(estimatedCosts) }}
         </div>
       </div>
       <div class="bg-brown/15 rounded-lg p-3 border border-brown/20">
-        <div class="text-xs text-parchment/40 mb-1">Est. Margin</div>
+        <div class="text-xs text-parchment/60 mb-1">Est. Margin</div>
         <div class="text-lg font-bold font-[Cormorant_Garamond]" :class="estimatedRevenue - estimatedCosts > 0 ? 'text-green-400' : 'text-red-400'">
           {{ Dollar.format(estimatedRevenue - estimatedCosts) }}
         </div>
@@ -63,7 +63,7 @@ const monthlyMetrics = [
 
     <!-- PLACEHOLDER: Monthly breakdown - replace with real data -->
     <div class="border-t border-brown/20 pt-3">
-      <div class="text-[10px] uppercase tracking-wider text-parchment/30 mb-2">
+      <div class="text-[10px] uppercase tracking-wider text-parchment/50 mb-2">
         Monthly Summary
         <span class="text-amber/50 ml-1">(placeholder)</span>
       </div>
@@ -76,7 +76,7 @@ const monthlyMetrics = [
           <span class="text-xs text-parchment/50">{{ metric.label }}</span>
           <div class="flex items-center gap-4">
             <span class="text-sm font-medium text-parchment">{{ metric.revenue }}</span>
-            <span class="text-xs text-parchment/30">{{ metric.orders }} orders</span>
+            <span class="text-xs text-parchment/50">{{ metric.orders }} orders</span>
           </div>
         </div>
       </div>

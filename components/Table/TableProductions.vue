@@ -1,143 +1,194 @@
-<script setup>
-// Access needed stores
+<script setup lang="ts">
+import type { TableColumn } from "@nuxt/ui";
+import type { Production } from "~/types";
+import type { Row } from "@tanstack/vue-table";
+
+const router = useRouter();
 const productionsStore = useProductionStore();
 const vesselStore = useVesselStore();
 const bottlestore = useBottleStore();
 const { confirm } = useDeleteConfirm();
-// Columns for table data
-const columns = [
-	{ key: 'date', label: 'Date', sortable: true },
-	{ key: 'vessel', label: 'Vessel' },
-	{ key: 'bottle', label: 'Bottle' },
-	{ key: 'quantity', label: 'Quantity' },
-	{ key: 'productionCost', label: 'Production Cost' },
-	{ key: 'bottleCost', label: 'Bottle Cost' },
-	{ key: 'actions', label: 'Actions' },
-];
-// Table search and pagination
-const search = ref('');
-const page = ref(1);
-const pageCount = ref(10);
 
-const filteredData = computed(() => {
-	if (!search.value) return productionsStore.productions;
-	const q = search.value.toLowerCase();
-	return productionsStore.productions.filter((p) => {
-		const bottleName = bottlestore.getName(p.bottle)?.toLowerCase() || '';
-		return bottleName.includes(q);
-	});
-});
+const UButton = resolveComponent("UButton");
+const UDropdownMenu = resolveComponent("UDropdownMenu");
 
-const rows = computed(() => {
-	return filteredData.value.slice(
-		(page.value - 1) * pageCount.value,
-		page.value * pageCount.value
-	);
-});
-// Action buttons
-const items = (row) => [
-	[
-		{
-			label: 'Edit',
-			icon: 'i-heroicons-pencil-square-20-solid',
-			click: () => editItem(row),
-		},
-		{
-			label: 'Delete',
-			icon: 'i-heroicons-trash-20-solid',
-			click: () => deleteItem(row),
-		},
-	],
+const search = ref("");
+const pagination = ref({ pageIndex: 0, pageSize: 10 });
+
+const columns: TableColumn<Production>[] = [
+  {
+    accessorKey: "date",
+    header: ({ column }) => {
+      const isSorted = column.getIsSorted();
+      return h(UButton, {
+        color: "neutral",
+        variant: "ghost",
+        label: "Date",
+        icon: isSorted
+          ? isSorted === "asc"
+            ? "i-lucide-arrow-up-narrow-wide"
+            : "i-lucide-arrow-down-wide-narrow"
+          : "i-lucide-arrow-up-down",
+        class: "-mx-2.5",
+        onClick: () => column.toggleSorting(column.getIsSorted() === "asc"),
+      });
+    },
+    cell: ({ row }) =>
+      new Date(row.original.date).toLocaleString("en-US", {
+        year: "numeric",
+        month: "long",
+        day: "numeric",
+      }),
+  },
+  {
+    accessorKey: "vessel",
+    header: "Vessel",
+    cell: ({ row }) =>
+      vesselStore.vessels
+        .filter((vessel) => row.original.vessel.includes(vessel._id))
+        .map((vessel) => vessel.name)
+        .join(", ") || "N/A",
+  },
+  {
+    accessorKey: "bottle",
+    header: "Bottle",
+    cell: ({ row }) => bottlestore.getName(row.original.bottle) || "Unknown",
+  },
+  {
+    accessorKey: "quantity",
+    header: "Quantity",
+  },
+  {
+    accessorKey: "productionCost",
+    header: "Production Cost",
+    cell: ({ row }) => Dollar.format(row.original.productionCost),
+  },
+  {
+    accessorKey: "bottleCost",
+    header: "Bottle Cost",
+    cell: ({ row }) => Dollar.format(row.original.bottleCost),
+  },
+  {
+    id: "actions",
+    cell: ({ row }) => {
+      return h(
+        "div",
+        { class: "text-right" },
+        h(
+          UDropdownMenu,
+          {
+            content: { align: "end" },
+            items: getRowItems(row),
+            "aria-label": "Actions dropdown",
+          },
+          () =>
+            h(UButton, {
+              icon: "i-lucide-ellipsis-vertical",
+              color: "neutral",
+              variant: "ghost",
+              class: "ml-auto",
+              "aria-label": "Actions dropdown",
+            })
+        )
+      );
+    },
+  },
 ];
-// Actions
+
+function getRowItems(row: Row<Production>) {
+  return [
+    {
+      label: "View Details",
+      onSelect() {
+        router.push(`/admin/production/${row.original._id}`);
+      },
+    },
+    {
+      label: "Edit production",
+      onSelect() {
+        productionsStore.production = row.original;
+        openPanel();
+      },
+    },
+    {
+      label: "Delete production",
+      variant: "danger",
+      async onClick() {
+        const confirmed = await confirm("Production", bottlestore.getName(row.original.bottle));
+        if (confirmed) {
+          await productionsStore.deleteProduction(row.original._id);
+        }
+      },
+    },
+  ];
+}
+
+// Panel slide-over
+import { PanelProduction } from "#components";
+const overlay = useOverlay();
+const panel = overlay.create(PanelProduction);
+const openPanel = async () => await panel.open();
+
 const newItem = () => {
-	formSelection.value = 'FormProduction';
-	toggleFormModal();
-};
-
-const editItem = (row) => {
-	productionsStore.production = row;
-	formSelection.value = 'FormProduction';
-	toggleFormModal();
-};
-
-const deleteItem = async (row) => {
-	const confirmed = await confirm('Production', bottlestore.getName(row.bottle));
-	if (confirmed) {
-		await productionsStore.deleteProduction(row._id);
-	}
+  openPanel();
 };
 </script>
 
 <template>
-	<div>
-		<UInput v-model="search" placeholder="Search productions..." class="mb-2" />
-		<div class="overflow-x-auto">
-			<UTable
-				:rows="rows"
-				:columns="columns"
-				:loading="productionsStore.loading">
-				<template #empty-state>
-					<div class="flex flex-col items-center justify-center py-6 gap-3">
-						<span class="text-sm text-gray-500">No productions found</span>
-					</div>
-				</template>
-				<template #date-data="{ row }">
-					{{
-						new Date(row.date).toLocaleString('en-US', {
-							year: 'numeric',
-							month: 'long',
-							day: 'numeric',
-						})
-					}}
-				</template>
-				<template #vessel-data="{ row }">
-					{{
-						vesselStore.vessels
-							.filter((vessel) => row.vessel.includes(vessel._id))
-							.map((vessel) => vessel.name)
-							.join(', ')
-					}}
-				</template>
-				<template #bottle-data="{ row }">
-					{{ bottlestore.getName(row.bottle) }}
-				</template>
-				<template #productionCost-data="{ row }">
-					{{ Dollar.format(row.productionCost) }}
-				</template>
-				<template #bottleCost-data="{ row }">
-					{{ Dollar.format(row.bottleCost) }}
-				</template>
-				<template #actions-header>
-					<UButton
-						color="gray"
-						variant="ghost"
-						icon="i-heroicons-plus-20-solid"
-						@click="newItem" />
-				</template>
-				<template #actions-data="{ row }">
-					<UDropdown :items="items(row)">
-						<UButton
-							color="gray"
-							variant="ghost"
-							icon="i-heroicons-ellipsis-horizontal-20-solid" />
-					</UDropdown>
-				</template>
-			</UTable>
-		</div>
-		<div class="flex flex-col sm:flex-row justify-between gap-2">
-			<UFormGroup label="Results per Page">
-				<USelect
-					:options="[5, 10, 20, 100]"
-					v-model="pageCount" />
-			</UFormGroup>
-			<div
-				class="flex justify-end px-3 py-3.5 border-t border-gray-200 dark:border-gray-700">
-				<UPagination
-					v-model="page"
-					:page-count="pageCount"
-					:total="filteredData.length" />
-			</div>
-		</div>
-	</div>
+  <TableWrapper
+    v-model:search="search"
+    v-model:pagination="pagination"
+    :total-items="productionsStore.productions.length"
+    :loading="productionsStore.loading"
+    search-placeholder="Search productions..."
+  >
+    <template #actions>
+      <UButton icon="i-heroicons-plus-circle" size="xl" @click="newItem" variant="ghost">Add Production</UButton>
+    </template>
+
+    <!-- Desktop table -->
+    <div class="hidden sm:block">
+      <UTable
+        v-model:global-filter="search"
+        v-model:pagination="pagination"
+        :data="productionsStore.productions"
+        :columns="columns"
+        :loading="productionsStore.loading"
+        :empty="{ icon: 'i-lucide-factory', label: 'No productions found' }"
+      />
+    </div>
+
+    <!-- Mobile card view -->
+    <div class="sm:hidden space-y-3">
+      <div
+        v-for="prod in productionsStore.productions.slice().sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())"
+        :key="prod._id"
+        class="bg-charcoal rounded-lg border border-brown/30 p-4"
+        @click="router.push(`/admin/production/${prod._id}`)"
+      >
+        <div class="flex items-start justify-between mb-2">
+          <div>
+            <div class="text-sm font-medium text-parchment">{{ bottlestore.getName(prod.bottle) || 'Unknown' }}</div>
+            <div class="text-xs text-parchment/60">{{ new Date(prod.date).toLocaleDateString() }}</div>
+          </div>
+          <span class="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-gold/15 text-gold border border-gold/20">
+            {{ prod.quantity }} bottles
+          </span>
+        </div>
+        <div class="grid grid-cols-2 gap-2 text-xs">
+          <div>
+            <span class="text-parchment/60">Total Cost</span>
+            <div class="text-copper font-semibold">{{ Dollar.format(prod.productionCost || 0) }}</div>
+          </div>
+          <div>
+            <span class="text-parchment/60">Per Bottle</span>
+            <div class="text-parchment/70">{{ Dollar.format(prod.bottleCost || 0) }}</div>
+          </div>
+        </div>
+      </div>
+      <div v-if="productionsStore.productions.length === 0" class="text-center py-6 text-parchment/50 text-sm">
+        No productions found
+      </div>
+    </div>
+  </TableWrapper>
 </template>

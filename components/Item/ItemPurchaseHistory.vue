@@ -24,11 +24,15 @@ const selectedItem = (row) => {
 	return row.items.filter((item) => item.item === route.params._id)[0];
 };
 
-// Update purchase
+// Panel slide-over
+import { PanelPurchaseOrder } from "#components";
+const overlay = useOverlay();
+const panel = overlay.create(PanelPurchaseOrder);
+const openPanel = async () => await panel.open();
+
 const newPurchaseOrder = () => {
 	purchaseOrderStore.resetCurrentPurchaseOrder();
-	formSelection.value = 'FormPurchaseOrder';
-	toggleFormModal();
+	openPanel();
 }
 </script>
 

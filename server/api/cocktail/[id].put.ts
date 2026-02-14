@@ -4,6 +4,7 @@ export default defineEventHandler(async (event) => {
 	const id = event.context.params?.id;
 	const body = await readBody(event);
 	const sanitized = sanitize(body);
+	await validateBody(sanitized, cocktailUpdateSchema);
 	try {
 		const updatedCocktail = await Cocktail.findByIdAndUpdate(id, sanitized, {
 			new: true,

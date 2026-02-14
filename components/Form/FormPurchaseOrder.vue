@@ -72,14 +72,13 @@ const submitForm = async () => {
     itemStore.item.purchaseHistory.push(data._id);
     itemStore.updateItem();
   });
-  toggleFormModal();
 };
 </script>
 
 <template>
   <div>
     <div class="flex flex-wrap gap-3">
-      <UFormGroup label="Date">
+      <UFormField label="Date">
         <UPopover :popper="{ placement: 'bottom-start' }">
           <UButton
             icon="i-heroicons-calendar-days-20-solid"
@@ -103,20 +102,20 @@ const submitForm = async () => {
               @close="close" />
           </template>
         </UPopover>
-      </UFormGroup>
-      <UFormGroup label="Status">
+      </UFormField>
+      <UFormField label="Status">
         <USelect
           :options="statusOptions"
           v-model="purchaseOrderStore.purchaseOrder.status"
           placeholder="Select status" />
-      </UFormGroup>
-      <UFormGroup label="Vendor">
+      </UFormField>
+      <UFormField label="Vendor">
         <USelect
           :options="contactStore.contacts"
           v-model="purchaseOrderStore.purchaseOrder.vendor"
           option-attribute="businessName"
           value-attribute="_id" />
-      </UFormGroup>
+      </UFormField>
     </div>
     <UTable
       :rows="purchaseOrderStore.purchaseOrder.items"
@@ -156,7 +155,7 @@ const submitForm = async () => {
     <div
       v-if="additionalItem"
       class="flex flex-wrap justify-between my-3 gap-3">
-      <UFormGroup label="Item">
+      <UFormField label="Item">
         <USelectMenu
           :options="itemStore.items"
           :search-input="{
@@ -166,19 +165,19 @@ const submitForm = async () => {
           v-model="newItem.item"
           option-attribute="name"
           value-attribute="_id" />
-      </UFormGroup>
-      <UFormGroup label="Quantity">
+      </UFormField>
+      <UFormField label="Quantity">
         <UInput v-model.number="newItem.quantity" />
-      </UFormGroup>
-      <UFormGroup label="Size">
+      </UFormField>
+      <UFormField label="Size">
         <UInput v-model.number="newItem.size" />
-      </UFormGroup>
-      <UFormGroup label="Size Unit">
+      </UFormField>
+      <UFormField label="Size Unit">
         <USelect :options="allUnits" v-model="newItem.sizeUnit" />
-      </UFormGroup>
-      <UFormGroup label="Price">
+      </UFormField>
+      <UFormField label="Price">
         <UInput v-model.number="newItem.price" />
-      </UFormGroup>
+      </UFormField>
       <UButton color="gray" icon="i-heroicons-plus-20-solid" @click="addItem"
         >Add Item</UButton
       >

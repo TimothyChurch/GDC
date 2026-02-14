@@ -35,7 +35,7 @@ const moveToFermenter = async (mashTunId: string, fermenterId: string) => {
       <h3 class="text-sm font-bold text-parchment uppercase tracking-wider">Brewing</h3>
     </div>
     <div v-if="vesselStore.mashTuns.length === 0" class="py-4 text-center">
-      <p class="text-xs text-parchment/30">No mash tuns configured</p>
+      <p class="text-xs text-parchment/50">No mash tuns configured</p>
     </div>
     <div v-else class="flex flex-col gap-3">
       <div v-for="mashTun in vesselStore.mashTuns" :key="mashTun._id">

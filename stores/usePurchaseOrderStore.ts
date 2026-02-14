@@ -5,6 +5,7 @@ export const usePurchaseOrderStore = defineStore('purchaseOrders', () => {
 
 	// State
 	const purchaseOrders = ref<PurchaseOrder[]>([]);
+	const loaded = ref(false);
 	const loading = ref(false);
 	const saving = ref(false);
 	const purchaseOrder = ref<PurchaseOrder>({
@@ -23,12 +24,17 @@ export const usePurchaseOrderStore = defineStore('purchaseOrders', () => {
 			const response = await $fetch('/api/purchaseOrder');
 			purchaseOrders.value = response as PurchaseOrder[];
 		} catch (error) {
-			console.error('Error fetching purchase orders:', error);
 		} finally {
 			loading.value = false;
 		}
 	};
-	getPurchaseOrders();
+
+	const ensureLoaded = async () => {
+		if (!loaded.value) {
+			await getPurchaseOrders();
+			loaded.value = true;
+		}
+	};
 
 	const updatePurchaseOrder = async (): Promise<PurchaseOrder> => {
 		saving.value = true;
@@ -111,8 +117,10 @@ export const usePurchaseOrderStore = defineStore('purchaseOrders', () => {
 	return {
 		purchaseOrders,
 		purchaseOrder,
+		loaded,
 		loading,
 		saving,
+		ensureLoaded,
 		getPurchaseOrders,
 		updatePurchaseOrder,
 		deletePurchaseOrder,

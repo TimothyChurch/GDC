@@ -1,11 +1,13 @@
 export interface Batch {
 	_id: string;
+	batchNumber?: string;
 	recipe: string;
 	recipeCost: number;
 	status?: string;
 	batchSize: number;
 	batchSizeUnit: string;
 	batchCost?: number;
+	notes?: string;
 	brewing: {
 		vessel?: string;
 		date?: Date;
@@ -76,4 +78,6 @@ export interface Batch {
 	bottled: {
 		productionRecord?: string;
 	};
+	createdAt?: string;
+	updatedAt?: string;
 }

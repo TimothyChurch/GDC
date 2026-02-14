@@ -80,5 +80,14 @@ export const Vessel = defineMongooseModel({
 			type: Number,
 			required: false,
 		},
+		location: {
+			type: String,
+			required: false,
+		},
+		status: {
+			type: String,
+			required: false,
+		},
 	},
+	options: { timestamps: true },
 });

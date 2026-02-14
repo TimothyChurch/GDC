@@ -1,147 +1,116 @@
 <script setup lang="ts">
-import type { Inventory } from '~/types';
+import type { TableColumn } from "@nuxt/ui";
+import type { Inventory } from "~/types";
+import type { Row } from "@tanstack/vue-table";
 
 const inventoryStore = useInventoryStore();
 const { confirm } = useDeleteConfirm();
 
-const search = ref('');
-const page = ref(1);
-const pageCount = ref(10);
+const UButton = resolveComponent("UButton");
+const UDropdownMenu = resolveComponent("UDropdownMenu");
 
-const filteredData = computed(() => {
-	if (!search.value) return inventoryStore.inventories;
-	const q = search.value.toLowerCase();
-	return inventoryStore.inventories.filter((inv) => {
-		const dateStr = new Date(inv.date).toLocaleDateString().toLowerCase();
-		return dateStr.includes(q);
-	});
-});
+const search = ref("");
+const pagination = ref({ pageIndex: 0, pageSize: 10 });
 
-const rows = computed(() => {
-	return filteredData.value.slice(
-		(page.value - 1) * pageCount.value,
-		page.value * pageCount.value
-	);
-});
-
-const columns = [
-	{
-		key: 'date',
-		label: 'Date',
-		sortable: true,
-	},
-	{
-		key: 'actions',
-	},
+const columns: TableColumn<Inventory>[] = [
+  {
+    accessorKey: "date",
+    header: ({ column }) => {
+      const isSorted = column.getIsSorted();
+      return h(UButton, {
+        color: "neutral",
+        variant: "ghost",
+        label: "Date",
+        icon: isSorted
+          ? isSorted === "asc"
+            ? "i-lucide-arrow-up-narrow-wide"
+            : "i-lucide-arrow-down-wide-narrow"
+          : "i-lucide-arrow-up-down",
+        class: "-mx-2.5",
+        onClick: () => column.toggleSorting(column.getIsSorted() === "asc"),
+      });
+    },
+    cell: ({ row }) => new Date(row.original.date).toLocaleDateString(),
+  },
+  {
+    id: "actions",
+    cell: ({ row }) => {
+      return h(
+        "div",
+        { class: "text-right" },
+        h(
+          UDropdownMenu,
+          {
+            content: { align: "end" },
+            items: getRowItems(row),
+            "aria-label": "Actions dropdown",
+          },
+          () =>
+            h(UButton, {
+              icon: "i-lucide-ellipsis-vertical",
+              color: "neutral",
+              variant: "ghost",
+              class: "ml-auto",
+              "aria-label": "Actions dropdown",
+            })
+        )
+      );
+    },
+  },
 ];
-const items = (row: Inventory) => [
-	[
-		{
-			label: 'Edit',
-			icon: 'i-heroicons-pencil-square-20-solid',
-			click: () => editItem(row),
-		},
-		{
-			label: 'Delete',
-			icon: 'i-heroicons-trash-20-solid',
-			click: () => deleteItem(row),
-		},
-	],
-];
 
-const expand = ref({
-	openedRows: [],
-	row: {},
-});
+function getRowItems(row: Row<Inventory>) {
+  return [
+    {
+      label: "Edit record",
+      onSelect() {
+        inventoryStore.inventory = row.original;
+        openPanel();
+      },
+    },
+    {
+      label: "Delete record",
+      variant: "danger",
+      async onClick() {
+        const confirmed = await confirm("Inventory Record");
+        if (confirmed) {
+          inventoryStore.deleteInventory(row.original._id.toString());
+        }
+      },
+    },
+  ];
+}
 
-const itemColumns = [
-	{
-		key: 'item',
-		label: 'Item',
-	},
-	{
-		key: 'quantity',
-		label: 'Quantity',
-	},
-];
-// CRUD Functions
+// Panel slide-over
+import { PanelInventory } from "#components";
+const overlay = useOverlay();
+const panel = overlay.create(PanelInventory);
+const openPanel = async () => await panel.open();
 
 const addItem = () => {
-	inventoryStore.resetInventory();
-	formSelection.value = 'FormInventory';
-	toggleFormModal();
-};
-const editItem = (row: Inventory) => {
-	inventoryStore.inventory = row;
-	formSelection.value = 'FormInventory';
-	toggleFormModal();
-};
-const deleteItem = async (row: Inventory) => {
-	const confirmed = await confirm('Inventory Record');
-	if (confirmed) {
-		inventoryStore.deleteInventory(row._id.toString());
-	}
+  inventoryStore.resetInventory();
+  openPanel();
 };
 </script>
 
 <template>
-	<div>
-		<UInput v-model="search" placeholder="Search by date..." class="mb-2" />
-		<div class="overflow-x-auto">
-			<UTable
-				:rows="rows"
-				:columns="columns"
-				:loading="inventoryStore.loading"
-				v-model:expand="expand">
-				<template #empty-state>
-					<div class="flex flex-col items-center justify-center py-6 gap-3">
-						<span class="text-sm text-gray-500">No inventory records found</span>
-					</div>
-				</template>
-				<template #expand="{ row }">
-					<UTable
-						:rows="Object.entries(row.items)"
-						:columns="itemColumns">
-						<template #item-data="{ row }">
-							<div>{{ getInventoryNameById(row[0]) }}</div>
-						</template>
-						<template #quantity-data="{ row }">
-							<div>{{ row[1] }}</div>
-						</template>
-					</UTable>
-				</template>
-				<template #date-data="{ row }">
-					{{ new Date(row.date).toLocaleDateString() }}
-				</template>
-				<template #actions-header>
-					<UButton
-						color="gray"
-						variant="ghost"
-						icon="i-heroicons-plus-20-solid"
-						@click="addItem()" />
-				</template>
-				<template #actions-data="{ row }">
-					<UDropdown :items="items(row)">
-						<UButton
-							color="gray"
-							variant="ghost"
-							icon="i-heroicons-ellipsis-horizontal-20-solid" />
-					</UDropdown>
-				</template>
-			</UTable>
-		</div>
-		<div class="flex flex-col sm:flex-row justify-between gap-2">
-			<UFormGroup label="Results per Page">
-				<USelect
-					:options="[5, 10, 20, 100]"
-					v-model="pageCount" />
-			</UFormGroup>
-			<div class="flex justify-end px-3 py-3.5 border-t border-gray-200 dark:border-gray-700">
-				<UPagination
-					v-model="page"
-					:page-count="pageCount"
-					:total="filteredData.length" />
-			</div>
-		</div>
-	</div>
+  <TableWrapper
+    v-model:search="search"
+    v-model:pagination="pagination"
+    :total-items="inventoryStore.inventories.length"
+    :loading="inventoryStore.loading"
+    search-placeholder="Search by date..."
+  >
+    <template #actions>
+      <UButton icon="i-heroicons-plus-circle" size="xl" @click="addItem" variant="ghost">Add Record</UButton>
+    </template>
+    <UTable
+      v-model:global-filter="search"
+      v-model:pagination="pagination"
+      :data="inventoryStore.inventories"
+      :columns="columns"
+      :loading="inventoryStore.loading"
+      :empty="{ icon: 'i-lucide-archive', label: 'No inventory records found' }"
+    />
+  </TableWrapper>
 </template>

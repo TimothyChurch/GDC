@@ -1,7 +1,9 @@
 export default defineEventHandler(async (event) => {
+	await requireRole(event, 'Admin', 'Manager');
+
 	try {
-		return await User.find({});
+		return await User.find({}).select('-password');
 	} catch (error) {
-		return error;
+		throw createError({ statusCode: 500, statusMessage: 'Failed to fetch users' });
 	}
 });

@@ -12,10 +12,12 @@ export const Item = defineMongooseModel({
     },
     type: {
       type: String,
+      index: true,
     },
     vendor: {
       type: Schema.Types.ObjectId,
       ref: "Contact",
+      index: true,
     },
     brand: {
       type: String,
@@ -39,4 +41,5 @@ export const Item = defineMongooseModel({
       type: Number,
     },
   },
+  options: { timestamps: true },
 });

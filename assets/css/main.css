@@ -27,3 +27,38 @@ html {
   --ui-border: #b88a4f;
   scroll-behavior: smooth;
 }
+
+@media print {
+  body {
+    background: white !important;
+    color: black !important;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+  .bg-charcoal, .bg-espresso {
+    background: white !important;
+    border-color: #ddd !important;
+  }
+  .text-parchment, .text-parchment\/70, .text-parchment\/60, .text-parchment\/50 {
+    color: #333 !important;
+  }
+  .text-parchment\/60, .text-parchment\/50, .text-parchment\/20 {
+    color: #777 !important;
+  }
+  .text-gold, .text-copper, .text-amber {
+    color: #555 !important;
+  }
+  .border-brown\/30, .border-brown\/20 {
+    border-color: #ddd !important;
+  }
+  canvas {
+    max-width: 100% !important;
+    page-break-inside: avoid;
+  }
+  table {
+    page-break-inside: auto;
+  }
+  tr {
+    page-break-inside: avoid;
+  }
+}

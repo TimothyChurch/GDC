@@ -1,8 +1,11 @@
 import bcrypt from "bcrypt";
 
 export default defineEventHandler(async (event) => {
+	await requireRole(event, 'Admin');
+
 	const body = await readBody(event);
 	const sanitized = sanitize(body);
+	await validateBody(sanitized, userUpdateSchema);
 	try {
 		if (sanitized.password) {
 			sanitized.password = await bcrypt.hash(sanitized.password, 10);

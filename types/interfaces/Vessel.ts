@@ -23,4 +23,8 @@ export interface Vessel {
 		value?: number;
 	};
 	cost?: number;
+	location?: string;
+	status?: string;
+	createdAt?: string;
+	updatedAt?: string;
 }

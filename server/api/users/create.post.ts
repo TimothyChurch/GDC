@@ -1,6 +1,8 @@
 import bcrypt from "bcrypt";
 
 export default defineEventHandler(async (event) => {
+	await requireRole(event, 'Admin');
+
 	const body = await readBody(event);
 	const validated = await validateBody(body, userCreateSchema);
 	const sanitized = sanitize(validated);

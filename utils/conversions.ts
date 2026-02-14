@@ -30,7 +30,11 @@ export const convertUnitRatio = (fromUnit: string, toUnit: string) => {
 		each: { each: 1, bottle: 1, count: 1 },
 		count: { each: 1, bottle: 1, count: 1 },
 	};
-	return conversionRates[fromUnit][toUnit] as number;
+	const fromRates = conversionRates[fromUnit];
+	if (!fromRates || fromRates[toUnit] === undefined) {
+		return 1;
+	}
+	return fromRates[toUnit];
 };
 
 export const metricWeightToVolume = (weight: number, abv: number) => {

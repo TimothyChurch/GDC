@@ -52,7 +52,6 @@ const types = computed(() => {
 
 const saveRecipe = () => {
 	recipeStore.updateRecipe();
-	toggleFormModal();
 };
 </script>
 <template>

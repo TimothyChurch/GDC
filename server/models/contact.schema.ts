@@ -18,6 +18,7 @@ export const Contact = defineMongooseModel({
     type: {
       type: String,
       required: false,
+      index: true,
     },
     website: {
       type: String,
@@ -35,5 +36,22 @@ export const Contact = defineMongooseModel({
       type: String,
       required: false,
     },
+    notes: {
+      type: String,
+      required: false,
+    },
+    city: {
+      type: String,
+      required: false,
+    },
+    state: {
+      type: String,
+      required: false,
+    },
+    zip: {
+      type: String,
+      required: false,
+    },
   },
+  options: { timestamps: true },
 });

@@ -2,6 +2,7 @@ export default defineEventHandler(async (event) => {
 	const id = event.context.params?.id;
 	const body = await readBody(event);
 	const sanitized = sanitize(body);
+	await validateBody(sanitized, contactUpdateSchema);
 	try {
 		const updatedContact = await Contact.findByIdAndUpdate(id, sanitized, {
 			new: true,

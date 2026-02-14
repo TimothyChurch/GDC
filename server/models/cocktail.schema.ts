@@ -54,6 +54,12 @@ export const Cocktail = defineMongooseModel({
 		visible: {
 			type: Boolean,
 			required: true,
-		}
+			index: true,
+		},
+		img: {
+			type: String,
+			required: false,
+		},
 	},
+	options: { timestamps: true },
 });

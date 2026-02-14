@@ -60,7 +60,7 @@
       </div>
 
       <div class="border-t border-parchment/10 mt-8 pt-6 text-center">
-        <p class="text-xs text-parchment/40">
+        <p class="text-xs text-parchment/60">
           &copy; {{ new Date().getFullYear() }} Galveston Distilling Company. All rights reserved.
         </p>
       </div>

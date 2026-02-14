@@ -142,7 +142,7 @@ const statusText = (status: string) => {
 
     <div v-if="allAlerts.length === 0" class="py-6 text-center">
       <UIcon name="i-lucide-check-circle" class="text-3xl text-green-400/40 mb-2" />
-      <p class="text-sm text-parchment/30">All inventory levels healthy</p>
+      <p class="text-sm text-parchment/50">All inventory levels healthy</p>
     </div>
 
     <div v-else class="flex flex-col gap-2 max-h-64 overflow-y-auto">
@@ -158,7 +158,7 @@ const statusText = (status: string) => {
           <div :class="['w-2 h-2 rounded-full shrink-0', statusColor(alert.status)]" />
           <div class="min-w-0">
             <div class="text-sm text-parchment truncate">{{ alert.name }}</div>
-            <div class="text-[10px] uppercase tracking-wider text-parchment/30">
+            <div class="text-[10px] uppercase tracking-wider text-parchment/50">
               {{ alert.type === 'bottle' ? 'Bottle Product' : 'Ingredient' }}
             </div>
           </div>
@@ -167,12 +167,12 @@ const statusText = (status: string) => {
           <span :class="['text-sm font-bold', statusText(alert.status)]">
             {{ alert.quantity }}
           </span>
-          <span class="text-[10px] text-parchment/30">{{ alert.unit }}</span>
+          <span class="text-[10px] text-parchment/50">{{ alert.unit }}</span>
         </div>
       </div>
       <div
         v-if="allAlerts.length > 10"
-        class="text-xs text-parchment/30 text-center py-1"
+        class="text-xs text-parchment/50 text-center py-1"
       >
         +{{ allAlerts.length - 10 }} more items
       </div>

@@ -5,10 +5,11 @@ export const useInventoryStore = defineStore("inventories", () => {
 
   // State
   const inventories = ref<Inventory[]>([]);
+  const loaded = ref(false);
   const loading = ref(false);
   const saving = ref(false);
   const inventory = ref<Inventory>({
-    _id: '',
+    _id: undefined as unknown as string,
     date: new Date(),
     item: "",
     quantity: 0,
@@ -20,12 +21,17 @@ export const useInventoryStore = defineStore("inventories", () => {
       const response = await $fetch("/api/inventory");
       inventories.value = response as Inventory[];
     } catch (e) {
-      console.error("Error fetching inventories:", e);
     } finally {
       loading.value = false;
     }
   };
-  getInventories();
+
+  const ensureLoaded = async () => {
+    if (!loaded.value) {
+      await getInventories();
+      loaded.value = true;
+    }
+  };
 
   const getInventoriesByItem = (itemId: string) => {
     return inventories.value.filter((inv) => inv.item === itemId);
@@ -46,15 +52,26 @@ export const useInventoryStore = defineStore("inventories", () => {
           method: "PUT",
           body: JSON.stringify(inventory.value),
         });
-        const index = inventories.value.findIndex((i) => i._id === inventory.value._id);
+        const index = inventories.value.findIndex(
+          (i) => i._id === inventory.value._id,
+        );
         if (index !== -1) {
           inventories.value[index] = response as Inventory;
         }
       }
-      toast.add({ title: `Inventory ${isNew ? 'created' : 'updated'}`, color: 'success', icon: 'i-lucide-check-circle' });
+      toast.add({
+        title: `Inventory ${isNew ? "created" : "updated"}`,
+        color: "success",
+        icon: "i-lucide-check-circle",
+      });
       resetInventory();
     } catch (error: any) {
-      toast.add({ title: 'Failed to save inventory', description: error?.data?.message, color: 'error', icon: 'i-lucide-alert-circle' });
+      toast.add({
+        title: "Failed to save inventory",
+        description: error?.data?.message,
+        color: "error",
+        icon: "i-lucide-alert-circle",
+      });
     } finally {
       saving.value = false;
     }
@@ -62,7 +79,7 @@ export const useInventoryStore = defineStore("inventories", () => {
 
   const resetInventory = () => {
     inventory.value = {
-      _id: '',
+      _id: undefined as unknown as string,
       date: new Date(),
       item: "",
       quantity: 0,
@@ -76,9 +93,18 @@ export const useInventoryStore = defineStore("inventories", () => {
         method: "DELETE",
       });
       inventories.value = inventories.value.filter((i) => i._id !== id);
-      toast.add({ title: 'Inventory record deleted', color: 'success', icon: 'i-lucide-check-circle' });
+      toast.add({
+        title: "Inventory record deleted",
+        color: "success",
+        icon: "i-lucide-check-circle",
+      });
     } catch (error: any) {
-      toast.add({ title: 'Failed to delete inventory record', description: error?.data?.message, color: 'error', icon: 'i-lucide-alert-circle' });
+      toast.add({
+        title: "Failed to delete inventory record",
+        description: error?.data?.message,
+        color: "error",
+        icon: "i-lucide-alert-circle",
+      });
     } finally {
       saving.value = false;
     }
@@ -87,8 +113,10 @@ export const useInventoryStore = defineStore("inventories", () => {
   return {
     inventories,
     inventory,
+    loaded,
     loading,
     saving,
+    ensureLoaded,
     getInventories,
     getInventoriesByItem,
     updateInventory,

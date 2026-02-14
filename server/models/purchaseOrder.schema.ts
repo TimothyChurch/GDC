@@ -9,11 +9,13 @@ export const PurchaseOrder = defineMongooseModel({
     status: {
       type: String,
       required: true,
+      index: true,
     },
     vendor: {
       type: Schema.Types.ObjectId,
       ref: "Contact",
       required: true,
+      index: true,
     },
     items: [
       {
@@ -47,6 +49,8 @@ export const PurchaseOrder = defineMongooseModel({
     date: {
       type: Date,
       required: true,
+      index: true,
     },
   },
+  options: { timestamps: true },
 });

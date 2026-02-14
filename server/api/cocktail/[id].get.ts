@@ -12,7 +12,6 @@ export default defineEventHandler(async (event) => {
 		}
 		return cocktail;
 	} catch (error) {
-		console.error('Error fetching cocktail:', error);
 		throw createError({
 			statusCode: 500,
 			statusMessage: 'Error fetching cocktail',

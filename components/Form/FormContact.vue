@@ -25,7 +25,6 @@ const options = [
 
 const submitForm = () => {
 	contactStore.updateContact(contactStore.contact);
-	toggleFormModal();
 };
 </script>
 

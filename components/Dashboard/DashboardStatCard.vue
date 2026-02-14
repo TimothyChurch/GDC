@@ -37,7 +37,7 @@ const iconColorClasses = {
       <UIcon :name="icon" class="text-xl" />
     </div>
     <div class="flex flex-col min-w-0">
-      <span class="text-xs font-medium uppercase tracking-wider text-parchment/40">
+      <span class="text-xs font-medium uppercase tracking-wider text-parchment/60">
         {{ title }}
       </span>
       <span class="text-2xl font-bold text-parchment mt-0.5 font-[Cormorant_Garamond]">
@@ -51,7 +51,7 @@ const iconColorClasses = {
           <UIcon :name="trendUp ? 'i-lucide-trending-up' : 'i-lucide-trending-down'" class="text-sm" />
           {{ trend }}
         </span>
-        <span v-if="subtitle" class="text-xs text-parchment/40">
+        <span v-if="subtitle" class="text-xs text-parchment/60">
           {{ subtitle }}
         </span>
       </div>

@@ -1,6 +1,11 @@
 <script setup lang="ts">
 import type { Cocktail } from "~/types";
 
+useSeoMeta({
+  title: 'Cocktail Menu | Galveston Distilling Co',
+  description: 'Explore our handcrafted cocktail menu featuring island-inspired drinks made with our own spirits.',
+});
+
 const cocktailStore = useCocktailStore();
 const itemStore = useItemStore();
 
@@ -115,11 +120,13 @@ const clearFilters = () => {
     <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-10">
       <!-- Category filter tabs -->
       <div v-if="categories.length > 2" class="mb-4">
-        <p class="text-xs uppercase tracking-wider text-brown/40 dark:text-parchment/40 text-center mb-2">Menu</p>
-        <div class="flex flex-wrap gap-2 justify-center">
+        <p class="text-xs uppercase tracking-wider text-brown/60 dark:text-parchment/60 text-center mb-2">Menu</p>
+        <div role="tablist" aria-label="Menu categories" class="flex flex-wrap gap-2 justify-center">
           <button
             v-for="cat in categories"
             :key="cat"
+            role="tab"
+            :aria-selected="activeCategory === cat"
             @click="activeCategory = cat"
             class="px-4 py-1.5 rounded-full text-sm font-semibold transition-colors duration-200"
             :class="
@@ -135,11 +142,13 @@ const clearFilters = () => {
 
       <!-- Base spirit filter -->
       <div v-if="spiritTypes.length > 2" class="mb-6">
-        <p class="text-xs uppercase tracking-wider text-brown/40 dark:text-parchment/40 text-center mb-2">Base Spirit</p>
-        <div class="flex flex-wrap gap-2 justify-center">
+        <p class="text-xs uppercase tracking-wider text-brown/60 dark:text-parchment/60 text-center mb-2">Base Spirit</p>
+        <div role="tablist" aria-label="Base spirit filter" class="flex flex-wrap gap-2 justify-center">
           <button
             v-for="spirit in spiritTypes"
             :key="spirit"
+            role="tab"
+            :aria-selected="activeSpirit === spirit"
             @click="activeSpirit = spirit"
             class="px-4 py-1.5 rounded-full text-sm font-semibold transition-colors duration-200"
             :class="

@@ -9,7 +9,7 @@ const vesselStore = useVesselStore();
       <h3 class="text-sm font-bold text-parchment uppercase tracking-wider">Distilling</h3>
     </div>
     <div v-if="vesselStore.stills.length === 0" class="py-4 text-center">
-      <p class="text-xs text-parchment/30">No stills configured</p>
+      <p class="text-xs text-parchment/50">No stills configured</p>
     </div>
     <div v-else class="flex flex-col gap-2">
       <div v-for="still in vesselStore.stills" :key="still._id">

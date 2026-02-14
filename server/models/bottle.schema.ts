@@ -26,6 +26,14 @@ export const Bottle = defineMongooseModel({
       type: Number,
       required: false,
     },
+    volume: {
+      type: Number,
+      required: false,
+    },
+    volumeUnit: {
+      type: String,
+      required: false,
+    },
     img: {
       type: String,
       required: false,
@@ -44,4 +52,5 @@ export const Bottle = defineMongooseModel({
       required: false,
     },
   },
+  options: { timestamps: true },
 });

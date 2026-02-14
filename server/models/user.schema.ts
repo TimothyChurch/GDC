@@ -20,5 +20,10 @@ export const User = defineMongooseModel({
 			type: String,
 			required: false,
 		},
+		role: {
+			type: String,
+			required: false,
+		},
 	},
+	options: { timestamps: true },
 });

@@ -1,92 +1,282 @@
-<script setup>
+<script setup lang="ts">
+definePageMeta({ layout: "admin" });
+
+import { Line } from "vue-chartjs";
+
 const route = useRoute();
+const router = useRouter();
+
 const bottleStore = useBottleStore();
 const recipeStore = useRecipeStore();
 const inventoryStore = useInventoryStore();
 
-const bottle = computed(() => bottleStore.getBottleById(route.params._id));
-const recipe = computed(() => recipeStore.getRecipeById(bottle.value?.recipe));
+const bottle = computed(() =>
+  bottleStore.getBottleById(route.params._id as string),
+);
+const recipe = computed(() =>
+  bottle.value?.recipe
+    ? recipeStore.getRecipeById(bottle.value.recipe)
+    : undefined,
+);
 const inventory = computed(() =>
-  inventoryStore.getInventoriesByItem(bottle.value?._id),
+  inventoryStore.getInventoriesByItem(route.params._id as string),
 );
 
+// Panel slide-over
+import { PanelBottle } from "#components";
+const overlay = useOverlay();
+const panel = overlay.create(PanelBottle);
+
 const editBottle = () => {
+  if (!bottle.value) return;
   bottleStore.bottle = bottle.value;
-  formSelection.value = "FormBottle";
-  toggleFormModal();
+  panel.open();
 };
 
+// Add inventory
 const addInventory = ref(false);
-
 const updateInventory = () => {
-  inventoryStore.inventory.item = bottle.value?._id;
+  inventoryStore.inventory.item = route.params._id as string;
   inventoryStore.updateInventory();
   addInventory.value = false;
 };
+
+// Inventory list
+const reverseSortedInventory = computed(() =>
+  [...inventory.value].sort(
+    (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime(),
+  ),
+);
+
+// Inventory chart
+const sortedInventory = computed(() =>
+  [...inventory.value].sort(
+    (a, b) => new Date(a.date).getTime() - new Date(b.date).getTime(),
+  ),
+);
+
+const chartData = computed(() => ({
+  labels: sortedInventory.value.map((inv) =>
+    new Date(inv.date).toLocaleDateString("en-US", {
+      month: "short",
+      day: "numeric",
+    }),
+  ),
+  datasets: [
+    {
+      label: "Stock",
+      data: sortedInventory.value.map((inv) => inv.quantity),
+      borderColor: "#d4a574",
+      backgroundColor: "rgba(212, 165, 116, 0.1)",
+      tension: 0.3,
+      fill: true,
+    },
+  ],
+}));
+
+const chartOptions = {
+  responsive: true,
+  maintainAspectRatio: false,
+  plugins: { legend: { display: false } },
+  scales: {
+    y: {
+      ticks: { color: "rgba(255,255,255,0.4)" },
+      grid: { color: "rgba(255,255,255,0.05)" },
+    },
+    x: {
+      ticks: { color: "rgba(255,255,255,0.4)" },
+      grid: { color: "rgba(255,255,255,0.05)" },
+    },
+  },
+};
+
+const currentStock = computed(() => {
+  if (sortedInventory.value.length === 0) return 0;
+  return sortedInventory.value[sortedInventory.value.length - 1].quantity;
+});
 </script>
 
 <template>
-  <div>
-    <UCard>
-      <template #header>
-        <div class="flex justify-between">
-          <h1 class="text-xl font-bold">{{ bottle?.name }}</h1>
-
-          <UButton
-            icon="i-heroicons-pencil"
-            variant="ghost"
-            color="black"
-            @click="editBottle"
-          />
-        </div>
+  <div v-if="bottle" class="space-y-6">
+    <AdminPageHeader
+      :title="bottle.name"
+      :subtitle="`${bottle.class || ''}${bottle.type ? ' - ' + bottle.type : ''}`"
+      icon="i-lucide-wine"
+    >
+      <template #actions>
+        <UButton
+          icon="i-lucide-arrow-left"
+          variant="outline"
+          color="neutral"
+          size="sm"
+          @click="router.push('/admin/bottles')"
+        >
+          Back
+        </UButton>
+        <UButton icon="i-lucide-pencil" size="sm" @click="editBottle">
+          Edit
+        </UButton>
       </template>
-      <div class="flex justify-between">
-        <UCard>
-          <template #header>
-            <h2 class="text-lg font-semibold">Details</h2>
-          </template>
-          <p>{{ recipe?.name }}</p>
-          <h1>Class: {{ recipe?.class }}</h1>
-          <h1>Type: {{ recipe?.type }}</h1>
-          <h1>ABV: {{ bottle?.abv }}%</h1>
-        </UCard>
-        <UCard class="mt-4">
-          <template #header>
-            <div class="flex justify-between">
-              <h2 class="text-lg font-semibold">Inventory</h2>
-              <UButton
-                icon="i-heroicons-plus-circle"
-                size="lg"
-                color="black"
-                @click="addInventory = true"
-                variant="ghost"
-              />
-            </div>
-          </template>
-          <div v-if="addInventory" class="flex flex-col align-center gap-2">
+    </AdminPageHeader>
+
+    <!-- Bottle Details -->
+    <div class="bg-charcoal rounded-xl border border-brown/30 p-5">
+      <h3
+        class="text-lg font-bold text-parchment font-[Cormorant_Garamond] mb-4"
+      >
+        Bottle Details
+      </h3>
+      <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4">
+        <div>
+          <div class="text-xs text-parchment/60 uppercase tracking-wider mb-1">
+            Recipe
+          </div>
+          <NuxtLink
+            v-if="recipe"
+            :to="`/admin/recipes/${recipe._id}`"
+            class="text-sm text-copper hover:text-gold transition-colors"
+          >
+            {{ recipe.name }}
+          </NuxtLink>
+          <div v-else class="text-sm text-parchment/60">N/A</div>
+        </div>
+        <div>
+          <div class="text-xs text-parchment/60 uppercase tracking-wider mb-1">
+            ABV
+          </div>
+          <div class="text-sm text-parchment">{{ bottle.abv || 0 }}%</div>
+        </div>
+        <div>
+          <div class="text-xs text-parchment/60 uppercase tracking-wider mb-1">
+            Price
+          </div>
+          <div class="text-sm text-parchment font-semibold">
+            {{ Dollar.format(bottle.price || 0) }}
+          </div>
+        </div>
+        <div>
+          <div class="text-xs text-parchment/60 uppercase tracking-wider mb-1">
+            In Stock
+          </div>
+          <span
+            :class="[
+              'px-2 py-0.5 rounded-full text-[10px] font-semibold border',
+              bottle.inStock
+                ? 'bg-green-500/15 text-green-400 border-green-500/25'
+                : 'bg-red-500/15 text-red-400 border-red-500/25',
+            ]"
+          >
+            {{ bottle.inStock ? "Yes" : "No" }}
+          </span>
+        </div>
+        <div
+          v-if="bottle.description"
+          class="col-span-2 sm:col-span-3 lg:col-span-5"
+        >
+          <div class="text-xs text-parchment/60 uppercase tracking-wider mb-1">
+            Description
+          </div>
+          <div class="text-sm text-parchment/60">{{ bottle.description }}</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Inventory -->
+    <div class="bg-charcoal rounded-xl border border-brown/30 p-5">
+      <div class="flex items-center justify-between mb-4">
+        <div>
+          <h3
+            class="text-lg font-bold text-parchment font-[Cormorant_Garamond]"
+          >
+            Inventory
+          </h3>
+          <p class="text-xs text-parchment/60 mt-0.5">
+            Current stock: {{ currentStock }}
+          </p>
+        </div>
+        <UButton
+          icon="i-lucide-plus"
+          size="sm"
+          variant="outline"
+          @click="addInventory = !addInventory"
+        >
+          Add Entry
+        </UButton>
+      </div>
+
+      <!-- Add entry form -->
+      <div
+        v-if="addInventory"
+        class="mb-4 p-3 rounded-lg border border-brown/20 bg-brown/5"
+      >
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 items-end">
+          <div>
+            <div class="text-xs text-parchment/60 mb-1">Date</div>
             <SiteDatePicker v-model="inventoryStore.inventory.date" />
+          </div>
+          <div>
+            <div class="text-xs text-parchment/60 mb-1">Quantity</div>
             <UInput
               v-model="inventoryStore.inventory.quantity"
               type="number"
-              placeholder="Quantity"
-              class="mb-2"
+              placeholder="0"
             />
-            <UButtonGroup>
-              <UButton @click="updateInventory()">Add</UButton>
-
-              <UButton color="black" @click="addInventory = false"
-                >Cancel</UButton
-              >
-            </UButtonGroup>
           </div>
-          <div v-for="inv in inventory" :key="inv._id" class="mt-2">
-            <div class="flex justify-between gap-2">
-              <p>{{ new Date(inv.date).toLocaleDateString() }}</p>
-              <p>Quantity: {{ inv.quantity }}</p>
-            </div>
+          <div class="flex gap-2">
+            <UButton @click="updateInventory" size="sm">Add</UButton>
+            <UButton
+              color="neutral"
+              variant="outline"
+              size="sm"
+              @click="addInventory = false"
+              >Cancel</UButton
+            >
           </div>
-        </UCard>
+        </div>
       </div>
-    </UCard>
+
+      <!-- Chart -->
+      <div v-if="sortedInventory.length > 1" class="h-48 mb-4">
+        <Line :data="chartData" :options="chartOptions" />
+      </div>
+
+      <!-- Records -->
+      <div v-if="inventory.length > 0" class="divide-y divide-brown/20">
+        <div
+          v-for="inv in reverseSortedInventory"
+          :key="inv._id"
+          class="flex justify-between py-2 text-sm"
+        >
+          <span class="text-parchment/60">{{
+            new Date(inv.date).toLocaleDateString()
+          }}</span>
+          <span class="text-parchment">{{ inv.quantity }}</span>
+        </div>
+      </div>
+      <div v-else class="text-center py-6">
+        <UIcon
+          name="i-lucide-archive"
+          class="text-2xl text-parchment/20 mx-auto mb-2"
+        />
+        <p class="text-sm text-parchment/50">No inventory records</p>
+      </div>
+    </div>
+  </div>
+
+  <div v-else class="text-center py-12">
+    <UIcon
+      name="i-lucide-search-x"
+      class="text-4xl text-parchment/20 mx-auto mb-3"
+    />
+    <p class="text-parchment/60">Bottle not found</p>
+    <UButton
+      variant="outline"
+      color="neutral"
+      size="sm"
+      class="mt-3"
+      @click="router.push('/admin/bottles')"
+    >
+      Back to Bottles
+    </UButton>
   </div>
 </template>

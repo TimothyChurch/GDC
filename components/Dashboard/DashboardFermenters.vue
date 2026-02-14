@@ -36,7 +36,7 @@ const startDistilling = async (fermenterId: string, stillId: string) => {
       <h3 class="text-sm font-bold text-parchment uppercase tracking-wider">Fermenting</h3>
     </div>
     <div v-if="vesselStore.fermenters.length === 0" class="py-4 text-center">
-      <p class="text-xs text-parchment/30">No fermenters configured</p>
+      <p class="text-xs text-parchment/50">No fermenters configured</p>
     </div>
     <div v-else class="flex flex-col gap-2">
       <div v-for="fermenter in vesselStore.fermenters" :key="fermenter._id">

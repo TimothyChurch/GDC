@@ -72,7 +72,7 @@ const hasContents = (vessel: any) => vessel.contents && vessel.contents.length >
     <div class="flex items-center justify-between mb-4">
       <div>
         <h2 class="text-lg font-bold text-parchment font-[Cormorant_Garamond]">Vessel Status</h2>
-        <p class="text-xs text-parchment/40 mt-0.5">
+        <p class="text-xs text-parchment/60 mt-0.5">
           {{ vesselStore.vessels.length }} total vessels
         </p>
       </div>
@@ -92,7 +92,7 @@ const hasContents = (vessel: any) => vessel.contents && vessel.contents.length >
           <UIcon :name="group.icon" :class="['text-sm', group.color]" />
           <span class="text-xs font-semibold uppercase tracking-wider text-parchment/50">
             {{ group.title }}
-            <span class="text-parchment/30">({{ group.vessels.length }})</span>
+            <span class="text-parchment/50">({{ group.vessels.length }})</span>
           </span>
         </div>
         <div v-if="group.vessels.length === 0" class="text-xs text-parchment/20 pl-5 pb-2">
@@ -133,7 +133,7 @@ const hasContents = (vessel: any) => vessel.contents && vessel.contents.length >
           <UIcon name="i-lucide-cylinder" class="text-sm text-amber" />
           <span class="text-xs font-semibold uppercase tracking-wider text-parchment/50">
             Barrels
-            <span class="text-parchment/30">({{ vesselStore.barrels.length }})</span>
+            <span class="text-parchment/50">({{ vesselStore.barrels.length }})</span>
           </span>
         </div>
         <div v-if="vesselStore.barrels.length === 0" class="text-xs text-parchment/20 pl-5 pb-2">
@@ -148,7 +148,7 @@ const hasContents = (vessel: any) => vessel.contents && vessel.contents.length >
           </div>
           <div class="flex items-center gap-2 bg-brown/10 border border-brown/20 rounded-lg px-3 py-1.5">
             <div class="w-2 h-2 rounded-full bg-parchment/20" />
-            <span class="text-xs text-parchment/40">
+            <span class="text-xs text-parchment/60">
               {{ emptyBarrels.length }} empty
             </span>
           </div>
@@ -167,7 +167,7 @@ const hasContents = (vessel: any) => vessel.contents && vessel.contents.length >
           </div>
           <div
             v-if="filledBarrels.length > 6"
-            class="text-xs text-parchment/30 flex items-center px-3"
+            class="text-xs text-parchment/50 flex items-center px-3"
           >
             +{{ filledBarrels.length - 6 }} more barrels
           </div>

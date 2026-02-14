@@ -30,7 +30,7 @@ const formatDate = (date: Date) => {
     <div class="flex items-center justify-between mb-4">
       <div>
         <h2 class="text-lg font-bold text-parchment font-[Cormorant_Garamond]">Recent Productions</h2>
-        <p class="text-xs text-parchment/40 mt-0.5">
+        <p class="text-xs text-parchment/60 mt-0.5">
           {{ totalBottlesProduced.toLocaleString() }} total bottles produced
         </p>
       </div>
@@ -45,7 +45,7 @@ const formatDate = (date: Date) => {
 
     <div v-if="recentProductions.length === 0" class="py-8 text-center">
       <UIcon name="i-lucide-package-open" class="text-3xl text-parchment/20 mb-2" />
-      <p class="text-sm text-parchment/30">No production records yet</p>
+      <p class="text-sm text-parchment/50">No production records yet</p>
     </div>
 
     <div v-else class="flex flex-col divide-y divide-brown/20">
@@ -62,7 +62,7 @@ const formatDate = (date: Date) => {
             <div class="text-sm font-medium text-parchment truncate">
               {{ bottleStore.getName(prod.bottle) || 'Unknown Bottle' }}
             </div>
-            <div class="text-xs text-parchment/40">
+            <div class="text-xs text-parchment/60">
               {{ formatDate(prod.date) }}
             </div>
           </div>
@@ -71,7 +71,7 @@ const formatDate = (date: Date) => {
           <span class="text-sm font-semibold text-parchment">
             {{ prod.quantity }}
           </span>
-          <span class="text-xs text-parchment/40">bottles</span>
+          <span class="text-xs text-parchment/60">bottles</span>
         </div>
       </div>
     </div>

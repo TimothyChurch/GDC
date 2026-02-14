@@ -14,6 +14,7 @@ export const Inventory = defineMongooseModel({
       type: Schema.Types.ObjectId,
       ref: "Item",
       required: true,
+      index: true,
     },
     location: {
       type: Schema.Types.ObjectId,
@@ -25,4 +26,5 @@ export const Inventory = defineMongooseModel({
       required: true,
     },
   },
+  options: { timestamps: true },
 });

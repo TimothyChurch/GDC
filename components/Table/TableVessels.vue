@@ -1,125 +1,181 @@
-<script setup>
+<script setup lang="ts">
+import type { TableColumn } from "@nuxt/ui";
+import type { Vessel } from "~/types";
+import type { Row } from "@tanstack/vue-table";
+
 const vesselStore = useVesselStore();
 const { confirm } = useDeleteConfirm();
 
-const search = ref('');
-const page = ref(1);
-const pageCount = ref(10);
+const UButton = resolveComponent("UButton");
+const UDropdownMenu = resolveComponent("UDropdownMenu");
 
-const filteredData = computed(() => {
-	if (!search.value) return vesselStore.vessels;
-	const q = search.value.toLowerCase();
-	return vesselStore.vessels.filter((v) => {
-		return v.name?.toLowerCase().includes(q) || v.type?.toLowerCase().includes(q);
-	});
-});
+const search = ref("");
+const pagination = ref({ pageIndex: 0, pageSize: 10 });
 
-const rows = computed(() => {
-	return filteredData.value.slice(
-		(page.value - 1) * pageCount.value,
-		page.value * pageCount.value
-	);
-});
-
-const columns = [
-	{
-		key: 'name',
-		label: 'Name',
-		sortable: true,
-	},
-	{
-		key: 'type',
-		label: 'Type',
-		sortable: true,
-	},
-	{
-		key: 'current',
-		label: 'Current',
-	},
-	{
-		key: 'actions',
-	},
+const columns: TableColumn<Vessel>[] = [
+  {
+    accessorKey: "name",
+    header: ({ column }) => {
+      const isSorted = column.getIsSorted();
+      return h(UButton, {
+        color: "neutral",
+        variant: "ghost",
+        label: "Name",
+        icon: isSorted
+          ? isSorted === "asc"
+            ? "i-lucide-arrow-up-narrow-wide"
+            : "i-lucide-arrow-down-wide-narrow"
+          : "i-lucide-arrow-up-down",
+        class: "-mx-2.5",
+        onClick: () => column.toggleSorting(column.getIsSorted() === "asc"),
+      });
+    },
+  },
+  {
+    accessorKey: "type",
+    header: ({ column }) => {
+      const isSorted = column.getIsSorted();
+      return h(UButton, {
+        color: "neutral",
+        variant: "ghost",
+        label: "Type",
+        icon: isSorted
+          ? isSorted === "asc"
+            ? "i-lucide-arrow-up-narrow-wide"
+            : "i-lucide-arrow-down-wide-narrow"
+          : "i-lucide-arrow-up-down",
+        class: "-mx-2.5",
+        onClick: () => column.toggleSorting(column.getIsSorted() === "asc"),
+      });
+    },
+  },
+  {
+    accessorKey: "current",
+    header: "Current",
+  },
+  {
+    id: "actions",
+    cell: ({ row }) => {
+      return h(
+        "div",
+        { class: "text-right" },
+        h(
+          UDropdownMenu,
+          {
+            content: { align: "end" },
+            items: getRowItems(row),
+            "aria-label": "Actions dropdown",
+          },
+          () =>
+            h(UButton, {
+              icon: "i-lucide-ellipsis-vertical",
+              color: "neutral",
+              variant: "ghost",
+              class: "ml-auto",
+              "aria-label": "Actions dropdown",
+            })
+        )
+      );
+    },
+  },
 ];
 
-const items = (row) => [
-	[
-		{
-			label: 'Empty Vessel',
-			click: () => vesselStore.emptyVessel(row._id),
-		},
-		{
-			label: 'Edit',
-			icon: 'i-heroicons-pencil-square-20-solid',
-			click: () => editVessel(row),
-		},
-		{
-			label: 'Delete',
-			icon: 'i-heroicons-trash-20-solid',
-			click: () => deleteVessel(row),
-		},
-	],
-];
+function getRowItems(row: Row<Vessel>) {
+  return [
+    {
+      label: "View Details",
+      onSelect() {
+        navigateTo(`/admin/vessels/${row.original._id}`);
+      },
+    },
+    {
+      label: "Empty Vessel",
+      onSelect() {
+        vesselStore.emptyVessel(row.original._id);
+      },
+    },
+    {
+      label: "Edit vessel",
+      onSelect() {
+        vesselStore.vessel = row.original;
+        openPanel();
+      },
+    },
+    {
+      label: "Delete vessel",
+      variant: "danger",
+      async onClick() {
+        const confirmed = await confirm("Vessel", row.original.name);
+        if (confirmed) {
+          vesselStore.deleteVessel(row.original._id);
+        }
+      },
+    },
+  ];
+}
+
+// Panel slide-over
+import { PanelVessel } from "#components";
+const overlay = useOverlay();
+const panel = overlay.create(PanelVessel);
+const openPanel = async () => await panel.open();
 
 const addVessel = () => {
-	vesselStore.resetVessel();
-	formSelection.value = 'FormVessel';
-	toggleFormModal();
-};
-const editVessel = (row) => {
-	vesselStore.vessel = row;
-	formSelection.value = 'FormVessel';
-	toggleFormModal();
-};
-const deleteVessel = async (row) => {
-	const confirmed = await confirm('Vessel', row.name);
-	if (confirmed) {
-		vesselStore.deleteVessel(row._id);
-	}
+  vesselStore.resetVessel();
+  openPanel();
 };
 </script>
 
 <template>
-	<div>
-		<UInput v-model="search" placeholder="Search vessels..." class="mb-2" />
-		<div class="overflow-x-auto">
-			<UTable
-				:rows="rows"
-				:columns="columns"
-				:loading="vesselStore.loading">
-				<template #empty-state>
-					<div class="flex flex-col items-center justify-center py-6 gap-3">
-						<span class="text-sm text-gray-500">No vessels found</span>
-					</div>
-				</template>
-				<template #actions-header>
-					<UButton
-						color="gray"
-						variant="ghost"
-						icon="i-heroicons-plus-20-solid"
-						@click="addVessel()" />
-				</template>
-				<template #actions-data="{ row }">
-					<UDropdown :items="items(row)">
-						<UButton
-							color="gray"
-							variant="ghost"
-							icon="i-heroicons-ellipsis-horizontal-20-solid" />
-					</UDropdown>
-				</template>
-			</UTable>
-		</div>
-		<div class="flex flex-col sm:flex-row justify-between gap-2">
-			<UFormGroup label="Results per Page">
-				<USelect
-					:options="[5, 10, 20, 100]"
-					v-model="pageCount" />
-			</UFormGroup>
-			<div class="flex justify-end px-3 py-3.5 border-t border-gray-200 dark:border-gray-700">
-				<UPagination
-					v-model="page"
-					:page-count="pageCount"
-					:total="filteredData.length" />
-			</div>
-		</div>
-	</div>
+  <TableWrapper
+    v-model:search="search"
+    v-model:pagination="pagination"
+    :total-items="vesselStore.vessels.length"
+    :loading="vesselStore.loading"
+    search-placeholder="Search vessels..."
+  >
+    <template #actions>
+      <UButton icon="i-heroicons-plus-circle" size="xl" @click="addVessel" variant="ghost">Add Vessel</UButton>
+    </template>
+    <!-- Desktop table -->
+    <div class="hidden sm:block">
+      <UTable
+        v-model:global-filter="search"
+        v-model:pagination="pagination"
+        :data="vesselStore.vessels"
+        :columns="columns"
+        :loading="vesselStore.loading"
+        :empty="{ icon: 'i-lucide-container', label: 'No vessels found' }"
+      />
+    </div>
+
+    <!-- Mobile card view -->
+    <div class="sm:hidden space-y-3">
+      <div
+        v-for="vessel in vesselStore.vessels"
+        :key="vessel._id"
+        class="bg-charcoal rounded-lg border border-brown/30 p-4"
+      >
+        <div class="flex items-start justify-between mb-2">
+          <div>
+            <div class="text-sm font-medium text-parchment">{{ vessel.name }}</div>
+            <div class="text-xs text-parchment/60">{{ vessel.type || 'Unknown type' }}</div>
+          </div>
+          <span
+            class="px-2 py-0.5 rounded-full text-[10px] font-semibold border"
+            :class="vessel.current ? 'bg-amber/15 text-amber border-amber/25' : 'bg-brown/15 text-parchment/60 border-brown/25'"
+          >
+            {{ vessel.current ? 'In Use' : 'Empty' }}
+          </span>
+        </div>
+        <div v-if="vessel.current" class="text-xs">
+          <span class="text-parchment/60">Contents: </span>
+          <span class="text-parchment/70">{{ vessel.current }}</span>
+        </div>
+      </div>
+      <div v-if="vesselStore.vessels.length === 0" class="text-center py-6 text-parchment/50 text-sm">
+        No vessels found
+      </div>
+    </div>
+  </TableWrapper>
 </template>

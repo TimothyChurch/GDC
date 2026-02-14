@@ -63,7 +63,8 @@ const columns: TableColumn<Cocktail>[] = [
   {
     accessorKey: "visible",
     header: "Visible",
-    cell: ({ row }) => (row.original.visible ? "Yes" : "No")  },
+    cell: ({ row }) => (row.original.visible ? "Yes" : "No"),
+  },
   {
     id: "actions",
     cell: ({ row }) => {
@@ -73,9 +74,7 @@ const columns: TableColumn<Cocktail>[] = [
         h(
           UDropdownMenu,
           {
-            content: {
-              align: "end",
-            },
+            content: { align: "end" },
             items: getRowItems(row),
             "aria-label": "Actions dropdown",
           },
@@ -96,6 +95,12 @@ const columns: TableColumn<Cocktail>[] = [
 function getRowItems(row: Row<Cocktail>) {
   return [
     {
+      label: "View Details",
+      onSelect() {
+        navigateTo(`/admin/cocktails/${row.original._id}`);
+      },
+    },
+    {
       label: "Edit cocktail",
       onSelect() {
         cocktailStore.setCocktail(row.original._id.toString());
@@ -115,9 +120,9 @@ function getRowItems(row: Row<Cocktail>) {
   ];
 }
 // Modal component info
-import { ModalCocktail } from "#components";
+import { PanelCocktail } from "#components";
 const overlay = useOverlay();
-const modal = overlay.create(ModalCocktail);
+const modal = overlay.create(PanelCocktail);
 const newCocktail = () => {
   cocktailStore.resetCocktail();
   openModal();
@@ -126,18 +131,18 @@ const openModal = async () => await modal.open();
 </script>
 
 <template>
-  <div>
-    <div class="flex justify-between mb-2">
-      <UInput v-model="search" placeholder="Search cocktails..." />
-      <UButton
-        icon="i-heroicons-plus-circle"
-        size="xl"
-        @click="newCocktail"
-        variant="ghost"
-        >Add Cocktail</UButton
-      >
-    </div>
-    <div class="overflow-x-auto">
+  <TableWrapper
+    v-model:search="search"
+    v-model:pagination="pagination"
+    :total-items="cocktailStore.cocktails.length"
+    :loading="cocktailStore.loading"
+    search-placeholder="Search cocktails..."
+  >
+    <template #actions>
+      <UButton icon="i-heroicons-plus-circle" size="xl" @click="newCocktail" variant="ghost">Add Cocktail</UButton>
+    </template>
+    <!-- Desktop table -->
+    <div class="hidden sm:block">
       <UTable
         sticky
         v-model:global-filter="search"
@@ -153,18 +158,44 @@ const openModal = async () => await modal.open();
         </template>
       </UTable>
     </div>
-    <div class="flex flex-col sm:flex-row justify-between items-center gap-2 mt-2">
-      <UFormGroup label="Results per Page">
-        <USelect
-          :options="[5, 10, 20, 100]"
-          :model-value="pagination.pageSize"
-          @update:model-value="pagination = { ...pagination, pageSize: Number($event), pageIndex: 0 }" />
-      </UFormGroup>
-      <UPagination
-        :model-value="pagination.pageIndex + 1"
-        @update:model-value="pagination = { ...pagination, pageIndex: $event - 1 }"
-        :page-count="pagination.pageSize"
-        :total="cocktailStore.cocktails.length" />
+
+    <!-- Mobile card view -->
+    <div class="sm:hidden space-y-3">
+      <div
+        v-for="cocktail in cocktailStore.cocktails"
+        :key="cocktail._id"
+        class="bg-charcoal rounded-lg border border-brown/30 p-4"
+      >
+        <div class="flex items-start justify-between mb-2">
+          <div>
+            <div class="text-sm font-medium text-parchment">{{ cocktail.name }}</div>
+            <div class="text-xs text-parchment/60">{{ cocktail.glassware || 'No glassware' }}</div>
+          </div>
+          <span
+            class="px-2 py-0.5 rounded-full text-[10px] font-semibold border"
+            :class="cocktail.visible ? 'bg-green-500/15 text-green-400 border-green-500/25' : 'bg-red-500/15 text-red-400 border-red-500/25'"
+          >
+            {{ cocktail.visible ? 'Visible' : 'Hidden' }}
+          </span>
+        </div>
+        <div class="grid grid-cols-3 gap-2 text-xs">
+          <div>
+            <span class="text-parchment/60">Cost</span>
+            <div class="text-parchment/70">{{ Dollar.format(cocktailStore.cocktailCost(cocktail._id.toString())) }}</div>
+          </div>
+          <div>
+            <span class="text-parchment/60">Price</span>
+            <div class="text-copper font-semibold">{{ Dollar.format(cocktail.price || 0) }}</div>
+          </div>
+          <div>
+            <span class="text-parchment/60">Ingredients</span>
+            <div class="text-parchment/70">{{ cocktail.ingredients?.length || 0 }}</div>
+          </div>
+        </div>
+      </div>
+      <div v-if="cocktailStore.cocktails.length === 0" class="text-center py-6 text-parchment/50 text-sm">
+        No cocktails found
+      </div>
     </div>
-  </div>
+  </TableWrapper>
 </template>

@@ -5,6 +5,7 @@ export const useItemStore = defineStore("items", () => {
 
   // State
   const items = ref<Item[]>([]);
+  const loaded = ref(false);
   const loading = ref(false);
   const saving = ref(false);
   const item = ref<Item>({
@@ -26,19 +27,22 @@ export const useItemStore = defineStore("items", () => {
       const response = await $fetch("/api/item");
       items.value = response as Item[];
     } catch (e) {
-      console.error("Error fetching items:", e);
     } finally {
       loading.value = false;
     }
   };
-  getItems();
+
+  const ensureLoaded = async () => {
+    if (!loaded.value) {
+      await getItems();
+      loaded.value = true;
+    }
+  };
 
   const setItem = (id: string) => {
     const foundItem = items.value.find((i) => i._id === id);
     if (foundItem) {
       item.value = foundItem;
-    } else {
-      console.error(`Item with ID ${id} not found.`);
     }
   };
 
@@ -182,8 +186,10 @@ export const useItemStore = defineStore("items", () => {
   return {
     items,
     item,
+    loaded,
     loading,
     saving,
+    ensureLoaded,
     getItems,
     setItem,
     updateItem,

@@ -5,7 +5,6 @@ export default defineEventHandler(async (event) => {
 		const cocktails = await Cocktail.find();
 		return cocktails;
 	} catch (error) {
-		console.error('Error fetching cocktails:', error);
 		throw createError({
 			statusCode: 500,
 			statusMessage: 'Error fetching cocktails',

@@ -4,6 +4,7 @@ export const useBottleStore = defineStore("bottles", () => {
   const toast = useToast();
 
   const bottles = ref<Bottle[]>([]);
+  const loaded = ref(false);
   const loading = ref(false);
   const saving = ref(false);
   const bottle = ref<Bottle>({
@@ -26,12 +27,17 @@ export const useBottleStore = defineStore("bottles", () => {
       bottles.value = response as Bottle[];
       sortBottles();
     } catch (e) {
-      console.error("Error fetching bottles:", e);
     } finally {
       loading.value = false;
     }
   };
-  getBottles();
+
+  const ensureLoaded = async () => {
+    if (!loaded.value) {
+      await getBottles();
+      loaded.value = true;
+    }
+  };
 
   const setBottle = (id: string) => {
     bottle.value = bottles.value.find(
@@ -128,8 +134,10 @@ export const useBottleStore = defineStore("bottles", () => {
   return {
     bottles,
     bottle,
+    loaded,
     loading,
     saving,
+    ensureLoaded,
     getBottles,
     setBottle,
     resetBottle,

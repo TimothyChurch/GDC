@@ -1,43 +1,38 @@
+interface AuthUser {
+  _id: string;
+  email: string;
+  firstName?: string;
+  lastName?: string;
+}
+
 export const useAuth = () => {
   const router = useRouter();
+  const user = useState<AuthUser | null>('auth-user', () => null);
+
+  const isAuthenticated = computed(() => !!user.value);
+
+  const fetchUser = async () => {
+    try {
+      const data = await $fetch<AuthUser>('/api/auth/me');
+      user.value = data;
+    } catch {
+      user.value = null;
+    }
+  };
 
   const login = async (email: string, password: string) => {
-    const user = useCookie("user", {
-      default: () => ({
-        email: "",
-        authenticated: false,
-        data: {},
-      }),
-      sameSite: "strict" as const,
-      secure: true,
+    const data = await $fetch<AuthUser>('/api/auth/login', {
+      method: 'POST',
+      body: { email, password },
     });
-
-    if (user.value.authenticated) {
-      return true;
-    }
-
-    const data = (await $fetch("/api/users/find", {
-      method: "PUT",
-      body: JSON.stringify({ email, password }),
-    })) as unknown as Array<{ _id: string; email: string; password: string }>;
-
-    if (data.length > 0) {
-      const { password: _, ...userData } = data[0];
-      user.value.authenticated = true;
-      user.value.email = email;
-      user.value.data = userData;
-      router.push("/admin/dashboard");
-      return true;
-    }
-
-    return false;
+    user.value = data;
   };
 
-  const logout = () => {
-    const user = useCookie("user");
+  const logout = async () => {
+    await $fetch('/api/auth/logout', { method: 'POST' });
     user.value = null;
-    router.push("/login");
+    router.push('/login');
   };
 
-  return { login, logout };
+  return { user, isAuthenticated, login, logout, fetchUser };
 };

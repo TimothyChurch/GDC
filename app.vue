@@ -5,7 +5,7 @@ useHead({
   meta: [
     {
       name: "description",
-      content: "Opinionated Vite Starter Template",
+      content: "Galveston Distilling Co — Handcrafted spirits from Galveston Island, Texas",
     },
   ],
   link: [
@@ -19,11 +19,9 @@ useHead({
 </script>
 
 <template>
-  <UApp
-    class="flex w-screen h-screen max-h-screen max-w-screen overflow-y-hidden font-sans"
-  >
+  <UApp>
     <NuxtLayout>
-      <NuxtPage class="grow overflow-y-auto p-3" />
+      <NuxtPage />
     </NuxtLayout>
   </UApp>
 </template>

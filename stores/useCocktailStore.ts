@@ -7,6 +7,7 @@ export const useCocktailStore = defineStore("cocktails", () => {
 
   // State
   const cocktails = ref<Cocktail[]>([]);
+  const loaded = ref(false);
   const loading = ref(false);
   const saving = ref(false);
   const cocktail = ref<Cocktail>({
@@ -31,20 +32,23 @@ export const useCocktailStore = defineStore("cocktails", () => {
       const response = await $fetch("/api/cocktail");
       cocktails.value = response as Cocktail[];
     } catch (e) {
-      console.error("Error fetching cocktails:", e);
     } finally {
       loading.value = false;
     }
     sortCocktails();
   };
-  getCocktails();
+
+  const ensureLoaded = async () => {
+    if (!loaded.value) {
+      await getCocktails();
+      loaded.value = true;
+    }
+  };
 
   const setCocktail = (id: string) => {
     const foundCocktail = cocktails.value.find((c) => c._id === id);
     if (foundCocktail) {
       cocktail.value = foundCocktail;
-    } else {
-      console.error(`Cocktail with ID ${id} not found.`);
     }
   };
 
@@ -135,6 +139,25 @@ export const useCocktailStore = defineStore("cocktails", () => {
     });
   };
 
+  const toggleVisibility = async (id: string): Promise<void> => {
+    const target = cocktails.value.find(c => c._id === id);
+    if (!target) return;
+
+    const previousValue = target.visible;
+    target.visible = !target.visible;
+
+    try {
+      await $fetch(`/api/cocktail/${id}`, {
+        method: 'PUT',
+        body: JSON.stringify(target),
+      });
+      toast.add({ title: `Cocktail ${target.visible ? 'shown' : 'hidden'}`, color: 'success', icon: 'i-lucide-check-circle' });
+    } catch (error: any) {
+      target.visible = previousValue;
+      toast.add({ title: 'Failed to update visibility', description: error?.data?.message, color: 'error', icon: 'i-lucide-alert-circle' });
+    }
+  };
+
   const cocktailCost = (cocktail: Cocktail | string): number => {
     const selectedCocktail = ref();
     if (typeof cocktail === "string") {
@@ -156,8 +179,10 @@ export const useCocktailStore = defineStore("cocktails", () => {
   return {
     cocktails,
     cocktail,
+    loaded,
     loading,
     saving,
+    ensureLoaded,
     getCocktails,
     setCocktail,
     updateCocktail,
@@ -166,5 +191,6 @@ export const useCocktailStore = defineStore("cocktails", () => {
     getCocktailById,
     search,
     cocktailCost,
+    toggleVisibility,
   };
 });

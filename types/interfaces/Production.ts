@@ -11,4 +11,6 @@ export interface Production {
 	quantity: number;
 	productionCost: number;
 	bottleCost: number;
+	createdAt?: string;
+	updatedAt?: string;
 }

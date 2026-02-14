@@ -7,4 +7,6 @@ export interface PurchaseOrder {
 	items: PurchaseOrderItem[];
 	total: number;
 	date: Date;
+	createdAt?: string;
+	updatedAt?: string;
 }

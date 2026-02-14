@@ -3,6 +3,6 @@ export default defineEventHandler(async (event) => {
       return await Bottle.findOne({ _id: event.context.params?._id })
     }
     catch (error) {
-      return error
+      throw createError({ statusCode: 500, statusMessage: 'Failed to fetch bottle' });
     }
   })

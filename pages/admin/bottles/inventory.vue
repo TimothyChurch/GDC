@@ -1,125 +1,175 @@
 <script setup lang="ts">
-const bottleStore = useBottleStore();
-bottleStore.getBottles();
-const inventoryStore = useInventoryStore();
+definePageMeta({ layout: 'admin' })
+
+const toast = useToast()
+const bottleStore = useBottleStore()
+const inventoryStore = useInventoryStore()
 
 const bottles = ref<
-	Array<{
-		_id: string;
-		bottle: string;
-		bar: number;
-		office: number;
-		boxed: number;
-	}>
->([]);
-watch(
-	() => bottleStore.bottles,
-	() => {
-		bottles.value = bottleStore.bottles.map((bottle) => ({
-			_id: bottle._id,
-			bottle: bottle.name,
-			bar: 0,
-			office: 0,
-			boxed: 0,
-		}));
-	}
-);
-const search = ref('');
-const filteredBottles = computed(() => {
-	if (search.value != '') {
-		return bottles.value.filter((bottle) =>
-			bottle.bottle.toLowerCase().includes(search.value.toLowerCase())
-		);
-	} else {
-		return bottles.value;
-	}
-});
+  Array<{
+    _id: string;
+    bottle: string;
+    bar: number;
+    office: number;
+    boxed: number;
+  }>
+>([])
 
-const submitInventory = () => {
-	const date = new Date();
-	const inventory = ref<Record<string, number>>({});
-	bottles.value.forEach((bottle) => {
-		inventory.value[bottle._id] =
-			bottle.bar + bottle.office + bottle.boxed * 12;
-	});
-	inventoryStore.inventory = {
-		_id: '',
-		date: date,
-		item: '',
-		quantity: 0,
-	};
-	inventoryStore.updateInventory();
-};
+watch(
+  () => bottleStore.bottles,
+  () => {
+    bottles.value = bottleStore.bottles.map((bottle) => ({
+      _id: bottle._id,
+      bottle: bottle.name,
+      bar: 0,
+      office: 0,
+      boxed: 0,
+    }));
+  },
+  { immediate: true }
+)
+
+const search = ref('')
+const saving = ref(false)
+
+const filteredBottles = computed(() => {
+  if (!search.value) return bottles.value
+  return bottles.value.filter((bottle) =>
+    bottle.bottle.toLowerCase().includes(search.value.toLowerCase())
+  )
+})
+
+const getTotal = (bottle: { bar: number; office: number; boxed: number }) =>
+  Number(bottle.bar) + Number(bottle.office) + Number(bottle.boxed) * 12
+
+const getLastCount = (bottleId: string) => {
+  const records = inventoryStore.inventories
+    .filter((inv) => inv.item === bottleId)
+    .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
+  return records[0] || null
+}
+
+const getDelta = (bottle: { _id: string; bar: number; office: number; boxed: number }) => {
+  const lastCount = getLastCount(bottle._id)
+  if (!lastCount) return null
+  return getTotal(bottle) - lastCount.quantity
+}
+
+const submitInventory = async () => {
+  saving.value = true
+  const date = new Date()
+  try {
+    for (const bottle of bottles.value) {
+      const total = getTotal(bottle)
+      inventoryStore.inventory = {
+        _id: '',
+        date,
+        item: bottle._id,
+        quantity: total,
+      }
+      await inventoryStore.updateInventory()
+    }
+    toast.add({ title: 'Inventory submitted', color: 'success', icon: 'i-lucide-check-circle' })
+  } catch (error: any) {
+    toast.add({ title: 'Failed to submit inventory', description: error?.data?.message, color: 'error', icon: 'i-lucide-alert-circle' })
+  } finally {
+    saving.value = false
+  }
+}
 </script>
 
 <template>
-	<UContainer>
-		<div class="flex justify-evenly pb-5">
-			<UInput
-				v-model="search"
-				placeholder="Search..."
-				icon="i-heroicons-magnifying-glass-20-solid"
-				autocomplete="off"
-				:ui="{ icon: { trailing: { pointer: '' } } }">
-				<template #trailing>
-					<UButton
-						v-show="search !== ''"
-						color="gray"
-						variant="link"
-						icon="i-heroicons-x-mark-20-solid"
-						:padded="false"
-						@click="search = ''" />
-				</template>
-			</UInput>
-			<UButton @click="submitInventory">Submit Inventory</UButton>
-		</div>
-		<div class="grid grid-cols-6 gap-3 text-center text-xl font-bold underline">
-			<div class="col-span-2">
-				<h1>Bottle</h1>
-			</div>
-			<div>
-				<h1>Bar</h1>
-			</div>
-			<div>
-				<h1>Office</h1>
-			</div>
-			<div>
-				<h1>Boxed</h1>
-			</div>
-			<div>
-				<h1>Total</h1>
-			</div>
-		</div>
+  <div>
+    <AdminPageHeader title="Bottle Inventory" subtitle="Count and track bottle stock levels" icon="i-lucide-package-check">
+      <template #actions>
+        <UButton @click="submitInventory" :loading="saving" icon="i-lucide-check">Submit Inventory</UButton>
+      </template>
+    </AdminPageHeader>
 
-		<div v-for="bottle in filteredBottles">
-			<div class="grid grid-cols-6 gap-3 text-center p-1">
-				<div class="text-xl font-bold col-span-2">{{ bottle.bottle }}</div>
-				<UInput
-					v-model="bottle.bar"
-					type="number" />
-				<UInput
-					v-model="bottle.office"
-					type="number" />
-				<UInput
-					v-model="bottle.boxed"
-					type="number" />
-				<div class="grid grid-cols-2">
-					{{ bottle.bar + bottle.office + bottle.boxed * 12 }}
-					<h1
-						:class="(bottle.bar +
-							bottle.office +
-							bottle.boxed * 12 -
-							(bottleStockCheck(bottle._id).currentStock as number)) < 0 ? 'text-red-800' : 'text-black'">
-						{{
-							bottle.bar +
-							bottle.office +
-							bottle.boxed * 12 -
-							(bottleStockCheck(bottle._id).currentStock as number)
-						}}
-					</h1>
-				</div>
-			</div>
-			<UDivider />
-		</div>
-	</UContainer>
+    <div class="mb-4">
+      <UInput
+        v-model="search"
+        placeholder="Search bottles..."
+        icon="i-lucide-search"
+        class="max-w-xs"
+      />
+    </div>
+
+    <!-- Desktop Table -->
+    <div class="hidden sm:block">
+      <div class="bg-charcoal rounded-xl border border-brown/30 overflow-hidden">
+        <table class="w-full">
+          <thead>
+            <tr class="border-b border-brown/30">
+              <th class="text-left px-4 py-3 text-xs font-semibold text-parchment/60 uppercase tracking-wider">Bottle</th>
+              <th class="text-center px-4 py-3 text-xs font-semibold text-parchment/60 uppercase tracking-wider w-24">Bar</th>
+              <th class="text-center px-4 py-3 text-xs font-semibold text-parchment/60 uppercase tracking-wider w-24">Office</th>
+              <th class="text-center px-4 py-3 text-xs font-semibold text-parchment/60 uppercase tracking-wider w-24">Boxed</th>
+              <th class="text-center px-4 py-3 text-xs font-semibold text-parchment/60 uppercase tracking-wider w-20">Total</th>
+              <th class="text-center px-4 py-3 text-xs font-semibold text-parchment/60 uppercase tracking-wider w-28">Last Count</th>
+              <th class="text-center px-4 py-3 text-xs font-semibold text-parchment/60 uppercase tracking-wider w-20">Delta</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr
+              v-for="bottle in filteredBottles"
+              :key="bottle._id"
+              class="border-b border-brown/15 last:border-0"
+            >
+              <td class="px-4 py-2 text-sm font-medium text-parchment">{{ bottle.bottle }}</td>
+              <td class="px-4 py-2"><UInput v-model="bottle.bar" type="number" min="0" class="text-center" /></td>
+              <td class="px-4 py-2"><UInput v-model="bottle.office" type="number" min="0" class="text-center" /></td>
+              <td class="px-4 py-2"><UInput v-model="bottle.boxed" type="number" min="0" class="text-center" /></td>
+              <td class="px-4 py-2 text-center text-sm font-semibold text-parchment">{{ getTotal(bottle) }}</td>
+              <td class="px-4 py-2 text-center text-xs text-parchment/50">
+                <template v-if="getLastCount(bottle._id)">
+                  {{ getLastCount(bottle._id)!.quantity }} <span class="text-parchment/50">({{ new Date(getLastCount(bottle._id)!.date).toLocaleDateString() }})</span>
+                </template>
+                <span v-else class="text-parchment/20">--</span>
+              </td>
+              <td class="px-4 py-2 text-center text-sm font-semibold">
+                <template v-if="getDelta(bottle) !== null">
+                  <span :class="getDelta(bottle)! >= 0 ? 'text-green-400' : 'text-red-400'">
+                    {{ getDelta(bottle)! > 0 ? '+' : '' }}{{ getDelta(bottle) }}
+                  </span>
+                </template>
+                <span v-else class="text-parchment/20">--</span>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Mobile Stacked Cards -->
+    <div class="sm:hidden space-y-3">
+      <div
+        v-for="bottle in filteredBottles"
+        :key="bottle._id"
+        class="bg-charcoal rounded-xl border border-brown/30 p-4"
+      >
+        <div class="text-sm font-medium text-parchment mb-3">{{ bottle.bottle }}</div>
+        <div class="grid grid-cols-3 gap-2 mb-3">
+          <UFormField label="Bar">
+            <UInput v-model="bottle.bar" type="number" min="0" />
+          </UFormField>
+          <UFormField label="Office">
+            <UInput v-model="bottle.office" type="number" min="0" />
+          </UFormField>
+          <UFormField label="Boxed">
+            <UInput v-model="bottle.boxed" type="number" min="0" />
+          </UFormField>
+        </div>
+        <div class="flex justify-between items-center text-xs">
+          <span class="text-parchment/60">Total: <span class="font-semibold text-parchment">{{ getTotal(bottle) }}</span></span>
+          <template v-if="getDelta(bottle) !== null">
+            <span :class="getDelta(bottle)! >= 0 ? 'text-green-400' : 'text-red-400'">
+              Delta: {{ getDelta(bottle)! > 0 ? '+' : '' }}{{ getDelta(bottle) }}
+            </span>
+          </template>
+          <span v-else class="text-parchment/20">No previous count</span>
+        </div>
+      </div>
+    </div>
+  </div>
 </template>

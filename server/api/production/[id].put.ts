@@ -2,6 +2,7 @@ export default defineEventHandler(async (event) => {
 	const id = event.context.params?.id;
 	const body = await readBody(event);
 	const sanitized = sanitize(body);
+	await validateBody(sanitized, productionUpdateSchema);
 	try {
 		const updatedProduction = await Production.findByIdAndUpdate(id, sanitized, {
 			new: true,

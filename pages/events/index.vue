@@ -1,4 +1,9 @@
-<script setup></script>
+<script setup lang="ts">
+useSeoMeta({
+  title: 'Events | Galveston Distilling Co',
+  description: 'Book cocktail classes, distillery tours, and spirit tastings at Galveston Distilling Co.',
+});
+</script>
 
 <template>
   <div>

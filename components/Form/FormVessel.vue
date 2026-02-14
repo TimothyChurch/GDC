@@ -31,52 +31,52 @@ const submitForm = () => {
 	<div>
 		<UForm :state="vesselStore.vessel">
 			<div class="flex flex-wrap gap-3 justify-around">
-				<UFormGroup label="Name">
+				<UFormField label="Name">
 					<UInput v-model="vesselStore.vessel.name" />
-				</UFormGroup>
-				<UFormGroup label="Type">
+				</UFormField>
+				<UFormField label="Type">
 					<USelectMenu
 						v-model="vesselStore.vessel.type"
 						:options="vesselTypes"
 						placeholder="Type"
 						creatable
 						searchable />
-				</UFormGroup>
-				<UFormGroup label="Vessel Weight">
+				</UFormField>
+				<UFormField label="Vessel Weight">
 					<UButtonGroup>
 						<UInput v-model="vesselStore.vessel.stats.weight" />
 						<USelect
 							v-model="vesselStore.vessel.stats.weightUnit"
 							:options="weightUnits" />
 					</UButtonGroup>
-				</UFormGroup>
-				<UFormGroup label="Vessel Capacity">
+				</UFormField>
+				<UFormField label="Vessel Capacity">
 					<UButtonGroup>
 						<UInput v-model="vesselStore.vessel.stats.volume" />
 						<USelect
 							v-model="vesselStore.vessel.stats.volumeUnit"
 							:options="volumeUnits" />
 					</UButtonGroup>
-				</UFormGroup>
+				</UFormField>
 			</div>
 			<div
 				v-if="vesselStore.vessel.type === 'Barrel'"
 				class="flex justify-around">
-				<UFormGroup label="Size">
+				<UFormField label="Size">
 					<USelect
 						v-model="vesselStore.vessel.barrel.size"
 						:options="barrelSizes" />
-				</UFormGroup>
-				<UFormGroup label="Char Level">
+				</UFormField>
+				<UFormField label="Char Level">
 					<USelect
 						v-model="vesselStore.vessel.barrel.char"
 						:options="charLevels" />
-				</UFormGroup>
-				<UFormGroup label="Cost">
+				</UFormField>
+				<UFormField label="Cost">
 					<UInput v-model="vesselStore.vessel.barrel.cost">
 						<template #leading> $ </template>
 					</UInput>
-				</UFormGroup>
+				</UFormField>
 			</div>
 			<UButton
 				@click="submitForm()"

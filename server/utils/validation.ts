@@ -106,3 +106,71 @@ export const vesselCreateSchema = yup.object({
 	name: yup.string().required('Name is required'),
 	type: yup.string().required('Type is required'),
 });
+
+// ─── Update Schemas (all fields optional) ────────────────────
+
+export const userUpdateSchema = yup.object({
+	email: yup.string().email('Invalid email'),
+	password: yup.string().min(8, 'Password must be at least 8 characters'),
+	firstName: yup.string(),
+	lastName: yup.string(),
+	phoneNumber: yup.string(),
+	role: yup.string(),
+});
+
+export const batchUpdateSchema = yup.object({
+	recipe: yup.string(),
+	batchSize: yup.number().positive('Must be greater than 0'),
+	batchSizeUnit: yup.string(),
+	status: yup.string(),
+	batchCost: yup.number().min(0),
+	recipeCost: yup.number().min(0),
+});
+
+export const bottleUpdateSchema = yup.object({
+	name: yup.string(),
+	abv: yup.number().min(0, 'ABV cannot be negative').max(100, 'ABV cannot exceed 100'),
+	price: yup.number().min(0, 'Price cannot be negative'),
+});
+
+export const cocktailUpdateSchema = yup.object({
+	name: yup.string(),
+	price: yup.number().min(0, 'Price cannot be negative'),
+});
+
+export const contactUpdateSchema = yup.object({
+	businessName: yup.string(),
+	type: yup.string(),
+	email: yup.string().email('Invalid email'),
+});
+
+export const inventoryUpdateSchema = yup.object({
+	date: yup.date(),
+	quantity: yup.number(),
+});
+
+export const itemUpdateSchema = yup.object({
+	name: yup.string(),
+	pricePerUnit: yup.number().min(0, 'Price cannot be negative'),
+});
+
+export const productionUpdateSchema = yup.object({
+	date: yup.date(),
+	bottle: yup.string(),
+	quantity: yup.number().positive('Must be greater than 0'),
+});
+
+export const purchaseOrderUpdateSchema = yup.object({
+	vendor: yup.string(),
+	date: yup.date(),
+	status: yup.string(),
+});
+
+export const recipeUpdateSchema = yup.object({
+	name: yup.string(),
+});
+
+export const vesselUpdateSchema = yup.object({
+	name: yup.string(),
+	type: yup.string(),
+});

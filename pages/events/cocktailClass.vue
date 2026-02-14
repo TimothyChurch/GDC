@@ -1,4 +1,9 @@
 <script setup>
+useSeoMeta({
+  title: 'Cocktail Classes | Galveston Distilling Co',
+  description: 'Join our hands-on cocktail classes and learn to craft drinks with Galveston-made spirits.',
+});
+
 const { loadStripe } = useClientStripe();
 const nuxtApp = useNuxtApp();
 const stripePromise = loadStripe(nuxtApp.$config.public.stripe.key);

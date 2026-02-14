@@ -73,11 +73,11 @@ const columns = [
 			</UTable>
 		</div>
 		<div class="flex flex-col sm:flex-row justify-between gap-2">
-			<UFormGroup label="Results per Page">
+			<UFormField label="Results per Page">
 				<USelect
 					:options="[5, 10, 20, 100]"
 					v-model="pageCount" />
-			</UFormGroup>
+			</UFormField>
 			<div class="flex justify-end px-3 py-3.5 border-t border-gray-200 dark:border-gray-700">
 				<UPagination
 					v-model="page"

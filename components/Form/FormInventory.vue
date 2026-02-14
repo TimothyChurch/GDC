@@ -23,7 +23,7 @@ const onSubmit = async () => {
 <template>
 	<div class="flex flex-col gap-3">
 		<SiteDatePicker v-model="inventoryStore.inventory.date" />
-		<UFormGroup label="Item">
+		<UFormField label="Item">
 			<USelectMenu
 				v-model="inventoryStore.inventory.item"
 				:options="itemOptions"
@@ -31,18 +31,18 @@ const onSubmit = async () => {
 				option-attribute="label"
 				placeholder="Select an item"
 				searchable />
-		</UFormGroup>
-		<UFormGroup label="Quantity">
+		</UFormField>
+		<UFormField label="Quantity">
 			<UInput
 				v-model="inventoryStore.inventory.quantity"
 				type="number"
 				placeholder="Quantity" />
-		</UFormGroup>
-		<UFormGroup label="Location">
+		</UFormField>
+		<UFormField label="Location">
 			<UInput
 				v-model="inventoryStore.inventory.location"
 				placeholder="Location (optional)" />
-		</UFormGroup>
+		</UFormField>
 		<UButton
 			@click="onSubmit"
 			:loading="inventoryStore.saving"

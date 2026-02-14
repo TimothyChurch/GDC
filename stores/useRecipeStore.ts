@@ -5,6 +5,7 @@ export const useRecipeStore = defineStore("recipes", () => {
 
   // State
   const recipes = ref<Recipe[]>([]);
+  const loaded = ref(false);
   const loading = ref(false);
   const saving = ref(false);
   const recipe = ref<Recipe>({
@@ -25,12 +26,17 @@ export const useRecipeStore = defineStore("recipes", () => {
       const response = await $fetch("/api/recipe");
       recipes.value = response as Recipe[];
     } catch (e) {
-      console.error("Error fetching recipes:", e);
     } finally {
       loading.value = false;
     }
   };
-  getRecipes();
+
+  const ensureLoaded = async () => {
+    if (!loaded.value) {
+      await getRecipes();
+      loaded.value = true;
+    }
+  };
 
   const updateRecipe = async (): Promise<void> => {
     saving.value = true;
@@ -100,8 +106,10 @@ export const useRecipeStore = defineStore("recipes", () => {
   return {
     recipes,
     recipe,
+    loaded,
     loading,
     saving,
+    ensureLoaded,
     getRecipes,
     updateRecipe,
     deleteRecipe,

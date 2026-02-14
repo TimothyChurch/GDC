@@ -1,6 +1,7 @@
 export default defineEventHandler(async (event) => {
 	const body = await readBody(event);
 	const sanitized = sanitize(body);
+	await validateBody(sanitized, inventoryUpdateSchema);
 	try {
 		const updated = await Inventory.findOneAndUpdate(
 			{ _id: event.context.params?._id },

@@ -5,8 +5,12 @@ export interface Bottle {
 	type?: string;
 	abv?: number;
 	price?: number;
+	volume?: number;
+	volumeUnit?: string;
 	img?: string;
 	description?: string;
 	recipe?: string;
 	inStock?: boolean;
+	createdAt?: string;
+	updatedAt?: string;
 }

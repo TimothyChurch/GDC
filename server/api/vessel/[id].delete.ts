@@ -1,21 +1,30 @@
-import { Vessel } from '~/server/models/vessel.schema';
-
 export default defineEventHandler(async (event) => {
-	try {
-		const id = event.context.params?.id;
-		const deletedVessel = await Vessel.findByIdAndDelete(id);
-		if (!deletedVessel) {
-			throw createError({
-				statusCode: 404,
-				statusMessage: 'Vessel not found',
-			});
-		}
-		return { message: 'Vessel deleted successfully' };
-	} catch (error) {
-		console.error(error);
-		throw createError({
-			statusCode: 500,
-			statusMessage: 'Server error occurred while deleting the vessel.',
-		});
-	}
+  try {
+    const id = event.context.params?.id;
+
+    // Check if vessel has contents
+    const vessel = await Vessel.findById(id);
+    if (!vessel) {
+      throw createError({
+        statusCode: 404,
+        statusMessage: 'Vessel not found',
+      });
+    }
+
+    if (vessel.contents && vessel.contents.length > 0) {
+      throw createError({
+        statusCode: 400,
+        statusMessage: 'Cannot delete: vessel still has contents. Empty it first.',
+      });
+    }
+
+    await Vessel.findByIdAndDelete(id);
+    return { message: 'Vessel deleted successfully' };
+  } catch (error: any) {
+    if (error.statusCode) throw error;
+    throw createError({
+      statusCode: 500,
+      statusMessage: 'Failed to delete vessel',
+    });
+  }
 });

@@ -9,4 +9,7 @@ export interface Cocktail {
 	description?: string;
 	directions: string;
 	visible: boolean;
+	img?: string;
+	createdAt?: string;
+	updatedAt?: string;
 }

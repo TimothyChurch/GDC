@@ -6,6 +6,7 @@ export const useVesselStore = defineStore('vessels', () => {
 
 	// State
 	const vessels = ref<Vessel[]>([]);
+	const loaded = ref(false);
 	const loading = ref(false);
 	const saving = ref(false);
 	const vessel = ref<Vessel>({
@@ -53,19 +54,20 @@ export const useVesselStore = defineStore('vessels', () => {
 			const response = await $fetch('/api/vessel');
 			vessels.value = response as Vessel[];
 		} catch (error) {
-			console.error('Error fetching vessels:', error);
 		} finally {
 			loading.value = false;
 		}
 	};
-	getVessels();
+
+	const ensureLoaded = async () => {
+		if (!loaded.value) {
+			await getVessels();
+			loaded.value = true;
+		}
+	};
 
 	const getVesselById = (id: string) => {
-		try {
-			return vessels.value.find((v) => v._id === id);
-		} catch (error) {
-			console.error('Error fetching vessel:', error);
-		}
+		return vessels.value.find((v) => v._id === id);
 	};
 
 	const setVessel = (id: string) => {
@@ -75,16 +77,13 @@ export const useVesselStore = defineStore('vessels', () => {
 
 	const updateVessel = async (): Promise<void> => {
 		if (vessel.value.contents && vessel.value.contents.length > 0) {
+			const totalVolume = vessel.value.contents.reduce((acc, c) => acc + c.volume, 0);
 			vessel.value.current = {
-				volume: vessel.value.contents.reduce((acc, c) => acc + c.volume, 0),
+				volume: totalVolume,
 				volumeUnit: vessel.value.contents[0].volumeUnit,
-				abv:
-					vessel.value.contents
-						.map((c) => {
-							return (c.abv * c.volume) / 100;
-						})
-						.reduce((acc, curr) => acc + curr, 0) /
-					vessel.value.contents.length,
+				abv: totalVolume > 0
+					? vessel.value.contents.reduce((acc, c) => acc + (c.abv * c.volume), 0) / totalVolume
+					: 0,
 				value: vessel.value.contents.reduce((acc, c) => acc + c.value, 0),
 			};
 		}
@@ -250,6 +249,7 @@ export const useVesselStore = defineStore('vessels', () => {
 	return {
 		vessels,
 		vessel,
+		loaded,
 		loading,
 		saving,
 		fermenters,
@@ -257,6 +257,7 @@ export const useVesselStore = defineStore('vessels', () => {
 		stills,
 		tanks,
 		barrels,
+		ensureLoaded,
 		getVessels,
 		setVessel,
 		getVesselById,

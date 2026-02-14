@@ -1,4 +1,9 @@
 <script setup lang="ts">
+useSeoMeta({
+  title: 'Our Spirits | Galveston Distilling Co',
+  description: 'Discover our collection of small-batch spirits crafted on Galveston Island, Texas.',
+});
+
 const bottleStore = useBottleStore();
 
 const activeClass = ref("All");
@@ -26,10 +31,12 @@ const filteredBottles = computed(() => {
 
     <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-10">
       <!-- Spirit class filter tabs -->
-      <div v-if="spiritClasses.length > 2" class="flex flex-wrap gap-2 mb-8 justify-center">
+      <div v-if="spiritClasses.length > 2" role="tablist" aria-label="Spirit categories" class="flex flex-wrap gap-2 mb-8 justify-center">
         <button
           v-for="cls in spiritClasses"
           :key="cls"
+          role="tab"
+          :aria-selected="activeClass === cls"
           @click="activeClass = cls"
           class="px-4 py-1.5 rounded-full text-sm font-semibold transition-colors duration-200"
           :class="

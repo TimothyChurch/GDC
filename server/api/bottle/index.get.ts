@@ -3,7 +3,7 @@ export default defineEventHandler(async (event) => {
       return await Bottle.find({})
     }
     catch (error) {
-      return error
+      throw createError({ statusCode: 500, statusMessage: 'Failed to fetch bottles' });
     }
   })
   

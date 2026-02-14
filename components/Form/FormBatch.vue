@@ -42,7 +42,6 @@ const saveBatch = async () => {
 		batchStore.batch.recipeCost = recipePrice(batchStore.batch.recipe);
 	batchStore.batch.batchCost = scaledPrice.value;
 	batchStore.updateBatch();
-	toggleFormModal();
 };
 </script>
 

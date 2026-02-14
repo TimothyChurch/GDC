@@ -1,32 +1,11 @@
 <script setup lang="ts">
 const emit = defineEmits<{ toggleSidebar: [] }>();
-const { logout } = useAuth();
-const user = useCookie("user", {
-  default: () => ({ email: "", authenticated: false, data: {} }),
-});
+const { user, logout } = useAuth();
+const { open } = useCommandPalette();
 
-const now = ref(new Date());
-onMounted(() => {
-  setInterval(() => {
-    now.value = new Date();
-  }, 60000);
-});
-
-const greeting = computed(() => {
-  const hour = now.value.getHours();
-  if (hour < 12) return 'Good morning';
-  if (hour < 17) return 'Good afternoon';
-  return 'Good evening';
-});
-
-const formattedDate = computed(() => {
-  return now.value.toLocaleDateString('en-US', {
-    weekday: 'long',
-    year: 'numeric',
-    month: 'long',
-    day: 'numeric',
-  });
-});
+const isMac = computed(() =>
+  import.meta.client ? navigator?.userAgent?.includes('Mac') : false
+);
 </script>
 
 <template>
@@ -52,15 +31,32 @@ const formattedDate = computed(() => {
       </NuxtLink>
     </div>
 
-    <div class="hidden md:flex items-center text-xs text-copper/80">
-      {{ formattedDate }}
-    </div>
+    <!-- Search trigger -->
+    <button
+      class="hidden md:flex items-center gap-2 px-3 py-1.5 rounded-lg border border-brown/30 bg-espresso/50 hover:bg-brown/20 hover:border-brown/50 transition-all duration-200 text-parchment/60 hover:text-parchment/60 cursor-pointer"
+      @click="open()"
+    >
+      <UIcon name="i-lucide-search" class="text-sm" />
+      <span class="text-xs">Search...</span>
+      <div class="flex items-center gap-0.5 ml-4">
+        <UKbd :value="isMac ? 'meta' : 'ctrl'" size="sm" />
+        <UKbd value="K" size="sm" />
+      </div>
+    </button>
+    <UButton
+      class="md:hidden"
+      color="neutral"
+      variant="ghost"
+      icon="i-lucide-search"
+      size="sm"
+      @click="open()"
+    />
 
     <div class="flex items-center gap-2">
       <ModalCalculators />
       <div class="hidden sm:flex items-center gap-2 text-sm text-parchment/70">
         <UIcon name="i-lucide-user" class="text-copper" />
-        <span>{{ user.email }}</span>
+        <span>{{ user?.email }}</span>
       </div>
       <UButton
         color="neutral"

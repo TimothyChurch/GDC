@@ -92,6 +92,10 @@ export const useProofingCalculator = () => {
 		return { volume, unit };
 	});
 
+	const removeStep = (index: number) => {
+		steps.value.splice(index, 1);
+	};
+
 	const clear = () => {
 		initialWeight.value = { weight: 0, unit: 'lb' };
 		initialAbv.value = 0;
@@ -104,9 +108,11 @@ export const useProofingCalculator = () => {
 		initialAbv,
 		targetAbv,
 		initialVolume,
+		currentVolume,
 		estimateFinalVolume,
 		waterNeeded,
 		steps,
+		removeStep,
 		clear,
 	};
 };

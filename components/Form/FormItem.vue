@@ -20,7 +20,6 @@ const addVendor = (vendor: string) => {
 };
 const handleSubmit = () => {
 	itemStore.updateItem();
-	toggleFormModal();
 };
 </script>
 

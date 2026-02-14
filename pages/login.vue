@@ -1,36 +1,31 @@
 <script setup lang="ts">
 const router = useRouter();
-const { login } = useAuth();
+const { user, login, fetchUser } = useAuth();
 
-const user = useCookie("user", {
-  default: () => ({
-    email: "",
-    authenticated: false,
-    data: {},
-  }),
-});
-
-onMounted(() => {
-  if (user.value.authenticated) {
-    router.push("/admin/dashboard");
+onMounted(async () => {
+  await fetchUser();
+  if (user.value) {
+    router.push('/admin/dashboard');
   }
 });
 
-const email = ref("");
-const password = ref("");
-const error = ref("");
+const email = ref('');
+const password = ref('');
+const error = ref('');
 const loading = ref(false);
 
 const handleLogin = async () => {
-  error.value = "";
+  error.value = '';
   loading.value = true;
   try {
-    const success = await login(email.value, password.value);
-    if (!success) {
-      error.value = "Invalid email or password.";
+    await login(email.value, password.value);
+    router.push('/admin/dashboard');
+  } catch (e: any) {
+    if (e?.statusCode === 401) {
+      error.value = 'Invalid email or password.';
+    } else {
+      error.value = 'An error occurred during login. Please try again.';
     }
-  } catch (e) {
-    error.value = "An error occurred during login. Please try again.";
   } finally {
     loading.value = false;
   }

@@ -12,7 +12,6 @@ export default defineEventHandler(async (event) => {
 		}
 		return { message: 'Cocktail deleted successfully' };
 	} catch (error) {
-		console.error('Error deleting cocktail:', error);
 		throw createError({
 			statusCode: 500,
 			statusMessage: 'Error deleting cocktail',

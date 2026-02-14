@@ -8,4 +8,6 @@ export interface Item {
 	purchaseHistory?: string[];
 	inventoryHistory?: string[];
 	pricePerUnit?: number;
+	createdAt?: string;
+	updatedAt?: string;
 }

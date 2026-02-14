@@ -4,6 +4,7 @@ export default defineEventHandler(async (event) => {
 	const id = event.context.params?.id;
 	const body = await readBody(event);
 	const sanitized = sanitize(body);
+	await validateBody(sanitized, batchUpdateSchema);
 	try {
 		const updatedBatch = await Batch.findByIdAndUpdate(id, sanitized, { new: true });
 		if (!updatedBatch) {

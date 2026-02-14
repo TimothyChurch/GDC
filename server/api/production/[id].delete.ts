@@ -10,7 +10,6 @@ export default defineEventHandler(async (event) => {
 		}
 		return { message: 'Production deleted successfully' };
 	} catch (error) {
-		console.error(error);
 		throw createError({
 			statusCode: 500,
 			statusMessage: 'Server error occurred while deleting the production.',

@@ -27,21 +27,21 @@ const statusColor = computed(() => {
     </div>
     <div class="flex flex-col gap-1.5 text-xs">
       <div class="flex justify-between items-center">
-        <span class="text-parchment/40">Status</span>
+        <span class="text-parchment/60">Status</span>
         <span :class="['px-2 py-0.5 rounded-full text-[10px] font-semibold border', statusColor]">
           {{ batch.status }}
         </span>
       </div>
       <div class="flex justify-between">
-        <span class="text-parchment/40">Size</span>
+        <span class="text-parchment/60">Size</span>
         <span class="text-parchment/70">{{ batch.batchSize }} {{ batch.batchSizeUnit }}</span>
       </div>
       <div v-if="batch.batchCost" class="flex justify-between">
-        <span class="text-parchment/40">Cost</span>
+        <span class="text-parchment/60">Cost</span>
         <span class="text-parchment/70">{{ Dollar.format(batch.batchCost) }}</span>
       </div>
       <div v-if="batch.brewing?.date" class="flex justify-between">
-        <span class="text-parchment/40">Brew Date</span>
+        <span class="text-parchment/60">Brew Date</span>
         <span class="text-parchment/70">{{ new Date(batch.brewing.date).toLocaleDateString() }}</span>
       </div>
     </div>

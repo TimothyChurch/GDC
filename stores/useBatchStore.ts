@@ -7,6 +7,7 @@ export const useBatchStore = defineStore('batches', () => {
 
 	// State
 	const batches = ref<Batch[]>([]);
+	const loaded = ref(false);
 	const loading = ref(false);
 	const saving = ref(false);
 	const batch = ref<Batch>({
@@ -110,12 +111,17 @@ export const useBatchStore = defineStore('batches', () => {
 			const response = await $fetch('/api/batch');
 			batches.value = response as Batch[];
 		} catch (e) {
-			console.error('Error fetching batches:', e);
 		} finally {
 			loading.value = false;
 		}
 	};
-	getBatches();
+
+	const ensureLoaded = async () => {
+		if (!loaded.value) {
+			await getBatches();
+			loaded.value = true;
+		}
+	};
 
 	const setBatch = (id: string): void => {
 		batch.value = batches.value.find(
@@ -306,15 +312,7 @@ export const useBatchStore = defineStore('batches', () => {
 	};
 
 	const batchStages = () => {
-		return [
-			'Upcoming',
-			'Brewing',
-			'Fermenting',
-			'Distilling',
-			'Storage',
-			'Barrelled',
-			'Bottled',
-		];
+		return BATCH_STAGES.map((s) => s.name);
 	};
 
 	const getRecipeNameByBatchId = (id: string): string | undefined => {
@@ -329,6 +327,7 @@ export const useBatchStore = defineStore('batches', () => {
 	return {
 		batches,
 		batch,
+		loaded,
 		loading,
 		saving,
 		upcomingBatches,
@@ -337,6 +336,7 @@ export const useBatchStore = defineStore('batches', () => {
 		distillingBatches,
 		storedBatches,
 		barreledBatches,
+		ensureLoaded,
 		getBatches,
 		setBatch,
 		updateBatch,

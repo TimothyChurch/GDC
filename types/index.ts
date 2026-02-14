@@ -9,6 +9,7 @@ import type { Production } from './interfaces/Production';
 import type { PurchaseOrder } from './interfaces/PurchaseOrder';
 import type { PurchaseOrderItem } from './interfaces/PurchaseOrderItem';
 import type { Recipe } from './interfaces/Recipe';
+import type { User } from './interfaces/User';
 import type { Vessel } from './interfaces/Vessel';
 
 export type {
@@ -22,6 +23,7 @@ export type {
 	PurchaseOrder,
 	PurchaseOrderItem,
 	Recipe,
+	User,
 	Vessel,
 	Contents,
 };

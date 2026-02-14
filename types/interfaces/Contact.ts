@@ -8,4 +8,10 @@ export interface Contact {
 	address?: string;
 	email?: string;
 	phone?: string;
+	notes?: string;
+	city?: string;
+	state?: string;
+	zip?: string;
+	createdAt?: string;
+	updatedAt?: string;
 }

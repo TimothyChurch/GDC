@@ -127,7 +127,7 @@ const priorityBadge = (priority: string) => {
     case 'high': return 'bg-red-500/15 text-red-400 border-red-500/20';
     case 'medium': return 'bg-amber/15 text-amber border-amber/20';
     case 'low': return 'bg-blue-500/15 text-blue-400 border-blue-500/20';
-    default: return 'bg-brown/15 text-parchment/40 border-brown/20';
+    default: return 'bg-brown/15 text-parchment/60 border-brown/20';
   }
 };
 
@@ -136,7 +136,7 @@ const priorityIconColor = (priority: string) => {
     case 'high': return 'text-red-400';
     case 'medium': return 'text-amber';
     case 'low': return 'text-blue-400';
-    default: return 'text-parchment/40';
+    default: return 'text-parchment/60';
   }
 };
 </script>
@@ -158,7 +158,7 @@ const priorityIconColor = (priority: string) => {
     <!-- Priority summary -->
     <div class="flex gap-2 mb-4">
       <div class="flex items-center gap-1.5 text-xs bg-brown/15 rounded-lg px-2.5 py-1 border border-brown/20">
-        <span class="text-parchment/40">Total:</span>
+        <span class="text-parchment/60">Total:</span>
         <span class="font-medium text-parchment">{{ actionItems.length }}</span>
       </div>
       <div
@@ -172,7 +172,7 @@ const priorityIconColor = (priority: string) => {
 
     <div v-if="actionItems.length === 0" class="py-8 text-center">
       <UIcon name="i-lucide-check-circle-2" class="text-3xl text-green-400/40 mb-2" />
-      <p class="text-sm text-parchment/30">All caught up!</p>
+      <p class="text-sm text-parchment/50">All caught up!</p>
     </div>
 
     <div v-else class="flex flex-col gap-2 max-h-80 overflow-y-auto">
@@ -203,14 +203,14 @@ const priorityIconColor = (priority: string) => {
               {{ item.priority }}
             </span>
           </div>
-          <div class="text-xs text-parchment/40 mt-0.5">{{ item.description }}</div>
+          <div class="text-xs text-parchment/60 mt-0.5">{{ item.description }}</div>
           <div class="text-[10px] uppercase tracking-wider text-parchment/20 mt-1">{{ item.category }}</div>
         </div>
       </NuxtLink>
 
       <div
         v-if="actionItems.length > 12"
-        class="text-xs text-parchment/30 text-center py-1"
+        class="text-xs text-parchment/50 text-center py-1"
       >
         +{{ actionItems.length - 12 }} more items
       </div>

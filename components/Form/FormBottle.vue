@@ -66,6 +66,13 @@ const saveBottle = async () => {
 			<UFormField label="Price" name="price">
 				<UInput v-model="bottleStore.bottle.price" />
 			</UFormField>
+			<div class="col-span-full">
+				<FormImageUpload
+					v-model="bottleStore.bottle.img"
+					folder="bottles"
+					label="Product Photo"
+				/>
+			</div>
 			<UFormField label="Description" name="description" class="col-span-full">
 				<UTextarea v-model="bottleStore.bottle.description" class="w-full" />
 			</UFormField>

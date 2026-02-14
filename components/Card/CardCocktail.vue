@@ -38,7 +38,7 @@ const ingredientNames = computed(() => {
       {{ ingredientNames }}
     </p>
 
-    <div v-if="cocktail.glassware" class="mt-3 flex items-center gap-1.5 text-xs text-brown/40 dark:text-parchment/40">
+    <div v-if="cocktail.glassware" class="mt-3 flex items-center gap-1.5 text-xs text-brown/60 dark:text-parchment/60">
       <Icon name="carbon:drink-02" class="text-sm" />
       <span>{{ cocktail.glassware }}</span>
     </div>

@@ -3,6 +3,7 @@ import type { TableColumn } from "@nuxt/ui";
 import type { Recipe } from "~/types";
 import type { Row } from "@tanstack/vue-table";
 
+const router = useRouter();
 const recipeStore = useRecipeStore();
 const { confirm } = useDeleteConfirm();
 
@@ -57,9 +58,7 @@ const columns: TableColumn<Recipe>[] = [
         h(
           UDropdownMenu,
           {
-            content: {
-              align: "end",
-            },
+            content: { align: "end" },
             items: getRowItems(row),
             "aria-label": "Actions dropdown",
           },
@@ -99,9 +98,9 @@ function getRowItems(row: Row<Recipe>) {
   ];
 }
 // Modal component info
-import { ModalRecipe } from "#components";
+import { PanelRecipe } from "#components";
 const overlay = useOverlay();
-const modal = overlay.create(ModalRecipe);
+const modal = overlay.create(PanelRecipe);
 const newRecipe = () => {
   recipeStore.resetRecipe();
   openModal();
@@ -110,18 +109,18 @@ const openModal = async () => await modal.open();
 </script>
 
 <template>
-  <div>
-    <div class="flex justify-between mb-2">
-      <UInput v-model="search" placeholder="Search recipes..." />
-      <UButton
-        icon="i-heroicons-plus-circle"
-        size="xl"
-        @click="newRecipe"
-        variant="ghost"
-        >Add Recipe</UButton
-      >
-    </div>
-    <div class="overflow-x-auto">
+  <TableWrapper
+    v-model:search="search"
+    v-model:pagination="pagination"
+    :total-items="recipeStore.recipes.length"
+    :loading="recipeStore.loading"
+    search-placeholder="Search recipes..."
+  >
+    <template #actions>
+      <UButton icon="i-heroicons-plus-circle" size="xl" @click="newRecipe" variant="ghost">Add Recipe</UButton>
+    </template>
+    <!-- Desktop table -->
+    <div class="hidden sm:block">
       <UTable
         v-model:global-filter="search"
         v-model:pagination="pagination"
@@ -137,18 +136,35 @@ const openModal = async () => await modal.open();
         </template>
       </UTable>
     </div>
-    <div class="flex flex-col sm:flex-row justify-between items-center gap-2 mt-2">
-      <UFormGroup label="Results per Page">
-        <USelect
-          :options="[5, 10, 20, 100]"
-          :model-value="pagination.pageSize"
-          @update:model-value="pagination = { ...pagination, pageSize: Number($event), pageIndex: 0 }" />
-      </UFormGroup>
-      <UPagination
-        :model-value="pagination.pageIndex + 1"
-        @update:model-value="pagination = { ...pagination, pageIndex: $event - 1 }"
-        :page-count="pagination.pageSize"
-        :total="recipeStore.recipes.length" />
+
+    <!-- Mobile card view -->
+    <div class="sm:hidden space-y-3">
+      <div
+        v-for="recipe in recipeStore.recipes"
+        :key="recipe._id"
+        class="bg-charcoal rounded-lg border border-brown/30 p-4"
+        @click="router.push(`/admin/recipes/${recipe._id}`)"
+      >
+        <div class="flex items-start justify-between mb-2">
+          <div>
+            <div class="text-sm font-medium text-parchment">{{ recipe.name }}</div>
+            <div class="text-xs text-parchment/60">{{ recipe.class }}{{ recipe.type ? ` - ${recipe.type}` : '' }}</div>
+          </div>
+        </div>
+        <div class="grid grid-cols-2 gap-2 text-xs">
+          <div>
+            <span class="text-parchment/60">Volume</span>
+            <div class="text-parchment/70">{{ recipe.volume }} {{ recipe.volumeUnit }}</div>
+          </div>
+          <div>
+            <span class="text-parchment/60">Ingredients</span>
+            <div class="text-parchment/70">{{ recipe.items?.length || 0 }} item{{ (recipe.items?.length || 0) !== 1 ? 's' : '' }}</div>
+          </div>
+        </div>
+      </div>
+      <div v-if="recipeStore.recipes.length === 0" class="text-center py-6 text-parchment/50 text-sm">
+        No recipes found
+      </div>
     </div>
-  </div>
+  </TableWrapper>
 </template>

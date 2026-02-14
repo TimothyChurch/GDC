@@ -1,191 +1,280 @@
-<script setup>
+<script setup lang="ts">
+import type { TableColumn } from "@nuxt/ui";
+import type { PurchaseOrder } from "~/types";
+import type { Row } from "@tanstack/vue-table";
+
+const props = defineProps<{
+  data?: PurchaseOrder[]
+}>()
+
+const router = useRouter();
 const purchaseOrderStore = usePurchaseOrderStore();
 const contactStore = useContactStore();
 const itemStore = useItemStore();
 const { confirm } = useDeleteConfirm();
 
-const search = ref('');
-const page = ref(1);
-const pageCount = ref(10);
+const tableData = computed(() => props.data ?? purchaseOrderStore.purchaseOrders)
 
-const filteredData = computed(() => {
-	if (!search.value) return purchaseOrderStore.purchaseOrders;
-	const q = search.value.toLowerCase();
-	return purchaseOrderStore.purchaseOrders.filter((po) => {
-		const contact = contactStore.getContactById(po.vendor);
-		const vendorName = (contact?.businessName || `${contact?.firstName || ''} ${contact?.lastName || ''}`).toLowerCase();
-		const status = po.status?.toLowerCase() || '';
-		return vendorName.includes(q) || status.includes(q);
-	});
-});
+const UButton = resolveComponent("UButton");
+const UDropdownMenu = resolveComponent("UDropdownMenu");
 
-const rows = computed(() => {
-	return filteredData.value.slice(
-		(page.value - 1) * pageCount.value,
-		page.value * pageCount.value
-	);
-});
+const search = ref("");
+const pagination = ref({ pageIndex: 0, pageSize: 10 });
 
-const columns = [
-	{
-		label: 'Status',
-		key: 'status',
-		sortable: true,
-	},
-	{
-		label: 'Vendor',
-		key: 'vendor',
-		sortable: true,
-	},
-	{
-		label: 'Total Amount',
-		key: 'total',
-		sortable: true,
-	},
-	{
-		label: 'Date',
-		key: 'date',
-		sortable: true,
-	},
-	{
-		key: 'actions',
-	},
+const columns: TableColumn<PurchaseOrder>[] = [
+  {
+    id: "expand",
+    cell: ({ row }) =>
+      h(UButton, {
+        color: "neutral",
+        variant: "ghost",
+        icon: "i-lucide-chevron-down",
+        square: true,
+        "aria-label": "Expand",
+        ui: {
+          leadingIcon: [
+            "transition-transform",
+            row.getIsExpanded() ? "duration-200 rotate-180" : "",
+          ],
+        },
+        onClick: () => row.toggleExpanded(),
+      }),
+  },
+  {
+    accessorKey: "status",
+    header: ({ column }) => {
+      const isSorted = column.getIsSorted();
+      return h(UButton, {
+        color: "neutral",
+        variant: "ghost",
+        label: "Status",
+        icon: isSorted
+          ? isSorted === "asc"
+            ? "i-lucide-arrow-up-narrow-wide"
+            : "i-lucide-arrow-down-wide-narrow"
+          : "i-lucide-arrow-up-down",
+        class: "-mx-2.5",
+        onClick: () => column.toggleSorting(column.getIsSorted() === "asc"),
+      });
+    },
+  },
+  {
+    accessorKey: "vendor",
+    header: ({ column }) => {
+      const isSorted = column.getIsSorted();
+      return h(UButton, {
+        color: "neutral",
+        variant: "ghost",
+        label: "Vendor",
+        icon: isSorted
+          ? isSorted === "asc"
+            ? "i-lucide-arrow-up-narrow-wide"
+            : "i-lucide-arrow-down-wide-narrow"
+          : "i-lucide-arrow-up-down",
+        class: "-mx-2.5",
+        onClick: () => column.toggleSorting(column.getIsSorted() === "asc"),
+      });
+    },
+    cell: ({ row }) => {
+      const contact = contactStore.getContactById(row.original.vendor);
+      if (contact?.firstName) return `${contact.firstName} ${contact.lastName}`;
+      return contact?.businessName || "Unknown";
+    },
+  },
+  {
+    accessorKey: "total",
+    header: ({ column }) => {
+      const isSorted = column.getIsSorted();
+      return h(UButton, {
+        color: "neutral",
+        variant: "ghost",
+        label: "Total Amount",
+        icon: isSorted
+          ? isSorted === "asc"
+            ? "i-lucide-arrow-up-narrow-wide"
+            : "i-lucide-arrow-down-wide-narrow"
+          : "i-lucide-arrow-up-down",
+        class: "-mx-2.5",
+        onClick: () => column.toggleSorting(column.getIsSorted() === "asc"),
+      });
+    },
+    cell: ({ row }) => Dollar.format(row.original.total),
+  },
+  {
+    accessorKey: "date",
+    header: ({ column }) => {
+      const isSorted = column.getIsSorted();
+      return h(UButton, {
+        color: "neutral",
+        variant: "ghost",
+        label: "Date",
+        icon: isSorted
+          ? isSorted === "asc"
+            ? "i-lucide-arrow-up-narrow-wide"
+            : "i-lucide-arrow-down-wide-narrow"
+          : "i-lucide-arrow-up-down",
+        class: "-mx-2.5",
+        onClick: () => column.toggleSorting(column.getIsSorted() === "asc"),
+      });
+    },
+    cell: ({ row }) => new Date(row.original.date).toLocaleDateString(),
+  },
+  {
+    id: "actions",
+    cell: ({ row }) => {
+      return h(
+        "div",
+        { class: "text-right" },
+        h(
+          UDropdownMenu,
+          {
+            content: { align: "end" },
+            items: getRowItems(row),
+            "aria-label": "Actions dropdown",
+          },
+          () =>
+            h(UButton, {
+              icon: "i-lucide-ellipsis-vertical",
+              color: "neutral",
+              variant: "ghost",
+              class: "ml-auto",
+              "aria-label": "Actions dropdown",
+            })
+        )
+      );
+    },
+  },
 ];
-const expand = ref({
-	openedRows: [purchaseOrderStore.purchaseOrders],
-	row: {},
-});
-const itemsColumns = [
-	{
-		label: 'Item',
-		key: 'item',
-	},
-	{
-		label: 'Quantity',
-		key: 'quantity',
-	},
-	{
-		label: 'Size',
-		key: 'size',
-	},
-	{
-		label: 'Price',
-		key: 'price',
-	},
-	{
-		label: 'Total',
-		key: 'total',
-	},
-];
-const actionItems = (row) => [
-	[
-		{
-			label: 'Edit',
-			icon: 'i-heroicons-pencil-square-20-solid',
-			click: () => editPurchaseOrder(row),
-		},
-		{
-			label: 'Delete',
-			icon: 'i-heroicons-trash-20-solid',
-			click: () => deletePurchaseOrder(row),
-		},
-	],
-];
+
+function getRowItems(row: Row<PurchaseOrder>) {
+  return [
+    {
+      label: "View Details",
+      onSelect() {
+        router.push(`/admin/purchaseOrders/${row.original._id}`);
+      },
+    },
+    {
+      label: "Edit order",
+      onSelect() {
+        purchaseOrderStore.purchaseOrder = row.original;
+        openPanel();
+      },
+    },
+    {
+      label: "Delete order",
+      variant: "danger",
+      async onClick() {
+        const vendorName = contactStore.getContactById(row.original.vendor)?.businessName || "this order";
+        const confirmed = await confirm("Purchase Order", vendorName);
+        if (confirmed) {
+          purchaseOrderStore.deletePurchaseOrder(row.original._id);
+        }
+      },
+    },
+  ];
+}
+
+// Panel slide-over
+import { PanelPurchaseOrder } from "#components";
+const overlay = useOverlay();
+const panel = overlay.create(PanelPurchaseOrder);
+const openPanel = async () => await panel.open();
+
 const addPurchaseOrder = () => {
-	purchaseOrderStore.resetCurrentPurchaseOrder();
-	formSelection.value = 'FormPurchaseOrder';
-	toggleFormModal();
-};
-const editPurchaseOrder = (row) => {
-	purchaseOrderStore.purchaseOrder = row;
-	formSelection.value = 'FormPurchaseOrder';
-	toggleFormModal();
-};
-const deletePurchaseOrder = async (row) => {
-	const vendorName = contactStore.getContactById(row.vendor)?.businessName || 'this order';
-	const confirmed = await confirm('Purchase Order', vendorName);
-	if (confirmed) {
-		purchaseOrderStore.deletePurchaseOrder(row._id);
-	}
+  purchaseOrderStore.resetCurrentPurchaseOrder();
+  openPanel();
 };
 </script>
 
 <template>
-	<div>
-		<UInput v-model="search" placeholder="Search purchase orders..." class="mb-2" />
-		<div class="overflow-x-auto">
-			<UTable
-				:rows="rows"
-				:columns="columns"
-				:loading="purchaseOrderStore.loading"
-				v-model:expand="expand">
-				<template #empty-state>
-					<div class="flex flex-col items-center justify-center py-6 gap-3">
-						<span class="text-sm text-gray-500">No purchase orders found</span>
-					</div>
-				</template>
-				<template #vendor-data="{ row }">
-					<span v-if="contactStore.getContactById(row.vendor)?.firstName">
-						{{ contactStore.getContactById(row.vendor).firstName }}
-						{{ contactStore.getContactById(row.vendor).lastName }}
-					</span>
-					<span v-else>{{
-						contactStore.getContactById(row.vendor)?.businessName
-					}}</span>
-				</template>
-				<template #total-data="{ row }">
-					{{ Dollar.format(row.total) }}
-				</template>
-				<template #date-data="{ row }">
-					{{ new Date(row.date).toLocaleDateString() }}
-				</template>
-				<template #expand="{ row }">
-					<UTable
-						:rows="row.items"
-						:columns="itemsColumns">
-						<template #item-data="{ row }">
-							{{ itemStore.getItemById(row.item).name }}
-						</template>
-						<template #size-data="{ row }">
-							{{ row.size }} {{ row.sizeUnit }}
-						</template>
-						<template #price-data="{ row }">
-							{{ Dollar.format(row.price) }}
-						</template>
-						<template #total-data="{ row }">
-							{{ Dollar.format(row.price * row.quantity) }}
-						</template>
-					</UTable>
-				</template>
-				<template #actions-header>
-					<UButton
-						color="gray"
-						variant="ghost"
-						icon="i-heroicons-plus-20-solid"
-						@click="addPurchaseOrder()" />
-				</template>
-				<template #actions-data="{ row }">
-					<UDropdown :items="actionItems(row)">
-						<UButton
-							color="gray"
-							variant="ghost"
-							icon="i-heroicons-ellipsis-horizontal-20-solid" />
-					</UDropdown>
-				</template>
-			</UTable>
-		</div>
-		<div class="flex flex-col sm:flex-row justify-between gap-2">
-			<UFormGroup label="Results per Page">
-				<USelect
-					:options="[5, 10, 20, 100]"
-					v-model="pageCount" />
-			</UFormGroup>
-			<div class="flex justify-end px-3 py-3.5 border-t border-gray-200 dark:border-gray-700">
-				<UPagination
-					v-model="page"
-					:page-count="pageCount"
-					:total="filteredData.length" />
-			</div>
-		</div>
-	</div>
+  <TableWrapper
+    v-model:search="search"
+    v-model:pagination="pagination"
+    :total-items="tableData.length"
+    :loading="purchaseOrderStore.loading"
+    search-placeholder="Search purchase orders..."
+  >
+    <template #actions>
+      <UButton icon="i-heroicons-plus-circle" size="xl" @click="addPurchaseOrder" variant="ghost">Add Order</UButton>
+    </template>
+    <!-- Desktop table -->
+    <div class="hidden sm:block">
+      <UTable
+        v-model:global-filter="search"
+        v-model:pagination="pagination"
+        :data="tableData"
+        :columns="columns"
+        :loading="purchaseOrderStore.loading"
+        :empty="{ icon: 'i-lucide-clipboard-list', label: 'No purchase orders found' }"
+      >
+        <template #expanded="{ row }">
+          <div class="py-2 px-4">
+            <table class="w-full text-sm">
+              <thead>
+                <tr class="text-left text-parchment/60">
+                  <th class="pb-1">Item</th>
+                  <th class="pb-1">Quantity</th>
+                  <th class="pb-1">Size</th>
+                  <th class="pb-1">Price</th>
+                  <th class="pb-1">Total</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr v-for="(item, idx) in row.original.items" :key="idx">
+                  <td>{{ itemStore.getItemById(item.item)?.name || 'Unknown' }}</td>
+                  <td>{{ item.quantity }}</td>
+                  <td>{{ item.size }} {{ item.sizeUnit }}</td>
+                  <td>{{ Dollar.format(item.price) }}</td>
+                  <td>{{ Dollar.format(item.price * item.quantity) }}</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </template>
+      </UTable>
+    </div>
+
+    <!-- Mobile card view -->
+    <div class="sm:hidden space-y-3">
+      <div
+        v-for="po in tableData.slice().sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())"
+        :key="po._id"
+        class="bg-charcoal rounded-lg border border-brown/30 p-4"
+        @click="router.push(`/admin/purchaseOrders/${po._id}`)"
+      >
+        <div class="flex items-start justify-between mb-2">
+          <div>
+            <div class="text-sm font-medium text-parchment">{{ contactStore.getContactById(po.vendor)?.businessName || `${contactStore.getContactById(po.vendor)?.firstName || ''} ${contactStore.getContactById(po.vendor)?.lastName || ''}`.trim() || 'Unknown' }}</div>
+            <div class="text-xs text-parchment/60">{{ new Date(po.date).toLocaleDateString() }}</div>
+          </div>
+          <span
+            class="px-2 py-0.5 rounded-full text-[10px] font-semibold border"
+            :class="{
+              'bg-amber/15 text-amber border-amber/20': po.status === 'Pending',
+              'bg-blue-500/15 text-blue-400 border-blue-500/20': po.status === 'Confirmed',
+              'bg-purple-500/15 text-purple-400 border-purple-500/20': po.status === 'Shipped',
+              'bg-green-500/15 text-green-400 border-green-500/20': po.status === 'Delivered',
+              'bg-red-500/15 text-red-400 border-red-500/20': po.status === 'Cancelled',
+            }"
+          >
+            {{ po.status || 'Pending' }}
+          </span>
+        </div>
+        <div class="grid grid-cols-2 gap-2 text-xs">
+          <div>
+            <span class="text-parchment/60">Items</span>
+            <div class="text-parchment/70">{{ po.items?.length || 0 }} item{{ (po.items?.length || 0) !== 1 ? 's' : '' }}</div>
+          </div>
+          <div>
+            <span class="text-parchment/60">Total</span>
+            <div class="text-copper font-semibold">{{ Dollar.format(po.total || 0) }}</div>
+          </div>
+        </div>
+      </div>
+      <div v-if="tableData.length === 0" class="text-center py-6 text-parchment/50 text-sm">
+        No purchase orders found
+      </div>
+    </div>
+  </TableWrapper>
 </template>

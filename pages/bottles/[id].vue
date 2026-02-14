@@ -9,13 +9,39 @@ const bottle = computed(() =>
 );
 
 const relatedCocktails = computed(() => {
-  if (!bottle.value?.class) return [];
+  if (!bottle.value) return [];
+
+  // Use bottle type (e.g. "Vodka", "Bourbon Whisky") as the primary match term.
+  // Fall back to class only for simple single-concept classes (e.g. "Gin", "Rum")
+  // but NOT compound ones like "Liqueur/Cordial" or "Neutral Spirits or Alcohol".
+  const bottleType = bottle.value.type && bottle.value.type !== 'N/A'
+    ? bottle.value.type.toLowerCase()
+    : null;
+  const bottleClass = bottle.value.class?.toLowerCase();
+  const typeTerm = bottleType
+    || (bottleClass && !bottleClass.includes('/') && !bottleClass.includes(' or ') ? bottleClass : null);
+  const bottleName = bottle.value.name?.toLowerCase();
+
+  if (!typeTerm && !bottleName) return [];
+
   return cocktailStore.cocktails
     .filter((c) => c.visible !== false)
     .filter((c) =>
       c.ingredients.some((ing) => {
         const item = itemStore.getItemById(ing.item.toString());
-        return item?.type?.toLowerCase().includes(bottle.value!.class!.toLowerCase());
+        if (!item) return false;
+        const itemType = item.type?.toLowerCase() || '';
+        const itemName = item.name?.toLowerCase() || '';
+
+        // Type-based: "Bourbon" ↔ "Bourbon Whisky", "Vodka" ↔ "Vodka"
+        if (typeTerm && itemType && (itemType.includes(typeTerm) || typeTerm.includes(itemType))) {
+          return true;
+        }
+        // Name-based: ingredient named "Allspice Dram" ↔ bottle named "Allspice Dram"
+        if (bottleName && itemName && (itemName.includes(bottleName) || bottleName.includes(itemName))) {
+          return true;
+        }
+        return false;
       })
     )
     .slice(0, 3);
@@ -24,6 +50,11 @@ const relatedCocktails = computed(() => {
 const proof = computed(() => {
   if (!bottle.value?.abv) return null;
   return (bottle.value.abv * 2).toFixed(0);
+});
+
+useSeoMeta({
+  title: () => bottle.value ? `${bottle.value.name} | Galveston Distilling Co` : 'Spirit Details | Galveston Distilling Co',
+  description: () => bottle.value?.description || 'Handcrafted spirit from Galveston Distilling Co.',
 });
 </script>
 

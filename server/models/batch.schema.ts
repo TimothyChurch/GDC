@@ -10,14 +10,24 @@ export const Batch = defineMongooseModel({
 			type: Schema.Types.ObjectId,
 			ref: 'Recipe',
 			required: true,
+			index: true,
+		},
+		batchNumber: {
+			type: String,
+			required: false,
 		},
 		recipeCost: {
 			type: Number,
 			required: true,
 		},
+		notes: {
+			type: String,
+			required: false,
+		},
 		status: {
 			type: String,
 			required: false,
+			index: true,
 		},
 		batchSize: {
 			type: Number,
@@ -127,4 +137,5 @@ export const Batch = defineMongooseModel({
 			},
 		},
 	},
+	options: { timestamps: true },
 });

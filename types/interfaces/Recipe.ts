@@ -7,4 +7,8 @@ export interface Recipe {
 	volumeUnit: string;
 	items: { item: string; amount: number; unit: string }[];
 	directions?: string;
+	notes?: string;
+	targetAbv?: number;
+	createdAt?: string;
+	updatedAt?: string;
 }
