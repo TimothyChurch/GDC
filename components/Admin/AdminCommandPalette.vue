@@ -169,7 +169,7 @@ const groups = computed(() => {
         label: c.name,
         suffix: c.menu,
         icon: 'i-lucide-martini',
-        onSelect: () => navigate('/admin/cocktails'),
+        onSelect: () => navigate(`/admin/cocktails/${c._id}`),
       })),
     },
     {
@@ -179,7 +179,7 @@ const groups = computed(() => {
         label: c.businessName || `${c.firstName} ${c.lastName}`,
         suffix: c.type,
         icon: 'i-lucide-users',
-        onSelect: () => navigate('/admin/contacts'),
+        onSelect: () => navigate(`/admin/contacts/${c._id}`),
       })),
     },
     {
@@ -189,7 +189,7 @@ const groups = computed(() => {
         label: v.name,
         suffix: v.type,
         icon: 'i-lucide-container',
-        onSelect: () => navigate('/admin/vessels'),
+        onSelect: () => navigate(`/admin/vessels/${v._id}`),
       })),
     },
   ]

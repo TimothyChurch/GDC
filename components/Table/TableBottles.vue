@@ -170,6 +170,8 @@ const newBottle = () => {
         :columns="columns"
         :loading="bottleStore.loading"
         :empty="{ icon: 'i-lucide-wine', label: 'No bottles found' }"
+        @select="(row: Bottle) => router.push(`/admin/bottles/${row._id}`)"
+        :ui="{ tr: 'cursor-pointer' }"
       />
     </div>
 
@@ -178,7 +180,7 @@ const newBottle = () => {
       <div
         v-for="bottle in bottleStore.bottles"
         :key="bottle._id"
-        class="bg-charcoal rounded-lg border border-brown/30 p-4"
+        class="bg-charcoal rounded-lg border border-brown/30 p-4 cursor-pointer"
         @click="router.push(`/admin/bottles/${bottle._id}`)"
       >
         <div class="flex items-start justify-between mb-2">

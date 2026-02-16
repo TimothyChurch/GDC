@@ -112,12 +112,12 @@ useSeoMeta({
           <p class="mt-4 text-parchment/80 max-w-xl mx-auto">
             Looking for a unique venue? Our tasting room is available for private events, corporate gatherings, and celebrations. Let us create a custom experience for your group.
           </p>
-          <a
-            href="mailto:Timothy@GalvestonDistillingCo.com?subject=Private Event Inquiry"
+          <NuxtLink
+            to="/contact?topic=private-events"
             class="inline-block mt-8 rounded-md bg-gold px-6 py-3 text-sm font-semibold text-espresso hover:bg-copper transition-colors duration-300"
           >
             Contact Us About Private Events
-          </a>
+          </NuxtLink>
         </div>
       </div>
     </div>

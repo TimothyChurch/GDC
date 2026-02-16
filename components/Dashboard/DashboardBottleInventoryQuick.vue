@@ -36,13 +36,14 @@ const sortedBottles = computed(() =>
     </div>
 
     <div v-else class="max-h-80 overflow-y-auto space-y-1 -mx-1 px-1">
-      <div
+      <NuxtLink
         v-for="bottle in sortedBottles"
         :key="bottle._id"
-        class="flex items-center justify-between py-2 px-2 rounded-lg hover:bg-brown/10 transition-colors"
+        :to="`/admin/bottles/${bottle._id}`"
+        class="flex items-center justify-between py-2 px-2 rounded-lg hover:bg-brown/10 transition-colors cursor-pointer group"
       >
         <div class="flex items-center gap-2 min-w-0">
-          <span class="text-sm text-parchment/80 truncate">{{ bottle.name }}</span>
+          <span class="text-sm text-parchment/80 truncate group-hover:text-gold transition-colors duration-200">{{ bottle.name }}</span>
         </div>
         <div class="flex items-center gap-3 shrink-0">
           <!-- Quantity -->
@@ -77,7 +78,7 @@ const sortedBottles = computed(() =>
             </span>
           </div>
         </div>
-      </div>
+      </NuxtLink>
     </div>
   </div>
 </template>

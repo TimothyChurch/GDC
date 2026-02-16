@@ -37,6 +37,7 @@
           <NuxtLink to="/menu" class="text-sm text-parchment/80 hover:text-gold transition-colors">Cocktail Menu</NuxtLink>
           <NuxtLink to="/bottles" class="text-sm text-parchment/80 hover:text-gold transition-colors">Our Spirits</NuxtLink>
           <NuxtLink to="/events" class="text-sm text-parchment/80 hover:text-gold transition-colors">Events</NuxtLink>
+          <NuxtLink to="/contact" class="text-sm text-parchment/80 hover:text-gold transition-colors">Contact</NuxtLink>
         </div>
 
         <div class="flex flex-col gap-2">
@@ -51,10 +52,10 @@
       </div>
 
       <div class="flex justify-center gap-6 mt-10">
-        <a href="https://www.instagram.com/galvestondistilling/" target="_blank" rel="noopener" aria-label="Instagram" class="text-parchment/60 hover:text-gold transition-colors">
+        <a href="https://www.instagram.com/galvestondistillingco/" target="_blank" rel="noopener" aria-label="Instagram" class="text-parchment/60 hover:text-gold transition-colors">
           <Icon name="carbon:logo-instagram" class="text-xl" />
         </a>
-        <a href="https://www.facebook.com/GalvestonDistilling/" target="_blank" rel="noopener" aria-label="Facebook" class="text-parchment/60 hover:text-gold transition-colors">
+        <a href="https://www.facebook.com/GalvestonDistillingCo/" target="_blank" rel="noopener" aria-label="Facebook" class="text-parchment/60 hover:text-gold transition-colors">
           <Icon name="carbon:logo-facebook" class="text-xl" />
         </a>
       </div>

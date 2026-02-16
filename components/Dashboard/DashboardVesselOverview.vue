@@ -99,18 +99,19 @@ const hasContents = (vessel: any) => vessel.contents && vessel.contents.length >
           None configured
         </div>
         <div v-else class="grid grid-cols-1 sm:grid-cols-2 gap-2">
-          <div
+          <NuxtLink
             v-for="vessel in group.vessels"
             :key="vessel._id"
+            :to="`/admin/vessels/${vessel._id}`"
             :class="[
-              'rounded-lg border px-3 py-2 flex items-center justify-between',
+              'rounded-lg border px-3 py-2 flex items-center justify-between hover:border-gold/30 transition-all duration-200 cursor-pointer group',
               hasContents(vessel)
                 ? 'bg-brown/20 border-brown/30'
                 : 'bg-brown/5 border-brown/15',
             ]"
           >
             <div class="min-w-0">
-              <div class="text-sm text-parchment font-medium truncate">{{ vessel.name }}</div>
+              <div class="text-sm text-parchment font-medium truncate group-hover:text-gold transition-colors duration-200">{{ vessel.name }}</div>
               <div v-if="hasContents(vessel)" class="text-xs text-copper truncate">
                 {{ getContentLabel(vessel) }}
               </div>
@@ -123,7 +124,7 @@ const hasContents = (vessel: any) => vessel.contents && vessel.contents.length >
               v-else
               class="w-2 h-2 rounded-full bg-parchment/15 shrink-0 ml-2"
             />
-          </div>
+          </NuxtLink>
         </div>
       </div>
 
@@ -155,16 +156,17 @@ const hasContents = (vessel: any) => vessel.contents && vessel.contents.length >
         </div>
         <!-- Show filled barrel details -->
         <div v-if="filledBarrels.length > 0" class="grid grid-cols-1 sm:grid-cols-2 gap-2 mt-2">
-          <div
+          <NuxtLink
             v-for="barrel in filledBarrels.slice(0, 6)"
             :key="barrel._id"
-            class="rounded-lg border bg-brown/20 border-brown/30 px-3 py-2"
+            :to="`/admin/vessels/${barrel._id}`"
+            class="rounded-lg border bg-brown/20 border-brown/30 px-3 py-2 hover:border-gold/30 transition-all duration-200 cursor-pointer group"
           >
-            <div class="text-sm text-parchment font-medium truncate">{{ barrel.name }}</div>
+            <div class="text-sm text-parchment font-medium truncate group-hover:text-gold transition-colors duration-200">{{ barrel.name }}</div>
             <div v-for="content in barrel.contents" :key="content.batch" class="text-xs text-copper truncate">
               {{ getContentLabel(barrel) }} - {{ content.volume }} {{ content.volumeUnit }}
             </div>
-          </div>
+          </NuxtLink>
           <div
             v-if="filledBarrels.length > 6"
             class="text-xs text-parchment/50 flex items-center px-3"

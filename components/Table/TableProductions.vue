@@ -155,6 +155,8 @@ const newItem = () => {
         :columns="columns"
         :loading="productionsStore.loading"
         :empty="{ icon: 'i-lucide-factory', label: 'No productions found' }"
+        @select="(row: Production) => router.push(`/admin/production/${row._id}`)"
+        :ui="{ tr: 'cursor-pointer' }"
       />
     </div>
 
@@ -163,7 +165,7 @@ const newItem = () => {
       <div
         v-for="prod in productionsStore.productions.slice().sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())"
         :key="prod._id"
-        class="bg-charcoal rounded-lg border border-brown/30 p-4"
+        class="bg-charcoal rounded-lg border border-brown/30 p-4 cursor-pointer"
         @click="router.push(`/admin/production/${prod._id}`)"
       >
         <div class="flex items-start justify-between mb-2">

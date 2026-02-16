@@ -63,7 +63,7 @@ const actionItems = computed<ActionItem[]>(() => {
       priority: 'medium',
       icon: 'i-lucide-play',
       category: 'Production',
-      link: '/admin/dashboard',
+      link: `/admin/batch/${batch._id}`,
     });
   }
 
@@ -89,7 +89,7 @@ const actionItems = computed<ActionItem[]>(() => {
           priority: quantity <= 1 ? 'high' : 'medium',
           icon: 'i-lucide-shopping-cart',
           category: 'Inventory',
-          link: '/admin/items',
+          link: `/admin/items/${itemId}`,
         });
       }
     }

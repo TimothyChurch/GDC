@@ -124,6 +124,7 @@ const isLoading = computed(() =>
           :subtitle="`${upcomingBatches} upcoming`"
           icon="i-lucide-flask-conical"
           color="gold"
+          to="/admin/batch"
         />
         <DashboardStatCard
           title="Bottles in Stock"
@@ -131,6 +132,7 @@ const isLoading = computed(() =>
           :subtitle="`of ${totalBottles} total`"
           icon="i-lucide-wine"
           color="copper"
+          to="/admin/bottles"
         />
         <DashboardStatCard
           title="Pending POs"
@@ -138,6 +140,7 @@ const isLoading = computed(() =>
           :subtitle="pendingPOTotal"
           icon="i-lucide-receipt"
           color="amber"
+          to="/admin/purchaseOrders"
         />
         <DashboardStatCard
           title="Low Inventory"
@@ -145,6 +148,7 @@ const isLoading = computed(() =>
           subtitle="items need reorder"
           icon="i-lucide-alert-triangle"
           color="red"
+          to="/admin/items"
         />
         <DashboardStatCard
           title="This Month"
@@ -152,6 +156,7 @@ const isLoading = computed(() =>
           :subtitle="`${monthProductionRuns} production runs`"
           icon="i-lucide-factory"
           color="green"
+          to="/admin/production"
         />
       </div>
 

@@ -21,8 +21,12 @@ const statusColor = computed(() => {
 </script>
 
 <template>
-  <div v-if="batch" class="w-full rounded-lg border border-brown/25 bg-brown/15 p-3">
-    <div class="text-sm font-medium text-parchment mb-2">
+  <NuxtLink
+    v-if="batch"
+    :to="`/admin/batch/${batch._id}`"
+    class="block w-full rounded-lg border border-brown/25 bg-brown/15 p-3 hover:border-gold/40 hover:bg-brown/25 transition-all duration-200 cursor-pointer group"
+  >
+    <div class="text-sm font-medium text-parchment mb-2 group-hover:text-gold transition-colors duration-200">
       {{ recipeStore.getRecipeById(batch?.recipe)?.name || 'Unknown Recipe' }}
     </div>
     <div class="flex flex-col gap-1.5 text-xs">
@@ -45,5 +49,5 @@ const statusColor = computed(() => {
         <span class="text-parchment/70">{{ new Date(batch.brewing.date).toLocaleDateString() }}</span>
       </div>
     </div>
-  </div>
+  </NuxtLink>
 </template>

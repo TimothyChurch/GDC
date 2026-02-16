@@ -3,6 +3,7 @@ import type { TableColumn } from "@nuxt/ui";
 import type { Item } from "~/types";
 import type { Row } from "@tanstack/vue-table";
 
+const router = useRouter();
 const itemStore = useItemStore();
 const contactStore = useContactStore();
 const { confirm } = useDeleteConfirm();
@@ -173,6 +174,8 @@ const pagination = ref({ pageIndex: 0, pageSize: 10 });
         :columns="columns"
         :loading="itemStore.loading"
         :empty="{ icon: 'i-lucide-package', label: 'No items found' }"
+        @select="(row: Item) => router.push(`/admin/items/${row._id}`)"
+        :ui="{ tr: 'cursor-pointer' }"
       />
     </div>
 
@@ -181,7 +184,8 @@ const pagination = ref({ pageIndex: 0, pageSize: 10 });
       <div
         v-for="item in itemStore.items"
         :key="item._id"
-        class="bg-charcoal rounded-lg border border-brown/30 p-4"
+        class="bg-charcoal rounded-lg border border-brown/30 p-4 cursor-pointer"
+        @click="router.push(`/admin/items/${item._id}`)"
       >
         <div class="flex items-start justify-between mb-2">
           <div>

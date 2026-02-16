@@ -35,8 +35,15 @@ const recipeCostDisplay = computed(() => {
   <div class="bg-charcoal rounded-xl border border-brown/30 p-5">
     <div class="flex flex-col sm:flex-row sm:items-start justify-between gap-4 mb-4">
       <div>
-        <h2 class="text-2xl font-bold text-parchment font-[Cormorant_Garamond]">
-          {{ recipe?.name || 'Unknown Recipe' }}
+        <h2 class="text-2xl font-bold font-[Cormorant_Garamond]">
+          <NuxtLink
+            v-if="recipe?._id"
+            :to="`/admin/recipes/${recipe._id}`"
+            class="text-gold hover:text-copper transition-colors"
+          >
+            {{ recipe.name }}
+          </NuxtLink>
+          <span v-else class="text-parchment">Unknown Recipe</span>
         </h2>
         <div class="flex items-center gap-2 mt-1">
           <span v-if="recipe?.class" class="text-sm text-parchment/60">{{ recipe.class }}</span>

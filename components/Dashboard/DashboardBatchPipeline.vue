@@ -78,6 +78,17 @@ const getRecipeName = (recipeId: string) => {
   return recipeStore.getRecipeById(recipeId)?.name || 'Unknown';
 };
 
+// Track whether a drag occurred to prevent click navigation after dragging
+const didDrag = ref(false)
+
+function navigateToBatch(batchId: string) {
+  if (didDrag.value) {
+    didDrag.value = false;
+    return;
+  }
+  navigateTo(`/admin/batch/${batchId}`);
+}
+
 // Drag-and-drop state
 const dragBatchId = ref<string | null>(null)
 const dragSourceStage = ref<string | null>(null)
@@ -89,6 +100,7 @@ const advancing = ref(false)
 const stageOrder = BATCH_STAGES.map(s => s.name)
 
 function onDragStart(e: DragEvent, batchId: string, stageName: string) {
+  didDrag.value = true
   dragBatchId.value = batchId
   dragSourceStage.value = stageName
   if (e.dataTransfer) {
@@ -246,13 +258,14 @@ const pendingBatchName = computed(() => {
           <div
             v-for="batch in stage.batches.slice(0, 3)"
             :key="batch._id"
-            class="flex items-center gap-1.5 cursor-grab active:cursor-grabbing rounded px-1 py-0.5 -mx-1 hover:bg-brown/20 transition-colors"
+            class="flex items-center gap-1.5 cursor-grab active:cursor-grabbing rounded px-1 py-0.5 -mx-1 hover:bg-brown/20 hover:text-gold transition-colors"
             draggable="true"
             @dragstart="onDragStart($event, batch._id, stage.name)"
             @dragend="onDragEnd"
+            @click="navigateToBatch(batch._id)"
           >
             <div :class="['w-1.5 h-1.5 rounded-full shrink-0', stage.dotColor]" />
-            <span class="text-xs text-parchment/60 truncate">
+            <span class="text-xs text-parchment/60 truncate hover:text-gold transition-colors">
               {{ getRecipeName(batch.recipe) }}
             </span>
           </div>

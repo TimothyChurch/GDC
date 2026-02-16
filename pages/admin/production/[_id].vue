@@ -98,7 +98,7 @@ const editProduction = () => {
           <NuxtLink
             v-if="production.bottle"
             :to="`/admin/bottles/${production.bottle}`"
-            class="text-sm text-copper hover:text-gold transition-colors"
+            class="text-sm text-gold hover:text-copper transition-colors"
           >
             {{ bottleName }}
           </NuxtLink>
@@ -110,15 +110,30 @@ const editProduction = () => {
         </div>
         <div v-if="production.bottling?.glassware">
           <div class="text-xs text-parchment/60 uppercase tracking-wider mb-1">Glassware</div>
-          <div class="text-sm text-parchment">{{ resolveItemName(production.bottling.glassware) }}</div>
+          <NuxtLink
+            :to="`/admin/items/${production.bottling.glassware}`"
+            class="text-sm text-gold hover:text-copper transition-colors"
+          >
+            {{ resolveItemName(production.bottling.glassware) }}
+          </NuxtLink>
         </div>
         <div v-if="production.bottling?.cap">
           <div class="text-xs text-parchment/60 uppercase tracking-wider mb-1">Cap</div>
-          <div class="text-sm text-parchment">{{ resolveItemName(production.bottling.cap) }}</div>
+          <NuxtLink
+            :to="`/admin/items/${production.bottling.cap}`"
+            class="text-sm text-gold hover:text-copper transition-colors"
+          >
+            {{ resolveItemName(production.bottling.cap) }}
+          </NuxtLink>
         </div>
         <div v-if="production.bottling?.label">
           <div class="text-xs text-parchment/60 uppercase tracking-wider mb-1">Label</div>
-          <div class="text-sm text-parchment">{{ resolveItemName(production.bottling.label) }}</div>
+          <NuxtLink
+            :to="`/admin/items/${production.bottling.label}`"
+            class="text-sm text-gold hover:text-copper transition-colors"
+          >
+            {{ resolveItemName(production.bottling.label) }}
+          </NuxtLink>
         </div>
       </div>
     </div>
@@ -132,7 +147,12 @@ const editProduction = () => {
           :key="vessel!._id"
           class="flex items-center justify-between py-2 text-sm"
         >
-          <span class="text-parchment">{{ vessel!.name }}</span>
+          <NuxtLink
+            :to="`/admin/vessels/${vessel!._id}`"
+            class="text-gold hover:text-copper transition-colors"
+          >
+            {{ vessel!.name }}
+          </NuxtLink>
           <span class="text-parchment/50 text-xs">{{ vessel!.type }}</span>
         </div>
       </div>

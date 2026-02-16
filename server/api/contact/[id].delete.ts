@@ -20,6 +20,15 @@ export default defineEventHandler(async (event) => {
       });
     }
 
+    // Check for references in Events
+    const eventRefs = await Event.countDocuments({ contact: id });
+    if (eventRefs > 0) {
+      throw createError({
+        statusCode: 400,
+        statusMessage: `Cannot delete: ${eventRefs} event(s) reference this contact`,
+      });
+    }
+
     const deletedContact = await Contact.findByIdAndDelete(id);
     if (!deletedContact) {
       throw createError({

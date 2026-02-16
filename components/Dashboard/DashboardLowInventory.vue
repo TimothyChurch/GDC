@@ -146,18 +146,19 @@ const statusText = (status: string) => {
     </div>
 
     <div v-else class="flex flex-col gap-2 max-h-64 overflow-y-auto">
-      <div
+      <NuxtLink
         v-for="alert in allAlerts.slice(0, 10)"
         :key="alert.id"
+        :to="alert.type === 'bottle' ? `/admin/bottles/${alert.id}` : `/admin/items/${alert.id}`"
         :class="[
-          'flex items-center justify-between rounded-lg border px-3 py-2.5',
+          'flex items-center justify-between rounded-lg border px-3 py-2.5 hover:border-gold/30 transition-all duration-200 cursor-pointer group',
           statusBg(alert.status),
         ]"
       >
         <div class="flex items-center gap-2.5 min-w-0">
           <div :class="['w-2 h-2 rounded-full shrink-0', statusColor(alert.status)]" />
           <div class="min-w-0">
-            <div class="text-sm text-parchment truncate">{{ alert.name }}</div>
+            <div class="text-sm text-parchment truncate group-hover:text-gold transition-colors duration-200">{{ alert.name }}</div>
             <div class="text-[10px] uppercase tracking-wider text-parchment/50">
               {{ alert.type === 'bottle' ? 'Bottle Product' : 'Ingredient' }}
             </div>
@@ -169,7 +170,7 @@ const statusText = (status: string) => {
           </span>
           <span class="text-[10px] text-parchment/50">{{ alert.unit }}</span>
         </div>
-      </div>
+      </NuxtLink>
       <div
         v-if="allAlerts.length > 10"
         class="text-xs text-parchment/50 text-center py-1"

@@ -49,17 +49,18 @@ const formatDate = (date: Date) => {
     </div>
 
     <div v-else class="flex flex-col divide-y divide-brown/20">
-      <div
+      <NuxtLink
         v-for="prod in recentProductions"
         :key="prod._id"
-        class="flex items-center justify-between py-3 first:pt-0 last:pb-0"
+        :to="`/admin/production/${prod._id}`"
+        class="flex items-center justify-between py-3 first:pt-0 last:pb-0 hover:bg-brown/10 -mx-2 px-2 rounded-lg transition-all duration-200 cursor-pointer group"
       >
         <div class="flex items-center gap-3 min-w-0">
-          <div class="w-9 h-9 rounded-lg bg-copper/10 border border-copper/20 flex items-center justify-center shrink-0">
+          <div class="w-9 h-9 rounded-lg bg-copper/10 border border-copper/20 flex items-center justify-center shrink-0 group-hover:border-copper/40 transition-colors duration-200">
             <UIcon name="i-lucide-wine" class="text-copper text-sm" />
           </div>
           <div class="min-w-0">
-            <div class="text-sm font-medium text-parchment truncate">
+            <div class="text-sm font-medium text-parchment truncate group-hover:text-gold transition-colors duration-200">
               {{ bottleStore.getName(prod.bottle) || 'Unknown Bottle' }}
             </div>
             <div class="text-xs text-parchment/60">
@@ -73,7 +74,7 @@ const formatDate = (date: Date) => {
           </span>
           <span class="text-xs text-parchment/60">bottles</span>
         </div>
-      </div>
+      </NuxtLink>
     </div>
   </div>
 </template>

@@ -128,6 +128,8 @@ const openModal = async () => await modal.open();
         :columns="columns"
         :loading="recipeStore.loading"
         :empty="{ icon: 'i-lucide-book-open', label: 'No recipes found' }"
+        @select="(row: Recipe) => router.push(`/admin/recipes/${row._id}`)"
+        :ui="{ tr: 'cursor-pointer' }"
       >
         <template #expanded="{ row }">
           <div v-for="item in row.original.items" :key="item._id">
@@ -142,7 +144,7 @@ const openModal = async () => await modal.open();
       <div
         v-for="recipe in recipeStore.recipes"
         :key="recipe._id"
-        class="bg-charcoal rounded-lg border border-brown/30 p-4"
+        class="bg-charcoal rounded-lg border border-brown/30 p-4 cursor-pointer"
         @click="router.push(`/admin/recipes/${recipe._id}`)"
       >
         <div class="flex items-start justify-between mb-2">

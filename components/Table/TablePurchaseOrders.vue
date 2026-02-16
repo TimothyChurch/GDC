@@ -207,6 +207,8 @@ const addPurchaseOrder = () => {
         :columns="columns"
         :loading="purchaseOrderStore.loading"
         :empty="{ icon: 'i-lucide-clipboard-list', label: 'No purchase orders found' }"
+        @select="(row: PurchaseOrder) => router.push(`/admin/purchaseOrders/${row._id}`)"
+        :ui="{ tr: 'cursor-pointer' }"
       >
         <template #expanded="{ row }">
           <div class="py-2 px-4">
@@ -240,7 +242,7 @@ const addPurchaseOrder = () => {
       <div
         v-for="po in tableData.slice().sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())"
         :key="po._id"
-        class="bg-charcoal rounded-lg border border-brown/30 p-4"
+        class="bg-charcoal rounded-lg border border-brown/30 p-4 cursor-pointer"
         @click="router.push(`/admin/purchaseOrders/${po._id}`)"
       >
         <div class="flex items-start justify-between mb-2">

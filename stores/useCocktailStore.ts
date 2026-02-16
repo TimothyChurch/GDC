@@ -159,15 +159,16 @@ export const useCocktailStore = defineStore("cocktails", () => {
   };
 
   const cocktailCost = (cocktail: Cocktail | string): number => {
-    const selectedCocktail = ref();
+    let selectedCocktail;
     if (typeof cocktail === "string") {
-      selectedCocktail.value = cocktails.value.find(
+      selectedCocktail = cocktails.value.find(
         (c) => c._id === cocktail
       );
     } else {
-      selectedCocktail.value = cocktail;
+      selectedCocktail = cocktail;
     }
-    return selectedCocktail.value.ingredients.reduce(
+    if (!selectedCocktail) return 0;
+    return selectedCocktail.ingredients.reduce(
       (total: number, ingredient: { item: string; amount: number }) => {
         let cost = itemStore.getPriceById(ingredient.item) || 0;
         return total + ingredient.amount * cost;

@@ -17,6 +17,7 @@ onMounted(async () => {
     usePurchaseOrderStore().ensureLoaded(),
     useRecipeStore().ensureLoaded(),
     useVesselStore().ensureLoaded(),
+    useEventStore().ensureLoaded(),
   ]);
 });
 </script>

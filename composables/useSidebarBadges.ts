@@ -3,6 +3,8 @@ export function useSidebarBadges() {
   const purchaseOrderStore = usePurchaseOrderStore()
   const inventoryStore = useInventoryStore()
   const itemStore = useItemStore()
+  const eventStore = useEventStore()
+  const contactStore = useContactStore()
 
   const activeBatches = computed(() =>
     batchStore.batches.filter(b => b.status !== 'Bottled' && b.status !== 'Upcoming').length
@@ -31,5 +33,13 @@ export function useSidebarBadges() {
     return count
   })
 
-  return { activeBatches, pendingPOs, lowInventoryCount }
+  const pendingEvents = computed(() =>
+    eventStore.events.filter(e => e.status === 'Pending').length
+  )
+
+  const totalCustomers = computed(() =>
+    contactStore.contacts.filter(c => c.type === 'Customer').length
+  )
+
+  return { activeBatches, pendingPOs, lowInventoryCount, pendingEvents, totalCustomers }
 }

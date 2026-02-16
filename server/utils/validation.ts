@@ -73,9 +73,10 @@ export const cocktailCreateSchema = yup.object({
 });
 
 export const contactCreateSchema = yup.object({
-	businessName: yup.string().required('Business name is required'),
+	businessName: yup.string(),
 	type: yup.string().required('Type is required'),
 	email: yup.string().email('Invalid email'),
+	newsletter: yup.boolean(),
 });
 
 export const inventoryCreateSchema = yup.object({
@@ -100,6 +101,42 @@ export const purchaseOrderCreateSchema = yup.object({
 
 export const recipeCreateSchema = yup.object({
 	name: yup.string().required('Name is required'),
+});
+
+export const newsletterSubscribeSchema = yup.object({
+	email: yup.string().email('Invalid email').required('Email is required'),
+	firstName: yup.string(),
+	lastName: yup.string(),
+	phone: yup.string(),
+});
+
+export const eventCreateSchema = yup.object({
+	date: yup.date().required('Date is required'),
+	groupSize: yup.number().positive('Must be greater than 0').required('Group size is required'),
+	contact: yup.string().required('Contact is required'),
+	type: yup.string().oneOf(['Private Class', 'Private Event', 'Tasting']).required('Type is required'),
+	status: yup.string().oneOf(['Pending', 'Confirmed', 'Completed', 'Cancelled']),
+	notes: yup.string(),
+});
+
+export const eventRequestSchema = yup.object({
+	firstName: yup.string().required('First name is required'),
+	lastName: yup.string().required('Last name is required'),
+	email: yup.string().email('Invalid email').required('Email is required'),
+	phone: yup.string(),
+	date: yup.date().required('Preferred date is required'),
+	groupSize: yup.number().positive('Must be greater than 0').required('Group size is required'),
+	type: yup.string().oneOf(['Private Class', 'Private Event', 'Tasting']).required('Type is required'),
+	notes: yup.string(),
+});
+
+export const contactInquirySchema = yup.object({
+	firstName: yup.string().required('First name is required'),
+	lastName: yup.string().required('Last name is required'),
+	email: yup.string().email('Invalid email').required('Email is required'),
+	phone: yup.string(),
+	topic: yup.string().required('Please select a topic'),
+	message: yup.string().required('Message is required').min(10, 'Message must be at least 10 characters'),
 });
 
 export const vesselCreateSchema = yup.object({
@@ -142,6 +179,7 @@ export const contactUpdateSchema = yup.object({
 	businessName: yup.string(),
 	type: yup.string(),
 	email: yup.string().email('Invalid email'),
+	newsletter: yup.boolean(),
 });
 
 export const inventoryUpdateSchema = yup.object({
@@ -168,6 +206,15 @@ export const purchaseOrderUpdateSchema = yup.object({
 
 export const recipeUpdateSchema = yup.object({
 	name: yup.string(),
+});
+
+export const eventUpdateSchema = yup.object({
+	date: yup.date(),
+	groupSize: yup.number().positive('Must be greater than 0'),
+	contact: yup.string(),
+	type: yup.string().oneOf(['Private Class', 'Private Event', 'Tasting']),
+	status: yup.string().oneOf(['Pending', 'Confirmed', 'Completed', 'Cancelled']),
+	notes: yup.string(),
 });
 
 export const vesselUpdateSchema = yup.object({

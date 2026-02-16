@@ -81,7 +81,14 @@ const inventoryRecords = computed(() =>
         </div>
         <div>
           <div class="text-xs text-parchment/60 uppercase tracking-wider mb-1">Vendor</div>
-          <div class="text-sm text-parchment">{{ vendorName }}</div>
+          <NuxtLink
+            v-if="item.vendor"
+            :to="`/admin/contacts/${item.vendor}`"
+            class="text-sm text-gold hover:text-copper transition-colors"
+          >
+            {{ vendorName }}
+          </NuxtLink>
+          <div v-else class="text-sm text-parchment">N/A</div>
         </div>
         <div>
           <div class="text-xs text-parchment/60 uppercase tracking-wider mb-1">Inventory Unit</div>

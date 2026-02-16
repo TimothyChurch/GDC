@@ -152,6 +152,8 @@ const openModal = async () => await modal.open();
         :loading="cocktailStore.loading"
         :empty="{ icon: 'i-lucide-wine', label: 'No cocktails found' }"
         class="max-h-full"
+        @select="(row: Cocktail) => navigateTo(`/admin/cocktails/${row._id}`)"
+        :ui="{ tr: 'cursor-pointer' }"
       >
         <template #expanded="{ row }">
           <TableCocktailExpand :ingredients="row.original.ingredients" />
@@ -164,7 +166,8 @@ const openModal = async () => await modal.open();
       <div
         v-for="cocktail in cocktailStore.cocktails"
         :key="cocktail._id"
-        class="bg-charcoal rounded-lg border border-brown/30 p-4"
+        class="bg-charcoal rounded-lg border border-brown/30 p-4 cursor-pointer"
+        @click="navigateTo(`/admin/cocktails/${cocktail._id}`)"
       >
         <div class="flex items-start justify-between mb-2">
           <div>

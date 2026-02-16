@@ -6,9 +6,17 @@ const router = useRouter()
 
 const batchStore = useBatchStore()
 const recipeStore = useRecipeStore()
+const vesselStore = useVesselStore()
 
 const batch = computed(() => batchStore.getBatchById(route.params._id as string))
 const recipe = computed(() => batch.value?.recipe ? recipeStore.getRecipeById(batch.value.recipe) : undefined)
+
+const containingVessels = computed(() => {
+  if (!batch.value?._id) return []
+  return vesselStore.vessels.filter(v =>
+    v.contents?.some(c => c.batch === batch.value!._id)
+  )
+})
 
 // Panel slide-over for editing
 import { PanelBatch } from '#components'
@@ -66,6 +74,26 @@ const isCurrentStage = (stageName: string) =>
     <BatchStepper :current-status="batch.status || 'Upcoming'" />
 
     <BatchHeader :batch="batch" :recipe="recipe" />
+
+    <!-- Current Vessels -->
+    <div v-if="containingVessels.length > 0" class="bg-charcoal rounded-xl border border-brown/30 p-5">
+      <h3 class="text-lg font-bold text-parchment font-[Cormorant_Garamond] mb-4">Current Vessels</h3>
+      <div class="divide-y divide-brown/20">
+        <div
+          v-for="vessel in containingVessels"
+          :key="vessel._id"
+          class="flex items-center justify-between py-2 text-sm"
+        >
+          <NuxtLink
+            :to="`/admin/vessels/${vessel._id}`"
+            class="text-gold hover:text-copper transition-colors"
+          >
+            {{ vessel.name }}
+          </NuxtLink>
+          <span class="text-parchment/50 text-xs">{{ vessel.type }}</span>
+        </div>
+      </div>
+    </div>
 
     <BatchBrewing
       v-if="hasReachedStage('Brewing')"

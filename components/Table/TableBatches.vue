@@ -192,6 +192,8 @@ const addItem = () => {
         :columns="columns"
         :loading="batchStore.loading"
         :empty="{ icon: 'i-lucide-flask-conical', label: 'No batches found' }"
+        @select="(row: Batch) => router.push(`/admin/batch/${row._id}`)"
+        :ui="{ tr: 'cursor-pointer' }"
       />
     </div>
 
@@ -200,7 +202,7 @@ const addItem = () => {
       <div
         v-for="batch in tableData"
         :key="batch._id"
-        class="bg-charcoal rounded-lg border border-brown/30 p-4"
+        class="bg-charcoal rounded-lg border border-brown/30 p-4 cursor-pointer"
         @click="router.push(`/admin/batch/${batch._id}`)"
       >
         <div class="flex items-start justify-between mb-2">

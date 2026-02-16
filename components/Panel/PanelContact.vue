@@ -56,6 +56,10 @@ const typeOptions = ["Vendor", "Customer", "Distributor", "Employee", "Supplier"
               <UInput v-model="localData.phone" type="tel" />
             </UFormField>
           </div>
+          <div class="flex items-center gap-3">
+            <USwitch v-model="localData.newsletter" />
+            <span class="text-sm text-parchment/80">Newsletter subscriber</span>
+          </div>
         </div>
         <div class="flex items-center justify-end gap-2 px-4 py-3 border-t border-white/10">
           <UButton color="neutral" variant="outline" @click="cancel">Cancel</UButton>

@@ -39,11 +39,6 @@ export const useContactStore = defineStore('contacts', () => {
 		}
 	};
 
-	const checkContacts = () => {
-		if (!contacts.value.length) {
-			getContacts();
-		}
-	};
 	const updateContact = async (): Promise<void> => {
 		saving.value = true;
 		try {
@@ -84,6 +79,7 @@ export const useContactStore = defineStore('contacts', () => {
 			address: '',
 			email: '',
 			phone: '',
+			newsletter: false,
 		};
 	};
 
@@ -104,13 +100,19 @@ export const useContactStore = defineStore('contacts', () => {
 
 	// Getters
 	const getContactById = (id: string): Contact | undefined => {
-		checkContacts();
 		return contacts.value.find((c) => c._id === id);
 	};
 
 	const getVendors = () => {
-		checkContacts();
 		return contacts.value.filter((c) => c.type === 'Vendor');
+	};
+
+	const getCustomers = () => {
+		return contacts.value.filter((c) => c.type === 'Customer');
+	};
+
+	const getNewsletterSubscribers = () => {
+		return contacts.value.filter((c) => c.newsletter);
 	};
 
 	const search = (searchTerm: string): Contact[] => {
@@ -134,6 +136,8 @@ export const useContactStore = defineStore('contacts', () => {
 		deleteContact,
 		getContactById,
 		getVendors,
+		getCustomers,
+		getNewsletterSubscribers,
 		search,
 	};
 });

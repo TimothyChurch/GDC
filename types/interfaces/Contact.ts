@@ -9,6 +9,7 @@ export interface Contact {
 	email?: string;
 	phone?: string;
 	notes?: string;
+	newsletter?: boolean;
 	city?: string;
 	state?: string;
 	zip?: string;

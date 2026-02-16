@@ -40,6 +40,11 @@ export const Contact = defineMongooseModel({
       type: String,
       required: false,
     },
+    newsletter: {
+      type: Boolean,
+      default: false,
+      index: true,
+    },
     city: {
       type: String,
       required: false,

@@ -41,6 +41,7 @@ const ingredients = computed(() => {
     const price = latestPrice(ing.item)
     const lineCost = price * ing.amount
     return {
+      id: ing.item,
       name: item?.name || 'Unknown',
       amount: ing.amount,
       unit: ing.unit,
@@ -158,7 +159,12 @@ const menuLabel = computed(() => {
           :key="i"
           class="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-4 py-2 text-sm"
         >
-          <span class="text-parchment">{{ ing.name }}</span>
+          <NuxtLink
+            :to="`/admin/items/${ing.id}`"
+            class="text-gold hover:text-copper transition-colors"
+          >
+            {{ ing.name }}
+          </NuxtLink>
           <span class="text-parchment/60">{{ ing.amount }} {{ ing.unit }}</span>
           <span class="text-parchment/60 hidden sm:block">{{ Dollar.format(ing.pricePerUnit) }}</span>
           <span class="text-parchment text-right">{{ Dollar.format(ing.cost) }}</span>

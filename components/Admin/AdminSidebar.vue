@@ -7,7 +7,7 @@ const emit = defineEmits<{ close: []; toggleCollapse: [] }>();
 
 const route = useRoute();
 const overlay = useOverlay();
-const { activeBatches, pendingPOs, lowInventoryCount } = useSidebarBadges();
+const { activeBatches, pendingPOs, lowInventoryCount, pendingEvents, totalCustomers } = useSidebarBadges();
 
 interface NavLink {
   label: string;
@@ -48,8 +48,10 @@ const reportLinks: NavLink[] = [
 ];
 
 const adminLinks: NavLink[] = [
+  { label: 'Events', icon: 'i-lucide-calendar', to: '/admin/events', badge: pendingEvents },
+  { label: 'Customers', icon: 'i-lucide-heart-handshake', to: '/admin/customers', badge: totalCustomers },
   { label: 'Contacts', icon: 'i-lucide-users', to: '/admin/contacts' },
-  { label: 'Users', icon: 'i-lucide-users-round', to: '/admin/users' },
+  { label: 'Users', icon: 'i-lucide-user-cog', to: '/admin/users' },
   { label: 'Controls', icon: 'i-lucide-settings', to: '/admin/controls' },
 ];
 

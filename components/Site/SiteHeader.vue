@@ -7,6 +7,7 @@ const navList = [
   { label: "Menu", link: "/menu", icon: "carbon:restaurant" },
   { label: "Bottles", link: "/bottles", icon: "carbon:wine-bottle" },
   { label: "Events", link: "/events", icon: "carbon:calendar" },
+  { label: "Contact", link: "/contact", icon: "carbon:email" },
 ];
 
 const isActive = (link: string) => {
