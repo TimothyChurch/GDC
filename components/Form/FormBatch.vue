@@ -37,6 +37,15 @@ const scaledPrice = computed(() => {
 			scaling.value || 0
 	);
 });
+// When recipe changes, inherit its pipeline
+watch(() => batchStore.batch.recipe, (newRecipeId) => {
+	if (!newRecipeId || batchStore.batch._id) return;
+	const r = recipeStore.getRecipeById(newRecipeId);
+	if (r?.pipeline?.length) {
+		batchStore.batch.pipeline = [...r.pipeline];
+	}
+});
+
 const saveBatch = async () => {
 	if (!batchStore.batch.recipeCost)
 		batchStore.batch.recipeCost = recipePrice(batchStore.batch.recipe);

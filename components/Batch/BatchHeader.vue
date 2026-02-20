@@ -1,20 +1,22 @@
 <script setup lang="ts">
 import type { Batch, Recipe } from '~/types'
+import { STAGE_DISPLAY, stageTextColor, stageBgColor } from '~/composables/batchPipeline'
 
 const props = defineProps<{
   batch: Batch
   recipe?: Recipe
 }>()
 
-const statusColor = computed(() => {
+const stageDisplay = computed(() => {
+  const d = STAGE_DISPLAY[props.batch.currentStage]
+  return d || { icon: 'i-lucide-circle', color: 'neutral' }
+})
+
+const statusBadge = computed(() => {
   switch (props.batch.status) {
-    case 'Upcoming': return 'bg-blue-500/15 text-blue-400 border-blue-500/25'
-    case 'Brewing': return 'bg-orange-500/15 text-orange-400 border-orange-500/25'
-    case 'Fermenting': return 'bg-yellow-500/15 text-yellow-400 border-yellow-500/25'
-    case 'Distilling': return 'bg-copper/15 text-copper border-copper/25'
-    case 'Storage': return 'bg-purple-500/15 text-purple-400 border-purple-500/25'
-    case 'Barreled': return 'bg-amber/15 text-amber border-amber/25'
-    case 'Bottled': return 'bg-green-500/15 text-green-400 border-green-500/25'
+    case 'active': return 'bg-blue-500/15 text-blue-400 border-blue-500/25'
+    case 'completed': return 'bg-green-500/15 text-green-400 border-green-500/25'
+    case 'cancelled': return 'bg-red-500/15 text-red-400 border-red-500/25'
     default: return 'bg-brown/15 text-parchment/50 border-brown/25'
   }
 })
@@ -51,12 +53,21 @@ const recipeCostDisplay = computed(() => {
           <span v-if="recipe?.type" class="text-sm text-parchment/60">{{ recipe.type }}</span>
         </div>
       </div>
-      <span :class="['px-3 py-1 rounded-full text-xs font-semibold border shrink-0', statusColor]">
-        {{ batch.status }}
-      </span>
+      <div class="flex items-center gap-2 shrink-0">
+        <span :class="['px-3 py-1 rounded-full text-xs font-semibold border', statusBadge]">
+          {{ batch.status }}
+        </span>
+        <span
+          class="px-3 py-1 rounded-full text-xs font-semibold border flex items-center gap-1"
+          :class="stageBgColor(stageDisplay.color)"
+        >
+          <UIcon :name="stageDisplay.icon" :class="stageTextColor(stageDisplay.color)" class="text-sm" />
+          {{ batch.currentStage }}
+        </span>
+      </div>
     </div>
 
-    <div class="grid grid-cols-2 sm:grid-cols-3 gap-4 pt-4 border-t border-brown/20">
+    <div class="grid grid-cols-2 sm:grid-cols-4 gap-4 pt-4 border-t border-brown/20">
       <div>
         <div class="text-xs text-parchment/60 uppercase tracking-wider mb-1">Batch Size</div>
         <div class="text-sm text-parchment font-medium">
@@ -70,6 +81,10 @@ const recipeCostDisplay = computed(() => {
       <div>
         <div class="text-xs text-parchment/60 uppercase tracking-wider mb-1">Batch Cost</div>
         <div class="text-sm text-parchment font-medium">{{ batchCostDisplay }}</div>
+      </div>
+      <div v-if="batch.batchNumber">
+        <div class="text-xs text-parchment/60 uppercase tracking-wider mb-1">Batch #</div>
+        <div class="text-sm text-parchment font-medium">{{ batch.batchNumber }}</div>
       </div>
     </div>
   </div>

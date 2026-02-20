@@ -46,7 +46,13 @@ const classIcon = computed(() => {
       </span>
     </div>
 
-    <div class="text-right">
+    <div class="flex items-center justify-end gap-1.5">
+      <span
+        v-if="bottle.archived"
+        class="px-2 py-0.5 rounded-full text-[10px] font-semibold border bg-yellow-500/15 text-yellow-400 border-yellow-500/25"
+      >
+        Archived
+      </span>
       <span
         class="px-2 py-0.5 rounded-full text-[10px] font-semibold border"
         :class="bottle.inStock !== false

@@ -17,6 +17,7 @@ export const useRecipeStore = defineStore("recipes", () => {
     volumeUnit: "",
     items: [],
     directions: "",
+    pipeline: ['Mashing', 'Fermenting', 'Distilling', 'Storage', 'Proofing', 'Bottled'],
   });
 
   // CRUD actions
@@ -77,6 +78,7 @@ export const useRecipeStore = defineStore("recipes", () => {
       volumeUnit: "",
       items: [],
       directions: "",
+      pipeline: ['Mashing', 'Fermenting', 'Distilling', 'Storage', 'Proofing', 'Bottled'],
     };
   };
 

@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { Batch, Recipe } from '~/types'
+import { calculateProofGallons, toGallons } from '~/utils/proofGallons'
 
 const props = defineProps<{
   month: string // 'YYYY-MM' format
@@ -26,25 +27,11 @@ const monthLabel = computed(() =>
 // Batches distilled during the selected month
 const distilledBatches = computed(() => {
   return batchStore.batches.filter(b => {
-    const distDate = b.distilling?.date ? new Date(b.distilling.date) : null
+    const distDate = (b.stages as any)?.distilling?.startedAt ? new Date((b.stages as any).distilling.startedAt) : null
     if (!distDate) return false
     return distDate >= monthStart.value && distDate <= monthEnd.value
   })
 })
-
-// Calculate proof gallons: Volume (gal) × ABV × 2 / 100
-function proofGallons(volumeGal: number, abv: number): number {
-  return volumeGal * abv * 2 / 100
-}
-
-// Convert volume to gallons for consistency
-function toGallons(volume: number, unit: string): number {
-  const lower = (unit || '').toLowerCase()
-  if (lower.includes('gal')) return volume
-  if (lower.includes('liter') || lower === 'l') return volume * 0.264172
-  if (lower.includes('ml')) return volume * 0.000264172
-  return volume // fallback assume gallons
-}
 
 // Production by spirit type
 const productionByType = computed(() => {
@@ -53,12 +40,12 @@ const productionByType = computed(() => {
   distilledBatches.value.forEach(batch => {
     const recipe = batch.recipe ? recipeStore.getRecipeById(batch.recipe) : null
     const spiritType = recipe?.class || recipe?.type || 'Unknown'
-    const hearts = batch.distilling?.collected?.hearts
+    const hearts = (batch.stages as any)?.distilling?.collected?.hearts
     if (!hearts) return
 
     const vol = toGallons(hearts.volume || 0, hearts.unit || 'gal')
     const abv = hearts.abv || 0
-    const pg = proofGallons(vol, abv)
+    const pg = calculateProofGallons(vol, 'gallon', abv)
 
     const existing = map.get(spiritType) || { wineGallons: 0, proofGallons: 0, batches: 0 }
     existing.wineGallons += vol
@@ -88,18 +75,18 @@ const headsAndTails = computed(() => {
   let headsWG = 0, headsPG = 0, tailsWG = 0, tailsPG = 0
 
   distilledBatches.value.forEach(batch => {
-    const heads = batch.distilling?.collected?.heads
-    const tails = batch.distilling?.collected?.tails
+    const heads = (batch.stages as any)?.distilling?.collected?.heads
+    const tails = (batch.stages as any)?.distilling?.collected?.tails
 
     if (heads) {
       const vol = toGallons(heads.volume || 0, heads.unit || 'gal')
       headsWG += vol
-      headsPG += proofGallons(vol, heads.abv || 0)
+      headsPG += calculateProofGallons(vol, 'gallon', heads.abv || 0)
     }
     if (tails) {
       const vol = toGallons(tails.volume || 0, tails.unit || 'gal')
       tailsWG += vol
-      tailsPG += proofGallons(vol, tails.abv || 0)
+      tailsPG += calculateProofGallons(vol, 'gallon', tails.abv || 0)
     }
   })
 
@@ -139,7 +126,7 @@ const materialsUsed = computed(() => {
 const batchDetails = computed(() => {
   return distilledBatches.value.map(batch => {
     const recipe = batch.recipe ? recipeStore.getRecipeById(batch.recipe) : null
-    const hearts = batch.distilling?.collected?.hearts
+    const hearts = (batch.stages as any)?.distilling?.collected?.hearts
     const vol = hearts ? toGallons(hearts.volume || 0, hearts.unit || 'gal') : 0
     const abv = hearts?.abv || 0
 
@@ -147,10 +134,10 @@ const batchDetails = computed(() => {
       _id: batch._id,
       recipeName: recipe?.name || 'Unknown',
       spiritType: recipe?.class || recipe?.type || 'Unknown',
-      date: batch.distilling?.date ? new Date(batch.distilling.date).toLocaleDateString() : '--',
+      date: (batch.stages as any)?.distilling?.startedAt ? new Date((batch.stages as any).distilling.startedAt).toLocaleDateString() : '--',
       wineGallons: vol,
       abv,
-      proofGallons: proofGallons(vol, abv),
+      proofGallons: calculateProofGallons(vol, 'gallon', abv),
     }
   }).sort((a, b) => a.date.localeCompare(b.date))
 })

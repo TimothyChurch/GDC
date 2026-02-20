@@ -156,18 +156,26 @@ const currentStock = computed(() => {
         </div>
         <div>
           <div class="text-xs text-parchment/60 uppercase tracking-wider mb-1">
-            In Stock
+            Status
           </div>
-          <span
-            :class="[
-              'px-2 py-0.5 rounded-full text-[10px] font-semibold border',
-              bottle.inStock
-                ? 'bg-green-500/15 text-green-400 border-green-500/25'
-                : 'bg-red-500/15 text-red-400 border-red-500/25',
-            ]"
-          >
-            {{ bottle.inStock ? "Yes" : "No" }}
-          </span>
+          <div class="flex items-center gap-1.5">
+            <span
+              v-if="bottle.archived"
+              class="px-2 py-0.5 rounded-full text-[10px] font-semibold border bg-yellow-500/15 text-yellow-400 border-yellow-500/25"
+            >
+              Archived
+            </span>
+            <span
+              :class="[
+                'px-2 py-0.5 rounded-full text-[10px] font-semibold border',
+                bottle.inStock
+                  ? 'bg-green-500/15 text-green-400 border-green-500/25'
+                  : 'bg-red-500/15 text-red-400 border-red-500/25',
+              ]"
+            >
+              {{ bottle.inStock ? "In Stock" : "Out of Stock" }}
+            </span>
+          </div>
         </div>
         <div
           v-if="bottle.description"

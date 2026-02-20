@@ -10,7 +10,7 @@ const { localData, isDirty, saving, save, cancel } = useFormPanel({
     Object.assign(bottleStore.bottle, data);
     await bottleStore.updateBottle();
   },
-  onClose: () => emit('close', true),
+  onClose: () => emit("close", true),
 });
 
 const isNew = !localData.value._id;
@@ -24,11 +24,20 @@ const newType = (type: string) => {
   <USlideover side="right" :close="{ onClick: cancel }">
     <template #content>
       <div class="flex flex-col h-full w-full sm:max-w-lg">
-        <div class="flex items-center justify-between px-4 py-3 border-b border-white/10">
-          <h2 class="text-lg font-bold text-parchment font-[Cormorant_Garamond]">
-            {{ isNew ? 'New Bottle' : 'Edit Bottle' }}
+        <div
+          class="flex items-center justify-between px-4 py-3 border-b border-white/10"
+        >
+          <h2
+            class="text-lg font-bold text-parchment font-[Cormorant_Garamond]"
+          >
+            {{ isNew ? "New Bottle" : "Edit Bottle" }}
           </h2>
-          <UButton icon="i-lucide-x" color="neutral" variant="ghost" @click="cancel" />
+          <UButton
+            icon="i-lucide-x"
+            color="neutral"
+            variant="ghost"
+            @click="cancel"
+          />
         </div>
         <div class="flex-1 overflow-y-auto p-4 space-y-4">
           <UFormField label="Name">
@@ -54,7 +63,11 @@ const newType = (type: string) => {
               <USelectMenu
                 v-if="localData.class"
                 v-model="localData.type"
-                :items="liquorClasses.filter((i) => i.class === localData.class)[0]?.types.map((i) => i.type)"
+                :items="
+                  liquorClasses
+                    .filter((i) => i.class === localData.class)[0]
+                    ?.types.map((i) => i.type)
+                "
                 create-item
                 @create="newType"
               />
@@ -68,9 +81,14 @@ const newType = (type: string) => {
               <UInput v-model="localData.price" type="number" />
             </UFormField>
           </div>
-          <UFormField label="In Stock">
-            <USwitch v-model="localData.inStock" />
-          </UFormField>
+          <div class="flex items-center gap-6">
+            <UFormField label="In Stock">
+              <USwitch v-model="localData.inStock" />
+            </UFormField>
+            <UFormField v-if="!isNew" label="Archived">
+              <USwitch v-model="localData.archived" color="red" />
+            </UFormField>
+          </div>
           <FormImageUpload
             v-model="localData.img"
             folder="bottles"
@@ -80,10 +98,14 @@ const newType = (type: string) => {
             <UTextarea v-model="localData.description" />
           </UFormField>
         </div>
-        <div class="flex items-center justify-end gap-2 px-4 py-3 border-t border-white/10">
-          <UButton color="neutral" variant="outline" @click="cancel">Cancel</UButton>
+        <div
+          class="flex items-center justify-end gap-2 px-4 py-3 border-t border-white/10"
+        >
+          <UButton color="neutral" variant="outline" @click="cancel"
+            >Cancel</UButton
+          >
           <UButton @click="save" :loading="saving" :disabled="!isDirty">
-            {{ isNew ? 'Create' : 'Save' }}
+            {{ isNew ? "Create" : "Save" }}
           </UButton>
         </div>
       </div>

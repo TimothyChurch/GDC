@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { STAGE_DISPLAY, stageTextColor, stageBgColor } from '~/composables/batchPipeline';
+
 definePageMeta({ layout: 'admin' })
 
 const route = useRoute()
@@ -7,6 +9,8 @@ const router = useRouter()
 const recipeStore = useRecipeStore()
 const itemStore = useItemStore()
 const batchStore = useBatchStore()
+
+const stageDisplay = (name: string) => STAGE_DISPLAY[name] || { icon: 'i-lucide-circle', color: 'neutral' };
 
 const recipe = computed(() => recipeStore.getRecipeById(route.params._id as string))
 
@@ -94,6 +98,38 @@ const relatedBatches = computed(() =>
         <div>
           <div class="text-xs text-parchment/60 uppercase tracking-wider mb-1">Total Cost</div>
           <div class="text-sm text-parchment font-semibold">{{ Dollar.format(totalCost) }}</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Pipeline -->
+    <div v-if="recipe.pipeline?.length" class="bg-charcoal rounded-xl border border-brown/30 p-5">
+      <h3 class="text-lg font-bold text-parchment font-[Cormorant_Garamond] mb-4">
+        Production Pipeline
+        <span v-if="recipe.pipelineTemplate" class="text-sm font-normal text-parchment/50 ml-2">
+          ({{ recipe.pipelineTemplate }})
+        </span>
+      </h3>
+      <div class="flex items-center flex-wrap gap-1">
+        <div
+          v-for="(stage, index) in recipe.pipeline"
+          :key="stage"
+          class="flex items-center"
+        >
+          <div class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border"
+            :class="stageBgColor(stageDisplay(stage).color)"
+          >
+            <UIcon
+              :name="stageDisplay(stage).icon"
+              :class="stageTextColor(stageDisplay(stage).color)"
+            />
+            <span class="text-sm text-parchment">{{ stage }}</span>
+          </div>
+          <UIcon
+            v-if="index < recipe.pipeline.length - 1"
+            name="i-lucide-chevron-right"
+            class="text-parchment/30 mx-1 shrink-0"
+          />
         </div>
       </div>
     </div>

@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { calculateProofGallons, toGallons } from '~/utils/proofGallons'
+
 const props = defineProps<{
   month: string // 'YYYY-MM' format
 }>()
@@ -22,18 +24,6 @@ const monthEnd = computed(() => {
 const monthLabel = computed(() =>
   monthStart.value.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })
 )
-
-function proofGallons(volumeGal: number, abv: number): number {
-  return volumeGal * abv * 2 / 100
-}
-
-function toGallons(volume: number, unit: string): number {
-  const lower = (unit || '').toLowerCase()
-  if (lower.includes('gal')) return volume
-  if (lower.includes('liter') || lower === 'l') return volume * 0.264172
-  if (lower.includes('ml')) return volume * 0.000264172
-  return volume
-}
 
 // Bottle volume to wine gallons
 function bottleToWineGallons(bottle: { volume?: number; volumeUnit?: string }): number {
@@ -75,7 +65,7 @@ const bottledByProduct = computed(() => {
     const abv = bottle.abv || 0
     const wgPerBottle = bottleToWineGallons(bottle)
     const totalWG = wgPerBottle * (p.quantity || 0)
-    const totalPG = proofGallons(totalWG, abv)
+    const totalPG = calculateProofGallons(totalWG, 'gallon', abv)
     const sizeLabel = `${bottle.volume || 750}${bottle.volumeUnit || 'mL'}`
 
     const existing = map.get(key) || {
@@ -111,13 +101,13 @@ const totalProofGallons = computed(() =>
 const dumpedFromBarrels = computed(() => {
   return batchStore.batches
     .filter(b => {
-      const exitDate = b.barreled?.exit?.date ? new Date(b.barreled.exit.date) : null
+      const exitDate = (b.stages as any)?.barrelAging?.exit?.date ? new Date((b.stages as any).barrelAging.exit.date) : null
       if (!exitDate) return false
       return exitDate >= monthStart.value && exitDate <= monthEnd.value
     })
     .map(b => {
       const recipe = b.recipe ? recipeStore.getRecipeById(b.recipe) : null
-      const exit = b.barreled?.exit
+      const exit = (b.stages as any)?.barrelAging?.exit
       const vol = exit ? toGallons(exit.volume || 0, exit.volumeUnit || 'gal') : 0
       const abv = exit?.abv || 0
       return {
@@ -127,7 +117,7 @@ const dumpedFromBarrels = computed(() => {
         date: exit?.date ? new Date(exit.date).toLocaleDateString() : '--',
         wineGallons: vol,
         abv,
-        proofGallons: proofGallons(vol, abv),
+        proofGallons: calculateProofGallons(vol, 'gallon', abv),
       }
     })
 })
@@ -150,7 +140,7 @@ const productionDetails = computed(() => {
         quantity: p.quantity || 0,
         bottleSize: bottle ? `${bottle.volume || 750}${bottle.volumeUnit || 'mL'}` : '--',
         wineGallons: totalWG,
-        proofGallons: proofGallons(totalWG, abv),
+        proofGallons: calculateProofGallons(totalWG, 'gallon', abv),
         abv,
       }
     })

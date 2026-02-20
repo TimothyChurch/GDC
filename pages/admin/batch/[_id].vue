@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { STAGE_KEY_MAP, hasReachedStage as _hasReached, isCurrentStage as _isCurrent } from '~/composables/batchPipeline'
+
 definePageMeta({ layout: 'admin' })
 
 const route = useRoute()
@@ -29,19 +31,32 @@ const editBatch = () => {
   panel.open()
 }
 
-// Stage helpers
-const stageIndex = (stageName: string) =>
-  BATCH_STAGES.findIndex((s) => s.name === stageName)
+// Stage helpers using batch pipeline
+const hasReached = (stageName: string) => {
+  if (!batch.value) return false
+  if (batch.value.currentStage === 'Upcoming') return false
+  return _hasReached(batch.value.pipeline, batch.value.currentStage, stageName)
+}
 
-const currentStageIndex = computed(() =>
-  stageIndex(batch.value?.status || 'Upcoming')
-)
+const isCurrent = (stageName: string) => {
+  if (!batch.value) return false
+  return _isCurrent(batch.value.currentStage, stageName)
+}
 
-const hasReachedStage = (stageName: string) =>
-  currentStageIndex.value >= stageIndex(stageName)
+// Dynamic component map
+const STAGE_COMPONENTS: Record<string, string> = {
+  'Mashing': 'BatchMashing',
+  'Fermenting': 'BatchFermenting',
+  'Distilling': 'BatchDistilling',
+  'Maceration': 'BatchMaceration',
+  'Filtering': 'BatchFiltering',
+  'Barrel Aging': 'BatchBarrelAging',
+  'Storage': 'BatchStorage',
+  'Blending': 'BatchBlending',
+  'Proofing': 'BatchProofing',
+  'Bottled': 'BatchBottled',
+}
 
-const isCurrentStage = (stageName: string) =>
-  batch.value?.status === stageName
 </script>
 
 <template>
@@ -71,7 +86,7 @@ const isCurrentStage = (stageName: string) =>
       </template>
     </AdminPageHeader>
 
-    <BatchStepper :current-status="batch.status || 'Upcoming'" />
+    <BatchStepper :pipeline="batch.pipeline" :current-stage="batch.currentStage" />
 
     <BatchHeader :batch="batch" :recipe="recipe" />
 
@@ -95,38 +110,23 @@ const isCurrentStage = (stageName: string) =>
       </div>
     </div>
 
-    <BatchBrewing
-      v-if="hasReachedStage('Brewing')"
-      :batch="batch"
-      :editing="isCurrentStage('Brewing')"
-    />
+    <!-- Dynamic stage components based on pipeline -->
+    <template v-for="stage in batch.pipeline" :key="stage">
+      <component
+        v-if="hasReached(stage) && STAGE_COMPONENTS[stage]"
+        :is="STAGE_COMPONENTS[stage]"
+        :batch="batch"
+        :editing="isCurrent(stage)"
+      />
+    </template>
 
-    <BatchFermenting
-      v-if="hasReachedStage('Fermenting')"
-      :batch="batch"
-      :editing="isCurrentStage('Fermenting')"
-    />
-
-    <BatchDistilling
-      v-if="hasReachedStage('Distilling')"
-      :batch="batch"
-      :editing="isCurrentStage('Distilling')"
-    />
-
-    <BatchBarreled
-      v-if="hasReachedStage('Barreled')"
-      :batch="batch"
-      :editing="isCurrentStage('Barreled')"
-    />
-
-    <BatchBottled
-      v-if="hasReachedStage('Bottled')"
-      :batch="batch"
-    />
-
-    <div v-if="batch.status !== 'Bottled'" class="flex justify-center">
+    <!-- Advance action (only for active batches) -->
+    <div v-if="batch.status === 'active'" class="flex justify-center">
       <BatchAdvanceAction :batch="batch" @advanced="() => {}" />
     </div>
+
+    <!-- Activity Log -->
+    <BatchActivityLog :batch="batch" />
   </div>
 
   <div v-else class="text-center py-12">

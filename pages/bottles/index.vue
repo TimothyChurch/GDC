@@ -9,15 +9,15 @@ const bottleStore = useBottleStore();
 const activeClass = ref("All");
 
 const spiritClasses = computed(() => {
-  const classes = bottleStore.bottles
+  const classes = bottleStore.activeBottles
     .map((b) => b.class)
     .filter(Boolean);
   return ["All", ...new Set(classes)];
 });
 
 const filteredBottles = computed(() => {
-  if (activeClass.value === "All") return bottleStore.bottles;
-  return bottleStore.bottles.filter((b) => b.class === activeClass.value);
+  if (activeClass.value === "All") return bottleStore.activeBottles;
+  return bottleStore.activeBottles.filter((b) => b.class === activeClass.value);
 });
 </script>
 

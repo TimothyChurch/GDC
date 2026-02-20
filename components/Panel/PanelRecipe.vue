@@ -102,6 +102,12 @@ const removeItem = (itemId: string) => {
             </div>
           </UFormField>
 
+          <!-- Pipeline Builder -->
+          <RecipePipelineBuilder
+            v-model="localData.pipeline"
+            v-model:template="localData.pipelineTemplate"
+          />
+
           <UFormField label="Directions">
             <UTextarea v-model="localData.directions" />
           </UFormField>

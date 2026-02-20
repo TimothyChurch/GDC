@@ -137,19 +137,19 @@ describe('userLoginSchema', () => {
 
 describe('batchCreateSchema', () => {
   it('validates valid batch', async () => {
-    const valid = { recipe: 'abc123', batchSize: 50, batchSizeUnit: 'gal' };
+    const valid = { recipe: 'abc123', batchSize: 50, batchSizeUnit: 'gal', pipeline: ['Mashing', 'Fermenting'], currentStage: 'Upcoming' };
     await expect(batchCreateSchema.validate(valid)).resolves.toBeDefined();
   });
 
   it('rejects zero batch size', async () => {
     await expect(batchCreateSchema.validate({
-      recipe: 'abc123', batchSize: 0, batchSizeUnit: 'gal',
+      recipe: 'abc123', batchSize: 0, batchSizeUnit: 'gal', pipeline: ['Mashing'], currentStage: 'Upcoming',
     })).rejects.toThrow('Must be greater than 0');
   });
 
   it('rejects negative batch size', async () => {
     await expect(batchCreateSchema.validate({
-      recipe: 'abc123', batchSize: -10, batchSizeUnit: 'gal',
+      recipe: 'abc123', batchSize: -10, batchSizeUnit: 'gal', pipeline: ['Mashing'], currentStage: 'Upcoming',
     })).rejects.toThrow('Must be greater than 0');
   });
 });
@@ -207,14 +207,50 @@ describe('contactCreateSchema', () => {
 });
 
 describe('inventoryCreateSchema', () => {
-  it('validates with date', async () => {
+  it('validates with all required fields', async () => {
     await expect(inventoryCreateSchema.validate({
       date: new Date(),
+      item: '507f1f77bcf86cd799439011',
+      quantity: 10,
+    })).resolves.toBeDefined();
+  });
+
+  it('validates with optional location', async () => {
+    await expect(inventoryCreateSchema.validate({
+      date: new Date(),
+      item: '507f1f77bcf86cd799439011',
+      quantity: 5,
+      location: '507f1f77bcf86cd799439012',
     })).resolves.toBeDefined();
   });
 
   it('rejects missing date', async () => {
-    await expect(inventoryCreateSchema.validate({})).rejects.toThrow();
+    await expect(inventoryCreateSchema.validate({
+      item: '507f1f77bcf86cd799439011',
+      quantity: 10,
+    })).rejects.toThrow();
+  });
+
+  it('rejects missing item', async () => {
+    await expect(inventoryCreateSchema.validate({
+      date: new Date(),
+      quantity: 10,
+    })).rejects.toThrow('Item is required');
+  });
+
+  it('rejects missing quantity', async () => {
+    await expect(inventoryCreateSchema.validate({
+      date: new Date(),
+      item: '507f1f77bcf86cd799439011',
+    })).rejects.toThrow('Quantity is required');
+  });
+
+  it('transforms empty string quantity to null (fails required)', async () => {
+    await expect(inventoryCreateSchema.validate({
+      date: new Date(),
+      item: '507f1f77bcf86cd799439011',
+      quantity: '',
+    })).rejects.toThrow('Quantity is required');
   });
 });
 

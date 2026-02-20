@@ -57,29 +57,3 @@ export const fullTransfer = (
 	};
 	transferBatch(fromId, toId, transfer);
 };
-
-export const startBrewing = (
-	batchId: string,
-	mashTunId: string
-) => {
-	const batchStore = useBatchStore();
-	const vesselStore = useVesselStore();
-
-	batchStore.setBatch(batchId);
-	vesselStore.setVessel(mashTunId);
-
-	batchStore.batch.status = 'Brewing';
-	batchStore.updateBatch();
-
-	if (!vesselStore.vessel.contents) {
-		vesselStore.vessel.contents = [];
-	}
-	vesselStore.vessel.contents.push({
-		batch: batchId,
-		volume: batchStore.batch.batchSize,
-		volumeUnit: batchStore.batch.batchSizeUnit,
-		abv: 0,
-		value: batchStore.batch.batchCost || 0,
-	});
-	vesselStore.updateVessel();
-};

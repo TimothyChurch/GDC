@@ -23,7 +23,7 @@ onMounted(async () => {
 </script>
 
 <template>
-  <div class="flex flex-col w-screen h-screen max-h-screen bg-espresso">
+  <div class="flex flex-col w-screen h-screen max-h-screen bg-espresso print:h-auto print:max-h-none print:overflow-visible print:bg-white">
     <a href="#admin-main" class="sr-only focus:not-sr-only focus:absolute focus:top-2 focus:left-2 focus:z-[200] focus:bg-gold focus:text-espresso focus:px-4 focus:py-2 focus:rounded-md focus:font-semibold">
       Skip to main content
     </a>
@@ -31,7 +31,7 @@ onMounted(async () => {
       class="print:hidden"
       @toggle-sidebar="sidebarOpen = !sidebarOpen"
     />
-    <div class="flex flex-grow overflow-y-hidden relative">
+    <div class="flex flex-grow overflow-y-hidden relative print:overflow-visible">
       <!-- Mobile overlay backdrop -->
       <div
         v-if="sidebarOpen"
@@ -45,7 +45,7 @@ onMounted(async () => {
         @close="sidebarOpen = false"
         @toggle-collapse="sidebarCollapsed = !sidebarCollapsed"
       />
-      <div id="admin-main" class="overflow-y-auto flex-grow bg-espresso">
+      <div id="admin-main" class="overflow-y-auto flex-grow bg-espresso print:overflow-visible print:bg-white">
         <div class="p-4 md:p-6 lg:p-8 max-w-[1600px] mx-auto">
           <AdminBreadcrumbs v-if="showBreadcrumbs" class="mb-4" />
           <slot />

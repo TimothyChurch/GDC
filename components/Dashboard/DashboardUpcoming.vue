@@ -1,20 +1,39 @@
 <script setup lang="ts">
+import { STAGE_DISPLAY, STAGE_VESSEL_TYPE, stageTextColor } from '~/composables/batchPipeline'
+
 const batchStore = useBatchStore();
 const vesselStore = useVesselStore();
 
-const items = computed(() => {
-  return [
-    vesselStore.mashTuns.map((vessel) => {
-      return {
-        label: vessel.name,
-        _id: vessel._id,
-      };
-    }),
-  ];
-});
+// Get vessel options for a batch's first pipeline stage
+const getVesselOptions = (batch: any) => {
+  const firstStage = batch.pipeline?.[0]
+  if (!firstStage) return []
+  const vesselType = STAGE_VESSEL_TYPE[firstStage]
+  if (!vesselType) return []
+  switch (vesselType) {
+    case 'Mash Tun': return vesselStore.mashTuns
+    case 'Fermenter': return vesselStore.fermenters
+    case 'Still': return vesselStore.stills
+    case 'Tank': return vesselStore.tanks
+    case 'Barrel': return vesselStore.barrels
+    default: return []
+  }
+}
 
-const onStartBrewing = async (batchId: string, vesselId: string) => {
-  await batchStore.startBrewing(batchId, vesselId);
+const getFirstStageLabel = (batch: any) => {
+  const firstStage = batch.pipeline?.[0]
+  if (!firstStage) return 'Start'
+  return `Start ${firstStage}`
+}
+
+const getFirstStageDisplay = (batch: any) => {
+  const firstStage = batch.pipeline?.[0]
+  if (!firstStage) return STAGE_DISPLAY['Upcoming']
+  return STAGE_DISPLAY[firstStage] || STAGE_DISPLAY['Upcoming']
+}
+
+const onStartFirstStage = async (batchId: string, vesselId: string) => {
+  await batchStore.startFirstStage(batchId, vesselId);
 };
 </script>
 
@@ -34,12 +53,22 @@ const onStartBrewing = async (batchId: string, vesselId: string) => {
       <div v-for="batch in batchStore.upcomingBatches" :key="batch._id">
         <div class="flex flex-col items-center gap-2">
           <DashboardBatchCard :batchId="batch._id" />
-          <UDropdown :items="items">
-            <UButton size="sm" class="bg-blue-500/15 text-blue-400 border border-blue-500/25 hover:bg-blue-500/25 text-xs">
-              Start Brewing
+          <UDropdown
+            :items="[getVesselOptions(batch).map((v: any) => ({ label: v.name, _id: v._id }))]"
+          >
+            <UButton
+              size="sm"
+              :class="[
+                'text-xs border',
+                `bg-${getFirstStageDisplay(batch).color === 'copper' ? 'copper' : getFirstStageDisplay(batch).color + '-500'}/15`,
+                stageTextColor(getFirstStageDisplay(batch).color),
+                `border-${getFirstStageDisplay(batch).color === 'copper' ? 'copper' : getFirstStageDisplay(batch).color + '-500'}/25`,
+              ]"
+            >
+              {{ getFirstStageLabel(batch) }}
             </UButton>
             <template #item="{ item }">
-              <div @click="onStartBrewing(batch._id, item._id)">
+              <div @click="onStartFirstStage(batch._id, item._id)">
                 {{ item.label }}
               </div>
             </template>

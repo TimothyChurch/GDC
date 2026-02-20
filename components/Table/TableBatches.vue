@@ -18,16 +18,20 @@ const pagination = ref({ pageIndex: 0, pageSize: 10 });
 
 const tableData = computed(() => props.data ?? batchStore.batches);
 
-function statusColor(status: string) {
+import { STAGE_DISPLAY, stageBgColor, stageTextColor } from '~/composables/batchPipeline'
+
+function stageColor(stage: string) {
+  const display = STAGE_DISPLAY[stage]
+  if (!display) return 'bg-brown/15 text-parchment/50 border-brown/25'
+  return stageBgColor(display.color) + ' ' + stageTextColor(display.color)
+}
+
+function statusBadgeColor(status: string) {
   switch (status) {
-    case 'Upcoming': return 'bg-blue-500/15 text-blue-400 border-blue-500/25';
-    case 'Brewing': return 'bg-orange-500/15 text-orange-400 border-orange-500/25';
-    case 'Fermenting': return 'bg-yellow-500/15 text-yellow-400 border-yellow-500/25';
-    case 'Distilling': return 'bg-copper/15 text-copper border-copper/25';
-    case 'Storage': return 'bg-purple-500/15 text-purple-400 border-purple-500/25';
-    case 'Barreled': return 'bg-amber/15 text-amber border-amber/25';
-    case 'Bottled': return 'bg-green-500/15 text-green-400 border-green-500/25';
-    default: return 'bg-brown/15 text-parchment/50 border-brown/25';
+    case 'active': return 'bg-blue-500/15 text-blue-400 border-blue-500/25'
+    case 'completed': return 'bg-green-500/15 text-green-400 border-green-500/25'
+    case 'cancelled': return 'bg-red-500/15 text-red-400 border-red-500/25'
+    default: return 'bg-brown/15 text-parchment/50 border-brown/25'
   }
 }
 
@@ -77,13 +81,13 @@ const columns: TableColumn<Batch>[] = [
     cell: ({ row }) => `${row.original.batchSize || 0} ${row.original.batchSizeUnit || ''}`.trim(),
   },
   {
-    accessorKey: "status",
+    accessorKey: "currentStage",
     header: ({ column }) => {
       const isSorted = column.getIsSorted();
       return h(UButton, {
         color: "neutral",
         variant: "ghost",
-        label: "Status",
+        label: "Stage",
         icon: isSorted
           ? isSorted === "asc"
             ? "i-lucide-arrow-up-narrow-wide"
@@ -94,16 +98,28 @@ const columns: TableColumn<Batch>[] = [
       });
     },
     cell: ({ row }) =>
-      h(
-        "span",
-        {
-          class: [
-            "px-2 py-0.5 rounded-full text-[10px] font-semibold border",
-            statusColor(row.original.status || ""),
-          ],
-        },
-        row.original.status || "Unknown"
-      ),
+      h("div", { class: "flex items-center gap-1.5" }, [
+        h(
+          "span",
+          {
+            class: [
+              "px-2 py-0.5 rounded-full text-[10px] font-semibold border",
+              stageColor(row.original.currentStage || ""),
+            ],
+          },
+          row.original.currentStage || "Unknown"
+        ),
+        row.original.status !== 'active' ? h(
+          "span",
+          {
+            class: [
+              "px-1.5 py-0.5 rounded-full text-[10px] font-semibold border",
+              statusBadgeColor(row.original.status || ""),
+            ],
+          },
+          row.original.status
+        ) : null,
+      ]),
   },
   {
     id: "actions",
@@ -212,9 +228,9 @@ const addItem = () => {
           </div>
           <span
             class="px-2 py-0.5 rounded-full text-[10px] font-semibold border"
-            :class="statusColor(batch.status || '')"
+            :class="stageColor(batch.currentStage || '')"
           >
-            {{ batch.status || 'Unknown' }}
+            {{ batch.currentStage || 'Unknown' }}
           </span>
         </div>
         <div class="grid grid-cols-2 gap-2 text-xs">
@@ -222,9 +238,9 @@ const addItem = () => {
             <span class="text-parchment/60">Batch Cost</span>
             <div class="text-copper font-semibold">{{ Dollar.format(batch.batchCost || 0) }}</div>
           </div>
-          <div v-if="batch.brewing?.brewDate">
-            <span class="text-parchment/60">Brew Date</span>
-            <div class="text-parchment/70">{{ new Date(batch.brewing.brewDate).toLocaleDateString() }}</div>
+          <div v-if="batch.createdAt">
+            <span class="text-parchment/60">Created</span>
+            <div class="text-parchment/70">{{ new Date(batch.createdAt).toLocaleDateString() }}</div>
           </div>
         </div>
       </div>

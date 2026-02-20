@@ -2,6 +2,7 @@
 const itemStore = useItemStore();
 const bottleStore = useBottleStore();
 const inventoryStore = useInventoryStore();
+const vesselStore = useVesselStore();
 
 const itemOptions = computed(() => {
 	const bottles = bottleStore.bottles.map((bottle) => ({
@@ -14,6 +15,10 @@ const itemOptions = computed(() => {
 	}));
 	return [...bottles, ...items];
 });
+
+const vesselOptions = computed(() =>
+	vesselStore.vessels.map((v) => ({ label: v.name, value: v._id })),
+);
 
 const onSubmit = async () => {
 	await inventoryStore.updateInventory();
@@ -34,14 +39,18 @@ const onSubmit = async () => {
 		</UFormField>
 		<UFormField label="Quantity">
 			<UInput
-				v-model="inventoryStore.inventory.quantity"
+				v-model.number="inventoryStore.inventory.quantity"
 				type="number"
 				placeholder="Quantity" />
 		</UFormField>
 		<UFormField label="Location">
-			<UInput
+			<USelectMenu
 				v-model="inventoryStore.inventory.location"
-				placeholder="Location (optional)" />
+				:options="vesselOptions"
+				value-attribute="value"
+				option-attribute="label"
+				placeholder="Select a vessel (optional)"
+				searchable />
 		</UFormField>
 		<UButton
 			@click="onSubmit"

@@ -68,20 +68,30 @@ const columns: TableColumn<Bottle>[] = [
   },
   {
     accessorKey: "inStock",
-    header: "In Stock",
-    cell: ({ row }) =>
-      h(
-        "span",
-        {
+    header: "Status",
+    cell: ({ row }) => {
+      const badges = [];
+      if (row.original.archived) {
+        badges.push(
+          h("span", {
+            class: "px-2 py-0.5 rounded-full text-[10px] font-semibold border bg-yellow-500/15 text-yellow-400 border-yellow-500/25",
+            innerHTML: "Archived",
+          })
+        );
+      }
+      badges.push(
+        h("span", {
           class: [
             "px-2 py-0.5 rounded-full text-[10px] font-semibold border",
             row.original.inStock
               ? "bg-green-500/15 text-green-400 border-green-500/25"
               : "bg-red-500/15 text-red-400 border-red-500/25",
           ],
-        },
-        row.original.inStock ? "Yes" : "No"
-      ),
+          innerHTML: row.original.inStock ? "Yes" : "No",
+        })
+      );
+      return h("div", { class: "flex items-center gap-1.5" }, badges);
+    },
   },
   {
     id: "actions",
@@ -188,12 +198,20 @@ const newBottle = () => {
             <div class="text-sm font-medium text-parchment">{{ bottle.name }}</div>
             <div class="text-xs text-parchment/60">{{ bottle.class }}{{ bottle.type ? ` - ${bottle.type}` : '' }}</div>
           </div>
-          <span
-            class="px-2 py-0.5 rounded-full text-[10px] font-semibold border"
-            :class="bottle.inStock ? 'bg-green-500/15 text-green-400 border-green-500/25' : 'bg-red-500/15 text-red-400 border-red-500/25'"
-          >
-            {{ bottle.inStock ? 'In Stock' : 'Out of Stock' }}
-          </span>
+          <div class="flex items-center gap-1.5">
+            <span
+              v-if="bottle.archived"
+              class="px-2 py-0.5 rounded-full text-[10px] font-semibold border bg-yellow-500/15 text-yellow-400 border-yellow-500/25"
+            >
+              Archived
+            </span>
+            <span
+              class="px-2 py-0.5 rounded-full text-[10px] font-semibold border"
+              :class="bottle.inStock ? 'bg-green-500/15 text-green-400 border-green-500/25' : 'bg-red-500/15 text-red-400 border-red-500/25'"
+            >
+              {{ bottle.inStock ? 'In Stock' : 'Out of Stock' }}
+            </span>
+          </div>
         </div>
         <div class="grid grid-cols-2 gap-2 text-xs">
           <div>

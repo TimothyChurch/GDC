@@ -1,4 +1,4 @@
-import type { Batch } from './interfaces/Batch';
+import type { Batch, BatchStages, BatchLogEntry, BatchStageBase, MashingStage, FermentingStage, DistillingStage, MacerationStage, FilteringStage, BarrelAgingStage, StorageStage, BlendingStage, ProofingStage, BottledStage } from './interfaces/Batch';
 import type { Bottle } from './interfaces/Bottle';
 import type { Cocktail } from './interfaces/Cocktail';
 import type { Contact } from './interfaces/Contact';
@@ -15,6 +15,19 @@ import type { Vessel } from './interfaces/Vessel';
 
 export type {
 	Batch,
+	BatchStages,
+	BatchLogEntry,
+	BatchStageBase,
+	MashingStage,
+	FermentingStage,
+	DistillingStage,
+	MacerationStage,
+	FilteringStage,
+	BarrelAgingStage,
+	StorageStage,
+	BlendingStage,
+	ProofingStage,
+	BottledStage,
 	Bottle,
 	Cocktail,
 	Contact,

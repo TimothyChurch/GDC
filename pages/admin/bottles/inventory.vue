@@ -16,9 +16,9 @@ const bottles = ref<
 >([])
 
 watch(
-  () => bottleStore.bottles,
+  () => bottleStore.activeBottles,
   () => {
-    bottles.value = bottleStore.bottles.map((bottle) => ({
+    bottles.value = bottleStore.activeBottles.map((bottle) => ({
       _id: bottle._id,
       bottle: bottle.name,
       bar: 0,
@@ -55,6 +55,8 @@ const getDelta = (bottle: { _id: string; bar: number; office: number; boxed: num
   return getTotal(bottle) - lastCount.quantity
 }
 
+const printSheet = () => window.print()
+
 const submitInventory = async () => {
   saving.value = true
   const date = new Date()
@@ -80,13 +82,14 @@ const submitInventory = async () => {
 
 <template>
   <div>
-    <AdminPageHeader title="Bottle Inventory" subtitle="Count and track bottle stock levels" icon="i-lucide-package-check">
+    <AdminPageHeader title="Bottle Inventory" subtitle="Count and track bottle stock levels" icon="i-lucide-package-check" class="print:hidden">
       <template #actions>
-        <UButton @click="submitInventory" :loading="saving" icon="i-lucide-check">Submit Inventory</UButton>
+        <UButton @click="printSheet" icon="i-lucide-printer" variant="outline" class="print:hidden">Print Sheet</UButton>
+        <UButton @click="submitInventory" :loading="saving" icon="i-lucide-check" class="print:hidden">Submit Inventory</UButton>
       </template>
     </AdminPageHeader>
 
-    <div class="mb-4">
+    <div class="mb-4 print:hidden">
       <UInput
         v-model="search"
         placeholder="Search bottles..."
@@ -96,7 +99,7 @@ const submitInventory = async () => {
     </div>
 
     <!-- Desktop Table -->
-    <div class="hidden sm:block">
+    <div class="hidden sm:block print:hidden">
       <div class="bg-charcoal rounded-xl border border-brown/30 overflow-hidden">
         <table class="w-full">
           <thead>
@@ -142,7 +145,7 @@ const submitInventory = async () => {
     </div>
 
     <!-- Mobile Stacked Cards -->
-    <div class="sm:hidden space-y-3">
+    <div class="sm:hidden space-y-3 print:hidden">
       <div
         v-for="bottle in filteredBottles"
         :key="bottle._id"
@@ -171,5 +174,49 @@ const submitInventory = async () => {
         </div>
       </div>
     </div>
+    <!-- Print-Only Inventory Count Sheet -->
+    <div id="inventory-sheet" class="hidden print:block">
+      <div class="text-center mb-4">
+        <h1 class="text-xl font-bold">Galveston Distilling Co</h1>
+        <h2 class="text-lg">Inventory Count Sheet</h2>
+        <p class="text-sm mt-1">Date: {{ new Date().toLocaleDateString() }}</p>
+      </div>
+      <div class="mb-6 text-sm">
+        Counted by: ________________________________________
+      </div>
+      <table class="w-full border-collapse">
+        <thead>
+          <tr>
+            <th class="border border-gray-400 px-3 py-2 text-left text-sm font-semibold">Bottle</th>
+            <th class="border border-gray-400 px-3 py-2 text-center text-sm font-semibold w-20">Bar</th>
+            <th class="border border-gray-400 px-3 py-2 text-center text-sm font-semibold w-20">Office</th>
+            <th class="border border-gray-400 px-3 py-2 text-center text-sm font-semibold w-20">Boxed</th>
+            <th class="border border-gray-400 px-3 py-2 text-center text-sm font-semibold w-20">Total</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr v-for="bottle in bottles" :key="'print-' + bottle._id">
+            <td class="border border-gray-400 px-3 py-3 text-sm">{{ bottle.bottle }}</td>
+            <td class="border border-gray-400 px-3 py-3">&nbsp;</td>
+            <td class="border border-gray-400 px-3 py-3">&nbsp;</td>
+            <td class="border border-gray-400 px-3 py-3">&nbsp;</td>
+            <td class="border border-gray-400 px-3 py-3">&nbsp;</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
   </div>
 </template>
+
+<style>
+@media print {
+  #inventory-sheet {
+    color: black;
+    background: white;
+    page-break-inside: auto;
+  }
+  #inventory-sheet tr {
+    page-break-inside: avoid;
+  }
+}
+</style>

@@ -12,6 +12,7 @@ export const useInventoryStore = defineStore("inventories", () => {
     _id: undefined as unknown as string,
     date: new Date(),
     item: "",
+    location: "",
     quantity: 0,
   });
   // CRUD actions
@@ -42,15 +43,19 @@ export const useInventoryStore = defineStore("inventories", () => {
     try {
       const isNew = !inventory.value._id;
       if (isNew) {
+        const { _id, ...createData } = inventory.value;
+        if (!createData.location) delete createData.location;
         const response = await $fetch("/api/inventory/create", {
           method: "POST",
-          body: JSON.stringify(inventory.value),
+          body: createData,
         });
         inventories.value.push(response as Inventory);
       } else {
+        const updateData = { ...inventory.value };
+        if (!updateData.location) updateData.location = undefined;
         const response = await $fetch(`/api/inventory/${inventory.value._id}`, {
           method: "PUT",
-          body: JSON.stringify(inventory.value),
+          body: updateData,
         });
         const index = inventories.value.findIndex(
           (i) => i._id === inventory.value._id,
@@ -68,10 +73,11 @@ export const useInventoryStore = defineStore("inventories", () => {
     } catch (error: any) {
       toast.add({
         title: "Failed to save inventory",
-        description: error?.data?.message,
+        description: error?.data?.statusMessage || error?.data?.message,
         color: "error",
         icon: "i-lucide-alert-circle",
       });
+      throw error;
     } finally {
       saving.value = false;
     }
@@ -82,6 +88,7 @@ export const useInventoryStore = defineStore("inventories", () => {
       _id: undefined as unknown as string,
       date: new Date(),
       item: "",
+      location: "",
       quantity: 0,
     };
   };
@@ -101,7 +108,7 @@ export const useInventoryStore = defineStore("inventories", () => {
     } catch (error: any) {
       toast.add({
         title: "Failed to delete inventory record",
-        description: error?.data?.message,
+        description: error?.data?.statusMessage || error?.data?.message,
         color: "error",
         icon: "i-lucide-alert-circle",
       });

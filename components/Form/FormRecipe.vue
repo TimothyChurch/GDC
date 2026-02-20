@@ -125,6 +125,14 @@ const saveRecipe = () => {
 				</UFormField>
 				<UButton @click="additem" icon="i-heroicons-solid-plus" />
 			</div>
+			<!-- Pipeline Builder -->
+			<div class="col-span-full">
+				<RecipePipelineBuilder
+					v-model="recipeStore.recipe.pipeline"
+					v-model:template="recipeStore.recipe.pipelineTemplate"
+				/>
+			</div>
+
 			<UFormField label="Directions" name="directions">
 				<UTextarea v-model="recipeStore.recipe.directions" />
 			</UFormField>

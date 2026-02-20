@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { Line } from 'vue-chartjs'
-import type { Batch } from '~/types'
+import type { Batch, FermentingStage } from '~/types'
 
 const props = defineProps<{
   batch: Batch
@@ -10,23 +10,29 @@ const props = defineProps<{
 const batchStore = useBatchStore()
 const vesselStore = useVesselStore()
 
+const stage = computed(() => props.batch.stages?.fermenting as FermentingStage | undefined)
+
 const vesselName = computed(() => {
-  if (!props.batch.fermenting?.vessel) return 'Not assigned'
-  return vesselStore.getVesselById(props.batch.fermenting.vessel)?.name || 'Unknown'
+  if (!stage.value?.vessel) return 'Not assigned'
+  return vesselStore.getVesselById(stage.value.vessel)?.name || 'Unknown'
 })
 
 const sortedReadings = computed(() => {
-  const readings = props.batch.fermenting?.readings || []
+  const readings = stage.value?.readings || []
   return [...readings].sort(
     (a, b) => new Date(a.date).getTime() - new Date(b.date).getTime()
   )
 })
 
 const estimatedABV = computed(() => {
+  const og = stage.value?.originalGravity
+  const fg = stage.value?.finalGravity
+  if (og && fg) return ((og - fg) * 131.25).toFixed(2)
   if (!sortedReadings.value || sortedReadings.value.length < 2) return null
-  const og = sortedReadings.value[0].gravity
-  const fg = sortedReadings.value[sortedReadings.value.length - 1].gravity
-  return ((og - fg) * 131.25).toFixed(2)
+  const first = sortedReadings.value[0].gravity
+  const last = sortedReadings.value[sortedReadings.value.length - 1].gravity
+  if (!first || !last) return null
+  return ((first - last) * 131.25).toFixed(2)
 })
 
 const chartData = computed(() => ({
@@ -46,18 +52,10 @@ const chartData = computed(() => ({
 const chartOptions = {
   responsive: true,
   maintainAspectRatio: false,
-  plugins: {
-    legend: { display: false },
-  },
+  plugins: { legend: { display: false } },
   scales: {
-    y: {
-      ticks: { color: 'rgba(255,255,255,0.4)' },
-      grid: { color: 'rgba(255,255,255,0.05)' },
-    },
-    x: {
-      ticks: { color: 'rgba(255,255,255,0.4)' },
-      grid: { color: 'rgba(255,255,255,0.05)' },
-    },
+    y: { ticks: { color: 'rgba(255,255,255,0.4)' }, grid: { color: 'rgba(255,255,255,0.05)' } },
+    x: { ticks: { color: 'rgba(255,255,255,0.4)' }, grid: { color: 'rgba(255,255,255,0.05)' } },
   },
 }
 
@@ -65,29 +63,38 @@ const chartOptions = {
 const showAddReading = ref(false)
 const newReading = ref({
   date: new Date(),
-  temperature: undefined as unknown as number,
+  temperature: undefined as number | undefined,
   temperatureUnit: 'F',
-  gravity: undefined as unknown as number,
+  gravity: undefined as number | undefined,
+  pH: undefined as number | undefined,
+  notes: '',
 })
 
 const addReading = async () => {
-  const target = batchStore.getBatchById(props.batch._id)
-  if (!target) return
-  target.fermenting.readings.push({ ...newReading.value })
-  batchStore.batch = target
-  await batchStore.updateBatch()
+  const r = newReading.value
+  const readings = [...(stage.value?.readings || []), { ...r }]
+  const details = [
+    r.gravity != null ? `SG ${r.gravity}` : null,
+    r.temperature != null ? `${r.temperature}°${r.temperatureUnit}` : null,
+    r.pH != null ? `pH ${r.pH}` : null,
+  ].filter(Boolean).join(', ')
+  await batchStore.updateStageData(props.batch._id, 'Fermenting', { readings }, `Fermentation reading added${details ? ': ' + details : ''}`)
   showAddReading.value = false
-  newReading.value = {
-    date: new Date(),
-    temperature: undefined as unknown as number,
-    temperatureUnit: 'F',
-    gravity: undefined as unknown as number,
-  }
+  newReading.value = { date: new Date(), temperature: undefined, temperatureUnit: 'F', gravity: undefined, pH: undefined, notes: '' }
 }
 
 // Edit fields
-const localVessel = ref(props.batch.fermenting?.vessel || '')
-const localNotes = ref(props.batch.fermenting?.notes || '')
+const local = ref({
+  vessel: stage.value?.vessel || '',
+  yeastStrain: stage.value?.yeastStrain || '',
+  pitchTemp: stage.value?.pitchTemp,
+  pitchTempUnit: stage.value?.pitchTempUnit || 'F',
+  originalGravity: stage.value?.originalGravity,
+  finalGravity: stage.value?.finalGravity,
+  washVolume: stage.value?.washVolume,
+  washVolumeUnit: stage.value?.washVolumeUnit || 'gallon',
+  notes: stage.value?.notes || '',
+})
 
 const fermenterOptions = computed(() =>
   vesselStore.fermenters.map((v) => ({ label: v.name, value: v._id }))
@@ -97,12 +104,17 @@ const savingEdits = ref(false)
 const saveEdits = async () => {
   savingEdits.value = true
   try {
-    const target = batchStore.getBatchById(props.batch._id)
-    if (!target) return
-    target.fermenting.vessel = localVessel.value || undefined
-    target.fermenting.notes = localNotes.value
-    batchStore.batch = target
-    await batchStore.updateBatch()
+    await batchStore.updateStageData(props.batch._id, 'Fermenting', {
+      vessel: local.value.vessel || undefined,
+      yeastStrain: local.value.yeastStrain,
+      pitchTemp: local.value.pitchTemp,
+      pitchTempUnit: local.value.pitchTempUnit,
+      originalGravity: local.value.originalGravity,
+      finalGravity: local.value.finalGravity,
+      washVolume: local.value.washVolume,
+      washVolumeUnit: local.value.washVolumeUnit,
+      notes: local.value.notes,
+    })
   } finally {
     savingEdits.value = false
   }
@@ -132,52 +144,96 @@ const saveEdits = async () => {
       </div>
     </div>
 
-    <!-- Vessel & Notes (editing) -->
-    <div v-if="editing" class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
+    <!-- Vessel, Yeast, Pitch Temp -->
+    <div v-if="editing" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
       <div>
         <div class="text-xs text-parchment/60 uppercase tracking-wider mb-1">Vessel</div>
-        <USelect v-model="localVessel" :items="fermenterOptions" value-key="value" label-key="label" placeholder="Select fermenter" />
+        <USelect v-model="local.vessel" :items="fermenterOptions" value-key="value" label-key="label" placeholder="Select fermenter" />
+      </div>
+      <div>
+        <div class="text-xs text-parchment/60 uppercase tracking-wider mb-1">Yeast Strain</div>
+        <UInput v-model="local.yeastStrain" placeholder="e.g. Safale US-05" />
+      </div>
+      <div>
+        <div class="text-xs text-parchment/60 uppercase tracking-wider mb-1">Pitch Temp</div>
+        <div class="flex gap-2">
+          <UInput v-model.number="local.pitchTemp" type="number" placeholder="72" class="flex-1" />
+          <USelect v-model="local.pitchTempUnit" :items="['F', 'C']" class="w-16" />
+        </div>
       </div>
       <div>
         <div class="text-xs text-parchment/60 uppercase tracking-wider mb-1">Notes</div>
-        <UTextarea v-model="localNotes" placeholder="Fermentation notes..." :rows="2" />
-      </div>
-      <div class="sm:col-span-2 flex justify-end">
-        <UButton size="sm" @click="saveEdits" :loading="savingEdits">Save</UButton>
+        <UTextarea v-model="local.notes" placeholder="Fermentation notes..." :rows="2" />
       </div>
     </div>
-    <div v-else class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
+    <div v-else class="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-4">
       <div>
         <div class="text-xs text-parchment/60 uppercase tracking-wider mb-1">Vessel</div>
         <div class="text-sm text-parchment">{{ vesselName }}</div>
       </div>
-      <div v-if="batch.fermenting?.notes">
-        <div class="text-xs text-parchment/60 uppercase tracking-wider mb-1">Notes</div>
-        <div class="text-sm text-parchment/60">{{ batch.fermenting.notes }}</div>
+      <div v-if="stage?.yeastStrain">
+        <div class="text-xs text-parchment/60 uppercase tracking-wider mb-1">Yeast</div>
+        <div class="text-sm text-parchment">{{ stage.yeastStrain }}</div>
       </div>
+      <div v-if="stage?.pitchTemp">
+        <div class="text-xs text-parchment/60 uppercase tracking-wider mb-1">Pitch Temp</div>
+        <div class="text-sm text-parchment">{{ stage.pitchTemp }}&deg;{{ stage.pitchTempUnit }}</div>
+      </div>
+      <div v-if="stage?.notes">
+        <div class="text-xs text-parchment/60 uppercase tracking-wider mb-1">Notes</div>
+        <div class="text-sm text-parchment/60">{{ stage.notes }}</div>
+      </div>
+    </div>
+
+    <!-- OG / FG / Wash Volume -->
+    <div v-if="editing" class="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-4">
+      <UFormField label="Original Gravity">
+        <UInput v-model.number="local.originalGravity" type="number" step="0.001" placeholder="1.060" />
+      </UFormField>
+      <UFormField label="Final Gravity">
+        <UInput v-model.number="local.finalGravity" type="number" step="0.001" placeholder="1.010" />
+      </UFormField>
+      <UFormField label="Wash Volume">
+        <UInput v-model.number="local.washVolume" type="number" placeholder="0" />
+      </UFormField>
+      <UFormField label="Vol. Unit">
+        <USelect v-model="local.washVolumeUnit" :items="['gallon', 'L']" />
+      </UFormField>
+    </div>
+    <div v-else class="flex flex-wrap gap-6 mb-4 text-sm text-parchment/60">
+      <span v-if="stage?.originalGravity">OG: {{ stage.originalGravity }}</span>
+      <span v-if="stage?.finalGravity">FG: {{ stage.finalGravity }}</span>
+      <span v-if="stage?.washVolume">Wash: {{ stage.washVolume }} {{ stage.washVolumeUnit }}</span>
+    </div>
+
+    <div v-if="editing" class="mb-4 flex justify-end">
+      <UButton size="sm" @click="saveEdits" :loading="savingEdits">Save</UButton>
     </div>
 
     <!-- Add reading form -->
     <div v-if="showAddReading" class="mb-4 p-3 rounded-lg border border-yellow-500/20 bg-yellow-500/5">
-      <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+      <div class="grid grid-cols-2 sm:grid-cols-5 gap-3">
         <div>
           <div class="text-xs text-parchment/60 mb-1">Date</div>
           <SiteDatePicker v-model="newReading.date" />
         </div>
         <div>
           <div class="text-xs text-parchment/60 mb-1">Gravity</div>
-          <UInput v-model="newReading.gravity" type="number" step="0.001" placeholder="1.050" />
+          <UInput v-model.number="newReading.gravity" type="number" step="0.001" placeholder="1.050" />
         </div>
         <div>
           <div class="text-xs text-parchment/60 mb-1">Temperature</div>
-          <UInput v-model="newReading.temperature" type="number" placeholder="72" />
+          <div class="flex gap-2">
+            <UInput v-model.number="newReading.temperature" type="number" placeholder="72" class="flex-1" />
+            <USelect v-model="newReading.temperatureUnit" :items="['F', 'C']" class="w-16" />
+          </div>
         </div>
         <div>
-          <div class="text-xs text-parchment/60 mb-1">Unit</div>
-          <div class="flex gap-2 items-end">
-            <USelect v-model="newReading.temperatureUnit" :items="['F', 'C']" class="flex-1" />
-            <UButton size="sm" @click="addReading">Add</UButton>
-          </div>
+          <div class="text-xs text-parchment/60 mb-1">pH</div>
+          <UInput v-model.number="newReading.pH" type="number" step="0.1" placeholder="4.5" />
+        </div>
+        <div class="flex items-end">
+          <UButton size="sm" @click="addReading">Add</UButton>
         </div>
       </div>
     </div>
@@ -201,6 +257,7 @@ const saveEdits = async () => {
           </span>
           <span class="text-parchment">{{ reading.gravity }}</span>
           <span class="text-parchment/60">{{ reading.temperature }}&deg;{{ reading.temperatureUnit }}</span>
+          <span v-if="reading.pH" class="text-parchment/60">pH {{ reading.pH }}</span>
         </div>
       </div>
     </div>

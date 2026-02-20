@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { calculateProofGallons, toGallons } from '~/utils/proofGallons'
+
 const props = defineProps<{
   month: string // 'YYYY-MM' format
 }>()
@@ -21,23 +23,11 @@ const monthLabel = computed(() =>
   monthStart.value.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })
 )
 
-function proofGallons(volumeGal: number, abv: number): number {
-  return volumeGal * abv * 2 / 100
-}
-
-function toGallons(volume: number, unit: string): number {
-  const lower = (unit || '').toLowerCase()
-  if (lower.includes('gal')) return volume
-  if (lower.includes('liter') || lower === 'l') return volume * 0.264172
-  if (lower.includes('ml')) return volume * 0.000264172
-  return volume
-}
-
 // All batches that entered barrels (Storage Operations)
 // "Received into storage" = batches that entered barrels during this month
 const receivedIntoStorage = computed(() => {
   return batchStore.batches.filter(b => {
-    const entryDate = b.barreled?.entry?.date ? new Date(b.barreled.entry.date) : null
+    const entryDate = (b.stages as any)?.barrelAging?.entry?.date ? new Date((b.stages as any).barrelAging.entry.date) : null
     if (!entryDate) return false
     return entryDate >= monthStart.value && entryDate <= monthEnd.value
   })
@@ -46,7 +36,7 @@ const receivedIntoStorage = computed(() => {
 // "Removed from storage" = batches that exited barrels (for bottling) during this month
 const removedFromStorage = computed(() => {
   return batchStore.batches.filter(b => {
-    const exitDate = b.barreled?.exit?.date ? new Date(b.barreled.exit.date) : null
+    const exitDate = (b.stages as any)?.barrelAging?.exit?.date ? new Date((b.stages as any).barrelAging.exit.date) : null
     if (!exitDate) return false
     return exitDate >= monthStart.value && exitDate <= monthEnd.value
   })
@@ -56,11 +46,11 @@ const removedFromStorage = computed(() => {
 const receivedTotals = computed(() => {
   let wg = 0, pg = 0
   receivedIntoStorage.value.forEach(b => {
-    const entry = b.barreled?.entry
+    const entry = (b.stages as any)?.barrelAging?.entry
     if (!entry) return
     const vol = toGallons(entry.volume || 0, entry.volumeUnit || 'gal')
     wg += vol
-    pg += proofGallons(vol, entry.abv || 0)
+    pg += calculateProofGallons(vol, 'gallon', entry.abv || 0)
   })
   return { wineGallons: wg, proofGallons: pg, count: receivedIntoStorage.value.length }
 })
@@ -69,11 +59,11 @@ const receivedTotals = computed(() => {
 const removedTotals = computed(() => {
   let wg = 0, pg = 0
   removedFromStorage.value.forEach(b => {
-    const exit = b.barreled?.exit
+    const exit = (b.stages as any)?.barrelAging?.exit
     if (!exit) return
     const vol = toGallons(exit.volume || 0, exit.volumeUnit || 'gal')
     wg += vol
-    pg += proofGallons(vol, exit.abv || 0)
+    pg += calculateProofGallons(vol, 'gallon', exit.abv || 0)
   })
   return { wineGallons: wg, proofGallons: pg, count: removedFromStorage.value.length }
 })
@@ -86,7 +76,7 @@ const onHandCurrent = computed(() => {
     barrel.contents?.forEach(c => {
       const vol = toGallons(c.volume || 0, c.volumeUnit || 'gal')
       wg += vol
-      pg += proofGallons(vol, c.abv || 0)
+      pg += calculateProofGallons(vol, 'gallon', c.abv || 0)
     })
   })
   return { wineGallons: wg, proofGallons: pg, count: barrels.length }
@@ -97,10 +87,10 @@ const storageLosses = computed(() => {
   let lossWG = 0, lossPG = 0
 
   batchStore.batches.forEach(b => {
-    const entryDate = b.barreled?.entry?.date ? new Date(b.barreled.entry.date) : null
+    const entryDate = (b.stages as any)?.barrelAging?.entry?.date ? new Date((b.stages as any).barrelAging.entry.date) : null
     if (!entryDate || entryDate > monthEnd.value) return
 
-    const entry = b.barreled?.entry
+    const entry = (b.stages as any)?.barrelAging?.entry
     if (!entry) return
 
     // Find corresponding barrel
@@ -118,7 +108,7 @@ const storageLosses = computed(() => {
     if (loss > 0) {
       lossWG += loss
       // Estimate proof gallon loss using entry ABV
-      lossPG += proofGallons(loss, entry.abv || 0)
+      lossPG += calculateProofGallons(loss, 'gallon', entry.abv || 0)
     }
   })
 
@@ -133,11 +123,12 @@ const barrelInventory = computed(() => {
       const content = barrel.contents![0]
       const batch = batchStore.getBatchById(content.batch)
       const recipe = batch?.recipe ? recipeStore.getRecipeById(batch.recipe) : null
-      const entryDate = batch?.barreled?.entry?.date ? new Date(batch.barreled.entry.date) : null
+      const entryDate = (batch?.stages as any)?.barrelAging?.entry?.date ? new Date((batch?.stages as any).barrelAging.entry.date) : null
       const vol = toGallons(content.volume || 0, content.volumeUnit || 'gal')
       const abv = content.abv || 0
-      const entryVol = batch?.barreled?.entry
-        ? toGallons(batch.barreled.entry.volume || 0, batch.barreled.entry.volumeUnit || 'gal')
+      const barrelEntry = (batch?.stages as any)?.barrelAging?.entry
+      const entryVol = barrelEntry
+        ? toGallons(barrelEntry.volume || 0, barrelEntry.volumeUnit || 'gal')
         : vol
       const loss = entryVol - vol
 
@@ -148,7 +139,7 @@ const barrelInventory = computed(() => {
         entryDate: entryDate ? entryDate.toLocaleDateString() : '--',
         wineGallons: vol,
         abv,
-        proofGallons: proofGallons(vol, abv),
+        proofGallons: calculateProofGallons(vol, 'gallon', abv),
         loss: loss > 0 ? loss : 0,
       }
     })

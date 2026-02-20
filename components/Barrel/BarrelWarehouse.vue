@@ -12,7 +12,7 @@ const sortBy = ref<'name' | 'age-asc' | 'age-desc'>('name')
 const getBarrelAge = (vessel: any): number => {
   if (!vessel.contents?.length) return 0
   const batch = batchStore.getBatchById(vessel.contents[0].batch)
-  const fillDate = batch?.barreled?.entry?.date ? new Date(batch.barreled.entry.date) : null
+  const fillDate = (batch?.stages as any)?.barrelAging?.entry?.date ? new Date((batch?.stages as any).barrelAging.entry.date) : null
   if (!fillDate) return 0
   return differenceInDays(new Date(), fillDate)
 }

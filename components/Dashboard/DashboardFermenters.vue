@@ -1,30 +1,46 @@
 <script setup lang="ts">
+import { getNextStage, STAGE_VESSEL_TYPE } from '~/composables/batchPipeline'
+
 const batchStore = useBatchStore();
 const recipeStore = useRecipeStore();
 const vesselStore = useVesselStore();
 
-const items = computed(() => {
-  return [
-    vesselStore.stills.map((still) => {
-      return {
-        label: still.name,
-        value: still._id,
-      };
-    }),
-  ];
-});
+// Get next vessel options for a batch in a fermenter
+const getNextVesselOptions = (batchId: string) => {
+  const batch = batchStore.getBatchById(batchId)
+  if (!batch) return []
+  const next = getNextStage(batch.pipeline, batch.currentStage)
+  if (!next) return []
+  const vesselType = STAGE_VESSEL_TYPE[next]
+  if (!vesselType) return []
+  switch (vesselType) {
+    case 'Still': return vesselStore.stills
+    case 'Tank': return vesselStore.tanks
+    case 'Barrel': return vesselStore.barrels
+    default: return []
+  }
+}
 
-const startDistilling = async (fermenterId: string, stillId: string) => {
+const getNextStageLabel = (batchId: string) => {
+  const batch = batchStore.getBatchById(batchId)
+  if (!batch) return 'Advance'
+  const next = getNextStage(batch.pipeline, batch.currentStage)
+  return next ? `Start ${next}` : 'Advance'
+}
+
+const advanceFromFermenter = async (fermenterId: string, targetVesselId: string) => {
   const fermenter = vesselStore.getVesselById(fermenterId);
   const batchIds = fermenter?.contents?.map((c) => c.batch) || [];
 
-  await vesselStore.fullTransfer(fermenterId, stillId);
+  await vesselStore.fullTransfer(fermenterId, targetVesselId);
 
   for (const batchId of batchIds) {
-    await batchStore.advanceBatchStatus(batchId, 'Distilling', {
-      vessel: stillId,
-      date: new Date(),
-    });
+    const batch = batchStore.getBatchById(batchId)
+    if (!batch) continue
+    const next = getNextStage(batch.pipeline, batch.currentStage)
+    if (next) {
+      await batchStore.advanceToStage(batchId, next, { vessel: targetVesselId })
+    }
   }
 };
 </script>
@@ -58,9 +74,9 @@ const startDistilling = async (fermenterId: string, stillId: string) => {
             <div v-for="content in fermenter.contents" :key="content.batch" class="text-xs text-parchment/50">
               <span>{{ content.volume }} {{ content.volumeUnit }}</span>
             </div>
-            <UDropdown :items="items">
+            <UDropdown :items="[getNextVesselOptions(fermenter.contents[0]?.batch || '').map((v: any) => ({ label: v.name, value: v._id }))]">
               <UButton size="sm" class="bg-yellow-500/15 text-yellow-400 border border-yellow-500/25 hover:bg-yellow-500/25 text-xs">
-                Start Distilling
+                {{ getNextStageLabel(fermenter.contents[0]?.batch || '') }}
               </UButton>
               <template #item="{ item }">
                 <UButton
@@ -68,7 +84,7 @@ const startDistilling = async (fermenterId: string, stillId: string) => {
                   variant="ghost"
                   size="sm"
                   class="w-full text-xs"
-                  @click="startDistilling(fermenter._id, item.value)"
+                  @click="advanceFromFermenter(fermenter._id, item.value)"
                 >{{ item.label }}</UButton>
               </template>
             </UDropdown>

@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { STAGE_DISPLAY, stageTextColor, stageBgColor } from '~/composables/batchPipeline'
+
 const batchStore = useBatchStore();
 const recipeStore = useRecipeStore();
 
@@ -6,17 +8,23 @@ const props = defineProps<{ batchId: string }>();
 
 const batch = computed(() => batchStore.getBatchById(props.batchId));
 
-const statusColor = computed(() => {
+const stageDisplay = computed(() => {
+  if (!batch.value) return { icon: 'i-lucide-circle', color: 'neutral' }
+  return STAGE_DISPLAY[batch.value.currentStage] || { icon: 'i-lucide-circle', color: 'neutral' }
+});
+
+const statusBadge = computed(() => {
   switch (batch.value?.status) {
-    case 'Upcoming': return 'bg-blue-500/15 text-blue-400 border-blue-500/25';
-    case 'Brewing': return 'bg-orange-500/15 text-orange-400 border-orange-500/25';
-    case 'Fermenting': return 'bg-yellow-500/15 text-yellow-400 border-yellow-500/25';
-    case 'Distilling': return 'bg-copper/15 text-copper border-copper/25';
-    case 'Storage': return 'bg-purple-500/15 text-purple-400 border-purple-500/25';
-    case 'Barreled': return 'bg-amber/15 text-amber border-amber/25';
-    case 'Bottled': return 'bg-green-500/15 text-green-400 border-green-500/25';
-    default: return 'bg-brown/15 text-parchment/50 border-brown/25';
+    case 'active': return 'bg-blue-500/15 text-blue-400 border-blue-500/25'
+    case 'completed': return 'bg-green-500/15 text-green-400 border-green-500/25'
+    case 'cancelled': return 'bg-red-500/15 text-red-400 border-red-500/25'
+    default: return 'bg-brown/15 text-parchment/50 border-brown/25'
   }
+});
+
+const startDate = computed(() => {
+  if (!batch.value?.createdAt) return null
+  return new Date(batch.value.createdAt).toLocaleDateString()
 });
 </script>
 
@@ -31,9 +39,13 @@ const statusColor = computed(() => {
     </div>
     <div class="flex flex-col gap-1.5 text-xs">
       <div class="flex justify-between items-center">
-        <span class="text-parchment/60">Status</span>
-        <span :class="['px-2 py-0.5 rounded-full text-[10px] font-semibold border', statusColor]">
-          {{ batch.status }}
+        <span class="text-parchment/60">Stage</span>
+        <span
+          class="px-2 py-0.5 rounded-full text-[10px] font-semibold border flex items-center gap-1"
+          :class="stageBgColor(stageDisplay.color)"
+        >
+          <UIcon :name="stageDisplay.icon" :class="stageTextColor(stageDisplay.color)" class="text-xs" />
+          {{ batch.currentStage }}
         </span>
       </div>
       <div class="flex justify-between">
@@ -44,9 +56,9 @@ const statusColor = computed(() => {
         <span class="text-parchment/60">Cost</span>
         <span class="text-parchment/70">{{ Dollar.format(batch.batchCost) }}</span>
       </div>
-      <div v-if="batch.brewing?.date" class="flex justify-between">
-        <span class="text-parchment/60">Brew Date</span>
-        <span class="text-parchment/70">{{ new Date(batch.brewing.date).toLocaleDateString() }}</span>
+      <div v-if="startDate" class="flex justify-between">
+        <span class="text-parchment/60">Created</span>
+        <span class="text-parchment/70">{{ startDate }}</span>
       </div>
     </div>
   </NuxtLink>

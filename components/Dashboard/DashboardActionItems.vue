@@ -21,8 +21,9 @@ const actionItems = computed<ActionItem[]>(() => {
   // Batches in fermenting that might need gravity checks
   for (const batch of batchStore.fermentingBatches) {
     const recipeName = recipeStore.getRecipeById(batch.recipe)?.name || 'Unknown';
-    const lastReading = batch.fermenting?.readings?.length
-      ? batch.fermenting.readings[batch.fermenting.readings.length - 1]
+    const fermData = (batch.stages as any)?.fermenting;
+    const lastReading = fermData?.readings?.length
+      ? fermData.readings[fermData.readings.length - 1]
       : null;
 
     if (!lastReading) {

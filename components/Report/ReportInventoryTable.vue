@@ -32,7 +32,7 @@ const itemInventory = computed(() => {
 
 // Bottle inventory summary
 const bottleInventory = computed(() => {
-  return bottleStore.bottles.map(bottle => {
+  return bottleStore.activeBottles.map(bottle => {
     const records = inventoryStore.inventories
       .filter(inv => inv.item === bottle._id)
       .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())

@@ -22,7 +22,7 @@ const contentsName = computed(() => {
 const fillDate = computed(() => {
   if (!props.vessel.contents?.length) return null
   const batch = batchStore.getBatchById(props.vessel.contents[0].batch)
-  return batch?.barreled?.entry?.date ? new Date(batch.barreled.entry.date) : null
+  return (batch?.stages as any)?.barrelAging?.entry?.date ? new Date((batch?.stages as any).barrelAging.entry.date) : null
 })
 
 const ageDays = computed(() => {

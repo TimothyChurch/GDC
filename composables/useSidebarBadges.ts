@@ -7,7 +7,7 @@ export function useSidebarBadges() {
   const contactStore = useContactStore()
 
   const activeBatches = computed(() =>
-    batchStore.batches.filter(b => b.status !== 'Bottled' && b.status !== 'Upcoming').length
+    batchStore.batches.filter(b => b.status === 'active').length
   )
 
   const pendingPOs = computed(() =>

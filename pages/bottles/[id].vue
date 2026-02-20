@@ -4,9 +4,11 @@ const bottleStore = useBottleStore();
 const cocktailStore = useCocktailStore();
 const itemStore = useItemStore();
 
-const bottle = computed(() =>
-  bottleStore.getBottleById(route.params.id as string)
-);
+const bottle = computed(() => {
+  const b = bottleStore.getBottleById(route.params.id as string);
+  if (b?.archived) return undefined;
+  return b;
+});
 
 const relatedCocktails = computed(() => {
   if (!bottle.value) return [];

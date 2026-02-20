@@ -11,6 +11,7 @@ export interface Bottle {
 	description?: string;
 	recipe?: string;
 	inStock?: boolean;
+	archived?: boolean;
 	createdAt?: string;
 	updatedAt?: string;
 }

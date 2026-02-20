@@ -4,7 +4,7 @@ const bottleStore = useBottleStore();
 const featuredBottles = ref<typeof bottleStore.bottles>([]);
 
 onMounted(() => {
-  const inStock = bottleStore.bottles.filter((b) => b.inStock);
+  const inStock = bottleStore.activeBottles.filter((b) => b.inStock);
   featuredBottles.value = [...inStock].sort(() => Math.random() - 0.5).slice(0, 4);
 });
 </script>

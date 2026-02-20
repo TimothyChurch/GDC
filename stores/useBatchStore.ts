@@ -1,6 +1,21 @@
 import { defineStore } from 'pinia';
 import { ref } from 'vue';
-import type { Batch, Recipe } from '~/types';
+import type { Batch, BatchStages, Recipe } from '~/types';
+
+const emptyStages = (): BatchStages => ({});
+
+const defaultBatch = (): Batch => ({
+	_id: '',
+	recipe: '',
+	pipeline: ['Mashing', 'Fermenting', 'Distilling', 'Storage', 'Proofing', 'Bottled'],
+	currentStage: 'Upcoming',
+	status: 'active',
+	recipeCost: undefined as unknown as number,
+	batchSize: undefined as unknown as number,
+	batchSizeUnit: 'gallon',
+	batchCost: undefined,
+	stages: emptyStages(),
+});
 
 export const useBatchStore = defineStore('batches', () => {
 	const toast = useToast();
@@ -10,101 +25,40 @@ export const useBatchStore = defineStore('batches', () => {
 	const loaded = ref(false);
 	const loading = ref(false);
 	const saving = ref(false);
-	const batch = ref<Batch>({
-		_id: '',
-		recipe: '',
-		recipeCost: undefined as unknown as number,
-		status: 'Upcoming',
-		batchSize: undefined as unknown as number,
-		batchSizeUnit: 'gallon',
-		batchCost: undefined,
-		brewing: {
-			vessel: undefined,
-			date: undefined,
-			notes: '',
-		},
-		fermenting: {
-			vessel: undefined,
-			readings: [],
-			notes: '',
-		},
-		distilling: {
-			vessel: undefined,
-			date: undefined,
-			additions: {
-				tails: {
-					volume: undefined,
-					volumeUnit: '',
-					abv: undefined,
-				},
-			},
-			collected: {
-				heads: {
-					vessel: undefined,
-					volume: undefined,
-					volumeUnit: '',
-					abv: undefined,
-				},
-				hearts: {
-					vessel: undefined,
-					volume: undefined,
-					volumeUnit: '',
-					abv: undefined,
-				},
-				tails: {
-					vessel: undefined,
-					volume: undefined,
-					volumeUnit: '',
-					abv: undefined,
-				},
-				total: {
-					volume: undefined,
-					volumeUnit: '',
-					abv: undefined,
-				},
-			},
-			notes: '',
-		},
-		barreled: {
-			vessel: undefined,
-			entry: {
-				date: undefined,
-				volume: undefined,
-				volumeUnit: '',
-				abv: undefined,
-			},
-			exit: {
-				date: undefined,
-				volume: undefined,
-				volumeUnit: '',
-				abv: undefined,
-			},
-		},
-		bottled: {
-			productionRecord: undefined,
-		},
-	});
+	const batch = ref<Batch>(defaultBatch());
 
-	const upcomingBatches = computed(() =>
-		batches.value.filter((batch) => batch.status == 'Upcoming')
+	// --- Computed filters by currentStage ---
+	const activeBatches = computed(() =>
+		batches.value.filter((b) => b.status === 'active')
 	);
-	const brewingBatches = computed(() =>
-		batches.value.filter((batch) => batch.status == 'Brewing')
+	const completedBatches = computed(() =>
+		batches.value.filter((b) => b.status === 'completed')
+	);
+
+	// Stage-based filters (for dashboard pipeline widget compatibility)
+	const upcomingBatches = computed(() =>
+		batches.value.filter((b) => b.currentStage === 'Upcoming' && b.status === 'active')
+	);
+	const mashingBatches = computed(() =>
+		batches.value.filter((b) => b.currentStage === 'Mashing' && b.status === 'active')
 	);
 	const fermentingBatches = computed(() =>
-		batches.value.filter((batch) => batch.status == 'Fermenting')
+		batches.value.filter((b) => b.currentStage === 'Fermenting' && b.status === 'active')
 	);
 	const distillingBatches = computed(() =>
-		batches.value.filter((batch) => batch.status == 'Distilling')
+		batches.value.filter((b) => b.currentStage === 'Distilling' && b.status === 'active')
 	);
 	const storedBatches = computed(() =>
-		batches.value.filter((batch) => batch.status == 'Storage')
+		batches.value.filter((b) => b.currentStage === 'Storage' && b.status === 'active')
 	);
-	const barreledBatches = computed(() =>
-		batches.value.filter((batch) => batch.status == 'Barreled')
+	const barrelAgingBatches = computed(() =>
+		batches.value.filter((b) => b.currentStage === 'Barrel Aging' && b.status === 'active')
+	);
+	const macerationBatches = computed(() =>
+		batches.value.filter((b) => b.currentStage === 'Maceration' && b.status === 'active')
 	);
 
-	// Actions
+	// --- CRUD Actions ---
 	const getBatches = async (): Promise<void> => {
 		loading.value = true;
 		try {
@@ -125,7 +79,7 @@ export const useBatchStore = defineStore('batches', () => {
 
 	const setBatch = (id: string): void => {
 		batch.value = batches.value.find(
-			(batch) => batch._id === id
+			(b) => b._id === id
 		) as Batch;
 	};
 
@@ -134,6 +88,9 @@ export const useBatchStore = defineStore('batches', () => {
 		try {
 			const isNew = !batch.value._id;
 			if (isNew) {
+				const recipeStore = useRecipeStore();
+				const recipeName = recipeStore.getRecipeById(batch.value.recipe)?.name;
+				addLogEntry(batch.value, 'Batch created', recipeName ? `From recipe: ${recipeName}` : undefined);
 				const response = await $fetch('/api/batch/create', {
 					method: 'POST',
 					body: JSON.stringify(batch.value),
@@ -174,97 +131,77 @@ export const useBatchStore = defineStore('batches', () => {
 	};
 
 	const resetBatch = (): void => {
-		batch.value = {
-			_id: '',
-			recipe: '',
-			recipeCost: undefined as unknown as number,
-			status: 'Upcoming',
-			batchSize: undefined as unknown as number,
-			batchSizeUnit: 'gallon',
-			batchCost: undefined,
-			brewing: {
-				vessel: undefined,
-				date: undefined,
-				notes: '',
-			},
-			fermenting: {
-				vessel: undefined,
-				readings: [],
-				notes: '',
-			},
-			distilling: {
-				vessel: undefined,
-				date: undefined,
-				additions: {
-					tails: {
-						volume: undefined,
-						volumeUnit: '',
-						abv: undefined,
-					},
-				},
-				collected: {
-					heads: {
-						vessel: undefined,
-						volume: undefined,
-						volumeUnit: '',
-						abv: undefined,
-					},
-					hearts: {
-						vessel: undefined,
-						volume: undefined,
-						volumeUnit: '',
-						abv: undefined,
-					},
-					tails: {
-						vessel: undefined,
-						volume: undefined,
-						volumeUnit: '',
-						abv: undefined,
-					},
-					total: {
-						volume: undefined,
-						volumeUnit: '',
-						abv: undefined,
-					},
-				},
-				notes: '',
-			},
-			barreled: {
-				vessel: undefined,
-				entry: {
-					date: undefined,
-					volume: undefined,
-					volumeUnit: '',
-					abv: undefined,
-				},
-				exit: {
-					date: undefined,
-					volume: undefined,
-					volumeUnit: '',
-					abv: undefined,
-				},
-			},
-			bottled: {
-				productionRecord: undefined,
-			},
-		};
+		batch.value = defaultBatch();
 	};
 
-	const startBrewing = async (batchId: string, vesselId: string): Promise<void> => {
+	// --- Pipeline-based stage advancement ---
+
+	/** Advance a batch to the next stage in its pipeline */
+	const advanceToStage = async (
+		batchId: string,
+		targetStage: string,
+		stageData?: { vessel?: string },
+	): Promise<void> => {
+		const target = batches.value.find((b) => b._id === batchId);
+		if (!target) return;
+
+		// Mark previous stage as completed
+		const prevStageKey = STAGE_KEY_MAP[target.currentStage];
+		if (prevStageKey && target.stages[prevStageKey as keyof BatchStages]) {
+			(target.stages[prevStageKey as keyof BatchStages] as any).completedAt = new Date();
+		}
+
+		// Set new current stage
+		target.currentStage = targetStage;
+
+		// Initialize the new stage data if it doesn't exist
+		const newStageKey = STAGE_KEY_MAP[targetStage] as keyof BatchStages;
+		if (newStageKey) {
+			if (!target.stages[newStageKey]) {
+				(target.stages as any)[newStageKey] = {};
+			}
+			const stage = target.stages[newStageKey] as any;
+			stage.startedAt = new Date();
+			if (stageData?.vessel) stage.vessel = stageData.vessel;
+		}
+
+		// If advancing to Bottled, mark batch as completed
+		if (targetStage === 'Bottled') {
+			target.status = 'completed';
+		}
+
+		// Add log entry
+		addLogEntry(target, `Advanced to ${targetStage}`);
+
+		batch.value = target;
+		await updateBatch();
+	};
+
+	/** Start the first production stage (Mashing or Maceration) with vessel contents */
+	const startFirstStage = async (batchId: string, vesselId: string): Promise<void> => {
 		const vesselStore = useVesselStore();
 		const target = batches.value.find((b) => b._id === batchId);
 		if (!target) return;
 
-		target.status = 'Brewing';
-		target.brewing = {
-			...target.brewing,
-			vessel: vesselId,
-			date: new Date(),
-		};
+		const firstStage = target.pipeline[0];
+		target.currentStage = firstStage;
+
+		const stageKey = STAGE_KEY_MAP[firstStage] as keyof BatchStages;
+		if (stageKey) {
+			if (!target.stages[stageKey]) {
+				(target.stages as any)[stageKey] = {};
+			}
+			const stage = target.stages[stageKey] as any;
+			stage.startedAt = new Date();
+			stage.vessel = vesselId;
+		}
+
+		addLogEntry(target, `Started ${firstStage}`);
+
 		batch.value = target;
 		await updateBatch();
 
-		// Add batch contents to the mash tun
+		// Add batch contents to the vessel
 		await vesselStore.addContents(vesselId, {
 			batch: batchId,
 			volume: target.batchSize || 0,
@@ -274,79 +211,116 @@ export const useBatchStore = defineStore('batches', () => {
 		});
 	};
 
-	const advanceBatchStatus = async (batchId: string, newStatus: string, stageData?: { vessel?: string; date?: Date }): Promise<void> => {
+	/** Update data for a specific stage */
+	const updateStageData = async (batchId: string, stageName: string, data: Record<string, any>, logMessage?: string): Promise<void> => {
 		const target = batches.value.find((b) => b._id === batchId);
 		if (!target) return;
 
-		target.status = newStatus;
+		const stageKey = STAGE_KEY_MAP[stageName] as keyof BatchStages;
+		if (!stageKey) return;
 
-		const statusFieldMap: Record<string, string> = {
-			Brewing: 'brewing',
-			Fermenting: 'fermenting',
-			Distilling: 'distilling',
-			Storage: 'storage',
-			Barreled: 'barreled',
-			Bottled: 'bottled',
-		};
-
-		const stageKey = statusFieldMap[newStatus];
-		if (stageKey && stageData) {
-			const stage = (target as any)[stageKey];
-			if (stage) {
-				if (stageData.vessel !== undefined) stage.vessel = stageData.vessel;
-				if (stageData.date !== undefined) stage.date = stageData.date;
-			}
+		if (!target.stages[stageKey]) {
+			(target.stages as any)[stageKey] = {};
 		}
+		Object.assign(target.stages[stageKey] as any, data);
+
+		addLogEntry(target, logMessage || `Updated ${stageName} data`);
 
 		batch.value = target;
 		await updateBatch();
 	};
 
-	// Getters
+	// --- Activity log ---
+
+	const addLogEntry = (target: Batch, action: string, details?: string): void => {
+		if (!target.log) target.log = [];
+		const { user } = useAuth();
+		const userName = user.value
+			? `${user.value.firstName || ''} ${user.value.lastName || ''}`.trim() || user.value.email
+			: undefined;
+		target.log.push({
+			date: new Date(),
+			action,
+			details,
+			user: userName || undefined,
+		});
+	};
+
+	/** Add a manual note to a batch's activity log */
+	const addNote = async (batchId: string, note: string): Promise<void> => {
+		const target = batches.value.find((b) => b._id === batchId);
+		if (!target) return;
+		addLogEntry(target, 'Note added', note);
+		batch.value = target;
+		await updateBatch();
+	};
+
+	// --- Getters ---
 	const getBatchById = (id: string): Batch | undefined => {
 		return batches.value.find((b) => b._id === id);
+	};
+
+	const getBatchesByCurrentStage = (stage: string): Batch[] => {
+		return batches.value.filter((b) => b.currentStage === stage && b.status === 'active');
 	};
 
 	const getBatchByStatus = (status: string): Batch[] => {
 		return batches.value.filter((b) => b.status === status);
 	};
 
-	const batchStages = () => {
-		return BATCH_STAGES.map((s) => s.name);
-	};
+	/** Get all distinct stages that have active batches */
+	const activeStages = computed(() => {
+		const stages = new Set<string>();
+		for (const b of activeBatches.value) {
+			stages.add(b.currentStage);
+		}
+		return [...stages];
+	});
 
 	const getRecipeNameByBatchId = (id: string): string | undefined => {
 		const recipeStore = useRecipeStore();
-		const batch = getBatchById(id);
-		if (batch && batch.recipe) {
-			const recipe = recipeStore.getRecipeById(batch.recipe) as Recipe;
+		const b = getBatchById(id);
+		if (b?.recipe) {
+			const recipe = recipeStore.getRecipeById(b.recipe) as Recipe;
 			return recipe?.name;
 		}
 	};
 
 	return {
+		// State
 		batches,
 		batch,
 		loaded,
 		loading,
 		saving,
+		// Computed filters
+		activeBatches,
+		completedBatches,
 		upcomingBatches,
-		brewingBatches,
+		mashingBatches,
 		fermentingBatches,
 		distillingBatches,
 		storedBatches,
-		barreledBatches,
+		barrelAgingBatches,
+		macerationBatches,
+		activeStages,
+		// CRUD
 		ensureLoaded,
 		getBatches,
 		setBatch,
 		updateBatch,
 		deleteBatch,
 		resetBatch,
+		// Pipeline advancement
+		advanceToStage,
+		startFirstStage,
+		updateStageData,
+		// Activity log
+		addNote,
+		// Getters
 		getBatchById,
+		getBatchesByCurrentStage,
 		getBatchByStatus,
-		batchStages,
 		getRecipeNameByBatchId,
-		startBrewing,
-		advanceBatchStatus,
 	};
 });

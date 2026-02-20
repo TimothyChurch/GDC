@@ -4,6 +4,7 @@ const emit = defineEmits<{ close: [boolean] }>();
 const inventoryStore = useInventoryStore();
 const itemStore = useItemStore();
 const bottleStore = useBottleStore();
+const vesselStore = useVesselStore();
 
 const { localData, isDirty, saving, save, cancel } = useFormPanel({
   source: () => inventoryStore.inventory,
@@ -21,6 +22,10 @@ const itemOptions = computed(() => {
   const items = itemStore.items.map((i) => ({ label: i.name, value: i._id }));
   return [...bottles, ...items];
 });
+
+const vesselOptions = computed(() =>
+  vesselStore.vessels.map((v) => ({ label: v.name, value: v._id })),
+);
 </script>
 
 <template>
@@ -48,10 +53,17 @@ const itemOptions = computed(() => {
             />
           </UFormField>
           <UFormField label="Quantity">
-            <UInput v-model="localData.quantity" type="number" placeholder="Quantity" />
+            <UInput v-model.number="localData.quantity" type="number" placeholder="Quantity" />
           </UFormField>
           <UFormField label="Location">
-            <UInput v-model="localData.location" placeholder="Location (optional)" />
+            <USelectMenu
+              v-model="localData.location"
+              :options="vesselOptions"
+              value-attribute="value"
+              option-attribute="label"
+              placeholder="Select a vessel (optional)"
+              searchable
+            />
           </UFormField>
         </div>
         <div class="flex items-center justify-end gap-2 px-4 py-3 border-t border-white/10">

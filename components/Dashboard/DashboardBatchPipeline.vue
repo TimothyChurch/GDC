@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { ALL_STAGES, STAGE_DISPLAY, STAGE_KEY_MAP, stageTextColor, stageBgColor, getNextStage } from '~/composables/batchPipeline'
+
 const batchStore = useBatchStore();
 const recipeStore = useRecipeStore();
 const toast = useToast();
@@ -7,68 +9,29 @@ interface PipelineStage {
   name: string;
   icon: string;
   color: string;
-  bgColor: string;
-  borderColor: string;
-  dotColor: string;
   batches: any[];
 }
 
-const stages = computed<PipelineStage[]>(() => [
-  {
-    name: 'Upcoming',
-    icon: 'i-lucide-calendar-clock',
-    color: 'text-blue-400',
-    bgColor: 'bg-blue-500/10',
-    borderColor: 'border-blue-500/30',
-    dotColor: 'bg-blue-400',
-    batches: batchStore.upcomingBatches,
-  },
-  {
-    name: 'Brewing',
-    icon: 'i-lucide-flame',
-    color: 'text-orange-400',
-    bgColor: 'bg-orange-500/10',
-    borderColor: 'border-orange-500/30',
-    dotColor: 'bg-orange-400',
-    batches: batchStore.brewingBatches,
-  },
-  {
-    name: 'Fermenting',
-    icon: 'i-lucide-beaker',
-    color: 'text-yellow-400',
-    bgColor: 'bg-yellow-500/10',
-    borderColor: 'border-yellow-500/30',
-    dotColor: 'bg-yellow-400',
-    batches: batchStore.fermentingBatches,
-  },
-  {
-    name: 'Distilling',
-    icon: 'i-lucide-flask-conical',
-    color: 'text-copper',
-    bgColor: 'bg-copper/10',
-    borderColor: 'border-copper/30',
-    dotColor: 'bg-copper',
-    batches: batchStore.distillingBatches,
-  },
-  {
-    name: 'Storage',
-    icon: 'i-lucide-warehouse',
-    color: 'text-purple-400',
-    bgColor: 'bg-purple-500/10',
-    borderColor: 'border-purple-500/30',
-    dotColor: 'bg-purple-400',
-    batches: batchStore.storedBatches,
-  },
-  {
-    name: 'Barreled',
-    icon: 'i-lucide-cylinder',
-    color: 'text-amber',
-    bgColor: 'bg-amber/10',
-    borderColor: 'border-amber/30',
-    dotColor: 'bg-amber',
-    batches: batchStore.barreledBatches,
-  },
-]);
+// Build pipeline stages dynamically — show all stages that have active batches,
+// plus Upcoming (always). Order follows ALL_STAGES canonical order.
+const stages = computed<PipelineStage[]>(() => {
+  const result: PipelineStage[] = [];
+  for (const stageName of ALL_STAGES) {
+    if (stageName === 'Bottled') continue; // Don't show Bottled in pipeline widget
+    const display = STAGE_DISPLAY[stageName];
+    const batches = batchStore.getBatchesByCurrentStage(stageName);
+    // Always show Upcoming; show other stages only if they have batches
+    if (stageName === 'Upcoming' || batches.length > 0) {
+      result.push({
+        name: stageName,
+        icon: display?.icon || 'i-lucide-circle',
+        color: display?.color || 'neutral',
+        batches,
+      });
+    }
+  }
+  return result;
+});
 
 const totalActiveBatches = computed(() =>
   stages.value.reduce((sum, stage) => sum + stage.batches.length, 0)
@@ -97,8 +60,6 @@ const confirmOpen = ref(false)
 const pendingDrop = ref<{ batchId: string; fromStage: string; toStage: string } | null>(null)
 const advancing = ref(false)
 
-const stageOrder = BATCH_STAGES.map(s => s.name)
-
 function onDragStart(e: DragEvent, batchId: string, stageName: string) {
   didDrag.value = true
   dragBatchId.value = batchId
@@ -116,10 +77,19 @@ function onDragEnd() {
 }
 
 function onDragOver(e: DragEvent, stageName: string) {
-  if (!dragBatchId.value) return
-  const fromIdx = stageOrder.indexOf(dragSourceStage.value || '')
-  const toIdx = stageOrder.indexOf(stageName)
-  if (toIdx === fromIdx + 1) {
+  if (!dragBatchId.value || !dragSourceStage.value) return
+  // Validate: the drop target must be the next stage in the dragged batch's pipeline
+  const batch = batchStore.getBatchById(dragBatchId.value)
+  if (!batch) return
+
+  let expectedNext: string | null = null
+  if (batch.currentStage === 'Upcoming') {
+    expectedNext = batch.pipeline[0] || null
+  } else {
+    expectedNext = getNextStage(batch.pipeline, batch.currentStage)
+  }
+
+  if (expectedNext === stageName) {
     e.preventDefault()
     dropTargetStage.value = stageName
   }
@@ -135,10 +105,17 @@ function onDrop(e: DragEvent, stageName: string) {
   e.preventDefault()
   if (!dragBatchId.value || !dragSourceStage.value) return
 
-  const fromIdx = stageOrder.indexOf(dragSourceStage.value)
-  const toIdx = stageOrder.indexOf(stageName)
+  const batch = batchStore.getBatchById(dragBatchId.value)
+  if (!batch) return
 
-  if (toIdx === fromIdx + 1) {
+  let expectedNext: string | null = null
+  if (batch.currentStage === 'Upcoming') {
+    expectedNext = batch.pipeline[0] || null
+  } else {
+    expectedNext = getNextStage(batch.pipeline, batch.currentStage)
+  }
+
+  if (expectedNext === stageName) {
     pendingDrop.value = {
       batchId: dragBatchId.value,
       fromStage: dragSourceStage.value,
@@ -156,11 +133,12 @@ async function confirmAdvance() {
   if (!pendingDrop.value) return
   advancing.value = true
   try {
-    await batchStore.advanceBatchStatus(
-      pendingDrop.value.batchId,
-      pendingDrop.value.toStage,
-      { date: new Date() }
-    )
+    const { batchId, fromStage, toStage } = pendingDrop.value
+    if (fromStage === 'Upcoming') {
+      await batchStore.startFirstStage(batchId, '')
+    } else {
+      await batchStore.advanceToStage(batchId, toStage)
+    }
     toast.add({
       title: 'Batch advanced',
       description: `Moved to ${pendingDrop.value.toStage}`,
@@ -222,7 +200,7 @@ const pendingBatchName = computed(() => {
           dropTargetStage === stage.name
             ? 'ring-2 ring-gold/50 border-gold/40 bg-gold/5 scale-[1.02]'
             : stage.batches.length > 0
-              ? `${stage.bgColor} ${stage.borderColor} hover:scale-[1.02]`
+              ? `${stageBgColor(stage.color)} hover:scale-[1.02]`
               : 'bg-brown/10 border-brown/20',
         ]"
         @dragover="onDragOver($event, stage.name)"
@@ -235,7 +213,7 @@ const pendingBatchName = computed(() => {
             :name="stage.icon"
             :class="[
               'text-lg',
-              stage.batches.length > 0 ? stage.color : 'text-parchment/50',
+              stage.batches.length > 0 ? stageTextColor(stage.color) : 'text-parchment/50',
             ]"
           />
           <span class="text-xs font-semibold uppercase tracking-wider text-parchment/50">
@@ -264,7 +242,7 @@ const pendingBatchName = computed(() => {
             @dragend="onDragEnd"
             @click="navigateToBatch(batch._id)"
           >
-            <div :class="['w-1.5 h-1.5 rounded-full shrink-0', stage.dotColor]" />
+            <div :class="['w-1.5 h-1.5 rounded-full shrink-0', `bg-${stage.color === 'copper' ? 'copper' : stage.color + '-400'}`]" />
             <span class="text-xs text-parchment/60 truncate hover:text-gold transition-colors">
               {{ getRecipeName(batch.recipe) }}
             </span>

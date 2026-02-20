@@ -22,10 +22,10 @@ const greeting = computed(() => {
 
 // KPI: Active Batches
 const activeBatches = computed(() =>
-  batchStore.batches.filter((b) => b.status !== 'Bottled' && b.status !== 'Upcoming').length
+  batchStore.batches.filter((b) => b.status === 'active' && b.currentStage !== 'Upcoming').length
 );
 const upcomingBatches = computed(() =>
-  batchStore.batches.filter((b) => b.status === 'Upcoming').length
+  batchStore.batches.filter((b) => b.currentStage === 'Upcoming' && b.status === 'active').length
 );
 
 // KPI: Bottles in Stock

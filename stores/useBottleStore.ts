@@ -8,17 +8,22 @@ export const useBottleStore = defineStore("bottles", () => {
   const loading = ref(false);
   const saving = ref(false);
   const bottle = ref<Bottle>({
-    _id: '',
+    _id: undefined as unknown as string,
     name: "",
-    type: "bottle",
+    type: "",
     abv: 0,
-    recipe: '',
+    recipe: "",
     class: "",
     price: 0,
     img: "",
     description: "",
     inStock: true,
+    archived: false,
   });
+
+  const activeBottles = computed(() =>
+    bottles.value.filter((b) => !b.archived)
+  );
 
   const getBottles = async (): Promise<void> => {
     loading.value = true;
@@ -40,23 +45,22 @@ export const useBottleStore = defineStore("bottles", () => {
   };
 
   const setBottle = (id: string) => {
-    bottle.value = bottles.value.find(
-      (b) => b._id === id
-    ) as Bottle;
+    bottle.value = bottles.value.find((b) => b._id === id) as Bottle;
   };
 
   const resetBottle = () => {
     bottle.value = {
-      _id: '',
+      _id: undefined as unknown as string,
       name: "",
-      type: "bottle",
+      type: "",
       abv: 0,
-      recipe: '',
+      recipe: "",
       class: "",
       price: 0,
       img: "",
       description: "",
       inStock: true,
+      archived: false,
     };
   };
 
@@ -65,25 +69,41 @@ export const useBottleStore = defineStore("bottles", () => {
     try {
       const isNew = !bottle.value._id;
       if (isNew) {
+        const { _id, ...createData } = bottle.value;
+        if (!createData.recipe) delete createData.recipe;
         const response = await $fetch("/api/bottle/create", {
           method: "POST",
-          body: JSON.stringify(bottle.value),
+          body: createData,
         });
         bottles.value.push(response as Bottle);
       } else {
+        const updateData = { ...bottle.value };
+        if (!updateData.recipe) delete updateData.recipe;
         const response = await $fetch(`/api/bottle/${bottle.value?._id}`, {
           method: "PUT",
-          body: JSON.stringify(bottle.value),
+          body: updateData,
         });
-        const index = bottles.value.findIndex((b) => b._id === bottle.value._id);
+        const index = bottles.value.findIndex(
+          (b) => b._id === bottle.value._id,
+        );
         if (index !== -1) {
           bottles.value[index] = response as Bottle;
         }
       }
-      toast.add({ title: `Bottle ${isNew ? 'created' : 'updated'}`, color: 'success', icon: 'i-lucide-check-circle' });
+      toast.add({
+        title: `Bottle ${isNew ? "created" : "updated"}`,
+        color: "success",
+        icon: "i-lucide-check-circle",
+      });
       sortBottles();
     } catch (error: any) {
-      toast.add({ title: 'Failed to save bottle', description: error?.data?.message, color: 'error', icon: 'i-lucide-alert-circle' });
+      toast.add({
+        title: "Failed to save bottle",
+        description: error?.data?.statusMessage || error?.data?.message,
+        color: "error",
+        icon: "i-lucide-alert-circle",
+      });
+      throw error;
     } finally {
       saving.value = false;
     }
@@ -96,9 +116,18 @@ export const useBottleStore = defineStore("bottles", () => {
         method: "DELETE",
       });
       bottles.value = bottles.value.filter((b) => b._id !== id);
-      toast.add({ title: 'Bottle deleted', color: 'success', icon: 'i-lucide-check-circle' });
+      toast.add({
+        title: "Bottle deleted",
+        color: "success",
+        icon: "i-lucide-check-circle",
+      });
     } catch (error: any) {
-      toast.add({ title: 'Failed to delete bottle', description: error?.data?.message, color: 'error', icon: 'i-lucide-alert-circle' });
+      toast.add({
+        title: "Failed to delete bottle",
+        description: error?.data?.message,
+        color: "error",
+        icon: "i-lucide-alert-circle",
+      });
     } finally {
       saving.value = false;
     }
@@ -126,13 +155,12 @@ export const useBottleStore = defineStore("bottles", () => {
     bottles.value.find((b) => b._id === id) as Bottle;
 
   const selectBottle = (id: string) => {
-    bottle.value = bottles.value.find(
-      (b) => b._id === id
-    ) as Bottle;
+    bottle.value = bottles.value.find((b) => b._id === id) as Bottle;
   };
 
   return {
     bottles,
+    activeBottles,
     bottle,
     loaded,
     loading,

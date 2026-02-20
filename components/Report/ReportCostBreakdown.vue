@@ -22,7 +22,7 @@ const batchCostData = computed(() => {
         batchSizeUnit: batch.batchSizeUnit,
         recipeCost: recipeCostVal,
         batchCost: batch.batchCost || 0,
-        brewDate: batch.brewing?.date ? new Date(batch.brewing.date) : null,
+        brewDate: batch.createdAt ? new Date(batch.createdAt) : null,
       }
     })
     .sort((a, b) => (b.brewDate?.getTime() || 0) - (a.brewDate?.getTime() || 0))

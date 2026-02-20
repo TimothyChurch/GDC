@@ -51,6 +51,11 @@ export const Bottle = defineMongooseModel({
       type: Boolean,
       required: false,
     },
+    archived: {
+      type: Boolean,
+      required: false,
+      default: false,
+    },
   },
   options: { timestamps: true },
 });

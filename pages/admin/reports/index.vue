@@ -13,7 +13,7 @@ const totalBottlesProduced = computed(() =>
   productionsStore.productions.reduce((sum, p) => sum + (p.quantity || 0), 0)
 )
 const activeBatches = computed(() =>
-  batchStore.batches.filter(b => b.status && !['Upcoming', 'Bottled'].includes(b.status)).length
+  batchStore.batches.filter(b => b.status === 'active').length
 )
 const totalBarrels = computed(() => vesselStore.barrels.length)
 const filledBarrels = computed(() =>
@@ -22,10 +22,10 @@ const filledBarrels = computed(() =>
 
 // TTB stats
 const distillingBatches = computed(() =>
-  batchStore.batches.filter(b => b.distilling?.date).length
+  batchStore.batches.filter(b => (b.stages as any)?.distilling?.startedAt).length
 )
 const barreledBatches = computed(() =>
-  batchStore.batches.filter(b => b.barreled?.entry?.date).length
+  batchStore.batches.filter(b => (b.stages as any)?.barrelAging?.entry?.date).length
 )
 
 const reportCards = [

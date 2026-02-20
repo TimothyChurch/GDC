@@ -7,12 +7,9 @@ if (import.meta.client) {
   });
 }
 
-export const BATCH_STAGES = [
-  { name: 'Upcoming', icon: 'i-lucide-calendar-clock', color: 'blue' },
-  { name: 'Brewing', icon: 'i-lucide-flame', color: 'orange' },
-  { name: 'Fermenting', icon: 'i-lucide-beaker', color: 'yellow' },
-  { name: 'Distilling', icon: 'i-lucide-flask-conical', color: 'copper' },
-  { name: 'Storage', icon: 'i-lucide-warehouse', color: 'purple' },
-  { name: 'Barreled', icon: 'i-lucide-cylinder', color: 'amber' },
-  { name: 'Bottled', icon: 'i-lucide-wine', color: 'green' },
-] as const;
+// Derived from STAGE_DISPLAY in batchPipeline.ts — single source of truth
+export const BATCH_STAGES = ALL_STAGES.map((name) => ({
+  name,
+  icon: STAGE_DISPLAY[name].icon,
+  color: STAGE_DISPLAY[name].color,
+}));
