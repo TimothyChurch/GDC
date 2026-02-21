@@ -107,7 +107,7 @@ const addUser = () => {
         :data="userStore.users"
         :columns="columns"
         :loading="userStore.loading"
-        :empty="{ icon: 'i-lucide-users', label: 'No users found' }"
+        :empty="'No users found'"
       />
     </div>
 

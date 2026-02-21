@@ -154,8 +154,8 @@ const newItem = () => {
         :data="productionsStore.productions"
         :columns="columns"
         :loading="productionsStore.loading"
-        :empty="{ icon: 'i-lucide-factory', label: 'No productions found' }"
-        @select="(row: Production) => router.push(`/admin/production/${row._id}`)"
+        :empty="'No productions found'"
+        @select="(_e: Event, row: any) => router.push(`/admin/production/${row.original._id}`)"
         :ui="{ tr: 'cursor-pointer' }"
       />
     </div>

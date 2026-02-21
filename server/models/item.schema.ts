@@ -25,6 +25,15 @@ export const Item = defineMongooseModel({
     inventoryUnit: {
       type: String,
     },
+    purchaseSize: {
+      type: Number,
+    },
+    purchaseSizeUnit: {
+      type: String,
+    },
+    purchasePrice: {
+      type: Number,
+    },
     purchaseHistory: [
       {
         type: Schema.Types.ObjectId,

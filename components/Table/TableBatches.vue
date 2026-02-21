@@ -207,8 +207,8 @@ const addItem = () => {
         :data="tableData"
         :columns="columns"
         :loading="batchStore.loading"
-        :empty="{ icon: 'i-lucide-flask-conical', label: 'No batches found' }"
-        @select="(row: Batch) => router.push(`/admin/batch/${row._id}`)"
+        :empty="'No batches found'"
+        @select="(_e: Event, row: any) => router.push(`/admin/batch/${row.original._id}`)"
         :ui="{ tr: 'cursor-pointer' }"
       />
     </div>

@@ -3,6 +3,7 @@ import type { Bottle } from '~/types'
 
 const props = defineProps<{ bottle: Bottle }>()
 const router = useRouter()
+const { isLowStock } = useBottleStock()
 
 const classIcon = computed(() => {
   const cls = props.bottle.class?.toLowerCase() || ''
@@ -52,6 +53,12 @@ const classIcon = computed(() => {
         class="px-2 py-0.5 rounded-full text-[10px] font-semibold border bg-yellow-500/15 text-yellow-400 border-yellow-500/25"
       >
         Archived
+      </span>
+      <span
+        v-if="isLowStock(bottle._id)"
+        class="px-2 py-0.5 rounded-full text-[10px] font-semibold border bg-orange-500/15 text-orange-400 border-orange-500/25"
+      >
+        Low Stock
       </span>
       <span
         class="px-2 py-0.5 rounded-full text-[10px] font-semibold border"

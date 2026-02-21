@@ -91,9 +91,10 @@ export const useVesselStore = defineStore('vessels', () => {
 		try {
 			const isNew = !vessel.value._id;
 			if (isNew) {
+				const { _id, ...createData } = vessel.value;
 				const response = await $fetch('/api/vessel/create', {
 					method: 'POST',
-					body: vessel.value,
+					body: createData,
 				});
 				vessels.value.push(response as Vessel);
 			} else {

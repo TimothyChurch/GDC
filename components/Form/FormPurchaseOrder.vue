@@ -134,18 +134,18 @@ const submitForm = async () => {
       </template>
       <template #actions-data="{ row }">
         <UButton
-          color="gray"
+          color="neutral"
           icon="i-heroicons-trash-20-solid"
           @click="removeItem(row)"
           >Delete Item</UButton
         >
       </template>
     </UTable>
-    <UDivider />
+    <USeparator />
     <div class="flex gap-3 my-3 justify-start">
       <span> Total: {{ Dollar.format(total.value) }} </span>
       <UButton
-        color="gray"
+        color="neutral"
         icon="i-heroicons-plus-20-solid"
         @click="additionalItem = true"
         v-if="!additionalItem"
@@ -178,11 +178,11 @@ const submitForm = async () => {
       <UFormField label="Price">
         <UInput v-model.number="newItem.price" />
       </UFormField>
-      <UButton color="gray" icon="i-heroicons-plus-20-solid" @click="addItem"
+      <UButton color="neutral" icon="i-heroicons-plus-20-solid" @click="addItem"
         >Add Item</UButton
       >
     </div>
-    <UDivider />
+    <USeparator />
     <div class="flex justify-center my-3">
       <UButton color="primary" :loading="purchaseOrderStore.saving" @click="submitForm"> Submit </UButton>
     </div>

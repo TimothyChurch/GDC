@@ -150,9 +150,9 @@ const openModal = async () => await modal.open();
         :data="cocktailStore.cocktails"
         :columns="columns"
         :loading="cocktailStore.loading"
-        :empty="{ icon: 'i-lucide-wine', label: 'No cocktails found' }"
+        :empty="'No cocktails found'"
         class="max-h-full"
-        @select="(row: Cocktail) => navigateTo(`/admin/cocktails/${row._id}`)"
+        @select="(_e: Event, row: any) => navigateTo(`/admin/cocktails/${row.original._id}`)"
         :ui="{ tr: 'cursor-pointer' }"
       >
         <template #expanded="{ row }">

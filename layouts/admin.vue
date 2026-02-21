@@ -19,6 +19,21 @@ onMounted(async () => {
     useVesselStore().ensureLoaded(),
     useEventStore().ensureLoaded(),
   ]);
+
+  // Sync bottle inStock flags based on actual inventory data
+  const bottleStore = useBottleStore();
+  const inventoryStore = useInventoryStore();
+  for (const bottle of bottleStore.bottles) {
+    const records = inventoryStore.getInventoriesByItem(bottle._id);
+    if (records.length === 0) continue;
+    const sorted = [...records].sort(
+      (a, b) => new Date(a.date).getTime() - new Date(b.date).getTime(),
+    );
+    const shouldBeInStock = sorted[sorted.length - 1].quantity > 0;
+    if (bottle.inStock !== shouldBeInStock) {
+      bottle.inStock = shouldBeInStock;
+    }
+  }
 });
 </script>
 

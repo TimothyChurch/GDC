@@ -9,6 +9,7 @@ const router = useRouter();
 const bottleStore = useBottleStore();
 const recipeStore = useRecipeStore();
 const inventoryStore = useInventoryStore();
+const { getStockStatus } = useBottleStock();
 
 const bottle = computed(() =>
   bottleStore.getBottleById(route.params._id as string),
@@ -35,10 +36,18 @@ const editBottle = () => {
 
 // Add inventory
 const addInventory = ref(false);
-const updateInventory = () => {
+const updateInventory = async () => {
   inventoryStore.inventory.item = route.params._id as string;
-  inventoryStore.updateInventory();
+  await inventoryStore.updateInventory();
   addInventory.value = false;
+
+  // Auto-sync inStock based on latest inventory level
+  if (!bottle.value) return;
+  const shouldBeInStock = currentStock.value > 0;
+  if (bottle.value.inStock !== shouldBeInStock) {
+    bottleStore.bottle = { ...bottle.value, inStock: shouldBeInStock };
+    await bottleStore.updateBottle();
+  }
 };
 
 // Inventory list
@@ -94,6 +103,12 @@ const currentStock = computed(() => {
   if (sortedInventory.value.length === 0) return 0;
   return sortedInventory.value[sortedInventory.value.length - 1].quantity;
 });
+
+// Stock metrics from shared composable
+const stockStatus = computed(() => getStockStatus(route.params._id as string));
+const avgMonthlyUsage = computed(() => stockStatus.value?.avgMonthlyUsage ?? 0);
+const monthsOfStockRemaining = computed(() => stockStatus.value?.monthsRemaining ?? Infinity);
+const isLowStock = computed(() => stockStatus.value?.isLowStock ?? false);
 </script>
 
 <template>
@@ -210,6 +225,43 @@ const currentStock = computed(() => {
         >
           Add Entry
         </UButton>
+      </div>
+
+      <!-- Usage stats -->
+      <div
+        v-if="avgMonthlyUsage > 0"
+        class="grid grid-cols-2 sm:grid-cols-3 gap-3 mb-4"
+      >
+        <div class="rounded-lg border border-brown/20 bg-brown/5 p-3">
+          <div class="text-xs text-parchment/60 uppercase tracking-wider mb-1">
+            Avg. Monthly Usage
+          </div>
+          <div class="text-lg font-semibold text-parchment">
+            {{ avgMonthlyUsage.toFixed(1) }}
+          </div>
+        </div>
+        <div class="rounded-lg border border-brown/20 bg-brown/5 p-3">
+          <div class="text-xs text-parchment/60 uppercase tracking-wider mb-1">
+            Months Remaining
+          </div>
+          <div
+            :class="[
+              'text-lg font-semibold',
+              isLowStock ? 'text-red-400' : 'text-parchment',
+            ]"
+          >
+            {{ monthsOfStockRemaining === Infinity ? '--' : monthsOfStockRemaining.toFixed(1) }}
+          </div>
+        </div>
+        <div
+          v-if="isLowStock"
+          class="col-span-2 sm:col-span-1 flex items-center gap-2 rounded-lg border border-red-500/25 bg-red-500/10 p-3"
+        >
+          <UIcon name="i-lucide-triangle-alert" class="text-red-400 text-lg shrink-0" />
+          <div class="text-sm text-red-400 font-medium">
+            Low stock — less than 1 month remaining
+          </div>
+        </div>
       </div>
 
       <!-- Add entry form -->

@@ -57,9 +57,10 @@ export const useCocktailStore = defineStore("cocktails", () => {
     try {
       const isNew = !cocktail.value._id;
       if (isNew) {
+        const { _id, ...createData } = cocktail.value;
         const response = await $fetch("/api/cocktail/create", {
           method: "POST",
-          body: JSON.stringify(cocktail.value),
+          body: JSON.stringify(createData),
         });
         cocktails.value.push(response as Cocktail);
       } else {

@@ -42,9 +42,10 @@ export const usePurchaseOrderStore = defineStore('purchaseOrders', () => {
 			let response;
 			const isNew = !purchaseOrder.value._id;
 			if (isNew) {
+				const { _id, ...createData } = purchaseOrder.value;
 				response = await $fetch('/api/purchaseOrder/create', {
 					method: 'POST',
-					body: JSON.stringify(purchaseOrder.value),
+					body: JSON.stringify(createData),
 				});
 				purchaseOrders.value.push(response as PurchaseOrder);
 			} else {

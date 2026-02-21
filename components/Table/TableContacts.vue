@@ -190,8 +190,8 @@ const addItem = () => {
         :data="filteredContacts"
         :columns="columns"
         :loading="contactStore.loading"
-        :empty="{ icon: 'i-lucide-users', label: newsletterOnly ? 'No newsletter subscribers' : 'No contacts found' }"
-        @select="(row: Contact) => router.push(`/admin/contacts/${row._id}`)"
+        :empty="newsletterOnly ? 'No newsletter subscribers' : 'No contacts found'"
+        @select="(_e: Event, row: any) => router.push(`/admin/contacts/${row.original._id}`)"
         :ui="{ tr: 'cursor-pointer' }"
       >
         <template #expanded="{ row }">

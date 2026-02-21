@@ -44,9 +44,10 @@ export const useContactStore = defineStore('contacts', () => {
 		try {
 			const isNew = !contact.value._id;
 			if (isNew) {
+				const { _id, ...createData } = contact.value;
 				const response = await $fetch('/api/contact/create', {
 					method: 'POST',
-					body: JSON.stringify(contact.value),
+					body: JSON.stringify(createData),
 				});
 				contacts.value.push(response as Contact);
 			} else {

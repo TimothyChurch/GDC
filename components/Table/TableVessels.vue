@@ -145,7 +145,7 @@ const addVessel = () => {
         :data="vesselStore.vessels"
         :columns="columns"
         :loading="vesselStore.loading"
-        :empty="{ icon: 'i-lucide-container', label: 'No vessels found' }"
+        :empty="'No vessels found'"
       />
     </div>
 

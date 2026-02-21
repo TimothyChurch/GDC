@@ -208,7 +208,7 @@ const addCustomer = () => {
         :data="customers"
         :columns="columns"
         :loading="contactStore.loading"
-        :empty="{ icon: 'i-lucide-heart-handshake', label: 'No customers found' }"
+        :empty="'No customers found'"
       >
         <template #expanded="{ row }">
           <div class="flex gap-6 flex-wrap py-2 px-4">

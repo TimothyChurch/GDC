@@ -111,8 +111,8 @@ const columns: TableColumn<Item>[] = [
               variant: "ghost",
               class: "ml-auto",
               "aria-label": "Actions dropdown",
-            })
-        )
+            }),
+        ),
       );
     },
   },
@@ -163,7 +163,13 @@ const pagination = ref({ pageIndex: 0, pageSize: 10 });
     search-placeholder="Search items..."
   >
     <template #actions>
-      <UButton icon="i-heroicons-plus-circle" size="xl" @click="newItem" variant="ghost">Add Item</UButton>
+      <UButton
+        icon="i-heroicons-plus-circle"
+        size="xl"
+        @click="newItem"
+        variant="ghost"
+        >Add Item</UButton
+      >
     </template>
     <!-- Desktop table -->
     <div class="hidden sm:block">
@@ -173,8 +179,11 @@ const pagination = ref({ pageIndex: 0, pageSize: 10 });
         :data="itemStore.items"
         :columns="columns"
         :loading="itemStore.loading"
-        :empty="{ icon: 'i-lucide-package', label: 'No items found' }"
-        @select="(row: Item) => router.push(`/admin/items/${row._id}`)"
+        :empty="'No items found'"
+        @select="
+          (_e: Event, row: any) =>
+            router.push(`/admin/items/${row.original._id}`)
+        "
         :ui="{ tr: 'cursor-pointer' }"
       />
     </div>
@@ -189,25 +198,45 @@ const pagination = ref({ pageIndex: 0, pageSize: 10 });
       >
         <div class="flex items-start justify-between mb-2">
           <div>
-            <div class="text-sm font-medium text-parchment">{{ item.name }}</div>
-            <div class="text-xs text-parchment/60">{{ item.type || 'No type' }}</div>
+            <div class="text-sm font-medium text-parchment">
+              {{ item.name }}
+            </div>
+            <div class="text-xs text-parchment/60">
+              {{ item.type || "No type" }}
+            </div>
           </div>
-          <span class="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-brown/15 text-parchment/50 border border-brown/25">
-            {{ item.inventoryUnit || 'N/A' }}
+          <span
+            class="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-brown/15 text-parchment/50 border border-brown/25"
+          >
+            {{ item.inventoryUnit || "N/A" }}
           </span>
         </div>
         <div class="grid grid-cols-2 gap-2 text-xs">
           <div>
             <span class="text-parchment/60">Price</span>
-            <div class="text-copper font-semibold">{{ item.pricePerUnit > 0 ? `${Dollar.format(item.pricePerUnit)} / ${item.inventoryUnit}` : 'Not set' }}</div>
+            <div class="text-copper font-semibold">
+              {{
+                item.pricePerUnit > 0
+                  ? `${Dollar.format(item.pricePerUnit)} / ${item.inventoryUnit}`
+                  : "Not set"
+              }}
+            </div>
           </div>
           <div>
             <span class="text-parchment/60">Vendor</span>
-            <div class="text-parchment/70">{{ contactStore.getContactById(item.vendor)?.businessName || 'Unknown' }}</div>
+            <div class="text-parchment/70">
+              {{
+                contactStore.getContactById(item.vendor)?.businessName ||
+                "Unknown"
+              }}
+            </div>
           </div>
         </div>
       </div>
-      <div v-if="itemStore.items.length === 0" class="text-center py-6 text-parchment/50 text-sm">
+      <div
+        v-if="itemStore.items.length === 0"
+        class="text-center py-6 text-parchment/50 text-sm"
+      >
         No items found
       </div>
     </div>

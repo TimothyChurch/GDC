@@ -110,7 +110,7 @@ const addItem = () => {
       :data="inventoryStore.inventories"
       :columns="columns"
       :loading="inventoryStore.loading"
-      :empty="{ icon: 'i-lucide-archive', label: 'No inventory records found' }"
+      :empty="'No inventory records found'"
     />
   </TableWrapper>
 </template>

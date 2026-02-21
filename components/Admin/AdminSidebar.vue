@@ -7,7 +7,13 @@ const emit = defineEmits<{ close: []; toggleCollapse: [] }>();
 
 const route = useRoute();
 const overlay = useOverlay();
-const { activeBatches, pendingPOs, lowInventoryCount, pendingEvents, totalCustomers } = useSidebarBadges();
+const {
+  activeBatches,
+  pendingPOs,
+  lowInventoryCount,
+  pendingEvents,
+  totalCustomers,
+} = useSidebarBadges();
 
 interface NavLink {
   label: string;
@@ -22,63 +28,101 @@ interface NavSection {
 }
 
 const productionLinks: NavLink[] = [
-  { label: 'Dashboard', icon: 'i-lucide-layout-dashboard', to: '/admin/dashboard' },
-  { label: 'Batches', icon: 'i-lucide-flask-conical', to: '/admin/batch', badge: activeBatches },
-  { label: 'Recipes', icon: 'i-lucide-book-open', to: '/admin/recipes' },
-  { label: 'Vessels', icon: 'i-lucide-container', to: '/admin/vessels' },
-  { label: 'Barrels', icon: 'i-lucide-cylinder', to: '/admin/barrels' },
-  { label: 'Production', icon: 'i-lucide-factory', to: '/admin/production' },
-  { label: 'Proofing', icon: 'i-lucide-calculator', to: '/admin/proofing' },
+  {
+    label: "Dashboard",
+    icon: "i-lucide-layout-dashboard",
+    to: "/admin/dashboard",
+  },
+  { label: "Recipes", icon: "i-lucide-book-open", to: "/admin/recipes" },
+  {
+    label: "Batches",
+    icon: "i-lucide-flask-conical",
+    to: "/admin/batch",
+    badge: activeBatches,
+  },
+
+  { label: "Vessels", icon: "i-lucide-container", to: "/admin/vessels" },
+  { label: "Barrels", icon: "i-lucide-cylinder", to: "/admin/barrels" },
+  { label: "Production", icon: "i-lucide-factory", to: "/admin/production" },
+  { label: "Proofing", icon: "i-lucide-calculator", to: "/admin/proofing" },
 ];
 
 const productLinks: NavLink[] = [
-  { label: 'Bottles', icon: 'i-lucide-wine', to: '/admin/bottles' },
-  { label: 'Cocktails', icon: 'i-lucide-martini', to: '/admin/cocktails' },
-  { label: 'Cheat Sheets', icon: 'i-lucide-file-text', to: '/admin/cocktails/grid' },
+  { label: "Bottles", icon: "i-lucide-wine", to: "/admin/bottles" },
+  { label: "Cocktails", icon: "i-lucide-martini", to: "/admin/cocktails" },
+  {
+    label: "Cheat Sheets",
+    icon: "i-lucide-file-text",
+    to: "/admin/cocktails/grid",
+  },
 ];
 
 const inventoryLinks: NavLink[] = [
-  { label: 'Items', icon: 'i-lucide-package', to: '/admin/items', badge: lowInventoryCount },
-  { label: 'Bottle Inventory', icon: 'i-lucide-clipboard-list', to: '/admin/bottles/inventory' },
-  { label: 'Purchase Orders', icon: 'i-lucide-receipt', to: '/admin/purchaseOrders', badge: pendingPOs },
+  {
+    label: "Items",
+    icon: "i-lucide-package",
+    to: "/admin/items",
+    badge: lowInventoryCount,
+  },
+  {
+    label: "Bottle Inventory",
+    icon: "i-lucide-clipboard-list",
+    to: "/admin/bottles/inventory",
+  },
+  {
+    label: "Purchase Orders",
+    icon: "i-lucide-receipt",
+    to: "/admin/purchaseOrders",
+    badge: pendingPOs,
+  },
 ];
 
 const reportLinks: NavLink[] = [
-  { label: 'Reports', icon: 'i-lucide-bar-chart-3', to: '/admin/reports' },
+  { label: "Reports", icon: "i-lucide-bar-chart-3", to: "/admin/reports" },
 ];
 
 const adminLinks: NavLink[] = [
-  { label: 'Events', icon: 'i-lucide-calendar', to: '/admin/events', badge: pendingEvents },
-  { label: 'Customers', icon: 'i-lucide-heart-handshake', to: '/admin/customers', badge: totalCustomers },
-  { label: 'Contacts', icon: 'i-lucide-users', to: '/admin/contacts' },
-  { label: 'Users', icon: 'i-lucide-user-cog', to: '/admin/users' },
-  { label: 'Controls', icon: 'i-lucide-settings', to: '/admin/controls' },
+  {
+    label: "Events",
+    icon: "i-lucide-calendar",
+    to: "/admin/events",
+    badge: pendingEvents,
+  },
+  {
+    label: "Customers",
+    icon: "i-lucide-heart-handshake",
+    to: "/admin/customers",
+    badge: totalCustomers,
+  },
+  { label: "Contacts", icon: "i-lucide-users", to: "/admin/contacts" },
+  { label: "Users", icon: "i-lucide-user-cog", to: "/admin/users" },
+  { label: "Controls", icon: "i-lucide-settings", to: "/admin/controls" },
 ];
 
 const sections: NavSection[] = [
-  { title: 'Production', links: productionLinks },
-  { title: 'Products', links: productLinks },
-  { title: 'Inventory', links: inventoryLinks },
-  { title: 'Reports', links: reportLinks },
-  { title: 'Admin', links: adminLinks },
+  { title: "Production", links: productionLinks },
+  { title: "Products", links: productLinks },
+  { title: "Inventory", links: inventoryLinks },
+  { title: "Reports", links: reportLinks },
+  { title: "Admin", links: adminLinks },
 ];
 
 const isActive = (to: string) => {
-  return route.path === to || route.path.startsWith(to + '/');
+  return route.path === to || route.path.startsWith(to + "/");
 };
 
 // Quick-add actions
 const quickActions = [
-  { icon: 'i-lucide-flask-conical', label: 'Batch', panel: 'PanelBatch' },
-  { icon: 'i-lucide-factory', label: 'Production', panel: 'PanelProduction' },
-  { icon: 'i-lucide-receipt', label: 'PO', panel: 'PanelPurchaseOrder' },
+  { icon: "i-lucide-flask-conical", label: "Batch", panel: "PanelBatch" },
+  { icon: "i-lucide-factory", label: "Production", panel: "PanelProduction" },
+  { icon: "i-lucide-receipt", label: "PO", panel: "PanelPurchaseOrder" },
 ];
 
 async function openQuickAdd(panelName: string) {
   const components: Record<string, any> = {
-    PanelBatch: resolveComponent('PanelBatch'),
-    PanelProduction: resolveComponent('PanelProduction'),
-    PanelPurchaseOrder: resolveComponent('PanelPurchaseOrder'),
+    PanelBatch: resolveComponent("PanelBatch"),
+    PanelProduction: resolveComponent("PanelProduction"),
+    PanelPurchaseOrder: resolveComponent("PanelPurchaseOrder"),
   };
   const comp = components[panelName];
   if (comp) {
@@ -94,7 +138,7 @@ async function openQuickAdd(panelName: string) {
       'flex flex-col bg-charcoal border-r border-brown/30 overflow-y-auto overflow-x-hidden transition-all duration-300',
       'fixed inset-y-0 left-0 z-40 lg:static lg:z-auto',
       collapsed ? 'w-16' : 'w-64',
-      sidebarOpen ? 'flex' : 'hidden lg:flex'
+      sidebarOpen ? 'flex' : 'hidden lg:flex',
     ]"
   >
     <!-- Quick-add buttons -->
@@ -185,7 +229,10 @@ async function openQuickAdd(panelName: string) {
         class="group flex items-center gap-3 px-3 py-2 rounded-lg text-sm text-parchment/50 hover:text-parchment hover:bg-brown/30 transition-all duration-200"
         :class="collapsed ? 'justify-center' : ''"
       >
-        <UIcon name="i-lucide-home" class="shrink-0 text-lg text-parchment/50 group-hover:text-copper" />
+        <UIcon
+          name="i-lucide-home"
+          class="shrink-0 text-lg text-parchment/50 group-hover:text-copper"
+        />
         <span v-if="!collapsed">Main Site</span>
       </NuxtLink>
 
@@ -196,7 +243,9 @@ async function openQuickAdd(panelName: string) {
         @click="emit('toggleCollapse')"
       >
         <UIcon
-          :name="collapsed ? 'i-lucide-chevrons-right' : 'i-lucide-chevrons-left'"
+          :name="
+            collapsed ? 'i-lucide-chevrons-right' : 'i-lucide-chevrons-left'
+          "
           class="shrink-0 text-lg"
         />
         <span v-if="!collapsed">Collapse</span>

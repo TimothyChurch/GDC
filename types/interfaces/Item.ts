@@ -5,6 +5,9 @@ export interface Item {
 	brand?: string;
 	vendor?: string;
 	inventoryUnit?: string;
+	purchaseSize?: number;
+	purchaseSizeUnit?: string;
+	purchasePrice?: number;
 	purchaseHistory?: string[];
 	inventoryHistory?: string[];
 	pricePerUnit?: number;

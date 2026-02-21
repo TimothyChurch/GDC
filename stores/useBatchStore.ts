@@ -91,9 +91,10 @@ export const useBatchStore = defineStore('batches', () => {
 				const recipeStore = useRecipeStore();
 				const recipeName = recipeStore.getRecipeById(batch.value.recipe)?.name;
 				addLogEntry(batch.value, 'Batch created', recipeName ? `From recipe: ${recipeName}` : undefined);
+				const { _id, ...createData } = batch.value;
 				const response = await $fetch('/api/batch/create', {
 					method: 'POST',
-					body: JSON.stringify(batch.value),
+					body: JSON.stringify(createData),
 				});
 				batches.value.push(response as Batch);
 			} else {

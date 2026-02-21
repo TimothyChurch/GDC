@@ -44,9 +44,10 @@ export const useRecipeStore = defineStore("recipes", () => {
     try {
       const isNew = !recipe.value._id;
       if (isNew) {
+        const { _id, ...createData } = recipe.value;
         const response = await $fetch("/api/recipe/create", {
           method: "POST",
-          body: JSON.stringify(recipe.value),
+          body: JSON.stringify(createData),
         });
         recipes.value.push(response as Recipe);
       } else {

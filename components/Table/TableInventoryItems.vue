@@ -1,4 +1,5 @@
 <script setup lang="ts">
+const router = useRouter();
 const itemStore = useItemStore();
 const contactStore = useContactStore();
 
@@ -50,21 +51,23 @@ const columns = [
 
 <template>
 	<div>
-		<UButtonGroup>
+		<UFieldGroup>
 			<UInput
 				v-model="filterSearch"
 				placeholder="Search..." />
 			<UButton
-				color="gray"
+				color="neutral"
 				@click="filterSearch = ''">
 				X
 			</UButton>
-		</UButtonGroup>
+		</UFieldGroup>
 		<div class="overflow-x-auto">
 			<UTable
 				:rows="paginatedRows"
 				:columns="columns"
-				:loading="itemStore.loading">
+				:loading="itemStore.loading"
+				@select="(_e: Event, row: any) => router.push(`/admin/items/${row.original._id}`)"
+				:ui="{ tr: 'cursor-pointer' }">
 				<template #empty-state>
 					<div class="flex flex-col items-center justify-center py-6 gap-3">
 						<span class="text-sm text-gray-500">No inventory items found</span>

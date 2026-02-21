@@ -57,9 +57,10 @@ export const useProductionStore = defineStore('productions', () => {
 		try {
 			const isNew = !production.value._id;
 			if (isNew) {
+				const { _id, ...createData } = production.value;
 				const response = await $fetch('/api/production/create', {
 					method: 'POST',
-					body: production.value,
+					body: createData,
 				});
 				productions.value.push(response as Production);
 			} else {

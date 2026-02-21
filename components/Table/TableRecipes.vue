@@ -127,8 +127,8 @@ const openModal = async () => await modal.open();
         :data="recipeStore.recipes"
         :columns="columns"
         :loading="recipeStore.loading"
-        :empty="{ icon: 'i-lucide-book-open', label: 'No recipes found' }"
-        @select="(row: Recipe) => router.push(`/admin/recipes/${row._id}`)"
+        :empty="'No recipes found'"
+        @select="(_e: Event, row: any) => router.push(`/admin/recipes/${row.original._id}`)"
         :ui="{ tr: 'cursor-pointer' }"
       >
         <template #expanded="{ row }">

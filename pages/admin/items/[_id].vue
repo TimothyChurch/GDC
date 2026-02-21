@@ -70,7 +70,7 @@ const inventoryRecords = computed(() =>
     <!-- Item Details -->
     <div class="bg-charcoal rounded-xl border border-brown/30 p-5">
       <h3 class="text-lg font-bold text-parchment font-[Cormorant_Garamond] mb-4">Item Details</h3>
-      <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4">
+      <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
         <div>
           <div class="text-xs text-parchment/60 uppercase tracking-wider mb-1">Name</div>
           <div class="text-sm text-parchment">{{ item.name }}</div>
@@ -78,6 +78,10 @@ const inventoryRecords = computed(() =>
         <div>
           <div class="text-xs text-parchment/60 uppercase tracking-wider mb-1">Brand</div>
           <div class="text-sm text-parchment">{{ item.brand || 'N/A' }}</div>
+        </div>
+        <div>
+          <div class="text-xs text-parchment/60 uppercase tracking-wider mb-1">Type</div>
+          <div class="text-sm text-parchment">{{ item.type || 'N/A' }}</div>
         </div>
         <div>
           <div class="text-xs text-parchment/60 uppercase tracking-wider mb-1">Vendor</div>
@@ -93,6 +97,18 @@ const inventoryRecords = computed(() =>
         <div>
           <div class="text-xs text-parchment/60 uppercase tracking-wider mb-1">Inventory Unit</div>
           <div class="text-sm text-parchment">{{ item.inventoryUnit || 'N/A' }}</div>
+        </div>
+        <div>
+          <div class="text-xs text-parchment/60 uppercase tracking-wider mb-1">Purchase Size</div>
+          <div class="text-sm text-parchment">
+            {{ item.purchaseSize ? `${item.purchaseSize} ${item.purchaseSizeUnit || ''}` : 'N/A' }}
+          </div>
+        </div>
+        <div>
+          <div class="text-xs text-parchment/60 uppercase tracking-wider mb-1">Purchase Price</div>
+          <div class="text-sm text-parchment font-semibold">
+            {{ item.purchasePrice ? Dollar.format(item.purchasePrice) : 'N/A' }}
+          </div>
         </div>
         <div>
           <div class="text-xs text-parchment/60 uppercase tracking-wider mb-1">Price/Unit</div>

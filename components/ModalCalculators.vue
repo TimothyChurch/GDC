@@ -5,7 +5,7 @@ const isOpen = ref(calculatorModalStatus);
 <template>
   <div>
     <USlideover v-model="isOpen">
-      <UButton color="gray" variant="ghost" icon="i-heroicons-calculator" />
+      <UButton color="neutral" variant="ghost" icon="i-heroicons-calculator" />
       <template #content>
         <Proofing class="w-full" />
         <UButton

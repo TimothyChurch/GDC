@@ -14,6 +14,9 @@ export const useItemStore = defineStore("items", () => {
     type: "",
     vendor: '',
     inventoryUnit: "",
+    purchaseSize: 0,
+    purchaseSizeUnit: "",
+    purchasePrice: 0,
     purchaseHistory: [],
     inventoryHistory: [],
     brand: "",
@@ -52,9 +55,10 @@ export const useItemStore = defineStore("items", () => {
       let response;
       const isNew = !item.value._id;
       if (isNew) {
+        const { _id, ...createData } = item.value;
         response = await $fetch("/api/item/create", {
           method: "POST",
-          body: JSON.stringify(item.value),
+          body: JSON.stringify(createData),
         });
         items.value.push(response as Item);
       } else {
@@ -85,6 +89,9 @@ export const useItemStore = defineStore("items", () => {
       type: "",
       vendor: '',
       inventoryUnit: "",
+      purchaseSize: 0,
+      purchaseSizeUnit: "",
+      purchasePrice: 0,
       purchaseHistory: [],
       inventoryHistory: [],
       brand: "",
@@ -125,52 +132,27 @@ export const useItemStore = defineStore("items", () => {
   };
 
   const latestPrice = (item: Item | string): number => {
-    // Initialize stores
     const purchaseOrderStore = usePurchaseOrderStore();
-    // Ensure that it is the full item object vs string
-    let selectedItem;
-    if (typeof item == "string") {
-      selectedItem = getItemById(item);
-    } else {
-      selectedItem = item;
-    }
+    const { computePricePerUnit } = useUnitConversion();
+
+    const selectedItem = typeof item === "string" ? getItemById(item) : item;
     if (!selectedItem) return 0;
+
     // Sort Purchase orders by date (spread to avoid mutating the PO store's array)
     const sortedPurchaseOrders = [...purchaseOrderStore.purchaseOrders].sort(
       (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()
     );
-    // Find the last purchase where the item was purchased and return the price per size unit. Return undefined if not found.
-    for (let i in sortedPurchaseOrders) {
-      const flag = sortedPurchaseOrders[i].items.some(
-        (i) => i.item == selectedItem._id
-      );
-      if (flag) {
-        const lastPurchase = sortedPurchaseOrders[i].items.filter(
-          (i) => i.item == selectedItem._id
-        )[0];
-        // Price per unit
-        let pricePerUnit = lastPurchase.price / lastPurchase.size;
-        if (lastPurchase.sizeUnit != selectedItem.inventoryUnit) {
-          pricePerUnit =
-            pricePerUnit /
-            convertUnitRatio(
-              lastPurchase.sizeUnit as
-                | "fl oz"
-                | "cup"
-                | "gallon"
-                | "oz"
-                | "lb"
-                | "g"
-                | "kg"
-                | "mL"
-                | "L"
-                | "bottle"
-                | "each"
-                | "count",
-              selectedItem.inventoryUnit
-            );
-        }
-        return pricePerUnit;
+
+    // Find the most recent purchase containing this item
+    for (const po of sortedPurchaseOrders) {
+      const lineItem = po.items.find((i) => i.item === selectedItem._id);
+      if (lineItem) {
+        return computePricePerUnit(
+          lineItem.price,
+          lineItem.size,
+          lineItem.sizeUnit,
+          selectedItem.inventoryUnit || lineItem.sizeUnit
+        );
       }
     }
     return 0;

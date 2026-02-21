@@ -206,8 +206,8 @@ const addPurchaseOrder = () => {
         :data="tableData"
         :columns="columns"
         :loading="purchaseOrderStore.loading"
-        :empty="{ icon: 'i-lucide-clipboard-list', label: 'No purchase orders found' }"
-        @select="(row: PurchaseOrder) => router.push(`/admin/purchaseOrders/${row._id}`)"
+        :empty="'No purchase orders found'"
+        @select="(_e: Event, row: any) => router.push(`/admin/purchaseOrders/${row.original._id}`)"
         :ui="{ tr: 'cursor-pointer' }"
       >
         <template #expanded="{ row }">

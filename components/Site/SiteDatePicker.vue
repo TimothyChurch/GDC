@@ -18,14 +18,14 @@ const buttonLabel = () => {
 
 <template>
 	<UPopover v-model:open="open">
-		<UButtonGroup>
+		<UFieldGroup>
 			<UButton
 				icon="i-heroicons-calendar-days-20-solid"
 				:label="buttonLabel()" />
 			<UButton
 				icon="i-heroicons-x-mark"
 				@click="model = null" />
-		</UButtonGroup>
+		</UFieldGroup>
 
 		<template #content>
 			<DatePicker

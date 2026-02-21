@@ -54,12 +54,12 @@ const addItemToInventory = () => {
 			v-if="!inventoryButtonVisible"
 			class="flex gap-3">
 			<SiteDatePicker v-model="inventoryDate" />
-			<UButtonGroup>
+			<UFieldGroup>
 				<UInput
 					v-model="inventoryQuantity"
 					type="number" />
 				<UButton @click="addItemToInventory">Add</UButton>
-			</UButtonGroup>
+			</UFieldGroup>
 			<UButton
 				@click="inventoryButtonVisible = true"
 				color="red"

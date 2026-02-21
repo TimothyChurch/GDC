@@ -13,12 +13,43 @@ const vesselStore = useVesselStore()
 const batch = computed(() => batchStore.getBatchById(route.params._id as string))
 const recipe = computed(() => batch.value?.recipe ? recipeStore.getRecipeById(batch.value.recipe) : undefined)
 
+const itemStore = useItemStore()
+const { convertQuantity, ingredientCost } = useUnitConversion()
+
 const containingVessels = computed(() => {
   if (!batch.value?._id) return []
   return vesselStore.vessels.filter(v =>
     v.contents?.some(c => c.batch === batch.value!._id)
   )
 })
+
+// Scale recipe ingredients to batch size
+const scaleFactor = computed(() => {
+  if (!batch.value || !recipe.value || !recipe.value.volume) return 1
+  const batchInRecipeUnits = convertQuantity(batch.value.batchSize, batch.value.batchSizeUnit, recipe.value.volumeUnit)
+  return batchInRecipeUnits / recipe.value.volume
+})
+
+const scaledIngredients = computed(() => {
+  if (!recipe.value?.items) return []
+  return recipe.value.items.map((ing) => {
+    const item = itemStore.getItemById(ing._id)
+    const pricePerUnit = latestPrice(ing._id)
+    const scaledAmount = ing.amount * scaleFactor.value
+    const cost = ingredientCost(pricePerUnit, scaledAmount, ing.unit, item?.inventoryUnit || ing.unit)
+    return {
+      id: ing._id,
+      name: item?.name || 'Unknown',
+      amount: scaledAmount,
+      unit: ing.unit,
+      cost,
+    }
+  })
+})
+
+const scaledTotalCost = computed(() =>
+  scaledIngredients.value.reduce((sum, ing) => sum + ing.cost, 0)
+)
 
 // Panel slide-over for editing
 import { PanelBatch } from '#components'
@@ -89,6 +120,40 @@ const STAGE_COMPONENTS: Record<string, string> = {
     <BatchStepper :pipeline="batch.pipeline" :current-stage="batch.currentStage" />
 
     <BatchHeader :batch="batch" :recipe="recipe" />
+
+    <!-- Scaled Ingredients -->
+    <div v-if="scaledIngredients.length > 0" class="bg-charcoal rounded-xl border border-brown/30 p-5">
+      <div class="flex items-center justify-between mb-4">
+        <h3 class="text-lg font-bold text-parchment font-[Cormorant_Garamond]">
+          Ingredients
+          <span class="text-sm font-normal text-parchment/50 ml-2">
+            (scaled to {{ batch.batchSize }} {{ batch.batchSizeUnit }})
+          </span>
+        </h3>
+        <span class="text-sm font-semibold text-gold">{{ Dollar.format(scaledTotalCost) }}</span>
+      </div>
+      <div class="divide-y divide-brown/20">
+        <div class="grid grid-cols-3 gap-4 pb-2 text-xs text-parchment/60 uppercase tracking-wider">
+          <span>Item</span>
+          <span>Amount</span>
+          <span class="text-right">Cost</span>
+        </div>
+        <div
+          v-for="ing in scaledIngredients"
+          :key="ing.id"
+          class="grid grid-cols-3 gap-4 py-2 text-sm"
+        >
+          <NuxtLink
+            :to="`/admin/items/${ing.id}`"
+            class="text-gold hover:text-copper transition-colors"
+          >
+            {{ ing.name }}
+          </NuxtLink>
+          <span class="text-parchment/60">{{ Number(ing.amount.toFixed(2)) }} {{ ing.unit }}</span>
+          <span class="text-parchment text-right">{{ Dollar.format(ing.cost) }}</span>
+        </div>
+      </div>
+    </div>
 
     <!-- Current Vessels -->
     <div v-if="containingVessels.length > 0" class="bg-charcoal rounded-xl border border-brown/30 p-5">

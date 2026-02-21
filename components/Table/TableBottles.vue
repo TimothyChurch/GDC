@@ -3,9 +3,12 @@ import type { TableColumn } from "@nuxt/ui";
 import type { Bottle } from "~/types";
 import type { Row } from "@tanstack/vue-table";
 
+const props = defineProps<{ bottles: Bottle[] }>();
+
 const router = useRouter();
 const bottleStore = useBottleStore();
 const { confirm } = useDeleteConfirm();
+const { isLowStock } = useBottleStock();
 
 const UButton = resolveComponent("UButton");
 const UDropdownMenu = resolveComponent("UDropdownMenu");
@@ -76,6 +79,14 @@ const columns: TableColumn<Bottle>[] = [
           h("span", {
             class: "px-2 py-0.5 rounded-full text-[10px] font-semibold border bg-yellow-500/15 text-yellow-400 border-yellow-500/25",
             innerHTML: "Archived",
+          })
+        );
+      }
+      if (isLowStock(row.original._id)) {
+        badges.push(
+          h("span", {
+            class: "px-2 py-0.5 rounded-full text-[10px] font-semibold border bg-orange-500/15 text-orange-400 border-orange-500/25",
+            innerHTML: "Low Stock",
           })
         );
       }
@@ -164,7 +175,7 @@ const newBottle = () => {
   <TableWrapper
     v-model:search="search"
     v-model:pagination="pagination"
-    :total-items="bottleStore.bottles.length"
+    :total-items="props.bottles.length"
     :loading="bottleStore.loading"
     search-placeholder="Search bottles..."
   >
@@ -176,11 +187,11 @@ const newBottle = () => {
       <UTable
         v-model:global-filter="search"
         v-model:pagination="pagination"
-        :data="bottleStore.bottles"
+        :data="props.bottles"
         :columns="columns"
         :loading="bottleStore.loading"
-        :empty="{ icon: 'i-lucide-wine', label: 'No bottles found' }"
-        @select="(row: Bottle) => router.push(`/admin/bottles/${row._id}`)"
+        :empty="'No bottles match the current filters'"
+        @select="(_e: Event, row: any) => router.push(`/admin/bottles/${row.original._id}`)"
         :ui="{ tr: 'cursor-pointer' }"
       />
     </div>
@@ -188,7 +199,7 @@ const newBottle = () => {
     <!-- Mobile card view -->
     <div class="sm:hidden space-y-3">
       <div
-        v-for="bottle in bottleStore.bottles"
+        v-for="bottle in props.bottles"
         :key="bottle._id"
         class="bg-charcoal rounded-lg border border-brown/30 p-4 cursor-pointer"
         @click="router.push(`/admin/bottles/${bottle._id}`)"
@@ -204,6 +215,12 @@ const newBottle = () => {
               class="px-2 py-0.5 rounded-full text-[10px] font-semibold border bg-yellow-500/15 text-yellow-400 border-yellow-500/25"
             >
               Archived
+            </span>
+            <span
+              v-if="isLowStock(bottle._id)"
+              class="px-2 py-0.5 rounded-full text-[10px] font-semibold border bg-orange-500/15 text-orange-400 border-orange-500/25"
+            >
+              Low Stock
             </span>
             <span
               class="px-2 py-0.5 rounded-full text-[10px] font-semibold border"
@@ -224,8 +241,8 @@ const newBottle = () => {
           </div>
         </div>
       </div>
-      <div v-if="bottleStore.bottles.length === 0" class="text-center py-6 text-parchment/50 text-sm">
-        No bottles found
+      <div v-if="props.bottles.length === 0" class="text-center py-6 text-parchment/50 text-sm">
+        No bottles match the current filters
       </div>
     </div>
   </TableWrapper>

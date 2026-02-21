@@ -42,9 +42,10 @@ export const useEventStore = defineStore('events', () => {
 		try {
 			const isNew = !event.value._id;
 			if (isNew) {
+				const { _id, ...createData } = event.value;
 				const response = await $fetch('/api/event/create', {
 					method: 'POST',
-					body: JSON.stringify(event.value),
+					body: JSON.stringify(createData),
 				});
 				events.value.push(response as GDCEvent);
 			} else {

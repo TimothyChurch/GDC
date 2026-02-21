@@ -110,10 +110,7 @@ const scaledPrice = computed(() => {
               />
             </UFormField>
             <UFormField label="Size Unit">
-              <USelect
-                v-model="localData.batchSizeUnit"
-                :options="volumeUnits"
-              />
+              <USelect v-model="localData.batchSizeUnit" :items="volumeUnits" />
             </UFormField>
           </div>
           <UFormField label="Batch Cost">

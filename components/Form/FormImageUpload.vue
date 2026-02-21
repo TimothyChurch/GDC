@@ -12,7 +12,7 @@ const emit = defineEmits<{
   'update:modelValue': [value: string | undefined]
 }>()
 
-const { upload, remove, uploading, error } = useFileUpload()
+const { upload, remove, uploading, error } = useCloudinaryUpload()
 const dragOver = ref(false)
 const fileInput = ref<HTMLInputElement | null>(null)
 

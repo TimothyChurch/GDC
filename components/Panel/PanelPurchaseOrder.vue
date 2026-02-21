@@ -23,22 +23,33 @@ const { localData, isDirty, saving, save, cancel } = useFormPanel({
       }
     });
   },
-  onClose: () => emit('close', true),
+  onClose: () => emit("close", true),
 });
 
 const isNew = !localData.value._id;
 
-const statusOptions = ["Pending", "Confirmed", "Shipped", "Delivered", "Cancelled"];
+const statusOptions = [
+  "Pending",
+  "Confirmed",
+  "Shipped",
+  "Delivered",
+  "Cancelled",
+];
 
 const total = computed(() => {
-  return localData.value.items.reduce((sum: number, item: PurchaseOrderItem) => sum + item.price * item.quantity, 0);
+  return localData.value.items.reduce(
+    (sum: number, item: PurchaseOrderItem) => sum + item.price * item.quantity,
+    0,
+  );
 });
 
-const newItem = ref({ item: '', quantity: 0, size: 0, sizeUnit: '', price: 0 });
+const newItem = ref({ item: "", quantity: 0, size: 0, sizeUnit: "", price: 0 });
 
 const addItem = () => {
-  localData.value.items.push({ ...newItem.value } as unknown as PurchaseOrderItem);
-  newItem.value = { item: '', quantity: 0, size: 0, sizeUnit: '', price: 0 };
+  localData.value.items.push({
+    ...newItem.value,
+  } as unknown as PurchaseOrderItem);
+  newItem.value = { item: "", quantity: 0, size: 0, sizeUnit: "", price: 0 };
 };
 
 const removeItem = (index: number) => {
@@ -50,11 +61,20 @@ const removeItem = (index: number) => {
   <USlideover side="right" :close="{ onClick: cancel }">
     <template #content>
       <div class="flex flex-col h-full w-full sm:max-w-lg">
-        <div class="flex items-center justify-between px-4 py-3 border-b border-white/10">
-          <h2 class="text-lg font-bold text-parchment font-[Cormorant_Garamond]">
-            {{ isNew ? 'New Purchase Order' : 'Edit Purchase Order' }}
+        <div
+          class="flex items-center justify-between px-4 py-3 border-b border-white/10"
+        >
+          <h2
+            class="text-lg font-bold text-parchment font-[Cormorant_Garamond]"
+          >
+            {{ isNew ? "New Purchase Order" : "Edit Purchase Order" }}
           </h2>
-          <UButton icon="i-lucide-x" color="neutral" variant="ghost" @click="cancel" />
+          <UButton
+            icon="i-lucide-x"
+            color="neutral"
+            variant="ghost"
+            @click="cancel"
+          />
         </div>
         <div class="flex-1 overflow-y-auto p-4 space-y-4">
           <UFormField label="Date">
@@ -62,14 +82,23 @@ const removeItem = (index: number) => {
           </UFormField>
           <div class="grid grid-cols-2 gap-4">
             <UFormField label="Status">
-              <USelect v-model="localData.status" :options="statusOptions" />
+              <USelect
+                v-model="localData.status"
+                :items="statusOptions"
+                class="w-full"
+              />
             </UFormField>
             <UFormField label="Vendor">
               <USelect
                 v-model="localData.vendor"
-                :options="contactStore.contacts"
-                option-attribute="businessName"
-                value-attribute="_id"
+                :items="
+                  contactStore.contacts.map((c) => ({
+                    label: c.businessName || `${c.firstName} ${c.lastName}`,
+                    value: c._id,
+                  }))
+                "
+                value-key="value"
+                class="w-full"
               />
             </UFormField>
           </div>
@@ -81,26 +110,63 @@ const removeItem = (index: number) => {
                 :key="index"
                 class="flex items-center justify-between gap-2 text-sm"
               >
-                <span class="flex-1 truncate">{{ itemStore.items.find((i) => i._id === item.item)?.name }}</span>
-                <span class="text-parchment/60">{{ item.quantity }} x {{ Dollar.format(item.price) }}</span>
-                <UButton icon="i-lucide-trash-2" color="error" variant="ghost" size="xs" @click="removeItem(index)" />
+                <span class="flex-1 truncate">{{
+                  itemStore.items.find((i) => i._id === item.item)?.name
+                }}</span>
+                <span class="text-parchment/60"
+                  >{{ item.quantity }} x {{ Dollar.format(item.price) }}</span
+                >
+                <UButton
+                  icon="i-lucide-trash-2"
+                  color="error"
+                  variant="ghost"
+                  size="xs"
+                  @click="removeItem(index)"
+                />
               </div>
               <div class="space-y-2 border border-white/10 rounded p-2">
                 <USelectMenu
                   v-model="newItem.item"
-                  :options="itemStore.items"
-                  option-attribute="name"
-                  value-attribute="_id"
+                  :items="
+                    itemStore.items.map((i) => ({
+                      label: i.name,
+                      value: i._id,
+                    }))
+                  "
+                  value-key="value"
                   placeholder="Select item"
                   searchable
                 />
                 <div class="grid grid-cols-4 gap-2">
-                  <UInput v-model.number="newItem.quantity" type="number" placeholder="Qty" />
-                  <UInput v-model.number="newItem.size" type="number" placeholder="Size" />
-                  <USelect v-model="newItem.sizeUnit" :options="allUnits" placeholder="Unit" />
-                  <UInput v-model.number="newItem.price" type="number" placeholder="Price" />
+                  <UInput
+                    v-model.number="newItem.quantity"
+                    type="number"
+                    placeholder="Qty"
+                  />
+                  <UInput
+                    v-model.number="newItem.size"
+                    type="number"
+                    placeholder="Size"
+                  />
+                  <USelect
+                    v-model="newItem.sizeUnit"
+                    :items="allUnits"
+                    placeholder="Unit"
+                  />
+                  <UInput
+                    v-model.number="newItem.price"
+                    type="number"
+                    placeholder="Price"
+                  />
                 </div>
-                <UButton @click="addItem" icon="i-lucide-plus" size="sm" variant="outline" class="w-full">Add Item</UButton>
+                <UButton
+                  @click="addItem"
+                  icon="i-lucide-plus"
+                  size="sm"
+                  variant="outline"
+                  class="w-full"
+                  >Add Item</UButton
+                >
               </div>
             </div>
           </UFormField>
@@ -109,10 +175,14 @@ const removeItem = (index: number) => {
             <span class="text-lg font-bold">{{ Dollar.format(total) }}</span>
           </UFormField>
         </div>
-        <div class="flex items-center justify-end gap-2 px-4 py-3 border-t border-white/10">
-          <UButton color="neutral" variant="outline" @click="cancel">Cancel</UButton>
+        <div
+          class="flex items-center justify-end gap-2 px-4 py-3 border-t border-white/10"
+        >
+          <UButton color="neutral" variant="outline" @click="cancel"
+            >Cancel</UButton
+          >
           <UButton @click="save" :loading="saving" :disabled="!isDirty">
-            {{ isNew ? 'Create' : 'Save' }}
+            {{ isNew ? "Create" : "Save" }}
           </UButton>
         </div>
       </div>

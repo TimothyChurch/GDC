@@ -1,4 +1,4 @@
-export function useFileUpload() {
+export function useCloudinaryUpload() {
   const uploading = ref(false)
   const error = ref<string | null>(null)
 

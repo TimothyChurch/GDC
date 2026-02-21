@@ -1,52 +1,26 @@
 import type { Item, Recipe, Bottle } from '~/types';
 
 export const latestPrice = (item: Item | string): number => {
-	// Initialize stores and set up ref
 	const itemStore = useItemStore();
 	const purchaseOrderStore = usePurchaseOrderStore();
-	const selectedItem = ref();
-	// Ensure that it is the full item object vs string
-	if (typeof item == 'string') {
-		selectedItem.value = itemStore.getItemById(item);
-	} else {
-		selectedItem.value = item;
-	}
-	// Sort Purchase orders by date
-	const sortedPurchaseOrders = purchaseOrderStore.purchaseOrders.sort(
+	const { computePricePerUnit } = useUnitConversion();
+
+	const selectedItem = typeof item === 'string' ? itemStore.getItemById(item) : item;
+	if (!selectedItem) return 0;
+
+	const sortedPurchaseOrders = [...purchaseOrderStore.purchaseOrders].sort(
 		(a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()
 	);
-	// Find the last purchase where the item was purchased and return the price per size unit. Return undefined if not found.
-	for (let i in sortedPurchaseOrders) {
-		const flag = sortedPurchaseOrders[i].items.some(
-			(i) => i.item == selectedItem.value._id
-		);
-		if (flag) {
-			const lastPurchase = sortedPurchaseOrders[i].items.filter(
-				(i) => i.item == selectedItem.value._id
-			)[0];
-			// Price per unit
-			const pricePerUnit = ref(lastPurchase.price / lastPurchase.size);
-			if (lastPurchase.sizeUnit != selectedItem.value.inventoryUnit) {
-				pricePerUnit.value =
-					pricePerUnit.value /
-					convertUnitRatio(
-						lastPurchase.sizeUnit as
-							| 'fl oz'
-							| 'cup'
-							| 'gallon'
-							| 'oz'
-							| 'lb'
-							| 'g'
-							| 'kg'
-							| 'mL'
-							| 'L'
-							| 'bottle'
-							| 'each'
-							| 'count',
-						selectedItem.value.inventoryUnit
-					);
-			}
-			return pricePerUnit.value;
+
+	for (const po of sortedPurchaseOrders) {
+		const lineItem = po.items.find((i) => i.item === selectedItem._id);
+		if (lineItem) {
+			return computePricePerUnit(
+				lineItem.price,
+				lineItem.size,
+				lineItem.sizeUnit,
+				selectedItem.inventoryUnit || lineItem.sizeUnit
+			);
 		}
 	}
 	return 0;
@@ -55,61 +29,23 @@ export const latestPrice = (item: Item | string): number => {
 export const recipePrice = (recipe: Recipe | string) => {
 	const itemStore = useItemStore();
 	const recipeStore = useRecipeStore();
-	const selectedRecipe = ref();
-	const total = ref(0);
-	if (typeof recipe == 'string') {
-		selectedRecipe.value = recipeStore.getRecipeById(recipe);
-	} else {
-		selectedRecipe.value = recipe;
+	const { ingredientCost } = useUnitConversion();
+
+	const selectedRecipe = typeof recipe === 'string' ? recipeStore.getRecipeById(recipe) : recipe;
+	if (!selectedRecipe || selectedRecipe.items.length === 0) return 0;
+
+	let total = 0;
+	for (const ingredient of selectedRecipe.items) {
+		const item = itemStore.getItemById(ingredient._id);
+		const pricePerUnit = latestPrice(ingredient._id);
+		total += ingredientCost(
+			pricePerUnit,
+			ingredient.amount,
+			ingredient.unit,
+			item?.inventoryUnit || ingredient.unit
+		);
 	}
-	if (!selectedRecipe.value) return 0;
-	if (selectedRecipe.value.items.length == 0) return 0;
-	selectedRecipe.value.items.forEach(
-		(ingredient: {
-			_id: string;
-			amount: number;
-			unit:
-				| 'fl oz'
-				| 'cup'
-				| 'gallon'
-				| 'oz'
-				| 'lb'
-				| 'g'
-				| 'kg'
-				| 'mL'
-				| 'L'
-				| 'bottle'
-				| 'each'
-				| 'count';
-		}) => {
-			if (
-				ingredient.unit != itemStore.getItemById(ingredient._id)?.inventoryUnit
-			) {
-				total.value +=
-					latestPrice(ingredient?._id) *
-					ingredient.amount *
-					convertUnitRatio(
-						ingredient.unit,
-						itemStore.getItemById(ingredient._id)?.inventoryUnit as
-							| 'fl oz'
-							| 'cup'
-							| 'gallon'
-							| 'oz'
-							| 'lb'
-							| 'g'
-							| 'kg'
-							| 'mL'
-							| 'L'
-							| 'bottle'
-							| 'each'
-							| 'count'
-					);
-			} else {
-				total.value += latestPrice(ingredient?._id) * ingredient.amount;
-			}
-		}
-	);
-	return total.value;
+	return total;
 };
 
 export const latestProduction = (bottle: string) => {

@@ -58,9 +58,10 @@ export const useUserStore = defineStore('users', () => {
     try {
       const isNew = !user.value._id;
       if (isNew) {
+        const { _id, ...createData } = user.value;
         const response = await $fetch('/api/users/create', {
           method: 'POST',
-          body: JSON.stringify(user.value),
+          body: JSON.stringify(createData),
         });
         users.value.push(response as User);
       } else {

@@ -61,10 +61,23 @@ const handleSubmit = () => {
 						:items="allUnits"
 						class="w-full" />
 				</UFormField>
-				<UFormField label="Price per Inventory Unit" name="pricePerUnit" class="md:col-span-3">
+				<UFormField label="Purchase Size" name="purchaseSize" class="md:col-span-2">
 					<UInput
 						type="number"
-						v-model="itemStore.item.pricePerUnit"
+						v-model="itemStore.item.purchaseSize"
+						class="w-full" />
+				</UFormField>
+				<UFormField label="Size Unit" name="purchaseSizeUnit" class="md:col-span-2">
+					<USelect
+						v-model="itemStore.item.purchaseSizeUnit"
+						:items="allUnits"
+						class="w-full" />
+				</UFormField>
+				<UFormField label="Purchase Price" name="purchasePrice" class="md:col-span-2">
+					<UInput
+						type="number"
+						step="0.01"
+						v-model="itemStore.item.purchasePrice"
 						class="w-full" />
 				</UFormField>
 				<div class="flex justify-around col-span-full">

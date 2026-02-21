@@ -208,7 +208,7 @@ const addItem = () => {
         :data="filteredEvents"
         :columns="columns"
         :loading="eventStore.loading"
-        :empty="{ icon: 'i-lucide-calendar', label: 'No events found' }"
+        :empty="'No events found'"
       >
         <template #expanded="{ row }">
           <div class="flex gap-6 flex-wrap py-2 px-4">

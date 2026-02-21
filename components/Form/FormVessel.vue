@@ -43,20 +43,20 @@ const submitForm = () => {
 						searchable />
 				</UFormField>
 				<UFormField label="Vessel Weight">
-					<UButtonGroup>
+					<UFieldGroup>
 						<UInput v-model="vesselStore.vessel.stats.weight" />
 						<USelect
 							v-model="vesselStore.vessel.stats.weightUnit"
 							:options="weightUnits" />
-					</UButtonGroup>
+					</UFieldGroup>
 				</UFormField>
 				<UFormField label="Vessel Capacity">
-					<UButtonGroup>
+					<UFieldGroup>
 						<UInput v-model="vesselStore.vessel.stats.volume" />
 						<USelect
 							v-model="vesselStore.vessel.stats.volumeUnit"
 							:options="volumeUnits" />
-					</UButtonGroup>
+					</UFieldGroup>
 				</UFormField>
 			</div>
 			<div
@@ -82,7 +82,7 @@ const submitForm = () => {
 				@click="submitForm()"
 				variant="ghost"
 				icon="i-heroicons-check-circle"
-				color="gray"
+				color="neutral"
 				:loading="vesselStore.saving"
 				>Submit</UButton
 			>
