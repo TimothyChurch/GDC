@@ -12,13 +12,13 @@ const inventoryStore = useInventoryStore()
 const item = computed(() => itemStore.getItemById(route.params._id as string))
 
 // Panel slide-over for editing
-import { PanelItem } from '#components'
+import { LazyPanelItem } from '#components'
 const overlay = useOverlay()
-const panel = overlay.create(PanelItem)
+const panel = overlay.create(LazyPanelItem)
 
 const editItem = () => {
   if (!item.value) return
-  itemStore.item = item.value
+  itemStore.setItem(item.value._id)
   panel.open()
 }
 
@@ -41,7 +41,11 @@ const inventoryRecords = computed(() =>
 </script>
 
 <template>
-  <div v-if="item" class="space-y-6">
+  <div v-if="!itemStore.loaded" class="flex items-center justify-center py-12">
+    <UIcon name="i-lucide-loader-2" class="animate-spin text-3xl text-parchment/30" />
+  </div>
+
+  <div v-else-if="item" class="space-y-6">
     <AdminPageHeader
       :title="item.name"
       :subtitle="item.brand || undefined"

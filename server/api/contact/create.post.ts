@@ -1,7 +1,7 @@
 export default defineEventHandler(async (event) => {
 	const body = await readBody(event);
-	await validateBody(body, contactCreateSchema);
 	const sanitized = sanitize(body);
+	await validateBody(sanitized, contactCreateSchema);
 	try {
 		const newContact = new Contact(sanitized);
 		await newContact.save();

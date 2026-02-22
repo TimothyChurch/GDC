@@ -3,6 +3,7 @@ import * as yup from 'yup';
 
 const cocktailStore = useCocktailStore();
 const itemStore = useItemStore();
+const { cocktailModalOpen } = useCocktailModal();
 
 const schema = yup.object({
 	name: yup.string().required('Cocktail name is required'),

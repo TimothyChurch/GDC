@@ -32,7 +32,7 @@ export const bottleStockCheck = (id: string) => {
 export const currentStock = (item: Item) => {
 	const inventoryStore = useInventoryStore();
 
-	const sortedInventory = inventoryStore.inventories.sort(
+	const sortedInventory = [...inventoryStore.inventories].sort(
 		(a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()
 	);
 

@@ -4,6 +4,10 @@ import type { Cocktail } from "~/types";
 useSeoMeta({
   title: 'Cocktail Menu | Galveston Distilling Co',
   description: 'Explore our handcrafted cocktail menu featuring island-inspired drinks made with our own spirits.',
+  ogTitle: 'Cocktail Menu | Galveston Distilling Co',
+  ogDescription: 'Explore our handcrafted cocktail menu featuring island-inspired drinks made with our own spirits.',
+  ogImage: '/images/og-menu.jpg',
+  ogUrl: 'https://galvestondistilling.com/menu',
 });
 
 const cocktailStore = useCocktailStore();

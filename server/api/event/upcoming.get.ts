@@ -6,7 +6,8 @@ export default defineEventHandler(async () => {
       date: { $gte: now },
     })
       .select("date type capacity groupSize")
-      .sort({ date: 1 });
+      .sort({ date: 1 })
+      .lean();
     return events;
   } catch (error) {
     throw createError({

@@ -2,9 +2,11 @@
 const cocktailStore = useCocktailStore();
 const itemStore = useItemStore();
 
-const featuredCocktails = computed(() => {
+const featuredCocktails = ref<typeof cocktailStore.cocktails>([]);
+
+onMounted(() => {
   const visible = cocktailStore.cocktails.filter((c) => c.visible !== false);
-  return [...visible].sort(() => Math.random() - 0.5).slice(0, 3);
+  featuredCocktails.value = [...visible].sort(() => Math.random() - 0.5).slice(0, 3);
 });
 
 const getIngredientNames = (cocktail: { ingredients: { item: string; amount: number; unit: string }[] }) => {

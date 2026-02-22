@@ -2,6 +2,10 @@
 useSeoMeta({
   title: 'Contact Us | Galveston Distilling Co',
   description: 'Get in touch with Galveston Distilling Co. Ask questions, inquire about private events, or reach out about wholesale opportunities.',
+  ogTitle: 'Contact Us | Galveston Distilling Co',
+  ogDescription: 'Get in touch with Galveston Distilling Co. Ask questions, inquire about private events, or reach out about wholesale opportunities.',
+  ogImage: '/images/og-contact.jpg',
+  ogUrl: 'https://galvestondistilling.com/contact',
 });
 
 const route = useRoute();

@@ -24,7 +24,6 @@ export const useEventStore = defineStore('events', () => {
 		try {
 			const response = await $fetch('/api/event');
 			events.value = response as GDCEvent[];
-		} catch (error) {
 		} finally {
 			loading.value = false;
 		}
@@ -32,8 +31,12 @@ export const useEventStore = defineStore('events', () => {
 
 	const ensureLoaded = async () => {
 		if (!loaded.value) {
-			await getEvents();
-			loaded.value = true;
+			try {
+				await getEvents();
+				loaded.value = true;
+			} catch {
+				// loaded stays false — will retry on next call
+			}
 		}
 	};
 

@@ -2,6 +2,10 @@
 useSeoMeta({
   title: 'Cocktail Classes | Galveston Distilling Co',
   description: 'Join our hands-on cocktail classes and learn to craft drinks with Galveston-made spirits.',
+  ogTitle: 'Cocktail Classes | Galveston Distilling Co',
+  ogDescription: 'Join our hands-on cocktail classes and learn to craft drinks with Galveston-made spirits.',
+  ogImage: '/images/og-events.jpg',
+  ogUrl: 'https://galvestondistilling.com/events/cocktailClass',
 });
 
 const { loadStripe } = useClientStripe();

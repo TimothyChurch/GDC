@@ -19,6 +19,6 @@ onMounted(async () => {
       <slot />
     </main>
     <SiteFooter />
-    <ModalAge />
+    <LazyModalAge />
   </div>
 </template>

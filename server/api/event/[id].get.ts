@@ -1,7 +1,7 @@
 export default defineEventHandler(async (event) => {
   try {
     const id = event.context.params?.id;
-    const found = await Event.findById(id).populate("contact");
+    const found = await Event.findById(id).populate("contact").lean();
     if (!found) {
       throw createError({
         statusCode: 404,

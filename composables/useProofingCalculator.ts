@@ -1,9 +1,9 @@
-const initialWeight = ref({ weight: 0, unit: 'lb' });
-const initialAbv = ref(0);
-const targetAbv = ref();
-const steps: Ref<{ volume: number; unit: string; abv: number }[]> = ref([]);
-
 export const useProofingCalculator = () => {
+	const initialWeight = ref({ weight: 0, unit: 'lb' });
+	const initialAbv = ref(0);
+	const targetAbv = ref();
+	const steps: Ref<{ volume: number; unit: string; abv: number }[]> = ref([]);
+
 	const initialVolume: Ref<{ volume: number; unit: string }> = computed(() => {
 		if (initialWeight.value.unit === 'lb') {
 			const volume = parseFloat(
@@ -26,17 +26,17 @@ export const useProofingCalculator = () => {
 		}
 	});
 	const currentVolume = computed(() => {
-		const stepsVolume = ref(0);
+		let stepsVolume = 0;
 		if (steps.value.length > 0) {
 			steps.value.forEach((step) => {
 				if (step.volume != 0 && step.unit != '') {
-					stepsVolume.value +=
+					stepsVolume +=
 						step.volume * convertUnitRatio(step.unit, initialVolume.value.unit);
 				}
 			});
 		}
 		const volume = parseFloat(
-			(initialVolume.value.volume + stepsVolume.value).toFixed(2)
+			(initialVolume.value.volume + stepsVolume).toFixed(2)
 		);
 		const unit = initialVolume.value.unit;
 		return { volume, unit };

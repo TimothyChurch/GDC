@@ -12,7 +12,9 @@
   },
   "dependencies": {
     "@iconify-json/heroicons": "^1.2.1",
+    "@nuxt/image": "^2.0.0",
     "@nuxt/ui": "^4.4.0",
+    "@nuxtjs/sitemap": "^7.6.0",
     "@pinia/nuxt": "^0.7.0",
     "@stripe/stripe-js": "^7.4.0",
     "@tailwindcss/vite": "^4.1.4",

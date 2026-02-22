@@ -29,7 +29,6 @@ export const useItemStore = defineStore("items", () => {
     try {
       const response = await $fetch("/api/item");
       items.value = response as Item[];
-    } catch (e) {
     } finally {
       loading.value = false;
     }
@@ -37,16 +36,18 @@ export const useItemStore = defineStore("items", () => {
 
   const ensureLoaded = async () => {
     if (!loaded.value) {
-      await getItems();
-      loaded.value = true;
+      try {
+        await getItems();
+        loaded.value = true;
+      } catch {
+        // loaded stays false — will retry on next call
+      }
     }
   };
 
   const setItem = (id: string) => {
-    const foundItem = items.value.find((i) => i._id === id);
-    if (foundItem) {
-      item.value = foundItem;
-    }
+    const found = items.value.find((i) => i._id === id);
+    if (found) item.value = JSON.parse(JSON.stringify(found));
   };
 
   const updateItem = async (): Promise<Item> => {

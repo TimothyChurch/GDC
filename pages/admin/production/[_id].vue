@@ -47,9 +47,9 @@ const resolveItemName = (id?: string) => {
 }
 
 // Panel slide-over for editing
-import { PanelProduction } from '#components'
+import { LazyPanelProduction } from '#components'
 const overlay = useOverlay()
-const panel = overlay.create(PanelProduction)
+const panel = overlay.create(LazyPanelProduction)
 
 const editProduction = () => {
   if (!production.value) return

@@ -106,7 +106,7 @@ function getRowItems(row: Row<Production>) {
     {
       label: "Edit production",
       onSelect() {
-        productionsStore.production = row.original;
+        productionsStore.production = JSON.parse(JSON.stringify(row.original));
         openPanel();
       },
     },
@@ -124,9 +124,9 @@ function getRowItems(row: Row<Production>) {
 }
 
 // Panel slide-over
-import { PanelProduction } from "#components";
+import { LazyPanelProduction } from "#components";
 const overlay = useOverlay();
-const panel = overlay.create(PanelProduction);
+const panel = overlay.create(LazyPanelProduction);
 const openPanel = async () => await panel.open();
 
 const newItem = () => {

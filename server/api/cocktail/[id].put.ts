@@ -16,7 +16,8 @@ export default defineEventHandler(async (event) => {
 			});
 		}
 		return updatedCocktail;
-	} catch (error) {
+	} catch (error: any) {
+		if (error.statusCode) throw error;
 		throw createError({
 			statusCode: 500,
 			statusMessage: 'Error updating cocktail',

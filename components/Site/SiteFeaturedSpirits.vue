@@ -30,12 +30,14 @@ onMounted(() => {
           class="group text-center"
         >
           <div class="aspect-[3/4] bg-charcoal/5 dark:bg-parchment/5 rounded-lg overflow-hidden mb-4 flex items-center justify-center">
-            <img
+            <NuxtImg
               v-if="bottle.img"
               :src="bottle.img"
               :alt="bottle.name"
               class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
               loading="lazy"
+              sizes="sm:50vw lg:25vw"
+              format="webp"
             />
             <Icon v-else name="carbon:wine-bottle" class="text-5xl text-brown/20 dark:text-parchment/20" />
           </div>

@@ -64,7 +64,6 @@ export const useBatchStore = defineStore('batches', () => {
 		try {
 			const response = await $fetch('/api/batch');
 			batches.value = response as Batch[];
-		} catch (e) {
 		} finally {
 			loading.value = false;
 		}
@@ -72,15 +71,18 @@ export const useBatchStore = defineStore('batches', () => {
 
 	const ensureLoaded = async () => {
 		if (!loaded.value) {
-			await getBatches();
-			loaded.value = true;
+			try {
+				await getBatches();
+				loaded.value = true;
+			} catch {
+				// loaded stays false — will retry on next call
+			}
 		}
 	};
 
 	const setBatch = (id: string): void => {
-		batch.value = batches.value.find(
-			(b) => b._id === id
-		) as Batch;
+		const found = batches.value.find((b) => b._id === id);
+		if (found) batch.value = JSON.parse(JSON.stringify(found));
 	};
 
 	const updateBatch = async (): Promise<void> => {

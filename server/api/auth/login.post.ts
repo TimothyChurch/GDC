@@ -1,11 +1,37 @@
 import bcrypt from 'bcrypt';
 
+// In-memory rate limiter (5 attempts per IP per 15 minutes)
+const loginAttempts = new Map<string, { count: number; resetAt: number }>();
+
 export default defineEventHandler(async (event) => {
+  const ip = getRequestIP(event) || 'unknown';
+  const now = Date.now();
+
+  // Clean expired entries
+  const existing = loginAttempts.get(ip);
+  if (existing && now >= existing.resetAt) {
+    loginAttempts.delete(ip);
+  }
+
+  // Check rate limit
+  const attempts = loginAttempts.get(ip);
+  if (attempts && attempts.count >= 5) {
+    throw createError({
+      statusCode: 429,
+      statusMessage: 'Too many login attempts. Try again in 15 minutes.',
+    });
+  }
+
   const body = await readBody(event);
-  const validated = await validateBody(body, userLoginSchema);
+  const sanitized = sanitize(body);
+  const validated = await validateBody(sanitized, userLoginSchema);
 
   const users = await User.find({ email: validated.email });
   if (users.length === 0) {
+    const current = loginAttempts.get(ip) || { count: 0, resetAt: now + 15 * 60 * 1000 };
+    current.count++;
+    loginAttempts.set(ip, current);
+    console.warn(`[AUTH] Failed login for ${validated.email} from ${ip} (unknown user)`);
     throw createError({ statusCode: 401, statusMessage: 'Invalid credentials' });
   }
 
@@ -29,12 +55,21 @@ export default defineEventHandler(async (event) => {
   }
 
   if (!isMatch) {
+    const current = loginAttempts.get(ip) || { count: 0, resetAt: now + 15 * 60 * 1000 };
+    current.count++;
+    loginAttempts.set(ip, current);
+    console.warn(`[AUTH] Failed login for ${validated.email} from ${ip}`);
     throw createError({ statusCode: 401, statusMessage: 'Invalid credentials' });
   }
 
-  // Create server-side session
+  // Clear attempts on successful login
+  loginAttempts.delete(ip);
+
+  // Regenerate session to prevent session fixation
   const session = await getAuthSession(event);
-  await session.update({ userId: userObj._id.toString(), email: userObj.email });
+  await session.clear();
+  const newSession = await getAuthSession(event);
+  await newSession.update({ userId: userObj._id.toString(), email: userObj.email });
 
   const { password, ...userWithoutPassword } = userObj;
   return userWithoutPassword;

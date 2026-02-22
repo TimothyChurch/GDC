@@ -2,6 +2,10 @@
 useSeoMeta({
   title: 'Events | Galveston Distilling Co',
   description: 'Book cocktail classes, distillery tours, and spirit tastings at Galveston Distilling Co.',
+  ogTitle: 'Events | Galveston Distilling Co',
+  ogDescription: 'Book cocktail classes, distillery tours, and spirit tastings at Galveston Distilling Co.',
+  ogImage: '/images/og-events.jpg',
+  ogUrl: 'https://galvestondistilling.com/events',
 });
 </script>
 

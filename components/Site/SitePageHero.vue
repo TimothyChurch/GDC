@@ -8,12 +8,15 @@ defineProps<{
 
 <template>
   <div class="relative flex items-center justify-center overflow-hidden" style="min-height: 40vh">
-    <img
+    <NuxtImg
       v-if="backgroundImage"
       :src="backgroundImage"
       :alt="title"
       class="absolute inset-0 w-full h-full object-cover"
       loading="eager"
+      fetchpriority="high"
+      sizes="100vw"
+      format="webp"
     />
     <div v-else class="absolute inset-0 bg-charcoal"></div>
     <div class="absolute inset-0 bg-espresso/60"></div>

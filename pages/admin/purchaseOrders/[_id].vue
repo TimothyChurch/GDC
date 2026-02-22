@@ -39,9 +39,9 @@ const grandTotal = computed(() =>
 )
 
 // Panel slide-over for editing
-import { PanelPurchaseOrder } from '#components'
+import { LazyPanelPurchaseOrder } from '#components'
 const overlay = useOverlay()
-const panel = overlay.create(PanelPurchaseOrder)
+const panel = overlay.create(LazyPanelPurchaseOrder)
 
 const editPO = () => {
   if (!po.value) return

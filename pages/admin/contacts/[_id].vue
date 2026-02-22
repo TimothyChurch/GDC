@@ -24,13 +24,13 @@ const suppliedItems = computed(() =>
 )
 
 // Panel slide-over for editing
-import { PanelContact } from '#components'
+import { LazyPanelContact } from '#components'
 const overlay = useOverlay()
-const panel = overlay.create(PanelContact)
+const panel = overlay.create(LazyPanelContact)
 
 const editContact = () => {
   if (!contact.value) return
-  contactStore.contact = contact.value
+  contactStore.contact = JSON.parse(JSON.stringify(contact.value))
   panel.open()
 }
 

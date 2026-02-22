@@ -53,7 +53,6 @@ export const useVesselStore = defineStore('vessels', () => {
 		try {
 			const response = await $fetch('/api/vessel');
 			vessels.value = response as Vessel[];
-		} catch (error) {
 		} finally {
 			loading.value = false;
 		}
@@ -61,8 +60,12 @@ export const useVesselStore = defineStore('vessels', () => {
 
 	const ensureLoaded = async () => {
 		if (!loaded.value) {
-			await getVessels();
-			loaded.value = true;
+			try {
+				await getVessels();
+				loaded.value = true;
+			} catch {
+				// loaded stays false — will retry on next call
+			}
 		}
 	};
 
@@ -72,7 +75,8 @@ export const useVesselStore = defineStore('vessels', () => {
 
 	const setVessel = (id: string) => {
 		resetVessel();
-		vessel.value = vessels.value.find((v) => v._id === id) as Vessel;
+		const found = vessels.value.find((v) => v._id === id);
+		if (found) vessel.value = JSON.parse(JSON.stringify(found));
 	};
 
 	const updateVessel = async (): Promise<void> => {
@@ -158,7 +162,7 @@ export const useVesselStore = defineStore('vessels', () => {
 		};
 	};
 
-	const emptyVessel = (id: string) => {
+	const emptyVessel = async (id: string) => {
 		setVessel(id);
 		vessel.value.contents = [];
 		vessel.value.current = {
@@ -167,7 +171,7 @@ export const useVesselStore = defineStore('vessels', () => {
 			abv: 0,
 			value: 0,
 		};
-		updateVessel();
+		await updateVessel();
 	};
 
 	const fullTransfer = async (sourceId: string, destId: string): Promise<void> => {

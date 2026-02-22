@@ -4,9 +4,9 @@ definePageMeta({ layout: 'admin' })
 const viewMode = ref<'grid' | 'table'>('grid')
 
 // Transfer panel
-import { PanelVesselTransfer } from '#components'
+import { LazyPanelVesselTransfer } from '#components'
 const overlay = useOverlay()
-const transferPanel = overlay.create(PanelVesselTransfer)
+const transferPanel = overlay.create(LazyPanelVesselTransfer)
 const openTransfer = async () => await transferPanel.open()
 </script>
 

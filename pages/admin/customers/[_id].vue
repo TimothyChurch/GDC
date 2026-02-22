@@ -39,14 +39,14 @@ function formatDate(val: string) {
 }
 
 // Panel slide-overs
-import { PanelContact, PanelEvent } from '#components'
+import { LazyPanelContact, LazyPanelEvent } from '#components'
 const overlay = useOverlay()
-const contactPanel = overlay.create(PanelContact)
-const eventPanel = overlay.create(PanelEvent)
+const contactPanel = overlay.create(LazyPanelContact)
+const eventPanel = overlay.create(LazyPanelEvent)
 
 const editContact = () => {
   if (!contact.value) return
-  contactStore.contact = contact.value
+  contactStore.contact = JSON.parse(JSON.stringify(contact.value))
   contactPanel.open()
 }
 

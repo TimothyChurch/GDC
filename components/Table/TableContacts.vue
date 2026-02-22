@@ -5,7 +5,7 @@ import type { Row } from "@tanstack/vue-table";
 
 const router = useRouter();
 const contactStore = useContactStore();
-contactStore.getContacts();
+contactStore.ensureLoaded();
 const { confirm } = useDeleteConfirm();
 
 const UButton = resolveComponent("UButton");
@@ -130,7 +130,7 @@ function getRowItems(row: Row<Contact>) {
     {
       label: "Edit contact",
       onSelect() {
-        contactStore.contact = row.original;
+        contactStore.contact = JSON.parse(JSON.stringify(row.original));
         openPanel();
       },
     },
@@ -149,9 +149,9 @@ function getRowItems(row: Row<Contact>) {
 }
 
 // Panel slide-over
-import { PanelContact } from "#components";
+import { LazyPanelContact } from "#components";
 const overlay = useOverlay();
-const panel = overlay.create(PanelContact);
+const panel = overlay.create(LazyPanelContact);
 const openPanel = async () => await panel.open();
 
 const addItem = () => {

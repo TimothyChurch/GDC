@@ -2,6 +2,10 @@
 useSeoMeta({
   title: 'About Us | Galveston Distilling Co',
   description: 'Learn about Galveston Distilling Co — our story, our mission, and our commitment to crafting exceptional spirits on Galveston Island.',
+  ogTitle: 'About Us | Galveston Distilling Co',
+  ogDescription: 'Learn about Galveston Distilling Co — our story, our mission, and our commitment to crafting exceptional spirits on Galveston Island.',
+  ogImage: '/images/og-about.jpg',
+  ogUrl: 'https://galvestondistilling.com/about',
 });
 </script>
 

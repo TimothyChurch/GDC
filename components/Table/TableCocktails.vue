@@ -120,9 +120,9 @@ function getRowItems(row: Row<Cocktail>) {
   ];
 }
 // Modal component info
-import { PanelCocktail } from "#components";
+import { LazyPanelCocktail } from "#components";
 const overlay = useOverlay();
-const modal = overlay.create(PanelCocktail);
+const modal = overlay.create(LazyPanelCocktail);
 const newCocktail = () => {
   cocktailStore.resetCocktail();
   openModal();

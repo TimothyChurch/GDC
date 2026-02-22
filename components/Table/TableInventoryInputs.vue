@@ -64,7 +64,7 @@ function getRowItems(row: Row<Inventory>) {
     {
       label: "Edit record",
       onSelect() {
-        inventoryStore.inventory = row.original;
+        inventoryStore.inventory = JSON.parse(JSON.stringify(row.original));
         openPanel();
       },
     },
@@ -82,9 +82,9 @@ function getRowItems(row: Row<Inventory>) {
 }
 
 // Panel slide-over
-import { PanelInventory } from "#components";
+import { LazyPanelInventory } from "#components";
 const overlay = useOverlay();
-const panel = overlay.create(PanelInventory);
+const panel = overlay.create(LazyPanelInventory);
 const openPanel = async () => await panel.open();
 
 const addItem = () => {

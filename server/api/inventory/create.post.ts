@@ -1,7 +1,7 @@
 export default defineEventHandler(async (event) => {
 	const body = await readBody(event);
-	await validateBody(body, inventoryCreateSchema);
 	const sanitized = sanitize(body);
+	await validateBody(sanitized, inventoryCreateSchema);
 	if (!sanitized.location) delete sanitized.location;
 	try {
 		return await new Inventory(sanitized).save();

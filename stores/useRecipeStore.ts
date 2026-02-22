@@ -26,7 +26,6 @@ export const useRecipeStore = defineStore("recipes", () => {
     try {
       const response = await $fetch("/api/recipe");
       recipes.value = response as Recipe[];
-    } catch (e) {
     } finally {
       loading.value = false;
     }
@@ -34,8 +33,12 @@ export const useRecipeStore = defineStore("recipes", () => {
 
   const ensureLoaded = async () => {
     if (!loaded.value) {
-      await getRecipes();
-      loaded.value = true;
+      try {
+        await getRecipes();
+        loaded.value = true;
+      } catch {
+        // loaded stays false — will retry on next call
+      }
     }
   };
 
@@ -99,7 +102,8 @@ export const useRecipeStore = defineStore("recipes", () => {
   };
 
   const setRecipe = (id: string) => {
-    recipe.value = getRecipeById(id) as Recipe;
+    const found = getRecipeById(id);
+    if (found) recipe.value = JSON.parse(JSON.stringify(found));
   };
 
   const getRecipeById = (id: string): Recipe | undefined => {

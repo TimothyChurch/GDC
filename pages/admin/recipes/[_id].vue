@@ -22,13 +22,13 @@ const recipe = computed(() =>
 );
 
 // Panel slide-over for editing
-import { PanelRecipe } from "#components";
+import { LazyPanelRecipe } from "#components";
 const overlay = useOverlay();
-const panel = overlay.create(PanelRecipe);
+const panel = overlay.create(LazyPanelRecipe);
 
 const editRecipe = () => {
   if (!recipe.value) return;
-  recipeStore.recipe = recipe.value;
+  recipeStore.setRecipe(recipe.value._id);
   panel.open();
 };
 
@@ -60,7 +60,11 @@ const relatedBatches = computed(() =>
 </script>
 
 <template>
-  <div v-if="recipe" class="space-y-6">
+  <div v-if="!recipeStore.loaded" class="flex items-center justify-center py-12">
+    <UIcon name="i-lucide-loader-2" class="animate-spin text-3xl text-parchment/30" />
+  </div>
+
+  <div v-else-if="recipe" class="space-y-6">
     <AdminPageHeader
       :title="recipe.name"
       :subtitle="`${recipe.class}${recipe.type ? ' - ' + recipe.type : ''}`"

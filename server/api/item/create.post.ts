@@ -1,7 +1,7 @@
 export default defineEventHandler(async (event) => {
 	const body = await readBody(event);
-	await validateBody(body, itemCreateSchema);
 	const sanitized = sanitize(body);
+	await validateBody(sanitized, itemCreateSchema);
 	try {
 		return await new Item(sanitized).save();
 	} catch (error) {

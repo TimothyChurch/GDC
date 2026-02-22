@@ -1,6 +1,6 @@
 export default defineEventHandler(async () => {
   try {
-    return await EquipmentLog.find({}).sort({ timestamp: -1 }).limit(50);
+    return await EquipmentLog.find({}).sort({ timestamp: -1 }).limit(50).lean();
   } catch (error) {
     throw createError({
       statusCode: 500,

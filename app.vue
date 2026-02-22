@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import "./assets/css/main.css";
 useHead({
   title: "Galveston Distilling Co",
   meta: [

@@ -24,13 +24,13 @@ const inventory = computed(() =>
 );
 
 // Panel slide-over
-import { PanelBottle } from "#components";
+import { LazyPanelBottle } from "#components";
 const overlay = useOverlay();
-const panel = overlay.create(PanelBottle);
+const panel = overlay.create(LazyPanelBottle);
 
 const editBottle = () => {
   if (!bottle.value) return;
-  bottleStore.bottle = bottle.value;
+  bottleStore.setBottle(bottle.value._id);
   panel.open();
 };
 
@@ -112,7 +112,11 @@ const isLowStock = computed(() => stockStatus.value?.isLowStock ?? false);
 </script>
 
 <template>
-  <div v-if="bottle" class="space-y-6">
+  <div v-if="!bottleStore.loaded" class="flex items-center justify-center py-12">
+    <UIcon name="i-lucide-loader-2" class="animate-spin text-3xl text-parchment/30" />
+  </div>
+
+  <div v-else-if="bottle" class="space-y-6">
     <AdminPageHeader
       :title="bottle.name"
       :subtitle="`${bottle.class || ''}${bottle.type ? ' - ' + bottle.type : ''}`"

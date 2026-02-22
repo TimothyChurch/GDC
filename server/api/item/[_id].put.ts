@@ -12,7 +12,8 @@ export default defineEventHandler(async (event) => {
 			throw createError({ statusCode: 404, statusMessage: "Item not found" });
 		}
 		return updated;
-	} catch (error) {
+	} catch (error: any) {
+		if (error.statusCode) throw error;
 		throw createError({
 			statusCode: 500,
 			statusMessage: "Failed to update item",

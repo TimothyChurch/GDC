@@ -2,8 +2,8 @@ import { Batch } from "~/server/models/batch.schema";
 
 export default defineEventHandler(async (event) => {
 	const body = await readBody(event);
-	await validateBody(body, batchCreateSchema);
 	const sanitized = sanitize(body);
+	await validateBody(sanitized, batchCreateSchema);
 
 	// Add initial log entry
 	if (!sanitized.log) sanitized.log = [];

@@ -159,7 +159,7 @@ function getRowItems(row: Row<Batch>) {
     {
       label: "Edit batch",
       onSelect() {
-        batchStore.batch = row.original;
+        batchStore.batch = JSON.parse(JSON.stringify(row.original));
         openPanel();
       },
     },
@@ -177,9 +177,9 @@ function getRowItems(row: Row<Batch>) {
 }
 
 // Panel slide-over
-import { PanelBatch } from "#components";
+import { LazyPanelBatch } from "#components";
 const overlay = useOverlay();
-const panel = overlay.create(PanelBatch);
+const panel = overlay.create(LazyPanelBatch);
 const openPanel = async () => await panel.open();
 
 const addItem = () => {

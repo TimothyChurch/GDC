@@ -1,5 +1,6 @@
 <script setup>
-const isOpen = ref(calculatorModalStatus);
+const { calculatorModalStatus, toggleCalculatorModal } = useCalculatorModal();
+const isOpen = calculatorModalStatus;
 </script>
 
 <template>

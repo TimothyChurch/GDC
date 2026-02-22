@@ -1,6 +1,6 @@
 export default defineEventHandler(async (event) => {
   try {
-    const contacts = await Contact.find();
+    const contacts = await Contact.find().lean();
     return contacts;
   } catch (error) {
     throw createError({

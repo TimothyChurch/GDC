@@ -1,4 +1,16 @@
 import * as yup from "yup";
+import mongoose from "mongoose";
+
+/**
+ * Validate that a string is a valid MongoDB ObjectId.
+ * Throws a 400 error if invalid.
+ */
+export function validateObjectId(id: string | undefined, label = 'ID'): string {
+  if (!id || !mongoose.Types.ObjectId.isValid(id)) {
+    throw createError({ statusCode: 400, statusMessage: `Invalid ${label} format` });
+  }
+  return id;
+}
 
 /**
  * Recursively strip keys starting with '$' to prevent NoSQL injection.
@@ -200,7 +212,7 @@ export const userUpdateSchema = yup.object({
   firstName: yup.string(),
   lastName: yup.string(),
   phoneNumber: yup.string(),
-  role: yup.string(),
+  role: yup.string().oneOf(['Admin', 'Manager', 'Staff', 'ReadOnly']),
 });
 
 export const batchUpdateSchema = yup.object({
@@ -289,4 +301,11 @@ export const eventUpdateSchema = yup.object({
 export const vesselUpdateSchema = yup.object({
   name: yup.string(),
   type: yup.string(),
+});
+
+export const equipmentLogCreateSchema = yup.object({
+  equipment: yup.string().required('Equipment is required'),
+  action: yup.string().required('Action is required'),
+  value: yup.number().nullable(),
+  batch: yup.string().nullable(),
 });

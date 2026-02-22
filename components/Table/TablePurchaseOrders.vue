@@ -157,7 +157,7 @@ function getRowItems(row: Row<PurchaseOrder>) {
     {
       label: "Edit order",
       onSelect() {
-        purchaseOrderStore.purchaseOrder = row.original;
+        purchaseOrderStore.purchaseOrder = JSON.parse(JSON.stringify(row.original));
         openPanel();
       },
     },
@@ -176,9 +176,9 @@ function getRowItems(row: Row<PurchaseOrder>) {
 }
 
 // Panel slide-over
-import { PanelPurchaseOrder } from "#components";
+import { LazyPanelPurchaseOrder } from "#components";
 const overlay = useOverlay();
-const panel = overlay.create(PanelPurchaseOrder);
+const panel = overlay.create(LazyPanelPurchaseOrder);
 const openPanel = async () => await panel.open();
 
 const addPurchaseOrder = () => {

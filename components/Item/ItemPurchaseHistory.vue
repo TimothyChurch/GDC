@@ -25,9 +25,9 @@ const selectedItem = (row) => {
 };
 
 // Panel slide-over
-import { PanelPurchaseOrder } from "#components";
+import { LazyPanelPurchaseOrder } from "#components";
 const overlay = useOverlay();
-const panel = overlay.create(PanelPurchaseOrder);
+const panel = overlay.create(LazyPanelPurchaseOrder);
 const openPanel = async () => await panel.open();
 
 const newPurchaseOrder = () => {

@@ -12,12 +12,14 @@ defineProps<{
     class="group block bg-cream dark:bg-charcoal rounded-lg overflow-hidden border border-gold/10 hover:border-gold/30 hover:shadow-lg transition-all duration-300"
   >
     <div class="aspect-[3/4] bg-charcoal/5 dark:bg-parchment/5 overflow-hidden flex items-center justify-center">
-      <img
+      <NuxtImg
         v-if="bottle.img"
         :src="bottle.img"
         :alt="bottle.name"
         class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
         loading="lazy"
+        sizes="sm:50vw lg:25vw"
+        format="webp"
       />
       <Icon v-else name="carbon:wine-bottle" class="text-6xl text-brown/15 dark:text-parchment/15" />
     </div>

@@ -1,4 +1,9 @@
 <script setup lang="ts">
+useSeoMeta({
+  title: 'Sign In | Galveston Distilling Co',
+  robots: 'noindex, nofollow',
+});
+
 const router = useRouter();
 const { user, login, fetchUser } = useAuth();
 

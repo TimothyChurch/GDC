@@ -141,9 +141,9 @@ function getRowItems(row: Row<Item>) {
 }
 
 // Panel slide-over
-import { PanelItem } from "#components";
+import { LazyPanelItem } from "#components";
 const overlay = useOverlay();
-const modal = overlay.create(PanelItem);
+const modal = overlay.create(LazyPanelItem);
 const newItem = () => {
   itemStore.resetItem();
   openModal();

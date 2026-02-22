@@ -22,9 +22,9 @@ export default defineEventHandler(async (event) => {
       error: null,
     };
   } catch (e) {
-    return {
-      clientSecret: null,
-      error: e,
-    };
+    throw createError({
+      statusCode: 500,
+      statusMessage: 'Failed to create payment intent',
+    });
   }
 });

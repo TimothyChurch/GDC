@@ -31,7 +31,6 @@ export const useBottleStore = defineStore("bottles", () => {
       const response = await $fetch("/api/bottle");
       bottles.value = response as Bottle[];
       sortBottles();
-    } catch (e) {
     } finally {
       loading.value = false;
     }
@@ -39,13 +38,18 @@ export const useBottleStore = defineStore("bottles", () => {
 
   const ensureLoaded = async () => {
     if (!loaded.value) {
-      await getBottles();
-      loaded.value = true;
+      try {
+        await getBottles();
+        loaded.value = true;
+      } catch {
+        // loaded stays false — will retry on next call
+      }
     }
   };
 
   const setBottle = (id: string) => {
-    bottle.value = bottles.value.find((b) => b._id === id) as Bottle;
+    const found = bottles.value.find((b) => b._id === id);
+    if (found) bottle.value = JSON.parse(JSON.stringify(found));
   };
 
   const resetBottle = () => {

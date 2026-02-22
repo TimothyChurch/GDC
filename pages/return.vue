@@ -1,4 +1,9 @@
 <script setup lang="ts">
+useSeoMeta({
+  title: 'Payment Status | Galveston Distilling Co',
+  robots: 'noindex, nofollow',
+});
+
 const route = useRoute();
 const sessionId = route.query.session_id as string | undefined;
 

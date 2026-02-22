@@ -21,7 +21,6 @@ export const useInventoryStore = defineStore("inventories", () => {
     try {
       const response = await $fetch("/api/inventory");
       inventories.value = response as Inventory[];
-    } catch (e) {
     } finally {
       loading.value = false;
     }
@@ -29,8 +28,12 @@ export const useInventoryStore = defineStore("inventories", () => {
 
   const ensureLoaded = async () => {
     if (!loaded.value) {
-      await getInventories();
-      loaded.value = true;
+      try {
+        await getInventories();
+        loaded.value = true;
+      } catch {
+        // loaded stays false — will retry on next call
+      }
     }
   };
 

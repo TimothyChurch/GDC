@@ -1,9 +1,12 @@
 <script setup lang="ts">
+import { useLocalStorage } from '@vueuse/core'
 import { ALL_STAGES, STAGE_DISPLAY, stageTextColor, stageBgColor } from '~/composables/batchPipeline'
 
 definePageMeta({ layout: 'admin' })
 
 const batchStore = useBatchStore()
+
+const viewMode = useLocalStorage('batch-view-mode', 'table')
 
 const selectedFilter = ref('All')
 
@@ -37,7 +40,28 @@ const filteredBatches = computed(() => {
 
 <template>
   <div>
-    <AdminPageHeader title="Batches" subtitle="Manage batch lifecycle from mashing to bottling" icon="i-lucide-flask-conical" />
+    <AdminPageHeader title="Batches" subtitle="Manage batch lifecycle from mashing to bottling" icon="i-lucide-flask-conical">
+      <template #actions>
+        <div class="flex items-center gap-1 rounded-lg border border-brown/20 p-0.5">
+          <button
+            class="p-1.5 rounded-md transition-colors"
+            :class="viewMode === 'table' ? 'bg-brown/30 text-gold' : 'text-parchment/40 hover:text-parchment/70'"
+            title="Table view"
+            @click="viewMode = 'table'"
+          >
+            <UIcon name="i-lucide-table-2" class="text-base" />
+          </button>
+          <button
+            class="p-1.5 rounded-md transition-colors"
+            :class="viewMode === 'board' ? 'bg-brown/30 text-gold' : 'text-parchment/40 hover:text-parchment/70'"
+            title="Board view"
+            @click="viewMode = 'board'"
+          >
+            <UIcon name="i-lucide-kanban" class="text-base" />
+          </button>
+        </div>
+      </template>
+    </AdminPageHeader>
 
     <div class="flex gap-1.5 overflow-x-auto pb-3 mb-1 scrollbar-hide">
       <button
@@ -59,6 +83,7 @@ const filteredBatches = computed(() => {
       </button>
     </div>
 
-    <TableBatches :data="filteredBatches" />
+    <TableBatches v-if="viewMode === 'table'" :data="filteredBatches" />
+    <BatchKanban v-else :data="filteredBatches" />
   </div>
 </template>

@@ -2,8 +2,8 @@ import { Cocktail } from '~/server/models/cocktail.schema';
 
 export default defineEventHandler(async (event) => {
 	const body = await readBody(event);
-	await validateBody(body, cocktailCreateSchema);
 	const sanitized = sanitize(body);
+	await validateBody(sanitized, cocktailCreateSchema);
 	try {
 		const newCocktail = new Cocktail(sanitized);
 		await newCocktail.save();

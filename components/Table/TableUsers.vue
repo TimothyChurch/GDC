@@ -77,9 +77,9 @@ function getRowItems(row: Row<User>) {
 }
 
 // Panel slide-over
-import { PanelUser } from '#components'
+import { LazyPanelUser } from '#components'
 const overlay = useOverlay()
-const panel = overlay.create(PanelUser)
+const panel = overlay.create(LazyPanelUser)
 const openPanel = async () => await panel.open()
 
 const addUser = () => {

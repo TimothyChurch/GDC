@@ -14,7 +14,8 @@ export default defineEventHandler(async (event) => {
 			});
 		}
 		return updatedContact;
-	} catch (error) {
+	} catch (error: any) {
+		if (error.statusCode) throw error;
 		throw createError({
 			statusCode: 500,
 			statusMessage: "Failed to update contact",

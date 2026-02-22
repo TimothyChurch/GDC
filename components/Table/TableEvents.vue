@@ -146,7 +146,8 @@ function getRowItems(row: Row<GDCEvent>) {
     {
       label: "Edit event",
       onSelect() {
-        eventStore.event = { ...row.original, contact: typeof row.original.contact === 'object' ? (row.original.contact as any)._id : row.original.contact };
+        const clone = JSON.parse(JSON.stringify(row.original));
+        eventStore.event = { ...clone, contact: typeof row.original.contact === 'object' ? (row.original.contact as any)._id : clone.contact };
         openPanel();
       },
     },
@@ -165,9 +166,9 @@ function getRowItems(row: Row<GDCEvent>) {
 }
 
 // Panel slide-over
-import { PanelEvent } from "#components";
+import { LazyPanelEvent } from "#components";
 const overlay = useOverlay();
-const panel = overlay.create(PanelEvent);
+const panel = overlay.create(LazyPanelEvent);
 const openPanel = async () => await panel.open();
 
 const addItem = () => {

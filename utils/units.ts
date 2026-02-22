@@ -22,12 +22,12 @@ export const countUntis = ['each', 'count', 'bottle', 'cap', 'label'];
 export const itemInventoryTypes = computed(() => {
 	const itemStore = useItemStore();
 	const filteredItems = itemStore.items.filter((item) => item.type);
-	const allTypes = ref([]) as Ref<string[]>;
+	const allTypes: string[] = [];
 	filteredItems.forEach((item) => {
-		if (item.type && !allTypes.value.includes(item.type)) {
-			allTypes.value.push(item.type);
+		if (item.type && !allTypes.includes(item.type)) {
+			allTypes.push(item.type);
 		}
 	});
-	allTypes.value.push('Bottle');
-	return allTypes.value.sort((a, b) => a.localeCompare(b));
+	allTypes.push('Bottle');
+	return allTypes.sort((a, b) => a.localeCompare(b));
 });

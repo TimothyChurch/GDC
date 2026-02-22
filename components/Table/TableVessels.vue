@@ -97,7 +97,7 @@ function getRowItems(row: Row<Vessel>) {
     {
       label: "Edit vessel",
       onSelect() {
-        vesselStore.vessel = row.original;
+        vesselStore.vessel = JSON.parse(JSON.stringify(row.original));
         openPanel();
       },
     },
@@ -115,9 +115,9 @@ function getRowItems(row: Row<Vessel>) {
 }
 
 // Panel slide-over
-import { PanelVessel } from "#components";
+import { LazyPanelVessel } from "#components";
 const overlay = useOverlay();
-const panel = overlay.create(PanelVessel);
+const panel = overlay.create(LazyPanelVessel);
 const openPanel = async () => await panel.open();
 
 const addVessel = () => {

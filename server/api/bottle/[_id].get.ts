@@ -1,8 +1,13 @@
 export default defineEventHandler(async (event) => {
-    try {
-      return await Bottle.findOne({ _id: event.context.params?._id })
+  try {
+    const id = event.context.params?._id;
+    const bottle = await Bottle.findOne({ _id: id }).lean();
+    if (!bottle) {
+      throw createError({ statusCode: 404, statusMessage: 'Bottle not found' });
     }
-    catch (error) {
-      throw createError({ statusCode: 500, statusMessage: 'Failed to fetch bottle' });
-    }
-  })
+    return bottle;
+  } catch (error: any) {
+    if (error.statusCode) throw error;
+    throw createError({ statusCode: 500, statusMessage: 'Failed to fetch bottle' });
+  }
+});

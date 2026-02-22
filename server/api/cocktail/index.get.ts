@@ -2,7 +2,7 @@ import { Cocktail } from '~/server/models/cocktail.schema';
 
 export default defineEventHandler(async (event) => {
 	try {
-		const cocktails = await Cocktail.find();
+		const cocktails = await Cocktail.find().lean();
 		return cocktails;
 	} catch (error) {
 		throw createError({

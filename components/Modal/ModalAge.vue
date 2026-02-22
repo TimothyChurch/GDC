@@ -1,4 +1,5 @@
 <script setup lang="ts">
+const { ageVerified } = useAgeVerification();
 const denied = ref(false);
 
 const over21 = () => {

@@ -26,7 +26,6 @@ export const useContactStore = defineStore('contacts', () => {
 		try {
 			const response = await $fetch('/api/contact');
 			contacts.value = response as Contact[];
-		} catch (error) {
 		} finally {
 			loading.value = false;
 		}
@@ -34,8 +33,12 @@ export const useContactStore = defineStore('contacts', () => {
 
 	const ensureLoaded = async () => {
 		if (!loaded.value) {
-			await getContacts();
-			loaded.value = true;
+			try {
+				await getContacts();
+				loaded.value = true;
+			} catch {
+				// loaded stays false — will retry on next call
+			}
 		}
 	};
 

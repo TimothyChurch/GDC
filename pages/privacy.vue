@@ -2,6 +2,9 @@
 useSeoMeta({
   title: 'Privacy Policy | Galveston Distilling Co',
   description: 'Privacy policy for Galveston Distilling Co website and services.',
+  ogTitle: 'Privacy Policy | Galveston Distilling Co',
+  ogDescription: 'Privacy policy for Galveston Distilling Co website and services.',
+  ogUrl: 'https://galvestondistilling.com/privacy',
 });
 </script>
 

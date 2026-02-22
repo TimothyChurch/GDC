@@ -20,7 +20,6 @@ export const useUserStore = defineStore('users', () => {
     try {
       const response = await $fetch('/api/users');
       users.value = response as User[];
-    } catch (e) {
     } finally {
       loading.value = false;
     }
@@ -28,8 +27,12 @@ export const useUserStore = defineStore('users', () => {
 
   const ensureLoaded = async () => {
     if (!loaded.value) {
-      await getUsers();
-      loaded.value = true;
+      try {
+        await getUsers();
+        loaded.value = true;
+      } catch {
+        // loaded stays false — will retry on next call
+      }
     }
   };
 

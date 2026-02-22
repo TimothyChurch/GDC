@@ -11,13 +11,13 @@ const recipeStore = useRecipeStore()
 const vessel = computed(() => vesselStore.getVesselById(route.params._id as string))
 
 // Panel slide-over for editing
-import { PanelVessel } from '#components'
+import { LazyPanelVessel } from '#components'
 const overlay = useOverlay()
-const panel = overlay.create(PanelVessel)
+const panel = overlay.create(LazyPanelVessel)
 
 const editVessel = () => {
   if (!vessel.value) return
-  vesselStore.vessel = { ...vessel.value }
+  vesselStore.setVessel(vessel.value._id)
   panel.open()
 }
 
@@ -83,7 +83,11 @@ const handleEmpty = () => {
 </script>
 
 <template>
-  <div v-if="vessel" class="space-y-6">
+  <div v-if="!vesselStore.loaded" class="flex items-center justify-center py-12">
+    <UIcon name="i-lucide-loader-2" class="animate-spin text-3xl text-parchment/30" />
+  </div>
+
+  <div v-else-if="vessel" class="space-y-6">
     <AdminPageHeader
       :title="vessel.name"
       :subtitle="vessel.type"

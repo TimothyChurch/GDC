@@ -50,7 +50,7 @@ export const recipePrice = (recipe: Recipe | string) => {
 
 export const latestProduction = (bottle: string) => {
 	const productionStore = useProductionStore();
-	const sortedProductions = productionStore.productions.sort(
+	const sortedProductions = [...productionStore.productions].sort(
 		(a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()
 	);
 	const lastProduction = sortedProductions.find((p) => p.bottle == bottle);

@@ -23,7 +23,6 @@ export const usePurchaseOrderStore = defineStore('purchaseOrders', () => {
 		try {
 			const response = await $fetch('/api/purchaseOrder');
 			purchaseOrders.value = response as PurchaseOrder[];
-		} catch (error) {
 		} finally {
 			loading.value = false;
 		}
@@ -31,8 +30,12 @@ export const usePurchaseOrderStore = defineStore('purchaseOrders', () => {
 
 	const ensureLoaded = async () => {
 		if (!loaded.value) {
-			await getPurchaseOrders();
-			loaded.value = true;
+			try {
+				await getPurchaseOrders();
+				loaded.value = true;
+			} catch {
+				// loaded stays false — will retry on next call
+			}
 		}
 	};
 

@@ -44,11 +44,13 @@ const categories = [
         class="group block"
       >
         <div class="overflow-hidden rounded-lg">
-          <img
+          <NuxtImg
             :src="category.imageSrc"
             :alt="category.imageAlt"
             class="aspect-3/2 w-full object-cover group-hover:scale-105 transition-transform duration-500 lg:aspect-5/6"
             loading="lazy"
+            sizes="sm:100vw lg:33vw"
+            format="webp"
           />
         </div>
         <h3 class="mt-4 text-lg font-semibold text-brown dark:text-parchment font-[Cormorant_Garamond]">

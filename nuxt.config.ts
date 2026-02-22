@@ -8,18 +8,26 @@ export default defineNuxtConfig({
     "@vueuse/nuxt",
     "nuxt-mongoose",
     "@pinia/nuxt",
-    "@nuxt/test-utils/module",
+    ...(process.env.NODE_ENV === 'test' ? ['@nuxt/test-utils/module' as const] : []),
     "@unlok-co/nuxt-stripe",
     "nuxt-meta-pixel",
+    "@nuxtjs/sitemap",
+    "@nuxt/image",
   ],
+  site: {
+    url: process.env.DOMAIN || 'https://galvestondistilling.com',
+  },
+  sitemap: {
+    exclude: ['/admin/**', '/login', '/return'],
+  },
   app: {
     head: {
       charset: 'utf-8',
       viewport: 'width=device-width, initial-scale=1',
       htmlAttrs: { lang: 'en' },
       meta: [
-        { name: 'og:site_name', content: 'Galveston Distilling Co' },
-        { name: 'og:type', content: 'website' },
+        { property: 'og:site_name', content: 'Galveston Distilling Co' },
+        { property: 'og:type', content: 'website' },
       ],
     },
   },
@@ -27,7 +35,7 @@ export default defineNuxtConfig({
     uri: process.env.NUXT_ENV_MONGODB_URI,
     options: {},
     modelsDir: "models",
-    devtools: true,
+    devtools: process.env.NODE_ENV !== 'production',
   },
   devServer: {
     port: 3001,
@@ -43,11 +51,16 @@ export default defineNuxtConfig({
         'X-Frame-Options': 'DENY',
         'X-XSS-Protection': '1; mode=block',
         'Referrer-Policy': 'strict-origin-when-cross-origin',
+        'Strict-Transport-Security': 'max-age=31536000; includeSubDomains',
       },
     },
+    '/admin/**': { ssr: false },
   },
   runtimeConfig: {
     // Server
+    sessionSecret: process.env.SESSION_SECRET,
+    domain: process.env.DOMAIN,
+    stripePriceId: process.env.STRIPE_PRICE_ID,
     cloudinaryCloudName: process.env.CLOUDINARY_CLOUD_NAME,
     cloudinaryApiKey: process.env.CLOUDINARY_API_KEY,
     cloudinaryApiSecret: process.env.CLOUDINARY_API_SECRET,

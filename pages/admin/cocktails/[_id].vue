@@ -10,9 +10,9 @@ const itemStore = useItemStore()
 const cocktail = computed(() => cocktailStore.getCocktailById(route.params._id as string))
 
 // Panel slide-over for editing
-import { PanelCocktail } from '#components'
+import { LazyPanelCocktail } from '#components'
 const overlay = useOverlay()
-const panel = overlay.create(PanelCocktail)
+const panel = overlay.create(LazyPanelCocktail)
 
 const editCocktail = () => {
   if (!cocktail.value) return
@@ -62,7 +62,11 @@ const menuLabel = computed(() => {
 </script>
 
 <template>
-  <div v-if="cocktail" class="space-y-6">
+  <div v-if="!cocktailStore.loaded" class="flex items-center justify-center py-12">
+    <UIcon name="i-lucide-loader-2" class="animate-spin text-3xl text-parchment/30" />
+  </div>
+
+  <div v-else-if="cocktail" class="space-y-6">
     <AdminPageHeader
       :title="cocktail.name"
       :subtitle="menuLabel"

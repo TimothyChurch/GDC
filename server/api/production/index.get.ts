@@ -1,6 +1,6 @@
 export default defineEventHandler(async (event) => {
 	try {
-		const productions = await Production.find();
+		const productions = await Production.find().lean();
 		return productions;
 	} catch (error) {
 		throw createError({

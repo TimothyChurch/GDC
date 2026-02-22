@@ -98,9 +98,9 @@ function getRowItems(row: Row<Recipe>) {
   ];
 }
 // Modal component info
-import { PanelRecipe } from "#components";
+import { LazyPanelRecipe } from "#components";
 const overlay = useOverlay();
-const modal = overlay.create(PanelRecipe);
+const modal = overlay.create(LazyPanelRecipe);
 const newRecipe = () => {
   recipeStore.resetRecipe();
   openModal();

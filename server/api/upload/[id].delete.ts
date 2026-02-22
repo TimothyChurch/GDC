@@ -1,12 +1,6 @@
-import { v2 as cloudinary } from 'cloudinary'
-
-cloudinary.config({
-  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
-  api_key: process.env.CLOUDINARY_API_KEY,
-  api_secret: process.env.CLOUDINARY_API_SECRET,
-})
-
 export default defineEventHandler(async (event) => {
+  const cloudinary = getCloudinary()
+
   const publicId = getRouterParam(event, 'id')
   if (!publicId) {
     throw createError({ statusCode: 400, statusMessage: 'Public ID required' })
@@ -16,6 +10,11 @@ export default defineEventHandler(async (event) => {
   // Cloudinary public IDs can contain folder paths like "gdc/bottles/abc123"
   const query = getQuery(event)
   const fullId = (query.fullId as string) || publicId
+
+  // Validate that the ID starts with our folder prefix to prevent arbitrary deletions
+  if (!fullId.startsWith('gdc/')) {
+    throw createError({ statusCode: 400, statusMessage: 'Invalid asset ID' })
+  }
 
   try {
     const result = await cloudinary.uploader.destroy(fullId)

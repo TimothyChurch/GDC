@@ -31,7 +31,6 @@ export const useProductionStore = defineStore('productions', () => {
 		try {
 			const response = await $fetch('/api/production');
 			productions.value = response as Production[];
-		} catch (error) {
 		} finally {
 			loading.value = false;
 		}
@@ -39,17 +38,19 @@ export const useProductionStore = defineStore('productions', () => {
 
 	const ensureLoaded = async () => {
 		if (!loaded.value) {
-			await getProductions();
-			loaded.value = true;
+			try {
+				await getProductions();
+				loaded.value = true;
+			} catch {
+				// loaded stays false — will retry on next call
+			}
 		}
 	};
 
 	const getProductionById = async (id: string): Promise<void> => {
-		try {
-			const response = await $fetch(`/api/production/${id}`);
-			production.value = response as Production;
-		} catch (error) {
-		}
+		const response = await $fetch(`/api/production/${id}`);
+		production.value = response as Production;
+
 	};
 
 	const updateProduction = async (): Promise<void> => {

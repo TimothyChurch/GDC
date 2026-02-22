@@ -1,6 +1,13 @@
 // Calculator Modal
-export const calculatorModalStatus = ref(false);
-export const toggleCalculatorModal = () =>
-  (calculatorModalStatus.value = !calculatorModalStatus.value);
+export const useCalculatorModal = () => {
+  const calculatorModalStatus = useState('calculatorModalStatus', () => false);
+  const toggleCalculatorModal = () => {
+    calculatorModalStatus.value = !calculatorModalStatus.value;
+  };
+  return { calculatorModalStatus, toggleCalculatorModal };
+};
 
-export const cocktailModalOpen = ref(false);
+export const useCocktailModal = () => {
+  const cocktailModalOpen = useState('cocktailModalOpen', () => false);
+  return { cocktailModalOpen };
+};

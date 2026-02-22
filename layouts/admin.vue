@@ -67,7 +67,7 @@ onMounted(async () => {
         </div>
       </div>
     </div>
-    <AdminCommandPalette />
-    <AdminShortcutsHelp />
+    <LazyAdminCommandPalette />
+    <LazyAdminShortcutsHelp />
   </div>
 </template>

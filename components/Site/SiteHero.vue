@@ -2,11 +2,14 @@
 
 <template>
   <div class="relative min-h-[90vh] flex items-center justify-center overflow-hidden">
-    <img
+    <NuxtImg
       src="/images/hero.jpg"
       alt="Galveston Craft Spirits Distillery"
       class="absolute inset-0 w-full h-full object-cover"
       loading="eager"
+      fetchpriority="high"
+      sizes="100vw"
+      format="webp"
     />
     <div class="absolute inset-0 bg-gradient-to-t from-espresso/90 via-espresso/50 to-espresso/30"></div>
 

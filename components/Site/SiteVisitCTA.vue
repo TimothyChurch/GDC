@@ -2,11 +2,13 @@
 
 <template>
   <section class="relative py-24 overflow-hidden">
-    <img
+    <NuxtImg
       src="/images/20231017_104945.jpg"
       alt="Galveston Distilling tasting room"
       class="absolute inset-0 w-full h-full object-cover"
       loading="lazy"
+      sizes="100vw"
+      format="webp"
     />
     <div class="absolute inset-0 bg-espresso/75"></div>
 

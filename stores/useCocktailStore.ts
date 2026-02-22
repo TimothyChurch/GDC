@@ -31,25 +31,26 @@ export const useCocktailStore = defineStore("cocktails", () => {
     try {
       const response = await $fetch("/api/cocktail");
       cocktails.value = response as Cocktail[];
-    } catch (e) {
+      sortCocktails();
     } finally {
       loading.value = false;
     }
-    sortCocktails();
   };
 
   const ensureLoaded = async () => {
     if (!loaded.value) {
-      await getCocktails();
-      loaded.value = true;
+      try {
+        await getCocktails();
+        loaded.value = true;
+      } catch {
+        // loaded stays false — will retry on next call
+      }
     }
   };
 
   const setCocktail = (id: string) => {
-    const foundCocktail = cocktails.value.find((c) => c._id === id);
-    if (foundCocktail) {
-      cocktail.value = foundCocktail;
-    }
+    const found = cocktails.value.find((c) => c._id === id);
+    if (found) cocktail.value = JSON.parse(JSON.stringify(found));
   };
 
   const updateCocktail = async (): Promise<void> => {

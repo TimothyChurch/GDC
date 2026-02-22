@@ -142,7 +142,7 @@ function getRowItems(row: Row<Bottle>) {
     {
       label: "Edit bottle",
       onSelect() {
-        bottleStore.bottle = row.original;
+        bottleStore.bottle = JSON.parse(JSON.stringify(row.original));
         openPanel();
       },
     },
@@ -160,9 +160,9 @@ function getRowItems(row: Row<Bottle>) {
 }
 
 // Panel slide-over
-import { PanelBottle } from "#components";
+import { LazyPanelBottle } from "#components";
 const overlay = useOverlay();
-const panel = overlay.create(PanelBottle);
+const panel = overlay.create(LazyPanelBottle);
 const openPanel = async () => await panel.open();
 
 const newBottle = () => {
