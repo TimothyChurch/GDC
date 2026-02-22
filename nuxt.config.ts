@@ -32,7 +32,7 @@ export default defineNuxtConfig({
     },
   },
   mongoose: {
-    uri: process.env.NUXT_ENV_MONGODB_URI,
+    uri: process.env.NUXT_ENV_MONGODB_URI || '',
     options: {},
     modelsDir: "models",
     devtools: process.env.NODE_ENV !== 'production',
@@ -57,27 +57,27 @@ export default defineNuxtConfig({
     '/admin/**': { ssr: false },
   },
   runtimeConfig: {
-    // Server
-    sessionSecret: process.env.NUXT_SESSION_SECRET,
-    domain: process.env.NUXT_DOMAIN,
-    stripePriceId: process.env.NUXT_STRIPE_PRICE_ID,
-    cloudinaryCloudName: process.env.NUXT_CLOUDINARY_CLOUD_NAME,
-    cloudinaryApiKey: process.env.NUXT_CLOUDINARY_API_KEY,
-    cloudinaryApiSecret: process.env.NUXT_CLOUDINARY_API_SECRET,
+    // Server — Nuxt auto-maps NUXT_SESSION_SECRET, NUXT_DOMAIN, etc. at runtime
+    sessionSecret: '',
+    domain: '',
+    stripePriceId: '',
+    cloudinaryCloudName: '',
+    cloudinaryApiKey: '',
+    cloudinaryApiSecret: '',
     stripe: {
-      key: process.env.STRIPE_SECRET_KEY,
+      key: '',
       options: {},
     },
-    // Client
+    // Client — Nuxt auto-maps NUXT_PUBLIC_* at runtime
     public: {
       stripe: {
-        key: process.env.STRIPE_PUBLIC_KEY,
+        key: '',
         options: {},
       },
       metapixel: {
         default: { id: "1254208522870414" },
       },
-      wsUrl: process.env.NUXT_PUBLIC_WS_URL || "ws://localhost:1880/ws",
+      wsUrl: "ws://localhost:1880/ws",
     },
   },
 });
