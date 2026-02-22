@@ -31,7 +31,7 @@ These are things that are actively broken or represent serious security risks.
 - The `find.put.ts` endpoint currently queries by raw password match
 
 ### 6. Remove hardcoded WebSocket IP
-- `pages/admin/controls.vue:5` has `ws://192.168.50.88:1880/ws` hardcoded — move to an environment variable
+- `pages/admin/controls.vue:5` has a hardcoded WebSocket IP — move to an environment variable
 
 ---
 
