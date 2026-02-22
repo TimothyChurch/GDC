@@ -8,8 +8,10 @@
       class="absolute inset-0 w-full h-full object-cover"
       loading="eager"
       fetchpriority="high"
-      sizes="100vw"
+      width="1920"
+      height="1080"
       format="webp"
+      quality="80"
     />
     <div class="absolute inset-0 bg-gradient-to-t from-espresso/90 via-espresso/50 to-espresso/30"></div>
 

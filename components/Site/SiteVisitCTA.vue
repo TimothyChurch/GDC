@@ -7,8 +7,10 @@
       alt="Galveston Distilling tasting room"
       class="absolute inset-0 w-full h-full object-cover"
       loading="lazy"
-      sizes="100vw"
+      width="1920"
+      height="1080"
       format="webp"
+      quality="80"
     />
     <div class="absolute inset-0 bg-espresso/75"></div>
 
