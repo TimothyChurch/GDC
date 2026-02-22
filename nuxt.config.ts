@@ -58,12 +58,12 @@ export default defineNuxtConfig({
   },
   runtimeConfig: {
     // Server
-    sessionSecret: process.env.SESSION_SECRET,
-    domain: process.env.DOMAIN,
-    stripePriceId: process.env.STRIPE_PRICE_ID,
-    cloudinaryCloudName: process.env.CLOUDINARY_CLOUD_NAME,
-    cloudinaryApiKey: process.env.CLOUDINARY_API_KEY,
-    cloudinaryApiSecret: process.env.CLOUDINARY_API_SECRET,
+    sessionSecret: process.env.NUXT_SESSION_SECRET,
+    domain: process.env.NUXT_DOMAIN,
+    stripePriceId: process.env.NUXT_STRIPE_PRICE_ID,
+    cloudinaryCloudName: process.env.NUXT_CLOUDINARY_CLOUD_NAME,
+    cloudinaryApiKey: process.env.NUXT_CLOUDINARY_API_KEY,
+    cloudinaryApiSecret: process.env.NUXT_CLOUDINARY_API_SECRET,
     stripe: {
       key: process.env.STRIPE_SECRET_KEY,
       options: {},

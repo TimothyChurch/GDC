@@ -1,4 +1,4 @@
-import bcrypt from 'bcrypt';
+import bcrypt from 'bcryptjs';
 
 // In-memory rate limiter (5 attempts per IP per 15 minutes)
 const loginAttempts = new Map<string, { count: number; resetAt: number }>();
