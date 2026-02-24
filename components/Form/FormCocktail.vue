@@ -1,8 +1,11 @@
 <script setup lang="ts">
 import * as yup from 'yup';
+import type { IngredientSourceType } from '~/types';
 
 const cocktailStore = useCocktailStore();
 const itemStore = useItemStore();
+const bottleStore = useBottleStore();
+const { getIngredientName, totalIngredientCost } = useIngredientResolver();
 const { cocktailModalOpen } = useCocktailModal();
 
 const schema = yup.object({
@@ -10,26 +13,28 @@ const schema = yup.object({
 	price: yup.number().min(0, 'Price cannot be negative'),
 });
 
-const cost = computed(() => {
-	return cocktailStore.cocktail.ingredients.reduce(
-		(total: number, ingredient: { item: string; amount: number }) => {
-			let cost = itemStore.getPriceById(ingredient.item) || 0;
-			return total + ingredient.amount * cost;
-		},
-		0
-	) as number;
-});
+const cost = computed(() => totalIngredientCost(cocktailStore.cocktail.ingredients));
 
 const newItem = (item: string) => {
 	itemStore.item.name = item;
 	itemStore.updateItem();
 };
 
-const newIngredient = ref({
-	item: '' as string,
-	amount: 0,
-	unit: "",
+const ingredientOptions = computed(() => {
+	const items = itemStore.itemNameId.map((i) => ({
+		id: `item:${i.id}`,
+		label: `${i.label} (Item)`,
+	}));
+	const bottles = bottleStore.bottleNameId.map((b) => ({
+		id: `bottle:${b.id}`,
+		label: `${b.label} (Bottle)`,
+	}));
+	return [...items, ...bottles].sort((a, b) => a.label.localeCompare(b.label));
 });
+
+const selectedIngredient = ref('');
+const newIngredientAmount = ref(0);
+const newIngredientUnit = ref('');
 
 const glasswareOptions = [
 	"Highball",
@@ -44,20 +49,27 @@ const menuOptions = ["main", "seasonal", "shots", "off menu"];
 const units = ["oz", "ml", "dash", "barspoon", "each"];
 
 const addIngredient = () => {
+	if (!selectedIngredient.value) return;
+	const [sourceType, ...idParts] = selectedIngredient.value.split(':');
+	const id = idParts.join(':');
 	cocktailStore.cocktail.ingredients.push({
-		item: newIngredient.value.item,
-		amount: newIngredient.value.amount,
-		unit: newIngredient.value.unit,
+		item: id,
+		amount: newIngredientAmount.value,
+		unit: newIngredientUnit.value,
+		sourceType: sourceType as IngredientSourceType,
 	});
-	newIngredient.value = {
-		item: '',
-		amount: 0,
-		unit: "",
-	};
+	selectedIngredient.value = '';
+	newIngredientAmount.value = 0;
+	newIngredientUnit.value = '';
 	let newItemElement = document.getElementById("newItem");
 	if (newItemElement) {
 		newItemElement.focus();
 	}
+};
+
+const handleCreateItem = (itemName: string) => {
+	// create-item always creates an Item, not a Bottle
+	newItem(itemName);
 };
 
 const removeIngredient = (index: number) => {
@@ -106,7 +118,8 @@ const saveCocktail = async () => {
 						:key="index"
 						class="grid grid-cols-6 items-center space-x-2 mb-2">
 						<span class="col-span-3">
-							{{ itemStore.getItemById(ingredient.item)?.name }}
+							{{ getIngredientName(ingredient) }}
+						<span v-if="ingredient.sourceType === 'bottle'" class="text-xs text-copper/70 ml-1">(Bottle)</span>
 						</span>
 						<span> {{ ingredient.amount }}</span>
 						<span>{{ ingredient.unit }} </span>
@@ -119,18 +132,18 @@ const saveCocktail = async () => {
 					<div class="grid grid-cols-6 space-x-2">
 						<USelectMenu
 							id="newItem"
-							v-model="newIngredient.item"
+							v-model="selectedIngredient"
 							value-key="id"
-							:items="itemStore.itemNameId"
+							:items="ingredientOptions"
 							class="flex flex-grow col-span-3"
 							create-item
-							@create="newItem" />
+							@create="handleCreateItem" />
 						<UInput
-							v-model.number="newIngredient.amount"
+							v-model.number="newIngredientAmount"
 							type="number"
 							class="flex flex-shrink max-w-20" />
 						<USelect
-							v-model="newIngredient.unit"
+							v-model="newIngredientUnit"
 							:items="units"
 							class="max-w-20" />
 						<UButton

@@ -88,6 +88,12 @@ export const Vessel = defineMongooseModel({
 			type: String,
 			required: false,
 		},
+		isUsed: {
+			type: Boolean,
+			default: false,
+		},
+		previousContents: String,
+		targetAge: Number,
 	},
 	options: { timestamps: true },
 });

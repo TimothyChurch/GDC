@@ -1,6 +1,97 @@
 export const estimateCocktailPrice = (cost: number): number =>
   ((cost - 1.5) / 2.5) * 4 + 7;
 
+/** Hardcoded fallback barrel aging targets (months) keyed by vessel barrel.size */
+const BARREL_AGE_FALLBACK: Record<string, number> = {
+  '5 Gallon': 12,
+  '10 Gallon': 15,
+  '15 Gallon': 18,
+  '30 Gallon': 24,
+  '53 Gallon': 36,
+};
+
+/**
+ * Barrel age defaults that check the settings store first, falling back to
+ * hardcoded values. Safe to call before the store is loaded -- returns the
+ * hardcoded defaults in that case.
+ */
+export const BARREL_AGE_DEFAULTS: Record<string, number> = new Proxy(
+  BARREL_AGE_FALLBACK,
+  {
+    get(fallback, prop, receiver) {
+      if (typeof prop === 'symbol') return Reflect.get(fallback, prop, receiver);
+      try {
+        const store = useSettingsStore();
+        if (store.loaded && store.barrelAgeDefaults) {
+          const storeVal = store.barrelAgeDefaults[prop];
+          if (storeVal !== undefined) return storeVal;
+        }
+      } catch {
+        // Store not available (e.g. server-side or before Pinia init) -- use fallback
+      }
+      return fallback[prop];
+    },
+    ownKeys() {
+      try {
+        const store = useSettingsStore();
+        if (store.loaded && store.barrelAgeDefaults) {
+          return Object.keys(store.barrelAgeDefaults);
+        }
+      } catch {
+        // fallback
+      }
+      return Object.keys(BARREL_AGE_FALLBACK);
+    },
+    getOwnPropertyDescriptor(fallback, prop) {
+      // Required for ownKeys to work with Object.entries / Object.keys
+      try {
+        const store = useSettingsStore();
+        if (store.loaded && store.barrelAgeDefaults && prop in store.barrelAgeDefaults) {
+          return { configurable: true, enumerable: true, value: store.barrelAgeDefaults[prop as string] };
+        }
+      } catch {
+        // fallback
+      }
+      if (prop in fallback) {
+        return { configurable: true, enumerable: true, value: fallback[prop as string] };
+      }
+      return undefined;
+    },
+  }
+);
+
+/**
+ * Look up barrel age default by size string.
+ * Handles exact match first, then normalised comparison
+ * (e.g. "5 gal", "5 gallon", "5 Gallon" all resolve to 12).
+ *
+ * Checks the settings store for overrides first, falls back to hardcoded defaults.
+ */
+export function getBarrelAgeDefault(size?: string): number | undefined {
+  if (!size) return undefined;
+
+  // Resolve the effective defaults map (store overrides or fallback)
+  let defaults = BARREL_AGE_FALLBACK;
+  try {
+    const store = useSettingsStore();
+    if (store.loaded && store.barrelAgeDefaults) {
+      defaults = store.barrelAgeDefaults;
+    }
+  } catch {
+    // Store not available -- use fallback
+  }
+
+  // Exact match
+  if (defaults[size] !== undefined) return defaults[size];
+  // Normalised match: extract leading number and compare
+  const num = parseInt(size, 10);
+  if (isNaN(num)) return undefined;
+  for (const [key, value] of Object.entries(defaults)) {
+    if (parseInt(key, 10) === num) return value;
+  }
+  return undefined;
+}
+
 export const liquorClasses = [
   {
     class: "Neutral Spirits or Alcohol",

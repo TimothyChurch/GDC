@@ -47,3 +47,49 @@ Written to `/home/timothy/Coding/GDC/ADMIN_REDESIGN_PLAN.md` with 7 implementati
 5. Reporting section with production, inventory, cost, and barrel reports
 
 See `patterns.md` for reusable component patterns discovered.
+
+### Settings System (Feb 2026)
+- Singleton MongoDB document via `server/models/settings.schema.ts` (auto-created on first GET)
+- API: `GET /PUT /api/settings` (no create/delete -- singleton pattern)
+- Store: `useSettingsStore` with `ensureLoaded()`, loaded in admin layout alongside other stores
+- Settings page: `/admin/settings` with UTabs (Categories, Barrel Defaults, Theme, Distillery Info)
+- `composables/useItemCategories.ts` returns dynamic categories from settings (falls back to ITEM_CATEGORIES constant)
+- `composables/definitions.ts` BARREL_AGE_DEFAULTS uses Proxy to check settings store first, hardcoded fallback second
+- Item Mongoose schema `category` field has no `enum` constraint (accepts any string for custom categories)
+- Server validation schemas for items also removed `oneOf` constraint on category
+
+### Batch-to-Production Flow (Feb 2026)
+- When advancing a batch to "Bottled", the production panel auto-opens pre-filled with batch vessels and date
+- `PanelProduction.vue` accepts `prefill` prop (`{ batchId, vessels, date }`) via `useOverlay().create(LazyPanelProduction).open({ prefill })`
+- `useProductionStore.createAndReturnId()` creates a production and returns the `_id` for batch linking
+- The batch-linked wizard save path bypasses `useFormPanel.save()` to avoid double-emit of `close` event
+- `BatchBottled.vue` shows "Record Bottling Run" button (both in editing mode header and in the empty state) to create+link productions after the fact
+- Production record link in BatchBottled navigates to `/admin/production/${id}` (not just `/admin/production`)
+- Pattern: pre-populate store singleton before opening panel, pass `prefill` prop for metadata only (batchId for linking)
+
+### Auto-Inventory Updates (Feb 2026)
+- **PO Received flow**: When PO status changes to "Delivered", `receivePurchaseOrder()` in PO store creates inventory records for each line item
+  - Converts PO quantities (qty x size in sizeUnit) to item's inventoryUnit via `useUnitConversion().convertQuantity()`
+  - Adds to current stock (from `getCurrentStock()`), creates new inventory record with new total
+  - Skips items with `trackInventory === false`
+  - Shows summary toast: "Inventory updated from PO: +24 each Glass Bottles, +24 each Caps..."
+- **Production completed flow**: `adjustInventoryForProduction()` in production store
+  - Increases linked bottle inventory by quantity
+  - Decreases bottling materials (glassware, cap, label) by quantity (one per bottle)
+  - Auto-syncs bottle's `inStock` flag based on resulting stock level
+  - Only triggers on NEW productions (not edits) -- captured via `isNewProduction` flag before store reset
+- **Key API**: `POST /api/inventory/bulk` -- creates multiple inventory records in one call (max 100)
+- **Key store methods**: `useInventoryStore.createBulk()`, `useInventoryStore.getCurrentStock()`
+- **UI touches**: PO panel shows green notice when switching to "Delivered", button label changes to "Save & Update Inventory"
+- **Quick action**: PO detail page has "Mark as Received" button (green), PO table has dropdown option
+- **Important**: `updateProduction()` calls `resetProduction()` after save, so production data for inventory adjustment must be captured BEFORE the update call
+
+### Shopping List Feature (Feb 2026)
+- `ShoppingListItem` interface exported from `stores/useItemStore.ts` (item, currentStock, reorderPoint, usePerMonth, suggestedOrderQty, status)
+- `shoppingListItems` computed in useItemStore: filters tracked items with inventory history that are low/out of stock
+- Suggested order qty formula: `usePerMonth * 2 - currentStock` (falls back to `reorderPoint * 2 - currentStock`), min of `minStock` or 1
+- Uses `getStockStatus()` and `getStockStatusColor()` from `composables/useInventoryCategories.ts`
+- Page at `/admin/inventory/shopping-list` with TanStack UTable, summary cards, mobile card view
+- Sidebar badge shows count of shopping list items (computed in AdminSidebar)
+- Dashboard "Inventory Health" widget has "Shopping List" link alongside "Manage"
+- Inventory index page has "Shopping List" button in header actions

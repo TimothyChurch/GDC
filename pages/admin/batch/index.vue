@@ -18,9 +18,9 @@ const filterTabs = computed(() => {
     { name: 'Completed', count: batchStore.batches.filter(b => b.status === 'completed').length, type: 'status' },
   ]
 
-  // Add stage-specific tabs for stages that have active batches
+  // Add stage-specific tabs for stages that have active batches (volume-aware)
   for (const stage of ALL_STAGES) {
-    const count = batchStore.getBatchesByCurrentStage(stage).length
+    const count = batchStore.getBatchesInStage(stage).length
     if (count > 0) {
       tabs.push({ name: stage, count, type: 'stage' })
     }
@@ -33,8 +33,8 @@ const filteredBatches = computed(() => {
   if (selectedFilter.value === 'All') return undefined
   if (selectedFilter.value === 'Active') return batchStore.batches.filter(b => b.status === 'active')
   if (selectedFilter.value === 'Completed') return batchStore.batches.filter(b => b.status === 'completed')
-  // Stage filter
-  return batchStore.getBatchesByCurrentStage(selectedFilter.value)
+  // Stage filter (volume-aware)
+  return batchStore.getBatchesInStage(selectedFilter.value)
 })
 </script>
 

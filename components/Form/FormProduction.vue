@@ -42,43 +42,61 @@ const vesselLabels = computed(() => {
 		return vesselObject;
 	});
 });
-// Compute overall production cost
-const productionCost = computed(() => {
-	const batchCost = ref(0);
-	const barrelCost = ref(0);
+// Cost breakdown computeds
+const calculatedBatchCost = computed(() => {
+	let total = 0;
 	if (productionsStore.production.vessel.length > 0) {
 		productionsStore.production.vessel.forEach((vessel) => {
 			const v = vesselStore.getVesselById(vessel as unknown as string);
 			v?.contents.forEach(
-				(content: { cost: number }) => (batchCost.value += content.cost)
+				(content: { cost: number }) => (total += content.cost || 0)
 			);
-			barrelCost.value += v?.barrel.cost as number;
 		});
 	}
+	return total;
+});
 
-	const bottleCost = productionsStore.production.bottling.glassware
+const calculatedBarrelCost = computed(() => {
+	let total = 0;
+	if (productionsStore.production.vessel.length > 0) {
+		productionsStore.production.vessel.forEach((vessel) => {
+			const v = vesselStore.getVesselById(vessel as unknown as string);
+			total += v?.barrel?.cost || 0;
+		});
+	}
+	return total;
+});
+
+const calculatedBottlingCost = computed(() => {
+	const glassCost = productionsStore.production.bottling.glassware
 		? (latestPrice(
 				productionsStore.production.bottling.glassware as unknown as string
-		  ) as number)
+		  ) as number) || 0
 		: 0;
 	const capCost = productionsStore.production.bottling.cap
 		? (latestPrice(
 				productionsStore.production.bottling.cap as unknown as string
-		  ) as number)
+		  ) as number) || 0
 		: 0;
 	const labelCost = productionsStore.production.bottling.label
 		? (latestPrice(
 				productionsStore.production.bottling.label as unknown as string
-		  ) as number)
+		  ) as number) || 0
 		: 0;
-
-	const totalCost =
-		batchCost.value +
-		barrelCost.value +
-		(bottleCost + capCost + labelCost) * productionsStore.production.quantity;
-
-	return totalCost;
+	return (glassCost + capCost + labelCost) * (productionsStore.production.quantity || 0);
 });
+
+const productionCost = computed(() => {
+	return (
+		calculatedBatchCost.value +
+		calculatedBarrelCost.value +
+		calculatedBottlingCost.value +
+		(productionsStore.production.costs?.labor || 0) +
+		(productionsStore.production.costs?.taxes || 0) +
+		(productionsStore.production.costs?.other || 0)
+	);
+});
+
 // Filter vessels based on selected IDs
 const filteredVessels = (ids: any[]) => {
 	const filtered = ids.map((id) => {
@@ -91,11 +109,35 @@ const filteredVessels = (ids: any[]) => {
 	return filtered;
 };
 // Save production
-const saveProduction = () => {
+const saveProduction = async () => {
+	const isNewProduction = !productionsStore.production._id;
+	productionsStore.production.costs = {
+		batch: calculatedBatchCost.value,
+		barrel: calculatedBarrelCost.value,
+		bottling: calculatedBottlingCost.value,
+		labor: productionsStore.production.costs?.labor || 0,
+		taxes: productionsStore.production.costs?.taxes || 0,
+		other: productionsStore.production.costs?.other || 0,
+	};
 	productionsStore.production.productionCost = productionCost.value;
 	productionsStore.production.bottleCost =
-		productionCost.value / productionsStore.production.quantity;
-	productionsStore.updateProduction();
+		productionsStore.production.quantity > 0
+			? productionCost.value / productionsStore.production.quantity
+			: 0;
+
+	// Capture production data before updateProduction resets it
+	const inventoryData = {
+		quantity: productionsStore.production.quantity,
+		bottle: productionsStore.production.bottle,
+		bottling: { ...productionsStore.production.bottling },
+	};
+
+	await productionsStore.updateProduction();
+
+	// Auto-adjust inventory for new productions only (not edits)
+	if (isNewProduction) {
+		await productionsStore.adjustInventoryForProduction(inventoryData);
+	}
 };
 </script>
 
@@ -111,9 +153,9 @@ const saveProduction = () => {
 			<UFormField label="Vessels" name="vessel">
 				<USelectMenu
 					v-model="productionsStore.production.vessel"
-					:options="vesselLabels"
-					option-attribute="name"
-					value-attribute="_id"
+					:items="vesselLabels"
+					label-key="name"
+					value-key="_id"
 					multiple
 					searchable>
 					<template #label>
@@ -126,43 +168,43 @@ const saveProduction = () => {
 			<UFormField label="Bottle" name="bottle">
 				<USelectMenu
 					v-model="productionsStore.production.bottle"
-					:options="bottleStore.bottles"
-					option-attribute="name"
-					value-attribute="_id"
+					:items="bottleStore.bottles"
+					label-key="name"
+					value-key="_id"
 					searchable />
 			</UFormField>
 			<UFormField label="Glassware" name="bottling.glassware">
 				<USelectMenu
 					v-model="productionsStore.production.bottling.glassware"
-					:options="
+					:items="
 						itemStore.items.filter(
 							(item) => item.type?.toLowerCase() === 'glass bottle'
 						)
 					"
-					option-attribute="name"
-					value-attribute="_id" />
+					label-key="name"
+					value-key="_id" />
 			</UFormField>
 			<UFormField label="Cap" name="bottling.cap">
 				<USelect
 					v-model="productionsStore.production.bottling.cap"
-					:options="
+					:items="
 						itemStore.items.filter(
 							(item) => item.type?.toLowerCase() === 'bottle cap'
 						)
 					"
-					option-attribute="name"
-					value-attribute="_id" />
+					label-key="name"
+					value-key="_id" />
 			</UFormField>
 			<UFormField label="Label" name="bottling.label">
 				<USelectMenu
 					v-model="productionsStore.production.bottling.label"
-					:options="
+					:items="
 						itemStore.items.filter(
 							(item) => item.type?.toLowerCase() === 'label'
 						)
 					"
-					option-attribute="name"
-					value-attribute="_id" />
+					label-key="name"
+					value-key="_id" />
 			</UFormField>
 			<UFormField label="Quantity" name="quantity">
 				<UInput

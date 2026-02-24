@@ -5,12 +5,12 @@ const props = defineProps<{
   cocktail: Cocktail;
 }>();
 
-const itemStore = useItemStore();
+const { getIngredientName } = useIngredientResolver();
 
 const ingredientNames = computed(() => {
   return props.cocktail.ingredients
-    .map((ing) => itemStore.getItemById(ing.item.toString())?.name)
-    .filter(Boolean)
+    .map((ing) => getIngredientName(ing))
+    .filter((name) => name && name !== 'Unknown Item' && name !== 'Unknown Bottle')
     .join(", ");
 });
 </script>

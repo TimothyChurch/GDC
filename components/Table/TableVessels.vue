@@ -2,6 +2,7 @@
 import type { TableColumn } from "@nuxt/ui";
 import type { Vessel } from "~/types";
 import type { Row } from "@tanstack/vue-table";
+import { getPaginationRowModel } from "@tanstack/vue-table";
 
 const vesselStore = useVesselStore();
 const { confirm } = useDeleteConfirm();
@@ -11,6 +12,11 @@ const UDropdownMenu = resolveComponent("UDropdownMenu");
 
 const search = ref("");
 const pagination = ref({ pageIndex: 0, pageSize: 10 });
+
+const tableRef = useTemplateRef('tableRef');
+const filteredTotal = computed(() =>
+  tableRef.value?.tableApi?.getFilteredRowModel().rows.length ?? vesselStore.vessels.length
+);
 
 const columns: TableColumn<Vessel>[] = [
   {
@@ -130,7 +136,7 @@ const addVessel = () => {
   <TableWrapper
     v-model:search="search"
     v-model:pagination="pagination"
-    :total-items="vesselStore.vessels.length"
+    :total-items="filteredTotal"
     :loading="vesselStore.loading"
     search-placeholder="Search vessels..."
   >
@@ -140,8 +146,10 @@ const addVessel = () => {
     <!-- Desktop table -->
     <div class="hidden sm:block">
       <UTable
+        ref="tableRef"
         v-model:global-filter="search"
         v-model:pagination="pagination"
+        :pagination-options="{ getPaginationRowModel: getPaginationRowModel() }"
         :data="vesselStore.vessels"
         :columns="columns"
         :loading="vesselStore.loading"

@@ -2,6 +2,7 @@
 import type { TableColumn } from "@nuxt/ui";
 import type { Inventory } from "~/types";
 import type { Row } from "@tanstack/vue-table";
+import { getPaginationRowModel } from "@tanstack/vue-table";
 
 const inventoryStore = useInventoryStore();
 const { confirm } = useDeleteConfirm();
@@ -11,6 +12,11 @@ const UDropdownMenu = resolveComponent("UDropdownMenu");
 
 const search = ref("");
 const pagination = ref({ pageIndex: 0, pageSize: 10 });
+
+const tableRef = useTemplateRef('tableRef');
+const filteredTotal = computed(() =>
+  tableRef.value?.tableApi?.getFilteredRowModel().rows.length ?? inventoryStore.inventories.length
+);
 
 const columns: TableColumn<Inventory>[] = [
   {
@@ -97,7 +103,7 @@ const addItem = () => {
   <TableWrapper
     v-model:search="search"
     v-model:pagination="pagination"
-    :total-items="inventoryStore.inventories.length"
+    :total-items="filteredTotal"
     :loading="inventoryStore.loading"
     search-placeholder="Search by date..."
   >
@@ -105,8 +111,10 @@ const addItem = () => {
       <UButton icon="i-heroicons-plus-circle" size="xl" @click="addItem" variant="ghost">Add Record</UButton>
     </template>
     <UTable
+      ref="tableRef"
       v-model:global-filter="search"
       v-model:pagination="pagination"
+      :pagination-options="{ getPaginationRowModel: getPaginationRowModel() }"
       :data="inventoryStore.inventories"
       :columns="columns"
       :loading="inventoryStore.loading"

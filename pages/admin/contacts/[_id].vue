@@ -19,9 +19,18 @@ const relatedPOs = computed(() =>
   purchaseOrderStore.getPurchaseOrderByVendor(route.params._id as string)
 )
 
-const suppliedItems = computed(() =>
-  itemStore.items.filter(i => i.vendor === route.params._id)
-)
+const suppliedItems = computed(() => {
+  const vendorPOs = relatedPOs.value
+  const uniqueItemIds = new Set<string>()
+  for (const po of vendorPOs) {
+    for (const lineItem of po.items) {
+      uniqueItemIds.add(lineItem.item)
+    }
+  }
+  return [...uniqueItemIds]
+    .map(id => itemStore.getItemById(id))
+    .filter((i): i is NonNullable<typeof i> => !!i)
+})
 
 // Panel slide-over for editing
 import { LazyPanelContact } from '#components'
@@ -162,7 +171,7 @@ function poStatusColor(status: string) {
           class="grid grid-cols-2 gap-4 py-2 text-sm hover:bg-brown/10 -mx-2 px-2 rounded transition-colors"
         >
           <span class="text-parchment">{{ item.name }}</span>
-          <span class="text-parchment text-right">{{ Dollar.format(item.pricePerUnit || 0) }}</span>
+          <span class="text-parchment text-right">{{ Dollar.format(itemStore.latestPrice(item._id)) }}</span>
         </NuxtLink>
       </div>
       <div v-else class="text-center py-6">

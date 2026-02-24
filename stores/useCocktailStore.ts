@@ -1,6 +1,6 @@
 import { defineStore } from "pinia";
 import { ref } from "vue";
-import type { Cocktail } from "~/types";
+import type { Cocktail, CocktailIngredient } from "~/types";
 
 export const useCocktailStore = defineStore("cocktails", () => {
   const toast = useToast();
@@ -22,8 +22,6 @@ export const useCocktailStore = defineStore("cocktails", () => {
     directions: "",
     visible: true,
   });
-
-  const itemStore = useItemStore();
 
   // CRUD actions
   const getCocktails = async (): Promise<void> => {
@@ -161,6 +159,7 @@ export const useCocktailStore = defineStore("cocktails", () => {
   };
 
   const cocktailCost = (cocktail: Cocktail | string): number => {
+    const { totalIngredientCost } = useIngredientResolver();
     let selectedCocktail;
     if (typeof cocktail === "string") {
       selectedCocktail = cocktails.value.find(
@@ -170,13 +169,7 @@ export const useCocktailStore = defineStore("cocktails", () => {
       selectedCocktail = cocktail;
     }
     if (!selectedCocktail) return 0;
-    return selectedCocktail.ingredients.reduce(
-      (total: number, ingredient: { item: string; amount: number }) => {
-        let cost = itemStore.getPriceById(ingredient.item) || 0;
-        return total + ingredient.amount * cost;
-      },
-      0
-    );
+    return totalIngredientCost(selectedCocktail.ingredients);
   };
 
   return {

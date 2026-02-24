@@ -1,17 +1,19 @@
 <script setup lang="ts">
-import type { ObjectId } from "mongoose";
 import type { TableColumn } from "@nuxt/ui";
-import type { Cocktail } from "~/types";
+import type { CocktailIngredient } from "~/types";
 
 const props = defineProps(["ingredients"]);
-const itemStore = useItemStore();
+const { getIngredientName, getIngredientCostPerUnit } = useIngredientResolver();
 
-const columns: TableColumn<Cocktail>[] = [
+const columns: TableColumn<CocktailIngredient>[] = [
   {
     accessorKey: "item",
     header: "Ingredient",
-    cell: ({ row }) =>
-      itemStore.getItemById(row.original.item.toString())?.name,
+    cell: ({ row }) => {
+      const name = getIngredientName(row.original);
+      const tag = row.original.sourceType === 'bottle' ? ' (Bottle)' : '';
+      return name + tag;
+    },
   },
   {
     accessorKey: "amount",
@@ -21,17 +23,12 @@ const columns: TableColumn<Cocktail>[] = [
   {
     header: "Cost Per Unit",
     cell: ({ row }) =>
-      Dollar.format(
-        itemStore.getPriceById(row.original.item.toString()) as number
-      ),
+      Dollar.format(getIngredientCostPerUnit(row.original)),
   },
   {
     header: "Total Cost",
     cell: ({ row }) =>
-      Dollar.format(
-        (row.original.amount *
-          itemStore.getPriceById(row.original.item.toString())) as number
-      ),
+      Dollar.format(getIngredientCostPerUnit(row.original) * row.original.amount),
   },
 ];
 </script>

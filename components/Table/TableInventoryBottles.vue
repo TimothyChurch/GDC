@@ -17,13 +17,13 @@ const rows = computed(() => {
 });
 
 const columns = [
-	{ key: 'name', label: 'Name' },
-	{ key: 'class', label: 'Class' },
-	{ key: 'type', label: 'Type' },
-	{ key: 'cost', label: 'Cost' },
-	{ key: 'price', label: 'Price' },
-	{ key: 'stock', label: 'Stock' },
-	{ key: 'actions' },
+	{ accessorKey: 'name', header: 'Name' },
+	{ accessorKey: 'class', header: 'Class' },
+	{ accessorKey: 'type', header: 'Type' },
+	{ accessorKey: 'cost', header: 'Cost' },
+	{ accessorKey: 'price', header: 'Price' },
+	{ accessorKey: 'stock', header: 'Stock' },
+	{ accessorKey: 'actions', header: '' },
 ];
 </script>
 
@@ -33,14 +33,14 @@ const columns = [
 			:data="bottleStore.bottles"
 			:loading="bottleStore.loading"
 			:empty="'No bottles found'">
-			<!-- <template #stock-data="{ row }">
+			<!-- <template #stock-cell="{ row }">
 				<div
 					v-if="bottleStockCheck(row._id).lowStock"
 					class="text-xl font-bold text-red-600">
 					{{ bottleStockCheck(row._id).currentStock }}
 				</div>
 			</template> -->
-			<!-- <template #actions-data="{ row }">
+			<!-- <template #actions-cell="{ row }">
 				<NuxtLink :to="`/admin/bottles/${row._id}`">
 					<UButton>Open</UButton>
 				</NuxtLink>

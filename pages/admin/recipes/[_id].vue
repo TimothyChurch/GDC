@@ -9,6 +9,7 @@ definePageMeta({ layout: "admin" });
 
 const route = useRoute();
 const router = useRouter();
+const toast = useToast();
 
 const recipeStore = useRecipeStore();
 const itemStore = useItemStore();
@@ -37,12 +38,95 @@ const totalCost = computed(() => {
   return recipePrice(recipe.value);
 });
 
+const { ingredientCost } = useUnitConversion();
+
+// --- Inline ingredient editing ---
+// Local editable copy of ingredients, synced from the recipe
+const editableIngredients = ref<{ _id: string; amount: number; unit: string }[]>([]);
+
+// Initialize / sync when recipe changes
+watch(
+  () => recipe.value?.items,
+  (items) => {
+    if (items) {
+      editableIngredients.value = items.map((ing) => ({ ...ing }));
+    }
+  },
+  { immediate: true, deep: true },
+);
+
+// Track whether the user has unsaved ingredient changes
+const ingredientsDirty = computed(() => {
+  if (!recipe.value?.items) return false;
+  const original = recipe.value.items;
+  const edited = editableIngredients.value;
+  if (original.length !== edited.length) return true;
+  return original.some((orig, i) => {
+    const ed = edited[i];
+    return (
+      orig._id !== ed._id ||
+      orig.amount !== ed.amount ||
+      orig.unit !== ed.unit
+    );
+  });
+});
+
+const savingIngredients = ref(false);
+
+const saveIngredients = async () => {
+  if (!recipe.value || !ingredientsDirty.value) return;
+  savingIngredients.value = true;
+  try {
+    recipeStore.setRecipe(recipe.value._id);
+    recipeStore.recipe.items = editableIngredients.value.map((ing) => ({
+      _id: ing._id,
+      amount: ing.amount,
+      unit: ing.unit,
+    }));
+    await recipeStore.updateRecipe();
+    toast.add({
+      title: "Ingredients updated",
+      color: "success",
+      icon: "i-lucide-check-circle",
+    });
+  } finally {
+    savingIngredients.value = false;
+  }
+};
+
+const resetIngredients = () => {
+  if (recipe.value?.items) {
+    editableIngredients.value = recipe.value.items.map((ing) => ({ ...ing }));
+  }
+};
+
+const removeIngredient = (index: number) => {
+  editableIngredients.value.splice(index, 1);
+};
+
+// Add ingredient row
+const newIngredient = ref({
+  _id: "" as string,
+  amount: null as number | null,
+  unit: "" as string,
+});
+
+const addIngredient = () => {
+  if (!newIngredient.value._id || !newIngredient.value.amount || !newIngredient.value.unit) return;
+  editableIngredients.value.push({
+    _id: newIngredient.value._id,
+    amount: newIngredient.value.amount,
+    unit: newIngredient.value.unit,
+  });
+  newIngredient.value = { _id: "", amount: null, unit: "" };
+};
+
+// Computed display data enriched from editable state
 const ingredients = computed(() => {
-  if (!recipe.value?.items) return [];
-  return recipe.value.items.map((ing) => {
+  return editableIngredients.value.map((ing) => {
     const item = itemStore.getItemById(ing._id);
     const price = latestPrice(ing._id);
-    const cost = price * ing.amount;
+    const cost = ingredientCost(price, ing.amount, ing.unit, item?.inventoryUnit || ing.unit);
     return {
       id: ing._id,
       name: item?.name || "Unknown",
@@ -166,48 +250,191 @@ const relatedBatches = computed(() =>
       </div>
     </div>
 
-    <!-- Ingredients -->
+    <!-- Ingredients (inline editable) -->
     <div class="bg-charcoal rounded-xl border border-brown/30 p-5">
-      <h3
-        class="text-lg font-bold text-parchment font-[Cormorant_Garamond] mb-4"
-      >
-        Ingredients
-      </h3>
-      <div v-if="ingredients.length > 0" class="divide-y divide-brown/20">
+      <div class="flex items-center justify-between mb-4">
+        <h3
+          class="text-lg font-bold text-parchment font-[Cormorant_Garamond]"
+        >
+          Ingredients
+        </h3>
+        <div v-if="ingredientsDirty" class="flex items-center gap-2">
+          <span class="text-xs text-amber-400 flex items-center gap-1">
+            <UIcon name="i-lucide-circle-dot" class="text-xs" />
+            Unsaved changes
+          </span>
+          <UButton
+            size="xs"
+            variant="outline"
+            color="neutral"
+            @click="resetIngredients"
+          >
+            Reset
+          </UButton>
+          <UButton
+            size="xs"
+            icon="i-lucide-save"
+            :loading="savingIngredients"
+            @click="saveIngredients"
+          >
+            Save
+          </UButton>
+        </div>
+      </div>
+
+      <div v-if="editableIngredients.length > 0 || newIngredient._id" class="space-y-0">
+        <!-- Header row -->
         <div
-          class="grid grid-cols-4 gap-4 pb-2 text-xs text-parchment/60 uppercase tracking-wider"
+          class="grid grid-cols-[1fr_100px_100px_90px_70px_36px] sm:grid-cols-[1fr_100px_120px_90px_80px_36px] gap-2 pb-2 text-xs text-parchment/60 uppercase tracking-wider"
         >
           <span>Item</span>
           <span>Amount</span>
+          <span>Unit</span>
           <span>Price/Unit</span>
           <span class="text-right">Cost</span>
+          <span></span>
         </div>
+
+        <!-- Editable ingredient rows -->
         <div
           v-for="(ing, i) in ingredients"
-          :key="i"
-          class="grid grid-cols-4 gap-4 py-2 text-sm"
+          :key="editableIngredients[i]?._id + '-' + i"
+          class="grid grid-cols-[1fr_100px_100px_90px_70px_36px] sm:grid-cols-[1fr_100px_120px_90px_80px_36px] gap-2 py-1.5 items-center border-t border-brown/10"
         >
+          <!-- Item name (read-only, clickable link) -->
           <NuxtLink
             :to="`/admin/items/${ing.id}`"
-            class="text-gold hover:text-copper transition-colors"
+            class="text-sm text-gold hover:text-copper transition-colors truncate"
           >
             {{ ing.name }}
           </NuxtLink>
-          <span class="text-parchment/60">{{ ing.amount }} {{ ing.unit }}</span>
-          <span class="text-parchment/60">{{
+
+          <!-- Amount (editable) -->
+          <UInput
+            v-model.number="editableIngredients[i].amount"
+            type="number"
+            size="sm"
+            :ui="{ base: 'text-sm' }"
+            step="any"
+            min="0"
+          />
+
+          <!-- Unit (editable) -->
+          <USelectMenu
+            v-model="editableIngredients[i].unit"
+            :items="allUnits"
+            size="sm"
+          />
+
+          <!-- Price per unit (read-only) -->
+          <span class="text-sm text-parchment/60">{{
             Dollar.format(ing.pricePerUnit)
           }}</span>
-          <span class="text-parchment text-right">{{
+
+          <!-- Cost (read-only, computed) -->
+          <span class="text-sm text-parchment text-right">{{
             Dollar.format(ing.cost)
           }}</span>
+
+          <!-- Delete button -->
+          <UButton
+            icon="i-lucide-trash-2"
+            color="error"
+            variant="ghost"
+            size="xs"
+            @click="removeIngredient(i)"
+          />
+        </div>
+
+        <!-- Add new ingredient row -->
+        <div
+          class="grid grid-cols-[1fr_100px_100px_90px_70px_36px] sm:grid-cols-[1fr_100px_120px_90px_80px_36px] gap-2 pt-3 mt-2 border-t border-brown/30 items-center"
+        >
+          <USelectMenu
+            v-model="newIngredient._id"
+            :items="
+              itemStore.items.map((i) => ({
+                label: i.name,
+                value: i._id,
+              }))
+            "
+            value-key="value"
+            placeholder="Add item..."
+            searchable
+            size="sm"
+          />
+          <UInput
+            v-model.number="newIngredient.amount"
+            type="number"
+            placeholder="Amt"
+            size="sm"
+            step="any"
+            min="0"
+          />
+          <USelectMenu
+            v-model="newIngredient.unit"
+            :items="allUnits"
+            placeholder="Unit"
+            size="sm"
+          />
+          <span></span>
+          <span></span>
+          <UButton
+            icon="i-lucide-plus"
+            size="xs"
+            :disabled="!newIngredient._id || !newIngredient.amount || !newIngredient.unit"
+            @click="addIngredient"
+          />
         </div>
       </div>
-      <div v-else class="text-center py-6">
-        <UIcon
-          name="i-lucide-package-open"
-          class="text-2xl text-parchment/20 mx-auto mb-2"
-        />
-        <p class="text-sm text-parchment/50">No ingredients listed</p>
+
+      <div v-else class="space-y-4">
+        <div class="text-center py-6">
+          <UIcon
+            name="i-lucide-package-open"
+            class="text-2xl text-parchment/20 mx-auto mb-2"
+          />
+          <p class="text-sm text-parchment/50">No ingredients listed</p>
+        </div>
+
+        <!-- Add row even when empty -->
+        <div
+          class="grid grid-cols-[1fr_100px_100px_36px] gap-2 items-center"
+        >
+          <USelectMenu
+            v-model="newIngredient._id"
+            :items="
+              itemStore.items.map((i) => ({
+                label: i.name,
+                value: i._id,
+              }))
+            "
+            value-key="value"
+            placeholder="Add item..."
+            searchable
+            size="sm"
+          />
+          <UInput
+            v-model.number="newIngredient.amount"
+            type="number"
+            placeholder="Amt"
+            size="sm"
+            step="any"
+            min="0"
+          />
+          <USelectMenu
+            v-model="newIngredient.unit"
+            :items="allUnits"
+            placeholder="Unit"
+            size="sm"
+          />
+          <UButton
+            icon="i-lucide-plus"
+            size="xs"
+            :disabled="!newIngredient._id || !newIngredient.amount || !newIngredient.unit"
+            @click="addIngredient"
+          />
+        </div>
       </div>
     </div>
 

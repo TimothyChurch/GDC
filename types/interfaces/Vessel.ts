@@ -25,6 +25,9 @@ export interface Vessel {
 	cost?: number;
 	location?: string;
 	status?: string;
+	isUsed?: boolean;
+	previousContents?: string;
+	targetAge?: number;
 	createdAt?: string;
 	updatedAt?: string;
 }

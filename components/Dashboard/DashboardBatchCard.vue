@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { STAGE_DISPLAY, stageTextColor, stageBgColor } from '~/composables/batchPipeline'
+import { getBatchBorderClass } from '~/composables/useRecipeColors'
 
 const batchStore = useBatchStore();
 const recipeStore = useRecipeStore();
@@ -22,6 +23,10 @@ const statusBadge = computed(() => {
   }
 });
 
+const batchBorder = computed(() =>
+  batch.value ? getBatchBorderClass(batch.value._id) : ''
+);
+
 const startDate = computed(() => {
   if (!batch.value?.createdAt) return null
   return new Date(batch.value.createdAt).toLocaleDateString()
@@ -32,7 +37,7 @@ const startDate = computed(() => {
   <NuxtLink
     v-if="batch"
     :to="`/admin/batch/${batch._id}`"
-    class="block w-full rounded-lg border border-brown/25 bg-brown/15 p-3 hover:border-gold/40 hover:bg-brown/25 transition-all duration-200 cursor-pointer group"
+    :class="['block w-full rounded-r-lg rounded-l border border-brown/25 bg-brown/15 p-3 hover:border-gold/40 hover:bg-brown/25 transition-all duration-200 cursor-pointer group border-l-4', batchBorder]"
   >
     <div class="text-sm font-medium text-parchment mb-2 group-hover:text-gold transition-colors duration-200">
       {{ recipeStore.getRecipeById(batch?.recipe)?.name || 'Unknown Recipe' }}

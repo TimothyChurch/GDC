@@ -1,4 +1,7 @@
 <script setup lang="ts">
+import { volumeUnits } from '~/utils/units';
+import { convertUnitRatio } from '~/utils/conversions';
+
 const emit = defineEmits<{ close: [boolean] }>();
 
 const vesselStore = useVesselStore();
@@ -10,7 +13,7 @@ const sourceId = ref('');
 const destId = ref('');
 const transferMode = ref<'full' | 'partial'>('full');
 const transferVolume = ref(0);
-const transferUnit = ref('gal');
+const transferUnit = ref('gallon');
 const loading = ref(false);
 
 const sourceVessel = computed(() =>
@@ -32,9 +35,13 @@ const sourceContents = computed(() => {
   });
 });
 
-const totalSourceVolume = computed(() =>
-  sourceVessel.value?.contents?.reduce((acc, c) => acc + c.volume, 0) || 0
-);
+const totalSourceVolume = computed(() => {
+  const contents = sourceVessel.value?.contents;
+  if (!contents?.length) return 0;
+  return contents.reduce(
+    (acc, c) => acc + c.volume * convertUnitRatio(c.volumeUnit, transferUnit.value), 0
+  );
+});
 
 const estimatedTransferValue = computed(() => {
   if (totalSourceVolume.value <= 0 || transferVolume.value <= 0) return 0;
@@ -137,7 +144,7 @@ const cancel = () => emit('close', true);
                 <UInput v-model="transferVolume" type="number" min="0" :max="totalSourceVolume" />
               </UFormField>
               <UFormField label="Unit">
-                <USelect v-model="transferUnit" :items="['gal', 'L']" />
+                <USelect v-model="transferUnit" :items="volumeUnits" />
               </UFormField>
             </div>
             <div class="text-xs text-parchment/50">

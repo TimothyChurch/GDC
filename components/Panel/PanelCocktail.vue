@@ -1,8 +1,12 @@
 <script setup lang="ts">
+import type { IngredientSourceType } from '~/types';
+
 const emit = defineEmits<{ close: [boolean] }>();
 
 const cocktailStore = useCocktailStore();
 const itemStore = useItemStore();
+const bottleStore = useBottleStore();
+const { getIngredientName, totalIngredientCost } = useIngredientResolver();
 
 const { localData, isDirty, saving, save, cancel } = useFormPanel({
   source: () => cocktailStore.cocktail,
@@ -15,25 +19,41 @@ const { localData, isDirty, saving, save, cancel } = useFormPanel({
 
 const isNew = !localData.value._id;
 
-const cost = computed(() => {
-  return localData.value.ingredients.reduce(
-    (total: number, ingredient: { item: string; amount: number }) => {
-      let c = itemStore.getPriceById(ingredient.item) || 0;
-      return total + ingredient.amount * c;
-    },
-    0
-  ) as number;
-});
+const cost = computed(() => totalIngredientCost(localData.value.ingredients));
 
 const glasswareOptions = ["Highball", "Lowball", "Martini", "Mug", "Shot glass", "Glencairn"];
 const menuOptions = ["main", "seasonal", "shots", "off menu"];
 const units = ["oz", "ml", "dash", "barspoon", "each"];
 
-const newIngredient = ref({ item: '' as string, amount: 0, unit: '' });
+const ingredientOptions = computed(() => {
+  const items = itemStore.itemNameId.map((i) => ({
+    id: `item:${i.id}`,
+    label: `${i.label} (Item)`,
+  }));
+  const bottles = bottleStore.bottleNameId.map((b) => ({
+    id: `bottle:${b.id}`,
+    label: `${b.label} (Bottle)`,
+  }));
+  return [...items, ...bottles].sort((a, b) => a.label.localeCompare(b.label));
+});
+
+const selectedIngredient = ref('');
+const newIngredientAmount = ref(0);
+const newIngredientUnit = ref('');
 
 const addIngredient = () => {
-  localData.value.ingredients.push({ ...newIngredient.value });
-  newIngredient.value = { item: '', amount: 0, unit: '' };
+  if (!selectedIngredient.value) return;
+  const [sourceType, ...idParts] = selectedIngredient.value.split(':');
+  const id = idParts.join(':');
+  localData.value.ingredients.push({
+    item: id,
+    amount: newIngredientAmount.value,
+    unit: newIngredientUnit.value,
+    sourceType: sourceType as IngredientSourceType,
+  });
+  selectedIngredient.value = '';
+  newIngredientAmount.value = 0;
+  newIngredientUnit.value = '';
 };
 
 const removeIngredient = (index: number) => {
@@ -71,20 +91,23 @@ const removeIngredient = (index: number) => {
                 :key="index"
                 class="flex items-center gap-2"
               >
-                <span class="flex-1 text-sm truncate">{{ itemStore.getItemById(ingredient.item)?.name }}</span>
+                <span class="flex-1 text-sm truncate">
+                  {{ getIngredientName(ingredient) }}
+                  <span v-if="ingredient.sourceType === 'bottle'" class="text-xs text-copper/70 ml-1">(Bottle)</span>
+                </span>
                 <span class="text-sm text-parchment/60">{{ ingredient.amount }} {{ ingredient.unit }}</span>
                 <UButton icon="i-lucide-trash-2" color="error" variant="ghost" size="xs" @click="removeIngredient(index)" />
               </div>
               <div class="flex gap-2 items-end">
                 <USelectMenu
-                  v-model="newIngredient.item"
+                  v-model="selectedIngredient"
                   value-key="id"
-                  :items="itemStore.itemNameId"
+                  :items="ingredientOptions"
                   class="flex-1"
-                  placeholder="Select item"
+                  placeholder="Select ingredient"
                 />
-                <UInput v-model.number="newIngredient.amount" type="number" placeholder="Amt" class="w-16" />
-                <USelect v-model="newIngredient.unit" :items="units" class="w-20" />
+                <UInput v-model.number="newIngredientAmount" type="number" placeholder="Amt" class="w-16" />
+                <USelect v-model="newIngredientUnit" :items="units" class="w-20" />
                 <UButton icon="i-lucide-plus" @click="addIngredient" size="sm" />
               </div>
             </div>

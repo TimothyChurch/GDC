@@ -18,7 +18,6 @@ export const Cocktail = defineMongooseModel({
 			{
 				item: {
 					type: Schema.Types.ObjectId,
-					ref: 'Item',
 					required: true,
 				},
 				amount: {
@@ -28,6 +27,11 @@ export const Cocktail = defineMongooseModel({
 				unit: {
 					type: String,
 					required: true,
+				},
+				sourceType: {
+					type: String,
+					enum: ['item', 'bottle'],
+					default: 'item',
 				},
 			},
 		],

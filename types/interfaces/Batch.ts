@@ -39,62 +39,56 @@ export interface FermentingStage extends BatchStageBase {
 	washVolumeUnit?: string;
 }
 
+export interface DistillingAddition {
+	label?: string;
+	sourceVessel?: string;
+	volume?: number;
+	volumeUnit?: string;
+	abv?: number;
+}
+
+export interface DistillingCut {
+	vessel?: string;
+	volume?: number;
+	volumeUnit?: string;
+	abv?: number;
+}
+
+export interface DistillingRun {
+	runNumber?: number;
+	runType?: 'stripping' | 'spirit';
+	date?: Date;
+	chargeVolume?: number;
+	chargeVolumeUnit?: string;
+	chargeAbv?: number;
+	chargeSourceVessel?: string;
+	additions?: DistillingAddition[];
+	output?: { vessel?: string; volume?: number; volumeUnit?: string; abv?: number; proofGallons?: number };
+	collected?: { foreshots?: DistillingCut; heads?: DistillingCut; lateHeads?: DistillingCut; hearts?: DistillingCut; tails?: DistillingCut };
+	total?: { volume?: number; volumeUnit?: string; abv?: number; proofGallons?: number };
+	notes?: string;
+}
+
 export interface DistillingStage extends BatchStageBase {
+	runs?: DistillingRun[];
+	// Legacy fields (kept for backwards compatibility with existing DB documents)
 	runType?: 'stripping' | 'spirit' | 'single';
 	runNumber?: number;
 	chargeVolume?: number;
 	chargeVolumeUnit?: string;
 	chargeAbv?: number;
-	additions: {
-		tails: {
-			volume?: number;
-			volumeUnit?: string;
-			abv?: number;
-		};
-		feints?: {
-			volume?: number;
-			volumeUnit?: string;
-			abv?: number;
-		};
+	additions?: {
+		tails?: { volume?: number; volumeUnit?: string; abv?: number };
+		feints?: { volume?: number; volumeUnit?: string; abv?: number };
 	};
-	collected: {
-		foreshots?: {
-			vessel?: string;
-			volume?: number;
-			volumeUnit?: string;
-			abv?: number;
-		};
-		heads: {
-			vessel?: string;
-			volume?: number;
-			volumeUnit?: string;
-			abv?: number;
-		};
-		hearts: {
-			vessel?: string;
-			volume?: number;
-			volumeUnit?: string;
-			abv?: number;
-		};
-		tails: {
-			vessel?: string;
-			volume?: number;
-			volumeUnit?: string;
-			abv?: number;
-		};
-		total: {
-			volume?: number;
-			volumeUnit?: string;
-			abv?: number;
-			proofGallons?: number;
-		};
+	collected?: {
+		foreshots?: { vessel?: string; volume?: number; volumeUnit?: string; abv?: number };
+		heads?: { vessel?: string; volume?: number; volumeUnit?: string; abv?: number };
+		lateHeads?: { vessel?: string; volume?: number; volumeUnit?: string; abv?: number };
+		hearts?: { vessel?: string; volume?: number; volumeUnit?: string; abv?: number };
+		tails?: { vessel?: string; volume?: number; volumeUnit?: string; abv?: number };
+		total?: { volume?: number; volumeUnit?: string; abv?: number; proofGallons?: number };
 	};
-	temperatures?: {
-		time: Date;
-		location: string;
-		value: number;
-		unit: string;
-	}[];
 }
 
 export interface MacerationStage extends BatchStageBase {
@@ -216,6 +210,27 @@ export interface BatchStages {
 	bottled?: BottledStage;
 }
 
+// --- Tasting note entry ---
+
+export interface TastingNote {
+	date: string;
+	abv?: number;
+	notes: string;
+	addedBy?: string;
+}
+
+// --- Transfer log entry ---
+
+export interface TransferLogEntry {
+	from: string;
+	to: string;
+	volume: number;
+	volumeUnit?: string;
+	date: Date;
+	vessel?: string;
+	user?: string;
+}
+
 // --- Activity log entry ---
 
 export interface BatchLogEntry {
@@ -238,8 +253,12 @@ export interface Batch {
 	batchSizeUnit: string;
 	recipeCost: number;
 	batchCost?: number;
+	barrelCost?: number;
 	notes?: string;
 	stages: BatchStages;
+	tastingNotes?: TastingNote[];
+	stageVolumes?: Record<string, number>;
+	transferLog?: TransferLogEntry[];
 	log?: BatchLogEntry[];
 	createdAt?: string;
 	updatedAt?: string;

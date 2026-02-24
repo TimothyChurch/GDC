@@ -4,7 +4,13 @@ import { STAGE_DISPLAY, stageTextColor } from '~/composables/batchPipeline'
 const props = defineProps<{
   pipeline: string[]
   currentStage: string
+  stageVolumes?: Record<string, number>
+  batchSizeUnit?: string
 }>()
+
+const hasVolumes = computed(() =>
+  props.stageVolumes && Object.keys(props.stageVolumes).length > 0
+)
 
 const currentIndex = computed(() =>
   props.pipeline.indexOf(props.currentStage)
@@ -26,6 +32,34 @@ const activeIndex = computed(() => {
   const pipeIdx = props.pipeline.indexOf(props.currentStage)
   return pipeIdx >= 0 ? pipeIdx + 1 : -1
 })
+
+// Check if a stage has active volume
+const hasVolume = (stageName: string): boolean => {
+  if (!hasVolumes.value || !props.stageVolumes) return false
+  return (props.stageVolumes[stageName] || 0) > 0
+}
+
+// Get volume label for a stage
+const volumeLabel = (stageName: string): string => {
+  if (!hasVolumes.value || !props.stageVolumes) return ''
+  const vol = props.stageVolumes[stageName] || 0
+  if (vol <= 0) return ''
+  const unit = (props.batchSizeUnit || 'gallon').replace(/gallon/i, 'gal').replace(/liter/i, 'L')
+  return `${vol}${unit}`
+}
+
+// Determine node state: 'active' (has volume, pulsing), 'completed' (past), 'future' (not reached)
+const nodeState = (index: number, stageName: string): 'active' | 'completed' | 'future' => {
+  if (hasVolumes.value) {
+    if (hasVolume(stageName)) return 'active'
+    if (index < activeIndex.value) return 'completed'
+    return 'future'
+  }
+  // Legacy behavior
+  if (index < activeIndex.value) return 'completed'
+  if (index === activeIndex.value) return 'active'
+  return 'future'
+}
 
 const stageColorClasses = (color: string) => {
   const map: Record<string, { bg: string; ring: string; text: string; line: string }> = {
@@ -59,15 +93,15 @@ const stageColorClasses = (color: string) => {
           <div
             :class="[
               'w-9 h-9 rounded-full flex items-center justify-center transition-all duration-300',
-              index < activeIndex
+              nodeState(index, stage.name) === 'completed'
                 ? `${stageColorClasses(stage.color).bg} text-white`
-                : index === activeIndex
+                : nodeState(index, stage.name) === 'active'
                   ? `ring-2 ${stageColorClasses(stage.color).ring} ${stageColorClasses(stage.color).bg}/20 ${stageColorClasses(stage.color).text} animate-pulse`
                   : 'bg-brown/20 text-parchment/25',
             ]"
           >
             <UIcon
-              v-if="index < activeIndex"
+              v-if="nodeState(index, stage.name) === 'completed'"
               name="i-lucide-check"
               class="text-base"
             />
@@ -80,14 +114,24 @@ const stageColorClasses = (color: string) => {
           <span
             :class="[
               'text-[10px] uppercase tracking-wider hidden sm:block whitespace-nowrap',
-              index < activeIndex
+              nodeState(index, stage.name) === 'completed'
                 ? stageColorClasses(stage.color).text
-                : index === activeIndex
+                : nodeState(index, stage.name) === 'active'
                   ? `${stageColorClasses(stage.color).text} font-bold`
                   : 'text-parchment/25',
             ]"
           >
             {{ stage.name }}
+          </span>
+          <!-- Volume badge -->
+          <span
+            v-if="hasVolumes && hasVolume(stage.name)"
+            :class="[
+              'text-[9px] font-semibold px-1.5 py-0.5 rounded-full hidden sm:block',
+              `${stageColorClasses(stage.color).bg}/20 ${stageColorClasses(stage.color).text}`,
+            ]"
+          >
+            {{ volumeLabel(stage.name) }}
           </span>
         </div>
 

@@ -30,14 +30,28 @@ const resolvedVessels = computed(() => {
     .filter(Boolean)
 })
 
-const totalCost = computed(() => {
-  if (!production.value) return 0
-  return (production.value.productionCost || 0) + (production.value.bottleCost || 0)
+const hasCostBreakdown = computed(() => {
+  if (!production.value?.costs) return false
+  const c = production.value.costs
+  return (c.batch || 0) + (c.barrel || 0) + (c.bottling || 0) + (c.labor || 0) + (c.taxes || 0) + (c.other || 0) > 0
+})
+
+const costBreakdownLines = computed(() => {
+  if (!production.value?.costs) return []
+  const c = production.value.costs
+  return [
+    { label: 'Batch / Spirit', value: c.batch || 0, icon: 'i-lucide-flask-conical' },
+    { label: 'Barrel', value: c.barrel || 0, icon: 'i-lucide-cylinder' },
+    { label: 'Bottling Materials', value: c.bottling || 0, icon: 'i-lucide-package' },
+    { label: 'Labor', value: c.labor || 0, icon: 'i-lucide-hard-hat' },
+    { label: 'Taxes', value: c.taxes || 0, icon: 'i-lucide-landmark' },
+    { label: 'Other', value: c.other || 0, icon: 'i-lucide-ellipsis' },
+  ].filter(line => line.value > 0)
 })
 
 const costPerBottle = computed(() => {
   if (!production.value?.quantity || production.value.quantity === 0) return 0
-  return totalCost.value / production.value.quantity
+  return (production.value.productionCost || 0) / production.value.quantity
 })
 
 const resolveItemName = (id?: string) => {
@@ -53,7 +67,7 @@ const panel = overlay.create(LazyPanelProduction)
 
 const editProduction = () => {
   if (!production.value) return
-  productionStore.production = production.value
+  productionStore.production = JSON.parse(JSON.stringify(production.value))
   panel.open()
 }
 </script>
@@ -166,17 +180,31 @@ const editProduction = () => {
     <div class="bg-charcoal rounded-xl border border-brown/30 p-5">
       <h3 class="text-lg font-bold text-parchment font-[Cormorant_Garamond] mb-4">Cost Breakdown</h3>
       <div class="space-y-2">
-        <div class="flex justify-between text-sm">
-          <span class="text-parchment/60">Production Cost</span>
-          <span class="text-parchment">{{ Dollar.format(production.productionCost || 0) }}</span>
-        </div>
-        <div class="flex justify-between text-sm">
-          <span class="text-parchment/60">Bottle Cost</span>
-          <span class="text-parchment">{{ Dollar.format(production.bottleCost || 0) }}</span>
-        </div>
+        <!-- Detailed breakdown when costs data is available -->
+        <template v-if="hasCostBreakdown">
+          <div
+            v-for="line in costBreakdownLines"
+            :key="line.label"
+            class="flex items-center justify-between text-sm"
+          >
+            <div class="flex items-center gap-2">
+              <UIcon :name="line.icon" class="text-parchment/50 w-4 h-4" />
+              <span class="text-parchment/60">{{ line.label }}</span>
+            </div>
+            <span class="text-parchment">{{ Dollar.format(line.value) }}</span>
+          </div>
+        </template>
+        <!-- Legacy fallback for older records without breakdown -->
+        <template v-else>
+          <div class="flex justify-between text-sm">
+            <span class="text-parchment/60">Production Cost</span>
+            <span class="text-parchment">{{ Dollar.format(production.productionCost || 0) }}</span>
+          </div>
+        </template>
+
         <div class="border-t border-brown/30 pt-2 flex justify-between text-sm font-semibold">
-          <span class="text-parchment">Total</span>
-          <span class="text-parchment">{{ Dollar.format(totalCost) }}</span>
+          <span class="text-parchment">Total Production Cost</span>
+          <span class="text-parchment">{{ Dollar.format(production.productionCost || 0) }}</span>
         </div>
         <div v-if="production.quantity" class="flex justify-between text-sm">
           <span class="text-parchment/60">Cost per Bottle</span>

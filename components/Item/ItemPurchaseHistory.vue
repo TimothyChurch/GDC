@@ -11,14 +11,14 @@ const purchaseOrders = computed(() =>
 );
 // Purchase order table info
 const columns = [
-	{ key: 'date', label: 'Date' },
-	{ key: 'status', label: 'Status' },
-	{ key: 'vendor', label: 'Vendor' },
-	{ key: 'quantity', label: 'Quantity' },
-	{ key: 'size', label: 'Size' },
-	{ key: 'price', label: 'Price' },
-	{ key: 'total', label: 'Total' },
-	{ key: 'actions', label: 'Actions' },
+	{ accessorKey: 'date', header: 'Date' },
+	{ accessorKey: 'status', header: 'Status' },
+	{ accessorKey: 'vendor', header: 'Vendor' },
+	{ accessorKey: 'quantity', header: 'Quantity' },
+	{ accessorKey: 'size', header: 'Size' },
+	{ accessorKey: 'price', header: 'Price' },
+	{ accessorKey: 'total', header: 'Total' },
+	{ accessorKey: 'actions', header: 'Actions' },
 ];
 const selectedItem = (row) => {
 	return row.items.filter((item) => item.item === route.params._id)[0];
@@ -45,26 +45,26 @@ const newPurchaseOrder = () => {
 		</div>
 		</template>
 		<UTable
-			:rows="purchaseOrders"
+			:data="purchaseOrders"
 			:columns="columns">
-			<template #date-data="{ row }">
-				{{ new Date(row.date).toLocaleDateString() }}
+			<template #date-cell="{ row }">
+				{{ new Date(row.original.date).toLocaleDateString() }}
 			</template>
-			<template #vendor-data="{ row }">
-				{{ contactStore.getContactById(row.vendor)?.businessName }}
+			<template #vendor-cell="{ row }">
+				{{ contactStore.getContactById(row.original.vendor)?.businessName }}
 			</template>
-			<template #quantity-data="{ row }">
-				{{ selectedItem(row)?.quantity }}
+			<template #quantity-cell="{ row }">
+				{{ selectedItem(row.original)?.quantity }}
 			</template>
-			<template #size-data="{ row }">
-				{{ selectedItem(row)?.size }} {{ selectedItem(row)?.sizeUnit }}
+			<template #size-cell="{ row }">
+				{{ selectedItem(row.original)?.size }} {{ selectedItem(row.original)?.sizeUnit }}
 			</template>
-			<template #price-data="{ row }">
-				{{ Dollar.format(selectedItem(row)?.price) }}
+			<template #price-cell="{ row }">
+				{{ Dollar.format(selectedItem(row.original)?.price) }}
 			</template>
-			<template #total-data="{ row }">
+			<template #total-cell="{ row }">
 				{{
-					Dollar.format(selectedItem(row)?.quantity * selectedItem(row)?.price)
+					Dollar.format(selectedItem(row.original)?.quantity * selectedItem(row.original)?.price)
 				}}
 			</template>
 		</UTable>

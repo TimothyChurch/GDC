@@ -1,5 +1,6 @@
 import { defineStore } from 'pinia';
 import type { Vessel, Contents } from '~/types';
+import { convertUnitRatio } from '~/utils/conversions';
 
 export const useVesselStore = defineStore('vessels', () => {
 	const toast = useToast();
@@ -32,6 +33,9 @@ export const useVesselStore = defineStore('vessels', () => {
 			value: 0,
 		},
 		cost: undefined,
+		isUsed: false,
+		previousContents: '',
+		targetAge: undefined,
 	});
 	const fermenters = computed(() =>
 		vessels.value.filter((v) => v.type === 'Fermenter')
@@ -45,6 +49,11 @@ export const useVesselStore = defineStore('vessels', () => {
 	const tanks = computed(() => vessels.value.filter((v) => v.type === 'Tank'));
 	const barrels = computed(() =>
 		vessels.value.filter((v) => v.type === 'Barrel')
+	);
+	const emptyBarrels = computed(() =>
+		barrels.value.filter(
+			(v) => !v.contents || v.contents.length === 0 || (v.current?.volume ?? 0) === 0
+		)
 	);
 
 	// Actions
@@ -81,14 +90,28 @@ export const useVesselStore = defineStore('vessels', () => {
 
 	const updateVessel = async (): Promise<void> => {
 		if (vessel.value.contents && vessel.value.contents.length > 0) {
-			const totalVolume = vessel.value.contents.reduce((acc, c) => acc + c.volume, 0);
+			const targetUnit = vessel.value.stats?.volumeUnit || vessel.value.contents[0]!.volumeUnit;
+			const totalVolume = vessel.value.contents.reduce(
+				(acc, c) => acc + c.volume * convertUnitRatio(c.volumeUnit, targetUnit), 0
+			);
+			const weightedAbv = totalVolume > 0
+				? vessel.value.contents.reduce(
+					(acc, c) => acc + c.abv * (c.volume * convertUnitRatio(c.volumeUnit, targetUnit)), 0
+				) / totalVolume
+				: 0;
 			vessel.value.current = {
 				volume: totalVolume,
-				volumeUnit: vessel.value.contents[0].volumeUnit,
-				abv: totalVolume > 0
-					? vessel.value.contents.reduce((acc, c) => acc + (c.abv * c.volume), 0) / totalVolume
-					: 0,
+				volumeUnit: targetUnit,
+				abv: weightedAbv,
 				value: vessel.value.contents.reduce((acc, c) => acc + c.value, 0),
+			};
+		} else {
+			// Contents empty — reset current to zero so fill level clears
+			vessel.value.current = {
+				volume: 0,
+				volumeUnit: vessel.value.current?.volumeUnit || '',
+				abv: 0,
+				value: 0,
 			};
 		}
 		saving.value = true;
@@ -159,11 +182,34 @@ export const useVesselStore = defineStore('vessels', () => {
 			},
 			contents: [],
 			cost: undefined,
+			isUsed: false,
+			previousContents: '',
+			targetAge: undefined,
 		};
 	};
 
 	const emptyVessel = async (id: string) => {
 		setVessel(id);
+
+		// For barrels, tag as used and record previous contents from the batch's recipe
+		if (vessel.value.type === 'Barrel' && vessel.value.contents?.length) {
+			vessel.value.isUsed = true;
+			// Resolve spirit type from the first batch's recipe
+			const batchStore = useBatchStore();
+			const recipeStore = useRecipeStore();
+			const firstBatchId = vessel.value.contents[0]?.batch;
+			if (firstBatchId) {
+				const batch = batchStore.getBatchById(firstBatchId);
+				if (batch?.recipe) {
+					const recipe = recipeStore.getRecipeById(batch.recipe);
+					if (recipe) {
+						// Use recipe type if available, otherwise fall back to recipe name
+						vessel.value.previousContents = recipe.type || recipe.name;
+					}
+				}
+			}
+		}
+
 		vessel.value.contents = [];
 		vessel.value.current = {
 			volume: 0,
@@ -203,10 +249,14 @@ export const useVesselStore = defineStore('vessels', () => {
 		if (!source || !dest) return;
 
 		const sourceContents = source.contents || [];
-		const totalSourceVolume = sourceContents.reduce((acc, c) => acc + c.volume, 0);
+		const normalUnit = sourceContents[0]?.volumeUnit || transfer.volumeUnit;
+		const totalSourceVolume = sourceContents.reduce(
+			(acc, c) => acc + c.volume * convertUnitRatio(c.volumeUnit, normalUnit), 0
+		);
 		if (totalSourceVolume <= 0) return;
 
-		const ratio = transfer.volume / totalSourceVolume;
+		const transferInNormalUnit = transfer.volume * convertUnitRatio(transfer.volumeUnit, normalUnit);
+		const ratio = transferInNormalUnit / totalSourceVolume;
 		const newDestContents: Contents[] = [];
 
 		// Split each content entry proportionally
@@ -236,6 +286,66 @@ export const useVesselStore = defineStore('vessels', () => {
 		toast.add({ title: 'Partial transfer complete', color: 'success', icon: 'i-lucide-check-circle' });
 	};
 
+	const transferBatchContents = async (
+		sourceId: string,
+		destId: string,
+		batchId: string,
+		volume: number,
+		volumeUnit: string,
+	): Promise<void> => {
+		const source = vessels.value.find((v) => v._id === sourceId);
+		const dest = vessels.value.find((v) => v._id === destId);
+		if (!source || !dest) return;
+
+		const sourceContents = source.contents || [];
+		const entry = sourceContents.find((c) => c.batch === batchId);
+		if (!entry || entry.volume <= 0) return;
+
+		// Convert requested volume to entry's stored unit before clamping
+		const volumeInEntryUnit = volume * convertUnitRatio(volumeUnit, entry.volumeUnit);
+		const actualVolume = Math.min(volumeInEntryUnit, entry.volume);
+		const ratio = actualVolume / entry.volume;
+		const transferValue = entry.value * ratio;
+		const transferAbv = entry.abv;
+
+		// Reduce source entry
+		entry.volume -= actualVolume;
+		entry.value -= transferValue;
+
+		// Remove if depleted
+		if (entry.volume < 0.001) {
+			source.contents = sourceContents.filter((c) => c !== entry);
+		}
+
+		// Add to destination — merge if same batch exists
+		const destContents = dest.contents || [];
+		const existingDest = destContents.find((c) => c.batch === batchId);
+		if (existingDest) {
+			// Volume-weighted ABV merge
+			const totalVol = existingDest.volume + actualVolume;
+			existingDest.abv = totalVol > 0
+				? (existingDest.abv * existingDest.volume + transferAbv * actualVolume) / totalVol
+				: 0;
+			existingDest.volume = totalVol;
+			existingDest.value += transferValue;
+		} else {
+			destContents.push({
+				batch: batchId,
+				volume: actualVolume,
+				volumeUnit,
+				abv: transferAbv,
+				value: transferValue,
+			});
+			dest.contents = destContents;
+		}
+
+		// Save both vessels
+		vessel.value = source;
+		await updateVessel();
+		vessel.value = dest;
+		await updateVessel();
+	};
+
 	const addContents = async (vesselId: string, contents: Contents): Promise<void> => {
 		const target = vessels.value.find((v) => v._id === vesselId);
 		if (!target) return;
@@ -262,6 +372,7 @@ export const useVesselStore = defineStore('vessels', () => {
 		stills,
 		tanks,
 		barrels,
+		emptyBarrels,
 		ensureLoaded,
 		getVessels,
 		setVessel,
@@ -273,6 +384,7 @@ export const useVesselStore = defineStore('vessels', () => {
 		getVesselByType,
 		fullTransfer,
 		transferBatch,
+		transferBatchContents,
 		addContents,
 	};
 });

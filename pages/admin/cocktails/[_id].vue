@@ -5,7 +5,7 @@ const route = useRoute()
 const router = useRouter()
 
 const cocktailStore = useCocktailStore()
-const itemStore = useItemStore()
+const { resolveAllIngredients } = useIngredientResolver()
 
 const cocktail = computed(() => cocktailStore.getCocktailById(route.params._id as string))
 
@@ -36,19 +36,7 @@ const margin = computed(() => {
 
 const ingredients = computed(() => {
   if (!cocktail.value?.ingredients?.length) return []
-  return cocktail.value.ingredients.map((ing) => {
-    const item = itemStore.getItemById(ing.item)
-    const price = latestPrice(ing.item)
-    const lineCost = price * ing.amount
-    return {
-      id: ing.item,
-      name: item?.name || 'Unknown',
-      amount: ing.amount,
-      unit: ing.unit,
-      pricePerUnit: price,
-      cost: lineCost,
-    }
-  })
+  return resolveAllIngredients(cocktail.value.ingredients)
 })
 
 const menuLabel = computed(() => {
@@ -164,10 +152,11 @@ const menuLabel = computed(() => {
           class="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-4 py-2 text-sm"
         >
           <NuxtLink
-            :to="`/admin/items/${ing.id}`"
+            :to="ing.link"
             class="text-gold hover:text-copper transition-colors"
           >
             {{ ing.name }}
+            <span v-if="ing.sourceType === 'bottle'" class="text-xs text-copper/70 ml-1">(Bottle)</span>
           </NuxtLink>
           <span class="text-parchment/60">{{ ing.amount }} {{ ing.unit }}</span>
           <span class="text-parchment/60 hidden sm:block">{{ Dollar.format(ing.pricePerUnit) }}</span>

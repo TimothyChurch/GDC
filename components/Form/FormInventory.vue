@@ -31,9 +31,9 @@ const onSubmit = async () => {
 		<UFormField label="Item">
 			<USelectMenu
 				v-model="inventoryStore.inventory.item"
-				:options="itemOptions"
-				value-attribute="value"
-				option-attribute="label"
+				:items="itemOptions"
+				value-key="value"
+				label-key="label"
 				placeholder="Select an item"
 				searchable />
 		</UFormField>
@@ -46,9 +46,9 @@ const onSubmit = async () => {
 		<UFormField label="Location">
 			<USelectMenu
 				v-model="inventoryStore.inventory.location"
-				:options="vesselOptions"
-				value-attribute="value"
-				option-attribute="label"
+				:items="vesselOptions"
+				value-key="value"
+				label-key="label"
 				placeholder="Select a vessel (optional)"
 				searchable />
 		</UFormField>

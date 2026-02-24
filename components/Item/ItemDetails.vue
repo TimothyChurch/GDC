@@ -3,7 +3,6 @@ import type { Item } from '~/types';
 const route = useRoute();
 
 const itemStore = useItemStore();
-const contactStore = useContactStore();
 
 const item = computed(() =>
 	itemStore.items.find((i) => i._id.toString() === route.params._id)
@@ -17,12 +16,8 @@ const item = computed(() =>
 				{{ item?.name }}
 			</template>
 			<div>
-				<div>Brand: {{ item?.brand }}</div>
 				<div>
-					Vendor:
-					{{
-						contactStore.getContactById(item?.vendor.toString())?.businessName
-					}}
+					Vendor: {{ itemStore.getVendorName(item?._id) || 'N/A' }}
 				</div>
 				<div>
 					Price: {{ Dollar.format(latestPrice(item?._id.toString())) }} /

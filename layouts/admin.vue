@@ -18,6 +18,7 @@ onMounted(async () => {
     useRecipeStore().ensureLoaded(),
     useVesselStore().ensureLoaded(),
     useEventStore().ensureLoaded(),
+    useSettingsStore().ensureLoaded(),
   ]);
 
   // Sync bottle inStock flags based on actual inventory data

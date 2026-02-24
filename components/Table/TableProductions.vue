@@ -2,6 +2,7 @@
 import type { TableColumn } from "@nuxt/ui";
 import type { Production } from "~/types";
 import type { Row } from "@tanstack/vue-table";
+import { getPaginationRowModel } from "@tanstack/vue-table";
 
 const router = useRouter();
 const productionsStore = useProductionStore();
@@ -14,6 +15,12 @@ const UDropdownMenu = resolveComponent("UDropdownMenu");
 
 const search = ref("");
 const pagination = ref({ pageIndex: 0, pageSize: 10 });
+const sorting = ref([{ id: "date", desc: true }]);
+
+const tableRef = useTemplateRef('tableRef');
+const filteredTotal = computed(() =>
+  tableRef.value?.tableApi?.getFilteredRowModel().rows.length ?? productionsStore.productions.length
+);
 
 const columns: TableColumn<Production>[] = [
   {
@@ -130,6 +137,7 @@ const panel = overlay.create(LazyPanelProduction);
 const openPanel = async () => await panel.open();
 
 const newItem = () => {
+  productionsStore.resetProduction();
   openPanel();
 };
 </script>
@@ -138,7 +146,7 @@ const newItem = () => {
   <TableWrapper
     v-model:search="search"
     v-model:pagination="pagination"
-    :total-items="productionsStore.productions.length"
+    :total-items="filteredTotal"
     :loading="productionsStore.loading"
     search-placeholder="Search productions..."
   >
@@ -149,8 +157,11 @@ const newItem = () => {
     <!-- Desktop table -->
     <div class="hidden sm:block">
       <UTable
+        ref="tableRef"
         v-model:global-filter="search"
         v-model:pagination="pagination"
+        :pagination-options="{ getPaginationRowModel: getPaginationRowModel() }"
+        v-model:sorting="sorting"
         :data="productionsStore.productions"
         :columns="columns"
         :loading="productionsStore.loading"

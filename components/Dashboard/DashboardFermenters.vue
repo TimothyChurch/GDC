@@ -74,20 +74,11 @@ const advanceFromFermenter = async (fermenterId: string, targetVesselId: string)
             <div v-for="content in fermenter.contents" :key="content.batch" class="text-xs text-parchment/50">
               <span>{{ content.volume }} {{ content.volumeUnit }}</span>
             </div>
-            <UDropdown :items="[getNextVesselOptions(fermenter.contents[0]?.batch || '').map((v: any) => ({ label: v.name, value: v._id }))]">
+            <UDropdownMenu :items="getNextVesselOptions(fermenter.contents[0]?.batch || '').map((v: any) => ({ label: v.name, onSelect: () => advanceFromFermenter(fermenter._id, v._id) }))">
               <UButton size="sm" class="bg-yellow-500/15 text-yellow-400 border border-yellow-500/25 hover:bg-yellow-500/25 text-xs">
                 {{ getNextStageLabel(fermenter.contents[0]?.batch || '') }}
               </UButton>
-              <template #item="{ item }">
-                <UButton
-                  color="neutral"
-                  variant="ghost"
-                  size="sm"
-                  class="w-full text-xs"
-                  @click="advanceFromFermenter(fermenter._id, item.value)"
-                >{{ item.label }}</UButton>
-              </template>
-            </UDropdown>
+            </UDropdownMenu>
           </div>
         </div>
       </div>

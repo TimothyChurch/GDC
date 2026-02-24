@@ -1,6 +1,6 @@
 <script setup lang="ts">
 const cocktailStore = useCocktailStore();
-const itemStore = useItemStore();
+const { getIngredientName } = useIngredientResolver();
 
 const featuredCocktails = ref<typeof cocktailStore.cocktails>([]);
 
@@ -9,10 +9,10 @@ onMounted(() => {
   featuredCocktails.value = [...visible].sort(() => Math.random() - 0.5).slice(0, 3);
 });
 
-const getIngredientNames = (cocktail: { ingredients: { item: string; amount: number; unit: string }[] }) => {
+const getIngredientNames = (cocktail: { ingredients: { item: string; amount: number; unit: string; sourceType?: string }[] }) => {
   return cocktail.ingredients
-    .map((ing) => itemStore.getItemById(ing.item.toString())?.name)
-    .filter(Boolean)
+    .map((ing) => getIngredientName(ing as any))
+    .filter((name) => name && name !== 'Unknown Item' && name !== 'Unknown Bottle')
     .join(", ");
 };
 </script>

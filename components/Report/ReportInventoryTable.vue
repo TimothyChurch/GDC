@@ -6,15 +6,18 @@ const bottleStore = useBottleStore()
 const inventoryStore = useInventoryStore()
 const productionStore = useProductionStore()
 
-// Item inventory summary
-const itemInventory = computed(() => {
-  return itemStore.items.map(item => {
+// Toggle: show out-of-stock items (default off)
+const showOutOfStock = ref(false)
+
+// All item inventory (with trackInventory filter applied)
+const allItemInventory = computed(() => {
+  return itemStore.items.filter(item => item.trackInventory !== false).map(item => {
     const records = inventoryStore.inventories
       .filter(inv => inv.item === item._id)
       .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
     const latestQty = records.length > 0 ? records[0].quantity : 0
     const previousQty = records.length > 1 ? records[1].quantity : null
-    const unitPrice = item.pricePerUnit || latestPrice(item._id) || 0
+    const unitPrice = latestPrice(item._id) || 0
     return {
       _id: item._id,
       name: item.name,
@@ -30,8 +33,14 @@ const itemInventory = computed(() => {
   }).sort((a, b) => a.name.localeCompare(b.name))
 })
 
-// Bottle inventory summary
-const bottleInventory = computed(() => {
+// Filtered item inventory (respects showOutOfStock toggle)
+const itemInventory = computed(() => {
+  if (showOutOfStock.value) return allItemInventory.value
+  return allItemInventory.value.filter(i => i.currentStock > 0)
+})
+
+// All bottle inventory
+const allBottleInventory = computed(() => {
   return bottleStore.activeBottles.map(bottle => {
     const records = inventoryStore.inventories
       .filter(inv => inv.item === bottle._id)
@@ -54,24 +63,30 @@ const bottleInventory = computed(() => {
   }).sort((a, b) => a.name.localeCompare(b.name))
 })
 
-// Summary stats
+// Filtered bottle inventory (respects showOutOfStock toggle)
+const bottleInventory = computed(() => {
+  if (showOutOfStock.value) return allBottleInventory.value
+  return allBottleInventory.value.filter(b => b.currentStock > 0)
+})
+
+// Summary stats (always computed from ALL items for accurate totals)
 const totalItemValue = computed(() =>
-  itemInventory.value.reduce((sum, i) => sum + i.totalValue, 0)
+  allItemInventory.value.reduce((sum, i) => sum + i.totalValue, 0)
 )
 const totalBottleRetailValue = computed(() =>
-  bottleInventory.value.reduce((sum, b) => sum + b.retailValue, 0)
+  allBottleInventory.value.reduce((sum, b) => sum + b.retailValue, 0)
 )
-const lowStockItems = computed(() =>
-  itemInventory.value.filter(i => i.currentStock <= 0).length
+const outOfStockItemCount = computed(() =>
+  allItemInventory.value.filter(i => i.currentStock <= 0).length
 )
 const totalBottlesOnHand = computed(() =>
-  bottleInventory.value.reduce((sum, b) => sum + b.currentStock, 0)
+  allBottleInventory.value.reduce((sum, b) => sum + b.currentStock, 0)
 )
 
-// Inventory by type chart
+// Inventory by type chart (always uses full inventory for accurate picture)
 const inventoryByType = computed(() => {
   const typeMap = new Map<string, number>()
-  itemInventory.value.forEach(item => {
+  allItemInventory.value.forEach(item => {
     const type = item.type || 'Other'
     typeMap.set(type, (typeMap.get(type) || 0) + item.totalValue)
   })
@@ -122,8 +137,8 @@ const activeTab = ref<'items' | 'bottles'>('items')
         <div class="text-xs text-parchment/60 mt-1">Bottles On Hand</div>
       </div>
       <div class="bg-charcoal rounded-lg border border-brown/30 p-4 text-center">
-        <div class="text-2xl font-bold" :class="lowStockItems > 0 ? 'text-red-400' : 'text-green-400'">
-          {{ lowStockItems }}
+        <div class="text-2xl font-bold" :class="outOfStockItemCount > 0 ? 'text-red-400' : 'text-green-400'">
+          {{ outOfStockItemCount }}
         </div>
         <div class="text-xs text-parchment/60 mt-1">Out of Stock Items</div>
       </div>
@@ -137,22 +152,34 @@ const activeTab = ref<'items' | 'bottles'>('items')
       </div>
     </div>
 
-    <!-- Tab toggle -->
-    <div class="flex items-center gap-1.5 bg-brown/15 rounded-lg p-1 border border-brown/20 w-fit">
-      <button
-        class="px-3 py-1.5 rounded-md text-xs font-medium transition-all"
-        :class="activeTab === 'items' ? 'bg-gold/15 text-gold border border-gold/20' : 'text-parchment/50 hover:text-parchment/70 border border-transparent'"
-        @click="activeTab = 'items'"
-      >
-        Raw Materials ({{ itemInventory.length }})
-      </button>
-      <button
-        class="px-3 py-1.5 rounded-md text-xs font-medium transition-all"
-        :class="activeTab === 'bottles' ? 'bg-gold/15 text-gold border border-gold/20' : 'text-parchment/50 hover:text-parchment/70 border border-transparent'"
-        @click="activeTab = 'bottles'"
-      >
-        Finished Goods ({{ bottleInventory.length }})
-      </button>
+    <!-- Filter controls -->
+    <div class="flex flex-wrap items-center justify-between gap-3">
+      <!-- Tab toggle -->
+      <div class="flex items-center gap-1.5 bg-brown/15 rounded-lg p-1 border border-brown/20 w-fit">
+        <button
+          class="px-3 py-1.5 rounded-md text-xs font-medium transition-all"
+          :class="activeTab === 'items' ? 'bg-gold/15 text-gold border border-gold/20' : 'text-parchment/50 hover:text-parchment/70 border border-transparent'"
+          @click="activeTab = 'items'"
+        >
+          Raw Materials ({{ itemInventory.length }})
+        </button>
+        <button
+          class="px-3 py-1.5 rounded-md text-xs font-medium transition-all"
+          :class="activeTab === 'bottles' ? 'bg-gold/15 text-gold border border-gold/20' : 'text-parchment/50 hover:text-parchment/70 border border-transparent'"
+          @click="activeTab = 'bottles'"
+        >
+          Finished Goods ({{ bottleInventory.length }})
+        </button>
+      </div>
+
+      <!-- Show out-of-stock toggle -->
+      <label class="flex items-center gap-2 cursor-pointer select-none">
+        <USwitch v-model="showOutOfStock" />
+        <span class="text-xs text-parchment/60">
+          Show out-of-stock items
+          <span v-if="outOfStockItemCount > 0 && !showOutOfStock" class="text-red-400/70">({{ outOfStockItemCount }} hidden)</span>
+        </span>
+      </label>
     </div>
 
     <!-- Items table -->
@@ -197,7 +224,12 @@ const activeTab = ref<'items' | 'bottles'>('items')
           </tbody>
         </table>
         <div v-if="itemInventory.length === 0" class="text-center py-6 text-parchment/50 text-sm">
-          No inventory items
+          <template v-if="!showOutOfStock && allItemInventory.length > 0">
+            All {{ allItemInventory.length }} items are out of stock. Toggle "Show out-of-stock items" to view them.
+          </template>
+          <template v-else>
+            No inventory items
+          </template>
         </div>
       </div>
     </div>
@@ -248,7 +280,12 @@ const activeTab = ref<'items' | 'bottles'>('items')
           </tbody>
         </table>
         <div v-if="bottleInventory.length === 0" class="text-center py-6 text-parchment/50 text-sm">
-          No bottle products
+          <template v-if="!showOutOfStock && allBottleInventory.length > 0">
+            All {{ allBottleInventory.length }} products are out of stock. Toggle "Show out-of-stock items" to view them.
+          </template>
+          <template v-else>
+            No bottle products
+          </template>
         </div>
       </div>
     </div>

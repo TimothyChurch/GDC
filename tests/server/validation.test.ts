@@ -257,14 +257,14 @@ describe('inventoryCreateSchema', () => {
 describe('itemCreateSchema', () => {
   it('validates valid item', async () => {
     await expect(itemCreateSchema.validate({
-      name: 'Corn Malt', pricePerUnit: 2.50,
+      name: 'Corn Malt', category: 'Base Ingredient',
     })).resolves.toBeDefined();
   });
 
-  it('rejects negative price', async () => {
+  it('rejects negative minStock', async () => {
     await expect(itemCreateSchema.validate({
-      name: 'Test', pricePerUnit: -1,
-    })).rejects.toThrow('Price cannot be negative');
+      name: 'Test', minStock: -1,
+    })).rejects.toThrow('Min stock cannot be negative');
   });
 });
 
@@ -359,8 +359,8 @@ describe('update schemas enforce constraints on provided fields', () => {
     await expect(batchUpdateSchema.validate({ batchSize: -5 })).rejects.toThrow('Must be greater than 0');
   });
 
-  it('itemUpdateSchema rejects negative price', async () => {
-    await expect(itemUpdateSchema.validate({ pricePerUnit: -1 })).rejects.toThrow('Price cannot be negative');
+  it('itemUpdateSchema rejects negative minStock', async () => {
+    await expect(itemUpdateSchema.validate({ minStock: -1 })).rejects.toThrow('Min stock cannot be negative');
   });
 
   it('productionUpdateSchema rejects negative quantity', async () => {

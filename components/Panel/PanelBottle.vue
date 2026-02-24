@@ -47,8 +47,8 @@ const newType = (type: string) => {
             <USelectMenu
               :items="recipeStore.recipes"
               searchable
-              option-attribute="name"
-              value-attribute="_id"
+              label-key="name"
+              value-key="_id"
               v-model="localData.recipe"
             />
           </UFormField>

@@ -104,17 +104,27 @@ const removeItem = (itemId: string) => {
 
           <UFormField label="Ingredients">
             <div class="space-y-2">
+              <!-- Inline-editable ingredient rows -->
               <div
-                v-for="item in localData.items"
-                :key="item._id"
-                class="flex items-center justify-between gap-2"
+                v-for="(item, idx) in localData.items"
+                :key="item._id + '-' + idx"
+                class="grid grid-cols-[1fr_60px_80px_28px] gap-1.5 items-center"
               >
-                <span class="text-sm flex-1 truncate">{{
+                <span class="text-sm truncate text-parchment">{{
                   itemStore.nameById(item._id)
                 }}</span>
-                <span class="text-sm text-parchment/60"
-                  >{{ item.amount }} {{ item.unit }}</span
-                >
+                <UInput
+                  v-model.number="localData.items[idx].amount"
+                  type="number"
+                  size="xs"
+                  step="any"
+                  min="0"
+                />
+                <USelectMenu
+                  v-model="localData.items[idx].unit"
+                  :items="allUnits"
+                  size="xs"
+                />
                 <UButton
                   icon="i-lucide-trash-2"
                   color="error"
@@ -123,7 +133,8 @@ const removeItem = (itemId: string) => {
                   @click="removeItem(item._id)"
                 />
               </div>
-              <div class="flex gap-2 items-end">
+              <!-- Add new ingredient row -->
+              <div class="grid grid-cols-[1fr_60px_80px_28px] gap-1.5 items-center pt-2 border-t border-white/10">
                 <USelectMenu
                   v-model="newItem._id"
                   :items="
@@ -133,23 +144,30 @@ const removeItem = (itemId: string) => {
                     }))
                   "
                   value-key="value"
-                  placeholder="Select item"
+                  placeholder="Add item..."
                   searchable
-                  class="flex-1"
+                  size="xs"
                 />
                 <UInput
                   v-model.number="newItem.amount"
                   type="number"
                   placeholder="Amt"
-                  class="w-16"
+                  size="xs"
+                  step="any"
+                  min="0"
                 />
                 <USelectMenu
                   v-model="newItem.unit"
                   :items="allUnits"
                   placeholder="Unit"
-                  class="w-24"
+                  size="xs"
                 />
-                <UButton icon="i-lucide-plus" @click="addItem" size="sm" />
+                <UButton
+                  icon="i-lucide-plus"
+                  size="xs"
+                  :disabled="!newItem._id || !newItem.amount || !newItem.unit"
+                  @click="addItem"
+                />
               </div>
             </div>
           </UFormField>

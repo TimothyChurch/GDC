@@ -2,6 +2,7 @@
 import type { TableColumn } from "@nuxt/ui";
 import type { PurchaseOrder } from "~/types";
 import type { Row } from "@tanstack/vue-table";
+import { getPaginationRowModel } from "@tanstack/vue-table";
 
 const props = defineProps<{
   data?: PurchaseOrder[]
@@ -20,6 +21,11 @@ const UDropdownMenu = resolveComponent("UDropdownMenu");
 
 const search = ref("");
 const pagination = ref({ pageIndex: 0, pageSize: 10 });
+
+const tableRef = useTemplateRef('tableRef');
+const filteredTotal = computed(() =>
+  tableRef.value?.tableApi?.getFilteredRowModel().rows.length ?? tableData.value.length
+);
 
 const columns: TableColumn<PurchaseOrder>[] = [
   {
@@ -147,7 +153,7 @@ const columns: TableColumn<PurchaseOrder>[] = [
 ];
 
 function getRowItems(row: Row<PurchaseOrder>) {
-  return [
+  const items: any[] = [
     {
       label: "View Details",
       onSelect() {
@@ -161,18 +167,44 @@ function getRowItems(row: Row<PurchaseOrder>) {
         openPanel();
       },
     },
-    {
-      label: "Delete order",
-      variant: "danger",
-      async onClick() {
-        const vendorName = contactStore.getContactById(row.original.vendor)?.businessName || "this order";
-        const confirmed = await confirm("Purchase Order", vendorName);
-        if (confirmed) {
-          purchaseOrderStore.deletePurchaseOrder(row.original._id);
-        }
-      },
-    },
   ];
+
+  // Add "Mark as Received" if PO is not already Delivered or Cancelled
+  if (row.original.status !== "Delivered" && row.original.status !== "Cancelled") {
+    items.push({
+      label: "Mark as Received",
+      async onSelect() {
+        purchaseOrderStore.purchaseOrder = JSON.parse(JSON.stringify(row.original));
+        purchaseOrderStore.purchaseOrder.status = "Delivered";
+        const result = await purchaseOrderStore.updatePurchaseOrder();
+        // Update item purchase histories
+        result.items.forEach((item) => {
+          const foundItem = itemStore.items.find((i) => i._id === item.item);
+          if (foundItem && !foundItem.purchaseHistory?.includes(result._id)) {
+            itemStore.item = foundItem;
+            itemStore.item.purchaseHistory?.push(result._id);
+            itemStore.updateItem();
+          }
+        });
+        // Auto-update inventory
+        await purchaseOrderStore.receivePurchaseOrder(result._id);
+      },
+    });
+  }
+
+  items.push({
+    label: "Delete order",
+    variant: "danger",
+    async onClick() {
+      const vendorName = contactStore.getContactById(row.original.vendor)?.businessName || "this order";
+      const confirmed = await confirm("Purchase Order", vendorName);
+      if (confirmed) {
+        purchaseOrderStore.deletePurchaseOrder(row.original._id);
+      }
+    },
+  });
+
+  return items;
 }
 
 // Panel slide-over
@@ -191,7 +223,7 @@ const addPurchaseOrder = () => {
   <TableWrapper
     v-model:search="search"
     v-model:pagination="pagination"
-    :total-items="tableData.length"
+    :total-items="filteredTotal"
     :loading="purchaseOrderStore.loading"
     search-placeholder="Search purchase orders..."
   >
@@ -201,8 +233,10 @@ const addPurchaseOrder = () => {
     <!-- Desktop table -->
     <div class="hidden sm:block">
       <UTable
+        ref="tableRef"
         v-model:global-filter="search"
         v-model:pagination="pagination"
+        :pagination-options="{ getPaginationRowModel: getPaginationRowModel() }"
         :data="tableData"
         :columns="columns"
         :loading="purchaseOrderStore.loading"

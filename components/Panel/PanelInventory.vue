@@ -45,9 +45,9 @@ const vesselOptions = computed(() =>
           <UFormField label="Item">
             <USelectMenu
               v-model="localData.item"
-              :options="itemOptions"
-              value-attribute="value"
-              option-attribute="label"
+              :items="itemOptions"
+              value-key="value"
+              label-key="label"
               placeholder="Select an item"
               searchable
             />
@@ -58,9 +58,9 @@ const vesselOptions = computed(() =>
           <UFormField label="Location">
             <USelectMenu
               v-model="localData.location"
-              :options="vesselOptions"
-              value-attribute="value"
-              option-attribute="label"
+              :items="vesselOptions"
+              value-key="value"
+              label-key="label"
               placeholder="Select a vessel (optional)"
               searchable
             />

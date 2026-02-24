@@ -2,6 +2,7 @@
 import type { TableColumn } from '@nuxt/ui'
 import type { User } from '~/types'
 import type { Row } from '@tanstack/vue-table'
+import { getPaginationRowModel } from '@tanstack/vue-table'
 
 const userStore = useUserStore()
 const { confirm } = useDeleteConfirm()
@@ -11,6 +12,11 @@ const UDropdownMenu = resolveComponent('UDropdownMenu')
 
 const search = ref('')
 const pagination = ref({ pageIndex: 0, pageSize: 10 })
+
+const tableRef = useTemplateRef('tableRef')
+const filteredTotal = computed(() =>
+  tableRef.value?.tableApi?.getFilteredRowModel().rows.length ?? userStore.users.length
+)
 
 const columns: TableColumn<User>[] = [
   {
@@ -92,7 +98,7 @@ const addUser = () => {
   <TableWrapper
     v-model:search="search"
     v-model:pagination="pagination"
-    :total-items="userStore.users.length"
+    :total-items="filteredTotal"
     :loading="userStore.loading"
     search-placeholder="Search users..."
   >
@@ -102,8 +108,10 @@ const addUser = () => {
     <!-- Desktop table -->
     <div class="hidden sm:block">
       <UTable
+        ref="tableRef"
         v-model:global-filter="search"
         v-model:pagination="pagination"
+        :pagination-options="{ getPaginationRowModel: getPaginationRowModel() }"
         :data="userStore.users"
         :columns="columns"
         :loading="userStore.loading"

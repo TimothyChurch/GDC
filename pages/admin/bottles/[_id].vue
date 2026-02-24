@@ -9,6 +9,9 @@ const router = useRouter();
 const bottleStore = useBottleStore();
 const recipeStore = useRecipeStore();
 const inventoryStore = useInventoryStore();
+const productionStore = useProductionStore();
+const batchStore = useBatchStore();
+const vesselStore = useVesselStore();
 const { getStockStatus } = useBottleStock();
 
 const bottle = computed(() =>
@@ -22,6 +25,37 @@ const recipe = computed(() =>
 const inventory = computed(() =>
   inventoryStore.getInventoriesByItem(route.params._id as string),
 );
+
+// Production history for this bottle (sorted most recent first)
+const bottleProductions = computed(() =>
+  productionStore.getProductionsByBottle(route.params._id as string),
+);
+
+// Most recent production's cost per bottle
+const latestBottleCost = computed(() => {
+  if (bottleProductions.value.length === 0) return null;
+  return bottleProductions.value[0].bottleCost;
+});
+
+// Total bottles ever produced
+const totalProduced = computed(() =>
+  bottleProductions.value.reduce((sum, p) => sum + (p.quantity || 0), 0),
+);
+
+// Reverse-lookup: find the batch linked to a production record
+const getBatchForProduction = (productionId: string) => {
+  return batchStore.batches.find(
+    (b) => b.stages?.bottled?.productionRecord === productionId,
+  );
+};
+
+// Resolve vessel names for a production
+const getVesselNames = (vesselIds: string[]) => {
+  return vesselIds
+    .map((id) => vesselStore.getVesselById(id)?.name)
+    .filter(Boolean)
+    .join(", ");
+};
 
 // Panel slide-over
 import { LazyPanelBottle } from "#components";
@@ -49,13 +83,6 @@ const updateInventory = async () => {
     await bottleStore.updateBottle();
   }
 };
-
-// Inventory list
-const reverseSortedInventory = computed(() =>
-  [...inventory.value].sort(
-    (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime(),
-  ),
-);
 
 // Inventory chart
 const sortedInventory = computed(() =>
@@ -145,7 +172,7 @@ const isLowStock = computed(() => stockStatus.value?.isLowStock ?? false);
       >
         Bottle Details
       </h3>
-      <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4">
+      <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4">
         <div>
           <div class="text-xs text-parchment/60 uppercase tracking-wider mb-1">
             Recipe
@@ -175,6 +202,21 @@ const isLowStock = computed(() => stockStatus.value?.isLowStock ?? false);
         </div>
         <div>
           <div class="text-xs text-parchment/60 uppercase tracking-wider mb-1">
+            Cost / Bottle
+          </div>
+          <div v-if="latestBottleCost !== null" class="text-sm text-parchment font-semibold">
+            {{ Dollar.format(latestBottleCost) }}
+            <span
+              v-if="bottle.price && latestBottleCost > 0"
+              class="text-xs font-normal text-parchment/50 ml-1"
+            >
+              ({{ ((1 - latestBottleCost / bottle.price) * 100).toFixed(0) }}% margin)
+            </span>
+          </div>
+          <div v-else class="text-sm text-parchment/50">No production data</div>
+        </div>
+        <div>
+          <div class="text-xs text-parchment/60 uppercase tracking-wider mb-1">
             Status
           </div>
           <div class="flex items-center gap-1.5">
@@ -198,7 +240,7 @@ const isLowStock = computed(() => stockStatus.value?.isLowStock ?? false);
         </div>
         <div
           v-if="bottle.description"
-          class="col-span-2 sm:col-span-3 lg:col-span-5"
+          class="col-span-2 sm:col-span-3 lg:col-span-6"
         >
           <div class="text-xs text-parchment/60 uppercase tracking-wider mb-1">
             Description
@@ -300,22 +342,8 @@ const isLowStock = computed(() => stockStatus.value?.isLowStock ?? false);
       </div>
 
       <!-- Chart -->
-      <div v-if="sortedInventory.length > 1" class="h-48 mb-4">
+      <div v-if="sortedInventory.length > 1" class="h-48">
         <Line :data="chartData" :options="chartOptions" />
-      </div>
-
-      <!-- Records -->
-      <div v-if="inventory.length > 0" class="divide-y divide-brown/20">
-        <div
-          v-for="inv in reverseSortedInventory"
-          :key="inv._id"
-          class="flex justify-between py-2 text-sm"
-        >
-          <span class="text-parchment/60">{{
-            new Date(inv.date).toLocaleDateString()
-          }}</span>
-          <span class="text-parchment">{{ inv.quantity }}</span>
-        </div>
       </div>
       <div v-else class="text-center py-6">
         <UIcon
@@ -323,6 +351,91 @@ const isLowStock = computed(() => stockStatus.value?.isLowStock ?? false);
           class="text-2xl text-parchment/20 mx-auto mb-2"
         />
         <p class="text-sm text-parchment/50">No inventory records</p>
+      </div>
+    </div>
+
+    <!-- Production History -->
+    <div class="bg-charcoal rounded-xl border border-brown/30 p-5">
+      <div class="flex items-center justify-between mb-4">
+        <div>
+          <h3
+            class="text-lg font-bold text-parchment font-[Cormorant_Garamond]"
+          >
+            Production History
+          </h3>
+          <p v-if="bottleProductions.length > 0" class="text-xs text-parchment/60 mt-0.5">
+            {{ bottleProductions.length }} production{{ bottleProductions.length !== 1 ? 's' : '' }}
+            &middot; {{ totalProduced }} bottles produced
+          </p>
+        </div>
+      </div>
+
+      <!-- Production list -->
+      <div v-if="bottleProductions.length > 0" class="space-y-3">
+        <div
+          v-for="prod in bottleProductions"
+          :key="prod._id"
+          class="rounded-lg border border-brown/20 bg-brown/5 p-4 cursor-pointer hover:border-copper/40 transition-colors"
+          @click="router.push(`/admin/production/${prod._id}`)"
+        >
+          <div class="flex flex-col sm:flex-row sm:items-center gap-3">
+            <!-- Date and batch info -->
+            <div class="flex-1 min-w-0">
+              <div class="flex items-center gap-2 mb-1">
+                <span class="text-sm font-medium text-parchment">
+                  {{ new Date(prod.date).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' }) }}
+                </span>
+                <span
+                  v-if="prod._id === bottleProductions[0]._id"
+                  class="px-1.5 py-0.5 rounded text-[10px] font-semibold bg-copper/15 text-copper border border-copper/25"
+                >
+                  Latest
+                </span>
+              </div>
+              <div class="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-parchment/60">
+                <span v-if="getVesselNames(prod.vessel)">
+                  <UIcon name="i-lucide-container" class="inline-block mr-0.5 align-text-bottom" />
+                  {{ getVesselNames(prod.vessel) }}
+                </span>
+                <NuxtLink
+                  v-if="getBatchForProduction(prod._id)"
+                  :to="`/admin/batch/${getBatchForProduction(prod._id)?._id}`"
+                  class="text-copper hover:text-gold transition-colors"
+                  @click.stop
+                >
+                  <UIcon name="i-lucide-flask-conical" class="inline-block mr-0.5 align-text-bottom" />
+                  Batch #{{ getBatchForProduction(prod._id)?.batchNumber || getBatchForProduction(prod._id)?._id?.slice(-6) }}
+                </NuxtLink>
+              </div>
+            </div>
+
+            <!-- Metrics -->
+            <div class="flex items-center gap-4 sm:gap-6 text-right">
+              <div>
+                <div class="text-xs text-parchment/60 uppercase tracking-wider">Qty</div>
+                <div class="text-sm font-semibold text-parchment">{{ prod.quantity }}</div>
+              </div>
+              <div>
+                <div class="text-xs text-parchment/60 uppercase tracking-wider">Cost/Bottle</div>
+                <div class="text-sm font-semibold text-copper">{{ Dollar.format(prod.bottleCost || 0) }}</div>
+              </div>
+              <div>
+                <div class="text-xs text-parchment/60 uppercase tracking-wider">Total Cost</div>
+                <div class="text-sm font-semibold text-parchment/70">{{ Dollar.format(prod.productionCost || 0) }}</div>
+              </div>
+              <UIcon name="i-lucide-chevron-right" class="text-parchment/30 shrink-0 hidden sm:block" />
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Empty state -->
+      <div v-else class="text-center py-6">
+        <UIcon
+          name="i-lucide-factory"
+          class="text-2xl text-parchment/20 mx-auto mb-2"
+        />
+        <p class="text-sm text-parchment/50">No production records for this bottle</p>
       </div>
     </div>
   </div>

@@ -19,8 +19,22 @@ const labelMap: Record<string, string> = {
   purchaseOrders: 'Purchase Orders',
   recipes: 'Recipes',
   vessels: 'Vessels',
-  inventory: 'Bottle Inventory',
+  inventory: 'Inventory',
   grid: 'Cheat Sheets',
+  bottling: 'Bottling Supplies',
+  ingredients: 'Base Ingredients',
+  botanicals: 'Botanicals',
+  other: 'Other Supplies',
+  input: 'Count Inventory',
+  print: 'Print Sheet',
+}
+
+function resolveInventoryLabel(segments: string[]): string {
+  const inventoryIdx = segments.indexOf('inventory')
+  if (inventoryIdx === -1) return 'Inventory'
+  // /admin/bottles/inventory → "Bottle Inventory"
+  if (inventoryIdx > 0 && segments[inventoryIdx - 1] === 'bottles') return 'Bottle Inventory'
+  return 'Inventory'
 }
 
 function resolveEntityName(parentSegment: string, id: string): string {
@@ -77,8 +91,11 @@ const breadcrumbs = computed(() => {
         ...(isLast ? {} : { to: currentPath }),
       })
     } else if (segment !== 'dashboard') {
+      const label = segment === 'inventory'
+        ? resolveInventoryLabel(pathSegments)
+        : (labelMap[segment] || segment)
       items.push({
-        label: labelMap[segment] || segment,
+        label,
         ...(isLast ? {} : { to: currentPath }),
       })
     }

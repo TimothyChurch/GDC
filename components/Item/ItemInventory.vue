@@ -10,9 +10,9 @@ const inventories = computed(() =>
 
 // Inventory Table
 const inventoryTableColumns = [
-	{ key: 'date', label: 'Date' },
-	{ key: 'items', label: 'Quantity' },
-	{ key: 'actions' },
+	{ accessorKey: 'date', header: 'Date' },
+	{ accessorKey: 'items', header: 'Quantity' },
+	{ accessorKey: 'actions', header: '' },
 ];
 // Update inventory
 const inventoryButtonVisible = ref(true);
@@ -41,13 +41,13 @@ const addItemToInventory = () => {
 			</div>
 		</template>
 		<UTable
-			:rows="inventories"
+			:data="inventories"
 			:columns="inventoryTableColumns">
-			<template #date-data="{ row }">
-				{{ new Date(row.date).toLocaleDateString() }}
+			<template #date-cell="{ row }">
+				{{ new Date(row.original.date).toLocaleDateString() }}
 			</template>
-			<template #items-data="{ row }">
-				{{ row.items[item?._id] }} {{ item?.inventoryUnit }}
+			<template #items-cell="{ row }">
+				{{ row.original.items[item?._id] }} {{ item?.inventoryUnit }}
 			</template>
 		</UTable>
 		<div

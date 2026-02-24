@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ALL_STAGES, STAGE_DISPLAY, stageTextColor, stageBgColor } from '~/composables/batchPipeline'
+import { ALL_STAGES, STAGE_DISPLAY, stageTextColor, stageBgColor, isStageActive, hasStageVolumes, getStageVolume } from '~/composables/batchPipeline'
 import type { Batch } from '~/types'
 
 const props = defineProps<{
@@ -10,12 +10,21 @@ const batchStore = useBatchStore()
 
 const batchesSource = computed(() => props.data ?? batchStore.batches)
 
-const columns = computed(() =>
+const allColumns = computed(() =>
   ALL_STAGES.map((stage) => {
     const display = STAGE_DISPLAY[stage] || { icon: 'i-lucide-circle', color: 'neutral' }
-    const batches = batchesSource.value.filter((b) => b.currentStage === stage)
+    // Volume-aware filtering: show batch in stage if it has volume there
+    const batches = batchesSource.value.filter((b) => {
+      if (hasStageVolumes(b)) return isStageActive(b, stage)
+      return b.currentStage === stage
+    })
     return { stage, display, batches }
   })
+)
+
+// Only show columns that have batches (no empty columns in wrapping layout)
+const columns = computed(() =>
+  allColumns.value.filter((col) => col.batches.length > 0)
 )
 
 const BORDER_TOP_MAP: Record<string, string> = {
@@ -27,12 +36,23 @@ const BORDER_TOP_MAP: Record<string, string> = {
 </script>
 
 <template>
-  <div class="overflow-x-auto pb-4 -mx-2 px-2">
-    <div class="flex gap-3" :style="{ minWidth: `${columns.length * 272}px` }">
+  <div>
+    <!-- Empty state when no batches at all -->
+    <div v-if="columns.length === 0" class="text-center py-12 text-parchment/40">
+      <UIcon name="i-lucide-kanban" class="text-3xl mb-2" />
+      <p class="text-sm">No batches to display</p>
+    </div>
+
+    <div v-else>
+    <!-- Batch color legend -->
+    <BatchRecipeLegend :batches="batchesSource" />
+
+    <!-- Wrapping grid of stage columns -->
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
       <div
         v-for="col in columns"
         :key="col.stage"
-        class="flex-1 min-w-[260px] max-w-[320px] rounded-lg border border-brown/20 bg-charcoal/50 border-t-2"
+        class="rounded-lg border border-brown/20 bg-charcoal/50 border-t-2"
         :class="BORDER_TOP_MAP[col.display.color] || 'border-t-brown/40'"
       >
         <!-- Column header -->
@@ -49,20 +69,15 @@ const BORDER_TOP_MAP: Record<string, string> = {
         </div>
 
         <!-- Column body -->
-        <div class="p-2 space-y-2 max-h-[calc(100vh-280px)] overflow-y-auto">
+        <div class="p-2 space-y-2">
           <DashboardBatchCard
             v-for="batch in col.batches"
             :key="batch._id"
             :batch-id="batch._id"
           />
-
-          <!-- Empty state -->
-          <div v-if="!col.batches.length" class="flex flex-col items-center gap-1.5 py-6 text-parchment/30">
-            <UIcon :name="col.display.icon" class="text-xl" />
-            <span class="text-[11px]">No batches</span>
-          </div>
         </div>
       </div>
+    </div>
     </div>
   </div>
 </template>

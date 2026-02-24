@@ -2,21 +2,25 @@
 import * as yup from 'yup';
 
 const itemStore = useItemStore();
-const contactStore = useContactStore();
+const categories = useItemCategories();
 
 const schema = yup.object({
 	name: yup.string().required('Item name is required'),
-	pricePerUnit: yup.number().min(0, 'Price cannot be negative'),
+	category: yup.string(),
+	minStock: yup.number().min(0, 'Min stock cannot be negative'),
+	reorderPoint: yup.number().min(0, 'Reorder point cannot be negative'),
+	usePerMonth: yup.number().min(0, 'Use per month cannot be negative'),
+	notes: yup.string(),
+	trackInventory: yup.boolean(),
 });
+
+const categoryItems = computed(() =>
+	categories.value.map((c) => ({ label: c, value: c }))
+);
 
 const addType = (type: string) => {
 	itemInventoryTypes.value.push(type);
 	itemStore.item.type = type;
-};
-const addVendor = (vendor: string) => {
-	contactStore.contact.businessName = vendor;
-	contactStore.contact.type = "Vendor";
-	contactStore.updateContact();
 };
 const handleSubmit = () => {
 	itemStore.updateItem();
@@ -34,9 +38,6 @@ const handleSubmit = () => {
 				<UFormField label="Name" name="name" class="md:col-span-3">
 					<UInput v-model="itemStore.item.name" placeholder="Name" />
 				</UFormField>
-				<UFormField label="Brand" name="brand" class="md:col-span-3">
-					<UInput v-model="itemStore.item.brand" placeholder="Brand" />
-				</UFormField>
 				<UFormField label="Type" name="type" class="md:col-span-3">
 					<USelectMenu
 						v-model="itemStore.item.type"
@@ -45,40 +46,42 @@ const handleSubmit = () => {
 						@create="addType"
 						class="w-full" />
 				</UFormField>
-				<UFormField label="Vendor" name="vendor" class="md:col-span-3">
-					<USelectMenu
-						v-model="itemStore.item.vendor"
-						:items="contactStore.getVendors()"
-						label-key="businessName"
-						value-key="_id"
-						class="w-full"
-						create-item
-						@create="addVendor" />
-				</UFormField>
 				<UFormField label="Inventory Unit" name="inventoryUnit" class="md:col-span-3">
 					<USelect
 						v-model="itemStore.item.inventoryUnit"
 						:items="allUnits"
 						class="w-full" />
 				</UFormField>
-				<UFormField label="Purchase Size" name="purchaseSize" class="md:col-span-2">
-					<UInput
-						type="number"
-						v-model="itemStore.item.purchaseSize"
-						class="w-full" />
-				</UFormField>
-				<UFormField label="Size Unit" name="purchaseSizeUnit" class="md:col-span-2">
+				<UFormField label="Category" name="category" class="md:col-span-3">
 					<USelect
-						v-model="itemStore.item.purchaseSizeUnit"
-						:items="allUnits"
+						v-model="itemStore.item.category"
+						:items="categoryItems"
 						class="w-full" />
 				</UFormField>
-				<UFormField label="Purchase Price" name="purchasePrice" class="md:col-span-2">
-					<UInput
-						type="number"
-						step="0.01"
-						v-model="itemStore.item.purchasePrice"
+				<UFormField label="Min Stock" name="minStock" class="md:col-span-2">
+					<UInput type="number" v-model="itemStore.item.minStock" min="0" class="w-full" />
+				</UFormField>
+				<UFormField label="Reorder Point" name="reorderPoint" class="md:col-span-2">
+					<UInput type="number" v-model="itemStore.item.reorderPoint" min="0" class="w-full" />
+				</UFormField>
+				<UFormField label="Use / Month" name="usePerMonth" class="md:col-span-2">
+					<UInput type="number" v-model="itemStore.item.usePerMonth" min="0" class="w-full" />
+				</UFormField>
+				<UFormField label="Notes" name="notes" class="col-span-full">
+					<UTextarea
+						v-model="itemStore.item.notes"
+						placeholder="Miscellaneous notes (e.g., average weight per unit, storage requirements)"
+						:rows="3"
 						class="w-full" />
+				</UFormField>
+				<UFormField name="trackInventory" class="col-span-full">
+					<div class="flex items-center justify-between">
+						<div>
+							<div class="text-sm font-medium text-parchment">Track Inventory</div>
+							<div class="text-xs text-parchment/60">Enable stock tracking, counts, and low-stock alerts for this item</div>
+						</div>
+						<USwitch v-model="itemStore.item.trackInventory" />
+					</div>
 				</UFormField>
 				<div class="flex justify-around col-span-full">
 					<UButton type="submit" :loading="itemStore.saving">Add item</UButton>

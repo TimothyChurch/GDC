@@ -1,8 +1,17 @@
+export type IngredientSourceType = 'item' | 'bottle';
+
+export interface CocktailIngredient {
+	item: string;
+	amount: number;
+	unit: string;
+	sourceType?: IngredientSourceType;
+}
+
 export interface Cocktail {
 	_id: string;
 	name: string;
 	glassware: string;
-	ingredients: { item: string; amount: number; unit: string }[];
+	ingredients: CocktailIngredient[];
 	cost?: number;
 	price: number;
 	menu?: string;

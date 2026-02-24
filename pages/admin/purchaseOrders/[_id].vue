@@ -45,14 +45,50 @@ const panel = overlay.create(LazyPanelPurchaseOrder)
 
 const editPO = () => {
   if (!po.value) return
-  purchaseOrderStore.purchaseOrder = po.value
+  purchaseOrderStore.purchaseOrder = JSON.parse(JSON.stringify(po.value))
   panel.open()
+}
+
+/** Whether this PO can be marked as received (not already Delivered or Cancelled) */
+const canReceive = computed(() => {
+  if (!po.value) return false
+  return po.value.status !== 'Delivered' && po.value.status !== 'Cancelled'
+})
+
+const receiving = ref(false)
+
+/** Quick action: Mark PO as Delivered and auto-update inventory */
+const markAsReceived = async () => {
+  if (!po.value) return
+  receiving.value = true
+  try {
+    // Update PO status to Delivered
+    purchaseOrderStore.purchaseOrder = JSON.parse(JSON.stringify(po.value))
+    purchaseOrderStore.purchaseOrder.status = 'Delivered'
+    const result = await purchaseOrderStore.updatePurchaseOrder()
+
+    // Update item purchase histories
+    result.items.forEach((item) => {
+      const foundItem = itemStore.items.find((i) => i._id === item.item)
+      if (foundItem && !foundItem.purchaseHistory?.includes(result._id)) {
+        itemStore.item = foundItem
+        itemStore.item.purchaseHistory?.push(result._id)
+        itemStore.updateItem()
+      }
+    })
+
+    // Auto-update inventory
+    await purchaseOrderStore.receivePurchaseOrder(result._id)
+  } finally {
+    receiving.value = false
+  }
 }
 
 function statusColor(status: string) {
   switch (status) {
     case 'Pending': return 'bg-yellow-500/15 text-yellow-400 border-yellow-500/25'
-    case 'Ordered': return 'bg-blue-500/15 text-blue-400 border-blue-500/25'
+    case 'Confirmed': return 'bg-blue-500/15 text-blue-400 border-blue-500/25'
+    case 'Shipped': return 'bg-purple-500/15 text-purple-400 border-purple-500/25'
     case 'Received':
     case 'Delivered': return 'bg-green-500/15 text-green-400 border-green-500/25'
     case 'Cancelled': return 'bg-red-500/15 text-red-400 border-red-500/25'
@@ -77,6 +113,16 @@ function statusColor(status: string) {
           @click="router.push('/admin/purchaseOrders')"
         >
           Back
+        </UButton>
+        <UButton
+          v-if="canReceive"
+          icon="i-lucide-package-check"
+          color="success"
+          size="sm"
+          :loading="receiving"
+          @click="markAsReceived"
+        >
+          Mark as Received
         </UButton>
         <UButton
           icon="i-lucide-pencil"

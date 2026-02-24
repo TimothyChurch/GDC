@@ -2,7 +2,7 @@
 definePageMeta({ layout: 'admin' })
 
 const cocktailStore = useCocktailStore();
-const itemStore = useItemStore();
+const { getIngredientName } = useIngredientResolver();
 
 const selectedCocktails = ref<Cocktail[]>([]);
 const columnCount = ref(4);
@@ -85,7 +85,7 @@ const printCocktails = () => {
                   class="flex justify-between gap-2 text-xs text-parchment/80 print:text-black"
                 >
                   <div class="truncate">
-                    {{ itemStore.getItemById(ingredient.item.toString())?.name }}
+                    {{ getIngredientName(ingredient) }}
                   </div>
                   <div class="whitespace-nowrap">{{ ingredient.amount }} {{ ingredient.unit }}</div>
                 </div>

@@ -2,15 +2,6 @@ export default defineEventHandler(async (event) => {
   try {
     const id = event.context.params?.id;
 
-    // Check for references in Items (vendor)
-    const itemRefs = await Item.countDocuments({ vendor: id });
-    if (itemRefs > 0) {
-      throw createError({
-        statusCode: 400,
-        statusMessage: `Cannot delete: ${itemRefs} item(s) reference this contact as vendor`,
-      });
-    }
-
     // Check for references in Purchase Orders (vendor)
     const poRefs = await PurchaseOrder.countDocuments({ vendor: id });
     if (poRefs > 0) {

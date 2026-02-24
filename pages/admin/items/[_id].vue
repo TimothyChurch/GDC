@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { getStockStatus, getStockStatusColor } from '~/composables/useInventoryCategories'
+
 definePageMeta({ layout: 'admin' })
 
 const route = useRoute()
@@ -22,9 +24,19 @@ const editItem = () => {
   panel.open()
 }
 
-const vendorName = computed(() => {
-  if (!item.value?.vendor) return 'N/A'
-  return contactStore.getContactById(item.value.vendor)?.businessName || 'Unknown'
+const latestVendorId = computed(() => {
+  if (!item.value) return null
+  return itemStore.getVendorId(item.value._id)
+})
+
+const latestVendorName = computed(() => {
+  if (!item.value) return 'N/A'
+  return itemStore.getVendorName(item.value._id) || 'N/A'
+})
+
+const latestPricePerUnit = computed(() => {
+  if (!item.value) return 0
+  return itemStore.latestPrice(item.value._id)
 })
 
 const purchaseOrders = computed(() =>
@@ -38,6 +50,22 @@ const getItemInPO = (po: any) => {
 const inventoryRecords = computed(() =>
   inventoryStore.getInventoriesByItem(route.params._id as string)
 )
+
+const currentStock = computed(() => {
+  if (inventoryRecords.value.length === 0) return 0
+  const sorted = [...inventoryRecords.value].sort((a, b) =>
+    new Date(b.date).getTime() - new Date(a.date).getTime()
+  )
+  return sorted[0].quantity
+})
+
+const stockStatus = computed(() =>
+  getStockStatus(currentStock.value, item.value?.reorderPoint || 0)
+)
+
+const stockStatusColor = computed(() =>
+  getStockStatusColor(stockStatus.value)
+)
 </script>
 
 <template>
@@ -48,7 +76,6 @@ const inventoryRecords = computed(() =>
   <div v-else-if="item" class="space-y-6">
     <AdminPageHeader
       :title="item.name"
-      :subtitle="item.brand || undefined"
       icon="i-lucide-package"
     >
       <template #actions>
@@ -80,21 +107,17 @@ const inventoryRecords = computed(() =>
           <div class="text-sm text-parchment">{{ item.name }}</div>
         </div>
         <div>
-          <div class="text-xs text-parchment/60 uppercase tracking-wider mb-1">Brand</div>
-          <div class="text-sm text-parchment">{{ item.brand || 'N/A' }}</div>
-        </div>
-        <div>
           <div class="text-xs text-parchment/60 uppercase tracking-wider mb-1">Type</div>
           <div class="text-sm text-parchment">{{ item.type || 'N/A' }}</div>
         </div>
         <div>
           <div class="text-xs text-parchment/60 uppercase tracking-wider mb-1">Vendor</div>
           <NuxtLink
-            v-if="item.vendor"
-            :to="`/admin/contacts/${item.vendor}`"
+            v-if="latestVendorId"
+            :to="`/admin/contacts/${latestVendorId}`"
             class="text-sm text-gold hover:text-copper transition-colors"
           >
-            {{ vendorName }}
+            {{ latestVendorName }}
           </NuxtLink>
           <div v-else class="text-sm text-parchment">N/A</div>
         </div>
@@ -103,22 +126,44 @@ const inventoryRecords = computed(() =>
           <div class="text-sm text-parchment">{{ item.inventoryUnit || 'N/A' }}</div>
         </div>
         <div>
-          <div class="text-xs text-parchment/60 uppercase tracking-wider mb-1">Purchase Size</div>
-          <div class="text-sm text-parchment">
-            {{ item.purchaseSize ? `${item.purchaseSize} ${item.purchaseSizeUnit || ''}` : 'N/A' }}
-          </div>
-        </div>
-        <div>
-          <div class="text-xs text-parchment/60 uppercase tracking-wider mb-1">Purchase Price</div>
+          <div class="text-xs text-parchment/60 uppercase tracking-wider mb-1">Latest Price/Unit</div>
           <div class="text-sm text-parchment font-semibold">
-            {{ item.purchasePrice ? Dollar.format(item.purchasePrice) : 'N/A' }}
+            {{ latestPricePerUnit > 0 ? `${Dollar.format(latestPricePerUnit)} / ${item.inventoryUnit || ''}` : 'N/A' }}
           </div>
         </div>
         <div>
-          <div class="text-xs text-parchment/60 uppercase tracking-wider mb-1">Price/Unit</div>
-          <div class="text-sm text-parchment font-semibold">{{ Dollar.format(item.pricePerUnit || 0) }}</div>
+          <div class="text-xs text-parchment/60 uppercase tracking-wider mb-1">Category</div>
+          <div class="text-sm text-parchment">{{ item.category || 'Other' }}</div>
+        </div>
+        <template v-if="item.trackInventory !== false">
+          <div>
+            <div class="text-xs text-parchment/60 uppercase tracking-wider mb-1">Stock Status</div>
+            <UBadge :color="stockStatusColor" variant="subtle" size="sm">{{ stockStatus }}</UBadge>
+          </div>
+          <div>
+            <div class="text-xs text-parchment/60 uppercase tracking-wider mb-1">Current Stock</div>
+            <div class="text-sm text-parchment font-semibold">{{ currentStock }} {{ item.inventoryUnit || '' }}</div>
+          </div>
+          <div>
+            <div class="text-xs text-parchment/60 uppercase tracking-wider mb-1">Reorder Point</div>
+            <div class="text-sm text-parchment">{{ item.reorderPoint || 0 }} {{ item.inventoryUnit || '' }}</div>
+          </div>
+          <div>
+            <div class="text-xs text-parchment/60 uppercase tracking-wider mb-1">Use / Month</div>
+            <div class="text-sm text-parchment">{{ item.usePerMonth ? `${item.usePerMonth} ${item.inventoryUnit || ''}` : 'N/A' }}</div>
+          </div>
+        </template>
+        <div v-else>
+          <div class="text-xs text-parchment/60 uppercase tracking-wider mb-1">Inventory Tracking</div>
+          <UBadge color="neutral" variant="subtle" size="sm">Disabled</UBadge>
         </div>
       </div>
+    </div>
+
+    <!-- Notes -->
+    <div v-if="item.notes" class="bg-charcoal rounded-xl border border-brown/30 p-5">
+      <h3 class="text-lg font-bold text-parchment font-[Cormorant_Garamond] mb-3">Notes</h3>
+      <p class="text-sm text-parchment/80 whitespace-pre-wrap">{{ item.notes }}</p>
     </div>
 
     <!-- Purchase History -->
@@ -153,7 +198,7 @@ const inventoryRecords = computed(() =>
     </div>
 
     <!-- Inventory History -->
-    <div class="bg-charcoal rounded-xl border border-brown/30 p-5">
+    <div v-if="item.trackInventory !== false" class="bg-charcoal rounded-xl border border-brown/30 p-5">
       <h3 class="text-lg font-bold text-parchment font-[Cormorant_Garamond] mb-4">Inventory History</h3>
       <div v-if="inventoryRecords.length > 0" class="divide-y divide-brown/20">
         <div class="grid grid-cols-2 gap-4 pb-2 text-xs text-parchment/60 uppercase tracking-wider">

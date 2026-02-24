@@ -123,7 +123,21 @@ export const inventoryCreateSchema = yup.object({
 
 export const itemCreateSchema = yup.object({
   name: yup.string().required("Name is required"),
-  pricePerUnit: yup.number().min(0, "Price cannot be negative"),
+  category: yup.string(),
+  trackInventory: yup.boolean(),
+  minStock: yup.number().min(0, "Min stock cannot be negative"),
+  reorderPoint: yup.number().min(0, "Reorder point cannot be negative"),
+  usePerMonth: yup.number().min(0, "Use per month cannot be negative"),
+  notes: yup.string(),
+});
+
+const productionCostsSchema = yup.object({
+  batch: yup.number().min(0, "Batch cost cannot be negative").default(0),
+  barrel: yup.number().min(0, "Barrel cost cannot be negative").default(0),
+  bottling: yup.number().min(0, "Bottling cost cannot be negative").default(0),
+  labor: yup.number().min(0, "Labor cost cannot be negative").default(0),
+  taxes: yup.number().min(0, "Tax amount cannot be negative").default(0),
+  other: yup.number().min(0, "Other cost cannot be negative").default(0),
 });
 
 export const productionCreateSchema = yup.object({
@@ -133,6 +147,7 @@ export const productionCreateSchema = yup.object({
     .number()
     .positive("Must be greater than 0")
     .required("Quantity is required"),
+  costs: productionCostsSchema.optional().default(undefined),
 });
 
 export const purchaseOrderCreateSchema = yup.object({
@@ -202,6 +217,8 @@ export const contactInquirySchema = yup.object({
 export const vesselCreateSchema = yup.object({
   name: yup.string().required("Name is required"),
   type: yup.string().required("Type is required"),
+  isUsed: yup.boolean(),
+  previousContents: yup.string(),
 });
 
 // ─── Update Schemas (all fields optional) ────────────────────
@@ -223,6 +240,7 @@ export const batchUpdateSchema = yup.object({
   currentStage: yup.string(),
   status: yup.string().oneOf(['active', 'completed', 'cancelled']),
   batchCost: yup.number().min(0),
+  barrelCost: yup.number().min(0),
   recipeCost: yup.number().min(0),
 });
 
@@ -266,13 +284,19 @@ export const inventoryUpdateSchema = yup.object({
 
 export const itemUpdateSchema = yup.object({
   name: yup.string(),
-  pricePerUnit: yup.number().min(0, "Price cannot be negative"),
+  category: yup.string(),
+  trackInventory: yup.boolean(),
+  minStock: yup.number().min(0, "Min stock cannot be negative"),
+  reorderPoint: yup.number().min(0, "Reorder point cannot be negative"),
+  usePerMonth: yup.number().min(0, "Use per month cannot be negative"),
+  notes: yup.string(),
 });
 
 export const productionUpdateSchema = yup.object({
   date: yup.date(),
   bottle: yup.string(),
   quantity: yup.number().positive("Must be greater than 0"),
+  costs: productionCostsSchema.optional().default(undefined),
 });
 
 export const purchaseOrderUpdateSchema = yup.object({
@@ -301,6 +325,8 @@ export const eventUpdateSchema = yup.object({
 export const vesselUpdateSchema = yup.object({
   name: yup.string(),
   type: yup.string(),
+  isUsed: yup.boolean(),
+  previousContents: yup.string(),
 });
 
 export const equipmentLogCreateSchema = yup.object({
@@ -308,4 +334,23 @@ export const equipmentLogCreateSchema = yup.object({
   action: yup.string().required('Action is required'),
   value: yup.number().nullable(),
   batch: yup.string().nullable(),
+});
+
+export const settingsUpdateSchema = yup.object({
+  itemCategories: yup
+    .array()
+    .of(yup.string().required())
+    .min(1, "At least one category is required"),
+  barrelAgeDefaults: yup.object(),
+  theme: yup.object({
+    primaryColor: yup.string(),
+  }),
+  distillery: yup.object({
+    name: yup.string(),
+    address: yup.string(),
+    permitNumbers: yup.object({
+      ttb: yup.string(),
+      tabc: yup.string(),
+    }),
+  }),
 });

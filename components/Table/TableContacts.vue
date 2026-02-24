@@ -2,6 +2,7 @@
 import type { TableColumn } from "@nuxt/ui";
 import type { Contact } from "~/types";
 import type { Row } from "@tanstack/vue-table";
+import { getPaginationRowModel } from "@tanstack/vue-table";
 
 const router = useRouter();
 const contactStore = useContactStore();
@@ -15,6 +16,11 @@ const UBadge = resolveComponent("UBadge");
 const search = ref("");
 const pagination = ref({ pageIndex: 0, pageSize: 10 });
 const newsletterOnly = ref(false);
+
+const tableRef = useTemplateRef('tableRef');
+const filteredTotal = computed(() =>
+  tableRef.value?.tableApi?.getFilteredRowModel().rows.length ?? filteredContacts.value.length
+);
 
 const filteredContacts = computed(() => {
   if (newsletterOnly.value) {
@@ -163,7 +169,7 @@ const addItem = () => {
   <TableWrapper
     v-model:search="search"
     v-model:pagination="pagination"
-    :total-items="filteredContacts.length"
+    :total-items="filteredTotal"
     :loading="contactStore.loading"
     search-placeholder="Search contacts..."
   >
@@ -185,8 +191,10 @@ const addItem = () => {
     <!-- Desktop table -->
     <div class="hidden sm:block">
       <UTable
+        ref="tableRef"
         v-model:global-filter="search"
         v-model:pagination="pagination"
+        :pagination-options="{ getPaginationRowModel: getPaginationRowModel() }"
         :data="filteredContacts"
         :columns="columns"
         :loading="contactStore.loading"

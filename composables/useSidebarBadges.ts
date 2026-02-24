@@ -17,18 +17,17 @@ export function useSidebarBadges() {
   )
 
   const lowInventoryCount = computed(() => {
-    const latestByItem = new Map<string, number>()
+    let count = 0
     for (const item of itemStore.items) {
+      if (item.trackInventory === false) continue
       const records = inventoryStore.getInventoriesByItem(item._id)
       if (records.length === 0) continue
       const sorted = [...records].sort((a, b) =>
         new Date(b.date).getTime() - new Date(a.date).getTime()
       )
-      latestByItem.set(item._id, sorted[0].quantity)
-    }
-    let count = 0
-    for (const qty of latestByItem.values()) {
-      if (qty <= 10) count++
+      const qty = sorted[0].quantity
+      const threshold = item.reorderPoint || 10
+      if (qty <= threshold) count++
     }
     return count
   })

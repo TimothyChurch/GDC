@@ -40,7 +40,7 @@ const typeOptions = ["Vendor", "Customer", "Distributor", "Employee", "Supplier"
             <UInput v-model="localData.businessName" />
           </UFormField>
           <UFormField label="Type">
-            <USelect v-model="localData.type" :options="typeOptions" />
+            <USelect v-model="localData.type" :items="typeOptions" />
           </UFormField>
           <UFormField label="Website">
             <UInput v-model="localData.website" type="url" placeholder="https://" />

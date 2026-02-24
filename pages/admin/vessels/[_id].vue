@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { getBarrelAgeDefault } from '~/composables/definitions'
+
 definePageMeta({ layout: 'admin' })
 
 const route = useRoute()
@@ -34,9 +36,12 @@ const typeIcon = computed(() => {
 
 const fillPercent = computed(() => {
   const max = vessel.value?.stats?.volume
+  const maxUnit = vessel.value?.stats?.volumeUnit
   const current = vessel.value?.current?.volume
+  const currentUnit = vessel.value?.current?.volumeUnit
   if (!max || !current) return 0
-  return Math.min(100, (current / max) * 100)
+  const converted = current * convertUnitRatio(currentUnit || '', maxUnit || '')
+  return Math.min(100, (converted / max) * 100)
 })
 
 const fillColor = computed(() => {
@@ -74,6 +79,33 @@ const agingDuration = computed(() => {
   const years = Math.floor(months / 12)
   const rem = months % 12
   return `${years} year${years > 1 ? 's' : ''}${rem ? `, ${rem} mo` : ''}`
+})
+
+const effectiveTargetAge = computed(() => {
+  if (!vessel.value || vessel.value.type !== 'Barrel') return null
+  // Per-barrel override first, then size-based default
+  if (vessel.value.targetAge) return vessel.value.targetAge
+  return getBarrelAgeDefault(vessel.value.barrel?.size) || null
+})
+
+const barrelAgeProgress = computed(() => {
+  if (!vessel.value || vessel.value.type !== 'Barrel' || !vessel.value.createdAt) return null
+  const target = effectiveTargetAge.value
+  if (!target) return null
+  const filled = new Date(vessel.value.createdAt)
+  const now = new Date()
+  const days = (now.getTime() - filled.getTime()) / (1000 * 60 * 60 * 24)
+  const months = parseFloat((days / 30.44).toFixed(1))
+  const percent = Math.min(100, Math.round((months / target) * 100))
+  return { months, target, percent }
+})
+
+const barrelProgressColor = computed(() => {
+  if (!barrelAgeProgress.value) return 'bg-amber-500/60'
+  const p = barrelAgeProgress.value.percent
+  if (p >= 100) return 'bg-green-500/60'
+  if (p >= 75) return 'bg-amber-500/60'
+  return 'bg-blue-500/60'
 })
 
 const handleEmpty = () => {
@@ -142,7 +174,16 @@ const handleEmpty = () => {
 
     <!-- Barrel Details (only for barrels) -->
     <div v-if="vessel.type === 'Barrel'" class="bg-charcoal rounded-xl border border-brown/30 p-5">
-      <h3 class="text-lg font-bold text-parchment font-[Cormorant_Garamond] mb-4">Barrel Details</h3>
+      <div class="flex items-center justify-between mb-4">
+        <h3 class="text-lg font-bold text-parchment font-[Cormorant_Garamond]">Barrel Details</h3>
+        <UBadge
+          :color="vessel.isUsed ? 'warning' : 'success'"
+          variant="subtle"
+          size="sm"
+        >
+          {{ vessel.isUsed ? 'Used' : 'New' }}
+        </UBadge>
+      </div>
       <div class="grid grid-cols-2 sm:grid-cols-4 gap-4">
         <div>
           <div class="text-xs text-parchment/60 uppercase tracking-wider mb-1">Size</div>
@@ -159,6 +200,41 @@ const handleEmpty = () => {
         <div>
           <div class="text-xs text-parchment/60 uppercase tracking-wider mb-1">Aging Duration</div>
           <div class="text-sm text-parchment">{{ agingDuration || 'N/A' }}</div>
+        </div>
+        <div>
+          <div class="text-xs text-parchment/60 uppercase tracking-wider mb-1">Target Age</div>
+          <div class="text-sm text-parchment">
+            <template v-if="effectiveTargetAge">
+              {{ effectiveTargetAge }} months
+              <span v-if="!vessel.targetAge" class="text-parchment/40 text-xs">(default)</span>
+              <span v-else class="text-parchment/40 text-xs">(custom)</span>
+            </template>
+            <template v-else>Not set</template>
+          </div>
+        </div>
+        <div v-if="vessel.isUsed && vessel.previousContents">
+          <div class="text-xs text-parchment/60 uppercase tracking-wider mb-1">Previous Contents</div>
+          <div class="text-sm text-parchment">{{ vessel.previousContents }}</div>
+        </div>
+      </div>
+
+      <!-- Barrel Age Progress -->
+      <div v-if="barrelAgeProgress && vessel.current?.volume && vessel.current.volume > 0" class="mt-4">
+        <div class="flex items-center justify-between mb-2">
+          <div class="text-xs text-parchment/60 uppercase tracking-wider">Aging Progress</div>
+          <span class="text-sm font-semibold" :class="barrelAgeProgress.percent >= 100 ? 'text-green-400' : 'text-amber-400'">
+            {{ barrelAgeProgress.months }} / {{ barrelAgeProgress.target }} months — {{ barrelAgeProgress.percent }}%
+          </span>
+        </div>
+        <div class="w-full h-3 rounded-full bg-brown/20 overflow-hidden">
+          <div
+            class="h-full rounded-full transition-all duration-500"
+            :class="barrelProgressColor"
+            :style="{ width: `${barrelAgeProgress.percent}%` }"
+          />
+        </div>
+        <div v-if="barrelAgeProgress.percent >= 100" class="mt-1 text-xs text-green-400 font-medium">
+          Target age reached — ready to dump
         </div>
       </div>
     </div>

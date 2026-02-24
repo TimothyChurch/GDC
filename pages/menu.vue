@@ -12,6 +12,8 @@ useSeoMeta({
 
 const cocktailStore = useCocktailStore();
 const itemStore = useItemStore();
+const bottleStore = useBottleStore();
+const { getIngredientName } = useIngredientResolver();
 
 const search = ref("");
 const activeCategory = ref("All");
@@ -43,11 +45,17 @@ const getSpiritCategory = (text: string): string | null => {
 
 const getBaseSpirit = (cocktail: Cocktail): string | null => {
   for (const ing of cocktail.ingredients) {
-    const item = itemStore.getItemById(ing.item as unknown as string);
-    if (!item) continue;
-    // Check item type first, then fall back to item name
-    const category = getSpiritCategory(item.type || "") || getSpiritCategory(item.name || "");
-    if (category) return category;
+    if (ing.sourceType === 'bottle') {
+      const bottle = bottleStore.getBottleById(ing.item as unknown as string);
+      if (!bottle) continue;
+      const category = getSpiritCategory(bottle.type || "") || getSpiritCategory(bottle.class || "") || getSpiritCategory(bottle.name || "");
+      if (category) return category;
+    } else {
+      const item = itemStore.getItemById(ing.item as unknown as string);
+      if (!item) continue;
+      const category = getSpiritCategory(item.type || "") || getSpiritCategory(item.name || "");
+      if (category) return category;
+    }
   }
   return null;
 };
@@ -91,10 +99,7 @@ const filteredCocktails = computed(() => {
       (c) =>
         c.name.toLowerCase().includes(q) ||
         c.ingredients.some((ing) =>
-          itemStore
-            .getItemById(ing.item as unknown as string)
-            ?.name.toLowerCase()
-            .includes(q)
+          getIngredientName(ing).toLowerCase().includes(q)
         )
     );
   }

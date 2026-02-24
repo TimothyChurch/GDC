@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import type { Batch, Recipe } from '~/types'
 import { calculateProofGallons, toGallons } from '~/utils/proofGallons'
+import { normalizeDistillingRuns } from '~/utils/distillingMigration'
 
 const props = defineProps<{
   month: string // 'YYYY-MM' format
@@ -33,22 +34,35 @@ const distilledBatches = computed(() => {
   })
 })
 
-// Production by spirit type
+// Production by spirit type — aggregate hearts across all spirit runs
 const productionByType = computed(() => {
   const map = new Map<string, { wineGallons: number; proofGallons: number; batches: number }>()
 
   distilledBatches.value.forEach(batch => {
     const recipe = batch.recipe ? recipeStore.getRecipeById(batch.recipe) : null
     const spiritType = recipe?.class || recipe?.type || 'Unknown'
-    const hearts = (batch.stages as any)?.distilling?.collected?.hearts
-    if (!hearts) return
+    const runs = normalizeDistillingRuns((batch.stages as any)?.distilling)
 
-    const vol = toGallons(hearts.volume || 0, hearts.unit || 'gal')
-    const abv = hearts.abv || 0
-    const pg = calculateProofGallons(vol, 'gallon', abv)
+    // Sum hearts from spirit runs only (stripping output is low wines, not final spirit)
+    let heartsVol = 0
+    let heartsAbvWeighted = 0
+
+    for (const run of runs) {
+      if (run.runType === 'spirit' && run.collected?.hearts) {
+        const h = run.collected.hearts
+        const vol = toGallons(h.volume || 0, h.volumeUnit || 'gallon')
+        heartsVol += vol
+        heartsAbvWeighted += vol * (h.abv || 0)
+      }
+    }
+
+    if (heartsVol === 0) return
+
+    const avgAbv = heartsAbvWeighted / heartsVol
+    const pg = calculateProofGallons(heartsVol, 'gallon', avgAbv)
 
     const existing = map.get(spiritType) || { wineGallons: 0, proofGallons: 0, batches: 0 }
-    existing.wineGallons += vol
+    existing.wineGallons += heartsVol
     existing.proofGallons += pg
     existing.batches += 1
     map.set(spiritType, existing)
@@ -70,27 +84,39 @@ const totalBatchCount = computed(() =>
   productionByType.value.reduce((sum, t) => sum + t.batches, 0)
 )
 
-// Heads and tails (non-product spirits)
+// Heads, late heads, and tails (non-product spirits) — aggregate across all spirit runs
 const headsAndTails = computed(() => {
-  let headsWG = 0, headsPG = 0, tailsWG = 0, tailsPG = 0
+  let headsWG = 0, headsPG = 0, lateHeadsWG = 0, lateHeadsPG = 0, tailsWG = 0, tailsPG = 0
 
   distilledBatches.value.forEach(batch => {
-    const heads = (batch.stages as any)?.distilling?.collected?.heads
-    const tails = (batch.stages as any)?.distilling?.collected?.tails
+    const runs = normalizeDistillingRuns((batch.stages as any)?.distilling)
 
-    if (heads) {
-      const vol = toGallons(heads.volume || 0, heads.unit || 'gal')
-      headsWG += vol
-      headsPG += calculateProofGallons(vol, 'gallon', heads.abv || 0)
-    }
-    if (tails) {
-      const vol = toGallons(tails.volume || 0, tails.unit || 'gal')
-      tailsWG += vol
-      tailsPG += calculateProofGallons(vol, 'gallon', tails.abv || 0)
+    for (const run of runs) {
+      if (run.runType !== 'spirit' || !run.collected) continue
+
+      const heads = run.collected.heads
+      const lateHeads = run.collected.lateHeads
+      const tails = run.collected.tails
+
+      if (heads) {
+        const vol = toGallons(heads.volume || 0, heads.volumeUnit || 'gallon')
+        headsWG += vol
+        headsPG += calculateProofGallons(vol, 'gallon', heads.abv || 0)
+      }
+      if (lateHeads) {
+        const vol = toGallons(lateHeads.volume || 0, lateHeads.volumeUnit || 'gallon')
+        lateHeadsWG += vol
+        lateHeadsPG += calculateProofGallons(vol, 'gallon', lateHeads.abv || 0)
+      }
+      if (tails) {
+        const vol = toGallons(tails.volume || 0, tails.volumeUnit || 'gallon')
+        tailsWG += vol
+        tailsPG += calculateProofGallons(vol, 'gallon', tails.abv || 0)
+      }
     }
   })
 
-  return { headsWG, headsPG, tailsWG, tailsPG }
+  return { headsWG, headsPG, lateHeadsWG, lateHeadsPG, tailsWG, tailsPG }
 })
 
 // Materials used (grain/ingredients from recipes)
@@ -122,22 +148,35 @@ const materialsUsed = computed(() => {
     .sort((a, b) => a.name.localeCompare(b.name))
 })
 
-// Individual batch detail
+// Individual batch detail — sum hearts across spirit runs
 const batchDetails = computed(() => {
   return distilledBatches.value.map(batch => {
     const recipe = batch.recipe ? recipeStore.getRecipeById(batch.recipe) : null
-    const hearts = (batch.stages as any)?.distilling?.collected?.hearts
-    const vol = hearts ? toGallons(hearts.volume || 0, hearts.unit || 'gal') : 0
-    const abv = hearts?.abv || 0
+    const runs = normalizeDistillingRuns((batch.stages as any)?.distilling)
+
+    let heartsVol = 0
+    let heartsAbvWeighted = 0
+
+    for (const run of runs) {
+      if (run.runType === 'spirit' && run.collected?.hearts) {
+        const h = run.collected.hearts
+        const vol = toGallons(h.volume || 0, h.volumeUnit || 'gallon')
+        heartsVol += vol
+        heartsAbvWeighted += vol * (h.abv || 0)
+      }
+    }
+
+    const abv = heartsVol > 0 ? heartsAbvWeighted / heartsVol : 0
 
     return {
       _id: batch._id,
       recipeName: recipe?.name || 'Unknown',
       spiritType: recipe?.class || recipe?.type || 'Unknown',
       date: (batch.stages as any)?.distilling?.startedAt ? new Date((batch.stages as any).distilling.startedAt).toLocaleDateString() : '--',
-      wineGallons: vol,
+      wineGallons: heartsVol,
       abv,
-      proofGallons: calculateProofGallons(vol, 'gallon', abv),
+      proofGallons: calculateProofGallons(heartsVol, 'gallon', abv),
+      runCount: runs.length,
     }
   }).sort((a, b) => a.date.localeCompare(b.date))
 })
@@ -217,10 +256,10 @@ const batchDetails = computed(() => {
       </div>
     </div>
 
-    <!-- Heads & Tails -->
+    <!-- Heads, Late Heads & Tails -->
     <div class="bg-charcoal rounded-xl border border-brown/30 p-5 print:border-gray-300">
-      <h3 class="text-sm font-semibold text-parchment/70 mb-3 print:text-black">Non-Product Spirits (Heads & Tails)</h3>
-      <div class="grid grid-cols-2 sm:grid-cols-4 gap-4">
+      <h3 class="text-sm font-semibold text-parchment/70 mb-3 print:text-black">Non-Product Spirits (Heads, Late Heads & Tails)</h3>
+      <div class="grid grid-cols-2 sm:grid-cols-3 gap-4">
         <div>
           <div class="text-xs text-parchment/60 uppercase tracking-wider mb-1 print:text-gray-500">Heads (WG)</div>
           <div class="text-sm text-parchment print:text-black">{{ headsAndTails.headsWG.toFixed(2) }}</div>
@@ -228,6 +267,14 @@ const batchDetails = computed(() => {
         <div>
           <div class="text-xs text-parchment/60 uppercase tracking-wider mb-1 print:text-gray-500">Heads (PG)</div>
           <div class="text-sm text-parchment print:text-black">{{ headsAndTails.headsPG.toFixed(2) }}</div>
+        </div>
+        <div>
+          <div class="text-xs text-parchment/60 uppercase tracking-wider mb-1 print:text-gray-500">Late Heads (WG)</div>
+          <div class="text-sm text-parchment print:text-black">{{ headsAndTails.lateHeadsWG.toFixed(2) }}</div>
+        </div>
+        <div>
+          <div class="text-xs text-parchment/60 uppercase tracking-wider mb-1 print:text-gray-500">Late Heads (PG)</div>
+          <div class="text-sm text-parchment print:text-black">{{ headsAndTails.lateHeadsPG.toFixed(2) }}</div>
         </div>
         <div>
           <div class="text-xs text-parchment/60 uppercase tracking-wider mb-1 print:text-gray-500">Tails (WG)</div>
@@ -280,6 +327,7 @@ const batchDetails = computed(() => {
               <th class="text-left py-2 px-3 text-parchment/50 font-medium print:text-gray-600">Date</th>
               <th class="text-left py-2 px-3 text-parchment/50 font-medium print:text-gray-600">Recipe</th>
               <th class="text-left py-2 px-3 text-parchment/50 font-medium print:text-gray-600">Spirit</th>
+              <th class="text-right py-2 px-3 text-parchment/50 font-medium print:text-gray-600">Runs</th>
               <th class="text-right py-2 px-3 text-parchment/50 font-medium print:text-gray-600">Wine Gal</th>
               <th class="text-right py-2 px-3 text-parchment/50 font-medium print:text-gray-600">ABV</th>
               <th class="text-right py-2 px-3 text-parchment/50 font-medium print:text-gray-600">Proof Gal</th>
@@ -300,6 +348,7 @@ const batchDetails = computed(() => {
                 <td class="py-2 px-3 text-parchment/70 print:text-gray-700">{{ b.date }}</td>
                 <td class="py-2 px-3 text-parchment print:text-black">{{ b.recipeName }}</td>
                 <td class="py-2 px-3 text-parchment/60 print:text-gray-600">{{ b.spiritType }}</td>
+                <td class="py-2 px-3 text-right text-parchment/60 print:text-gray-600">{{ b.runCount }}</td>
                 <td class="py-2 px-3 text-right text-parchment print:text-black">{{ b.wineGallons.toFixed(2) }}</td>
                 <td class="py-2 px-3 text-right text-parchment/60 print:text-gray-600">{{ b.abv.toFixed(1) }}%</td>
                 <td class="py-2 px-3 text-right text-copper print:text-black font-semibold">{{ b.proofGallons.toFixed(2) }}</td>

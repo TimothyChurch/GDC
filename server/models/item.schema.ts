@@ -14,25 +14,8 @@ export const Item = defineMongooseModel({
       type: String,
       index: true,
     },
-    vendor: {
-      type: Schema.Types.ObjectId,
-      ref: "Contact",
-      index: true,
-    },
-    brand: {
-      type: String,
-    },
     inventoryUnit: {
       type: String,
-    },
-    purchaseSize: {
-      type: Number,
-    },
-    purchaseSizeUnit: {
-      type: String,
-    },
-    purchasePrice: {
-      type: Number,
     },
     purchaseHistory: [
       {
@@ -46,8 +29,30 @@ export const Item = defineMongooseModel({
         ref: "Inventory",
       },
     ],
-    pricePerUnit: {
+    category: {
+      type: String,
+      default: 'Other',
+      index: true,
+    },
+    trackInventory: {
+      type: Boolean,
+      default: true,
+    },
+    minStock: {
       type: Number,
+      default: 0,
+    },
+    reorderPoint: {
+      type: Number,
+      default: 0,
+    },
+    usePerMonth: {
+      type: Number,
+      default: 0,
+    },
+    notes: {
+      type: String,
+      trim: true,
     },
   },
   options: { timestamps: true },

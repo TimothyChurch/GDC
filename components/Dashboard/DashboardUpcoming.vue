@@ -53,8 +53,8 @@ const onStartFirstStage = async (batchId: string, vesselId: string) => {
       <div v-for="batch in batchStore.upcomingBatches" :key="batch._id">
         <div class="flex flex-col items-center gap-2">
           <DashboardBatchCard :batchId="batch._id" />
-          <UDropdown
-            :items="[getVesselOptions(batch).map((v: any) => ({ label: v.name, _id: v._id }))]"
+          <UDropdownMenu
+            :items="getVesselOptions(batch).map((v: any) => ({ label: v.name, _id: v._id, onSelect: () => onStartFirstStage(batch._id, v._id) }))"
           >
             <UButton
               size="sm"
@@ -67,12 +67,7 @@ const onStartFirstStage = async (batchId: string, vesselId: string) => {
             >
               {{ getFirstStageLabel(batch) }}
             </UButton>
-            <template #item="{ item }">
-              <div @click="onStartFirstStage(batch._id, item._id)">
-                {{ item.label }}
-              </div>
-            </template>
-          </UDropdown>
+          </UDropdownMenu>
         </div>
       </div>
     </div>

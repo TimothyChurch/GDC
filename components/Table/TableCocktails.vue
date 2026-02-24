@@ -2,6 +2,7 @@
 import type { TableColumn } from "@nuxt/ui";
 import type { Cocktail } from "~/types";
 import type { Row } from "@tanstack/vue-table";
+import { getPaginationRowModel } from "@tanstack/vue-table";
 
 const cocktailStore = useCocktailStore();
 const { confirm } = useDeleteConfirm();
@@ -11,6 +12,11 @@ const UDropdownMenu = resolveComponent("UDropdownMenu");
 
 const search = ref("");
 const pagination = ref({ pageIndex: 0, pageSize: 10 });
+
+const tableRef = useTemplateRef('tableRef');
+const filteredTotal = computed(() =>
+  tableRef.value?.tableApi?.getFilteredRowModel().rows.length ?? cocktailStore.cocktails.length
+);
 
 const columns: TableColumn<Cocktail>[] = [
   {
@@ -134,7 +140,7 @@ const openModal = async () => await modal.open();
   <TableWrapper
     v-model:search="search"
     v-model:pagination="pagination"
-    :total-items="cocktailStore.cocktails.length"
+    :total-items="filteredTotal"
     :loading="cocktailStore.loading"
     search-placeholder="Search cocktails..."
   >
@@ -144,9 +150,11 @@ const openModal = async () => await modal.open();
     <!-- Desktop table -->
     <div class="hidden sm:block">
       <UTable
+        ref="tableRef"
         sticky
         v-model:global-filter="search"
         v-model:pagination="pagination"
+        :pagination-options="{ getPaginationRowModel: getPaginationRowModel() }"
         :data="cocktailStore.cocktails"
         :columns="columns"
         :loading="cocktailStore.loading"

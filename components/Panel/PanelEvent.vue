@@ -63,10 +63,10 @@ const contactEmail = computed(() => {
             <UInput v-model.number="localData.groupSize" type="number" min="1" />
           </UFormField>
           <UFormField label="Type">
-            <USelect v-model="localData.type" :options="typeOptions" />
+            <USelect v-model="localData.type" :items="typeOptions" />
           </UFormField>
           <UFormField label="Status">
-            <USelect v-model="localData.status" :options="statusOptions" />
+            <USelect v-model="localData.status" :items="statusOptions" />
           </UFormField>
           <UFormField label="Capacity">
             <UInput v-model.number="localData.capacity" type="number" min="1" placeholder="Max seats (for public classes)" />

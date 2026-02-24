@@ -33,8 +33,8 @@ const saveBottle = async () => {
 				<USelectMenu
 					:items="recipeStore.recipes"
 					searchable
-					option-attribute="name"
-					value-attribute="_id"
+					label-key="name"
+					value-key="_id"
 					v-model="bottleStore.bottle.recipe"
 					class="w-full" />
 			</UFormField>

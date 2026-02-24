@@ -2,6 +2,7 @@
 import type { TableColumn } from "@nuxt/ui";
 import type { Batch } from "~/types";
 import type { Row } from "@tanstack/vue-table";
+import { getPaginationRowModel } from "@tanstack/vue-table";
 
 const props = defineProps<{ data?: Batch[] }>();
 
@@ -18,7 +19,7 @@ const pagination = ref({ pageIndex: 0, pageSize: 10 });
 
 const tableData = computed(() => props.data ?? batchStore.batches);
 
-import { STAGE_DISPLAY, stageBgColor, stageTextColor } from '~/composables/batchPipeline'
+import { STAGE_DISPLAY, stageBgColor, stageTextColor, hasStageVolumes, getActiveStages, getStageVolume } from '~/composables/batchPipeline'
 
 function stageColor(stage: string) {
   const display = STAGE_DISPLAY[stage]
@@ -97,29 +98,39 @@ const columns: TableColumn<Batch>[] = [
         onClick: () => column.toggleSorting(column.getIsSorted() === "asc"),
       });
     },
-    cell: ({ row }) =>
-      h("div", { class: "flex items-center gap-1.5" }, [
-        h(
-          "span",
-          {
-            class: [
-              "px-2 py-0.5 rounded-full text-[10px] font-semibold border",
-              stageColor(row.original.currentStage || ""),
-            ],
-          },
-          row.original.currentStage || "Unknown"
-        ),
-        row.original.status !== 'active' ? h(
-          "span",
-          {
-            class: [
-              "px-1.5 py-0.5 rounded-full text-[10px] font-semibold border",
-              statusBadgeColor(row.original.status || ""),
-            ],
-          },
-          row.original.status
-        ) : null,
-      ]),
+    cell: ({ row }) => {
+      const batch = row.original;
+      const badges: any[] = [];
+
+      if (hasStageVolumes(batch) && getActiveStages(batch).length > 1) {
+        // Multi-stage: show each active stage with volume
+        const unit = (batch.batchSizeUnit || 'gallon').replace(/gallon/i, 'g').replace(/liter/i, 'L');
+        for (const stage of getActiveStages(batch)) {
+          const vol = getStageVolume(batch, stage);
+          badges.push(
+            h("span", {
+              class: ["px-2 py-0.5 rounded-full text-[10px] font-semibold border", stageColor(stage)],
+            }, `${stage} ${vol}${unit}`)
+          );
+        }
+      } else {
+        badges.push(
+          h("span", {
+            class: ["px-2 py-0.5 rounded-full text-[10px] font-semibold border", stageColor(batch.currentStage || "")],
+          }, batch.currentStage || "Unknown")
+        );
+      }
+
+      if (batch.status !== 'active') {
+        badges.push(
+          h("span", {
+            class: ["px-1.5 py-0.5 rounded-full text-[10px] font-semibold border", statusBadgeColor(batch.status || "")],
+          }, batch.status)
+        );
+      }
+
+      return h("div", { class: "flex items-center gap-1.5 flex-wrap" }, badges);
+    },
   },
   {
     id: "actions",
@@ -186,13 +197,18 @@ const addItem = () => {
   batchStore.resetBatch();
   openPanel();
 };
+
+const tableRef = useTemplateRef('tableRef');
+const filteredTotal = computed(() =>
+  tableRef.value?.tableApi?.getFilteredRowModel().rows.length ?? tableData.value.length
+);
 </script>
 
 <template>
   <TableWrapper
     v-model:search="search"
     v-model:pagination="pagination"
-    :total-items="tableData.length"
+    :total-items="filteredTotal"
     :loading="batchStore.loading"
     search-placeholder="Search batches..."
   >
@@ -202,8 +218,10 @@ const addItem = () => {
     <!-- Desktop table -->
     <div class="hidden sm:block">
       <UTable
+        ref="tableRef"
         v-model:global-filter="search"
         v-model:pagination="pagination"
+        :pagination-options="{ getPaginationRowModel: getPaginationRowModel() }"
         :data="tableData"
         :columns="columns"
         :loading="batchStore.loading"
@@ -226,12 +244,25 @@ const addItem = () => {
             <div class="text-sm font-medium text-parchment">{{ recipeStore.getRecipeById(batch.recipe)?.name || 'Unknown' }}</div>
             <div class="text-xs text-parchment/60">{{ batch.batchSize }} {{ batch.batchSizeUnit }}</div>
           </div>
-          <span
-            class="px-2 py-0.5 rounded-full text-[10px] font-semibold border"
-            :class="stageColor(batch.currentStage || '')"
-          >
-            {{ batch.currentStage || 'Unknown' }}
-          </span>
+          <div class="flex flex-wrap gap-1">
+            <template v-if="hasStageVolumes(batch) && getActiveStages(batch).length > 1">
+              <span
+                v-for="stage in getActiveStages(batch)"
+                :key="stage"
+                class="px-2 py-0.5 rounded-full text-[10px] font-semibold border"
+                :class="stageColor(stage)"
+              >
+                {{ stage }} {{ getStageVolume(batch, stage) }}{{ (batch.batchSizeUnit || 'gallon').replace(/gallon/i, 'g').replace(/liter/i, 'L') }}
+              </span>
+            </template>
+            <span
+              v-else
+              class="px-2 py-0.5 rounded-full text-[10px] font-semibold border"
+              :class="stageColor(batch.currentStage || '')"
+            >
+              {{ batch.currentStage || 'Unknown' }}
+            </span>
+          </div>
         </div>
         <div class="grid grid-cols-2 gap-2 text-xs">
           <div>

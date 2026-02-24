@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { STAGE_KEY_MAP, hasReachedStage as _hasReached, isCurrentStage as _isCurrent } from '~/composables/batchPipeline'
+import { STAGE_KEY_MAP, hasReachedStage as _hasReached, isCurrentStage as _isCurrent, isStageActive, hasStageVolumes, getNextStage, getActiveStages } from '~/composables/batchPipeline'
 
 definePageMeta({ layout: 'admin' })
 
@@ -62,17 +62,65 @@ const editBatch = () => {
   panel.open()
 }
 
+// Recalculate batch cost from current recipe prices
+const updatingCost = ref(false)
+const updateBatchCost = async () => {
+  if (!batch.value || !recipe.value) return
+  updatingCost.value = true
+  try {
+    const newRecipeCost = recipePrice(recipe.value)
+    batchStore.setBatch(batch.value._id)
+    batchStore.batch.recipeCost = newRecipeCost
+    batchStore.batch.batchCost = scaledTotalCost.value
+    await batchStore.updateBatch()
+  } finally {
+    updatingCost.value = false
+  }
+}
+
 // Stage helpers using batch pipeline
 const hasReached = (stageName: string) => {
   if (!batch.value) return false
-  if (batch.value.currentStage === 'Upcoming') return false
+  if (batch.value.currentStage === 'Upcoming' && !hasStageVolumes(batch.value)) return false
+  // Volume-aware: stage has been reached if it has volume OR if currentStage has passed it
+  if (hasStageVolumes(batch.value)) {
+    return isStageActive(batch.value, stageName) || _hasReached(batch.value.pipeline, batch.value.currentStage, stageName)
+  }
   return _hasReached(batch.value.pipeline, batch.value.currentStage, stageName)
 }
 
-const isCurrent = (stageName: string) => {
+// A stage is editable if it has volume > 0 (or is the current stage for legacy batches)
+const isEditable = (stageName: string) => {
   if (!batch.value) return false
+  if (hasStageVolumes(batch.value)) {
+    return isStageActive(batch.value, stageName)
+  }
   return _isCurrent(batch.value.currentStage, stageName)
 }
+
+// Stages that have volume and a valid next stage — show advance button for each
+const advancableStages = computed(() => {
+  if (!batch.value || batch.value.status !== 'active') return []
+  const stages: string[] = []
+
+  if (hasStageVolumes(batch.value)) {
+    const active = getActiveStages(batch.value)
+    for (const stage of active) {
+      // Check if this stage has a next stage in pipeline
+      if (stage === 'Upcoming') {
+        if (batch.value.pipeline.length > 0) stages.push(stage)
+      } else {
+        const next = getNextStage(batch.value.pipeline, stage)
+        if (next) stages.push(stage)
+      }
+    }
+  } else {
+    // Legacy: single advance button
+    stages.push(batch.value.currentStage)
+  }
+
+  return stages
+})
 
 // Dynamic component map
 const STAGE_COMPONENTS: Record<string, string> = {
@@ -121,7 +169,12 @@ const STAGE_COMPONENTS: Record<string, string> = {
       </template>
     </AdminPageHeader>
 
-    <BatchStepper :pipeline="batch.pipeline" :current-stage="batch.currentStage" />
+    <BatchStepper
+      :pipeline="batch.pipeline"
+      :current-stage="batch.currentStage"
+      :stage-volumes="batch.stageVolumes"
+      :batch-size-unit="batch.batchSizeUnit"
+    />
 
     <BatchHeader :batch="batch" :recipe="recipe" />
 
@@ -134,7 +187,19 @@ const STAGE_COMPONENTS: Record<string, string> = {
             (scaled to {{ batch.batchSize }} {{ batch.batchSizeUnit }})
           </span>
         </h3>
-        <span class="text-sm font-semibold text-gold">{{ Dollar.format(scaledTotalCost) }}</span>
+        <div class="flex items-center gap-3">
+          <span class="text-sm font-semibold text-gold">{{ Dollar.format(scaledTotalCost) }}</span>
+          <UButton
+            v-if="scaledTotalCost !== (batch.batchCost || 0)"
+            icon="i-lucide-refresh-cw"
+            size="xs"
+            variant="soft"
+            :loading="updatingCost"
+            @click="updateBatchCost"
+          >
+            Update Cost
+          </UButton>
+        </div>
       </div>
       <div class="divide-y divide-brown/20">
         <div class="grid grid-cols-3 gap-4 pb-2 text-xs text-parchment/60 uppercase tracking-wider">
@@ -185,14 +250,23 @@ const STAGE_COMPONENTS: Record<string, string> = {
         v-if="hasReached(stage) && STAGE_COMPONENTS[stage]"
         :is="STAGE_COMPONENTS[stage]"
         :batch="batch"
-        :editing="isCurrent(stage)"
+        :editing="isEditable(stage)"
       />
     </template>
 
-    <!-- Advance action (only for active batches) -->
-    <div v-if="batch.status === 'active'" class="flex justify-center">
-      <BatchAdvanceAction :batch="batch" @advanced="() => {}" />
+    <!-- Per-stage advance actions (only for active batches) -->
+    <div v-if="batch.status === 'active' && advancableStages.length > 0" class="flex flex-wrap justify-center gap-3">
+      <BatchAdvanceAction
+        v-for="stage in advancableStages"
+        :key="stage"
+        :batch="batch"
+        :source-stage="stage"
+        @advanced="() => {}"
+      />
     </div>
+
+    <!-- Tasting Notes (visible on all stages) -->
+    <BatchTastingNotes :batch="batch" />
 
     <!-- Activity Log -->
     <BatchActivityLog :batch="batch" />

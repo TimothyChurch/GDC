@@ -9,26 +9,6 @@ const schema = yup.object({
 	volume: yup.number().positive('Must be greater than 0'),
 });
 
-const recipeItemsColumns = [
-	{
-		key: "_id",
-		label: "Item",
-	},
-	{
-		key: "amount",
-		label: "Amount",
-	},
-	{
-		key: "unit",
-		label: "Unit",
-	},
-	{
-		key: "actions",
-	},
-];
-const recipeItemsRows = computed(() => {
-	return recipeStore.recipe.items;
-});
 const removeItem = (itemId: string) => {
 	recipeStore.recipe.items = recipeStore.recipe.items.filter(
 		(item) => item._id != itemId
@@ -41,6 +21,7 @@ const newitem = ref({
 });
 
 const additem = () => {
+	if (!newitem.value._id || !newitem.value.amount || !newitem.value.unit) return;
 	recipeStore.recipe.items.push(newitem.value);
 	newitem.value = { _id: null, amount: null, unit: null };
 };
@@ -67,18 +48,18 @@ const saveRecipe = () => {
 			<UFormField label="Class" name="class">
 				<USelectMenu
 					v-model="recipeStore.recipe.class"
-					:options="liquorClasses"
-					option-attribute="class"
-					value-attribute="class"
+					:items="liquorClasses"
+					label-key="class"
+					value-key="class"
 					placeholder="Select Class"
 					searchable />
 			</UFormField>
 			<UFormField label="Type" name="type">
 				<USelectMenu
 					v-model="recipeStore.recipe.type"
-					:options="types"
-					option-attribute="type"
-					value-attribute="type" />
+					:items="types"
+					label-key="type"
+					value-key="type" />
 			</UFormField>
 			<UFormField label="Volume" name="volume">
 				<UInput v-model="recipeStore.recipe.volume" type="number" />
@@ -86,45 +67,64 @@ const saveRecipe = () => {
 			<UFormField label="Volume Unit" name="volumeUnit">
 				<USelectMenu
 					v-model="recipeStore.recipe.volumeUnit"
-					:options="volumeUnits" />
+					:items="volumeUnits" />
 			</UFormField>
-			<UTable
-				:rows="recipeItemsRows"
-				:columns="recipeItemsColumns"
-				class="col-span-full">
-				<template #_id-data="{ row }" :key="row._id">
-					{{ itemStore.nameById(row._id) }}
-				</template>
-				<template #actions-data="{ row }">
-					<UButton
-						@click="removeItem(row._id)"
-						icon="i-heroicons-solid-trash" />
-				</template>
-			</UTable>
-			<div class="flex gap-3 justify-between col-span-2">
-				<UFormField label="Name">
+
+			<!-- Inline-editable ingredient rows -->
+			<div class="col-span-full space-y-2">
+				<div class="text-sm font-medium text-parchment/80 mb-1">Ingredients</div>
+				<div
+					v-for="(item, idx) in recipeStore.recipe.items"
+					:key="item._id + '-' + idx"
+					class="grid grid-cols-[1fr_80px_100px_36px] gap-2 items-center"
+				>
+					<span class="text-sm truncate">{{ itemStore.nameById(item._id) }}</span>
+					<UInput
+						v-model.number="recipeStore.recipe.items[idx].amount"
+						type="number"
+						size="sm"
+						step="any"
+						min="0"
+					/>
 					<USelectMenu
-						:options="itemStore.items"
+						v-model="recipeStore.recipe.items[idx].unit"
+						:items="allUnits"
+						size="sm"
+					/>
+					<UButton
+						@click="removeItem(item._id)"
+						icon="i-lucide-trash-2"
+						color="error"
+						variant="ghost"
+						size="xs"
+					/>
+				</div>
+				<!-- Add new ingredient -->
+				<div class="grid grid-cols-[1fr_80px_100px_36px] gap-2 items-center pt-2 border-t border-brown/20">
+					<USelectMenu
+						:items="itemStore.items.map((i) => ({ label: i.name, value: i._id }))"
 						v-model="newitem._id"
-						option-attribute="name"
-						value-attribute="_id"
-						placeholder="Select item"
-						clear-search-on-close
+						value-key="value"
+						placeholder="Add item..."
 						searchable
-						creatable />
-				</UFormField>
-				<UFormField label="Amount">
-					<UInput v-model="newitem.amount" type="number" />
-				</UFormField>
-				<UFormField label="Unit">
+						size="sm"
+					/>
+					<UInput v-model.number="newitem.amount" type="number" placeholder="Amt" size="sm" step="any" min="0" />
 					<USelectMenu
 						v-model="newitem.unit"
-						:options="allUnits"
+						:items="allUnits"
 						placeholder="Unit"
-						searchable />
-				</UFormField>
-				<UButton @click="additem" icon="i-heroicons-solid-plus" />
+						size="sm"
+					/>
+					<UButton
+						@click="additem"
+						icon="i-lucide-plus"
+						size="xs"
+						:disabled="!newitem._id || !newitem.amount || !newitem.unit"
+					/>
+				</div>
 			</div>
+
 			<!-- Pipeline Builder -->
 			<div class="col-span-full">
 				<RecipePipelineBuilder

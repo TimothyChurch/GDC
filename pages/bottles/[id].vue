@@ -13,6 +13,8 @@ const bottle = computed(() => {
 const relatedCocktails = computed(() => {
   if (!bottle.value) return [];
 
+  const bottleId = bottle.value._id;
+
   // Use bottle type (e.g. "Vodka", "Bourbon Whisky") as the primary match term.
   // Fall back to class only for simple single-concept classes (e.g. "Gin", "Rum")
   // but NOT compound ones like "Liqueur/Cordial" or "Neutral Spirits or Alcohol".
@@ -30,18 +32,24 @@ const relatedCocktails = computed(() => {
     .filter((c) => c.visible !== false)
     .filter((c) =>
       c.ingredients.some((ing) => {
-        const item = itemStore.getItemById(ing.item.toString());
-        if (!item) return false;
-        const itemType = item.type?.toLowerCase() || '';
-        const itemName = item.name?.toLowerCase() || '';
-
-        // Type-based: "Bourbon" ↔ "Bourbon Whisky", "Vodka" ↔ "Vodka"
-        if (typeTerm && itemType && (itemType.includes(typeTerm) || typeTerm.includes(itemType))) {
+        // Direct bottle ID match (sourceType === 'bottle')
+        if (ing.sourceType === 'bottle' && ing.item.toString() === bottleId) {
           return true;
         }
-        // Name-based: ingredient named "Allspice Dram" ↔ bottle named "Allspice Dram"
-        if (bottleName && itemName && (itemName.includes(bottleName) || bottleName.includes(itemName))) {
-          return true;
+
+        // Fuzzy matching for item-type ingredients
+        if (ing.sourceType !== 'bottle') {
+          const item = itemStore.getItemById(ing.item.toString());
+          if (!item) return false;
+          const itemType = item.type?.toLowerCase() || '';
+          const itemName = item.name?.toLowerCase() || '';
+
+          if (typeTerm && itemType && (itemType.includes(typeTerm) || typeTerm.includes(itemType))) {
+            return true;
+          }
+          if (bottleName && itemName && (itemName.includes(bottleName) || bottleName.includes(itemName))) {
+            return true;
+          }
         }
         return false;
       })

@@ -64,9 +64,9 @@ const saveBatch = async () => {
 				<UFormField label="Recipe" name="recipe">
 					<USelect
 						v-model="batchStore.batch.recipe"
-						:options="recipeStore.recipes"
-						option-attribute="name"
-						value-attribute="_id" />
+						:items="recipeStore.recipes"
+						label-key="name"
+						value-key="_id" />
 				</UFormField>
 				<UFormField label="Recipe Cost"> {{ price }} </UFormField>
 				<UFormField label="Batch Size" name="batchSize">
@@ -77,7 +77,7 @@ const saveBatch = async () => {
 							placeholder="Volume" />
 						<USelect
 							v-model="batchStore.batch.batchSizeUnit"
-							:options="volumeUnits"
+							:items="volumeUnits"
 							placeholder="unit" />
 					</UFieldGroup>
 				</UFormField>

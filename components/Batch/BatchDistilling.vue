@@ -1,6 +1,9 @@
 <script setup lang="ts">
-import type { Batch, DistillingStage } from '~/types'
+import type { Batch, DistillingStage, DistillingRun } from '~/types'
+import { STAGE_KEY_MAP } from '~/composables/batchPipeline'
+import { normalizeDistillingRuns } from '~/utils/distillingMigration'
 import { calculateProofGallons } from '~/utils/proofGallons'
+import { LazyModalDistillingCharge } from '#components'
 
 const props = defineProps<{
   batch: Batch
@@ -9,18 +12,28 @@ const props = defineProps<{
 
 const batchStore = useBatchStore()
 const vesselStore = useVesselStore()
+const overlay = useOverlay()
 
 const stage = computed(() => props.batch.stages?.distilling as DistillingStage | undefined)
 
+// Normalize runs for backwards compatibility
+const runs = computed(() => normalizeDistillingRuns(stage.value))
+
+// Still selection (stage-level vessel)
 const vesselName = computed(() => {
   if (!stage.value?.vessel) return 'Not assigned'
   return vesselStore.getVesselById(stage.value.vessel)?.name || 'Unknown'
 })
 
-const getVesselName = (id?: string) => {
-  if (!id) return 'N/A'
-  return vesselStore.getVesselById(id)?.name || 'Unknown'
-}
+const stillOptions = computed(() =>
+  vesselStore.stills.map((v) => ({ label: v.name, value: v._id }))
+)
+
+const localVessel = ref(stage.value?.vessel || '')
+const localNotes = ref(stage.value?.notes || '')
+
+watch(() => stage.value?.vessel, (v) => { localVessel.value = v || '' })
+watch(() => stage.value?.notes, (n) => { localNotes.value = n || '' })
 
 const startDate = computed(() => {
   if (!stage.value?.startedAt) return 'Not set'
@@ -29,160 +42,136 @@ const startDate = computed(() => {
   })
 })
 
-// Editing state
-const local = ref({
-  vessel: stage.value?.vessel || '',
-  runType: stage.value?.runType || '' as string,
-  runNumber: stage.value?.runNumber,
-  chargeVolume: stage.value?.chargeVolume,
-  chargeVolumeUnit: stage.value?.chargeVolumeUnit || 'gallon',
-  chargeAbv: stage.value?.chargeAbv,
-  additions: {
-    tails: {
-      volume: stage.value?.additions?.tails?.volume,
-      volumeUnit: stage.value?.additions?.tails?.volumeUnit || 'gallon',
-      abv: stage.value?.additions?.tails?.abv,
-    },
-    feints: {
-      volume: stage.value?.additions?.feints?.volume,
-      volumeUnit: stage.value?.additions?.feints?.volumeUnit || 'gallon',
-      abv: stage.value?.additions?.feints?.abv,
-    },
-  },
-  collected: {
-    foreshots: {
-      vessel: stage.value?.collected?.foreshots?.vessel || '',
-      volume: stage.value?.collected?.foreshots?.volume,
-      volumeUnit: stage.value?.collected?.foreshots?.volumeUnit || 'gallon',
-      abv: stage.value?.collected?.foreshots?.abv,
-    },
-    heads: {
-      vessel: stage.value?.collected?.heads?.vessel || '',
-      volume: stage.value?.collected?.heads?.volume,
-      volumeUnit: stage.value?.collected?.heads?.volumeUnit || 'gallon',
-      abv: stage.value?.collected?.heads?.abv,
-    },
-    hearts: {
-      vessel: stage.value?.collected?.hearts?.vessel || '',
-      volume: stage.value?.collected?.hearts?.volume,
-      volumeUnit: stage.value?.collected?.hearts?.volumeUnit || 'gallon',
-      abv: stage.value?.collected?.hearts?.abv,
-    },
-    tails: {
-      vessel: stage.value?.collected?.tails?.vessel || '',
-      volume: stage.value?.collected?.tails?.volume,
-      volumeUnit: stage.value?.collected?.tails?.volumeUnit || 'gallon',
-      abv: stage.value?.collected?.tails?.abv,
-    },
-    total: {
-      volume: stage.value?.collected?.total?.volume,
-      volumeUnit: stage.value?.collected?.total?.volumeUnit || 'gallon',
-      abv: stage.value?.collected?.total?.abv,
-      proofGallons: stage.value?.collected?.total?.proofGallons,
-    },
-  },
-  notes: stage.value?.notes || '',
-})
-
-const stillOptions = computed(() =>
-  vesselStore.stills.map((v) => ({ label: v.name, value: v._id }))
+// Summary stats
+const totalRuns = computed(() => runs.value.length)
+const totalProofGallons = computed(() =>
+  runs.value.reduce((sum, r) => sum + (r.total?.proofGallons || 0), 0)
 )
+const strippingCount = computed(() => runs.value.filter(r => r.runType === 'stripping').length)
+const spiritCount = computed(() => runs.value.filter(r => r.runType === 'spirit').length)
 
-const tankOptions = computed(() =>
-  vesselStore.tanks.map((v) => ({ label: v.name, value: v._id }))
-)
-
-const cutVesselOptions = computed(() => [
-  ...stillOptions.value,
-  ...tankOptions.value,
-])
-
-const runTypeOptions = ['stripping', 'spirit', 'single']
-const volumeUnits = ['gallon', 'L', 'mL', 'fl oz']
-
-const cuts = computed(() => [
-  { label: 'Foreshots', key: 'foreshots' as const, data: stage.value?.collected?.foreshots },
-  { label: 'Heads', key: 'heads' as const, data: stage.value?.collected?.heads },
-  { label: 'Hearts', key: 'hearts' as const, data: stage.value?.collected?.hearts },
-  { label: 'Tails', key: 'tails' as const, data: stage.value?.collected?.tails },
-  { label: 'Total', key: 'total' as const, data: stage.value?.collected?.total },
-])
-
-// Auto-calculate proof gallons for total collected
-const calculatedTotalPG = computed(() => {
-  const t = local.value.collected.total
-  if (t.volume && t.abv) {
-    return calculateProofGallons(t.volume, t.volumeUnit, t.abv)
-  }
-  return null
+// Get the fermenting stage vessel (source for charges)
+const fermentingVesselId = computed(() => {
+  const fermStageKey = STAGE_KEY_MAP['Fermenting']
+  if (!fermStageKey) return undefined
+  const fermStage = (props.batch.stages as any)?.[fermStageKey]
+  return fermStage?.vessel as string | undefined
 })
 
-const displayTotalPG = computed(() => {
-  const t = stage.value?.collected?.total
-  if (t?.proofGallons) return t.proofGallons
-  if (t?.volume && t?.abv) {
-    return calculateProofGallons(t.volume, t.volumeUnit || 'gallon', t.abv)
-  }
-  return null
-})
+// Add a new run via charge modal
+const addingRun = ref(false)
+const addRun = async (defaultRunType: 'stripping' | 'spirit') => {
+  const chargeModal = overlay.create(LazyModalDistillingCharge)
+  const result = await chargeModal.open({
+    batchId: props.batch._id,
+    sourceVesselId: fermentingVesselId.value,
+    defaultRunType,
+    isFirstRun: false,
+  })
 
-watch([() => local.value.collected.total.volume, () => local.value.collected.total.abv, () => local.value.collected.total.volumeUnit], () => {
-  if (calculatedTotalPG.value !== null) {
-    local.value.collected.total.proofGallons = calculatedTotalPG.value
-  }
-})
+  if (!result) return
 
-const saving = ref(false)
-const save = async () => {
-  saving.value = true
+  addingRun.value = true
   try {
-    await batchStore.updateStageData(props.batch._id, 'Distilling', {
-      vessel: local.value.vessel || undefined,
-      runType: local.value.runType || undefined,
-      runNumber: local.value.runNumber,
-      chargeVolume: local.value.chargeVolume,
-      chargeVolumeUnit: local.value.chargeVolumeUnit,
-      chargeAbv: local.value.chargeAbv,
-      additions: {
-        tails: {
-          volume: local.value.additions.tails.volume,
-          volumeUnit: local.value.additions.tails.volumeUnit,
-          abv: local.value.additions.tails.abv,
-        },
-        feints: {
-          volume: local.value.additions.feints.volume,
-          volumeUnit: local.value.additions.feints.volumeUnit,
-          abv: local.value.additions.feints.abv,
-        },
-      },
-      collected: {
-        foreshots: { ...local.value.collected.foreshots, vessel: local.value.collected.foreshots.vessel || undefined },
-        heads: { ...local.value.collected.heads, vessel: local.value.collected.heads.vessel || undefined },
-        hearts: { ...local.value.collected.hearts, vessel: local.value.collected.hearts.vessel || undefined },
-        tails: { ...local.value.collected.tails, vessel: local.value.collected.tails.vessel || undefined },
-        total: { ...local.value.collected.total },
-      },
-      notes: local.value.notes,
+    // Transfer charge from source to still
+    if (result.chargeVolume > 0 && result.chargeSourceVessel) {
+      await vesselStore.transferBatchContents(
+        result.chargeSourceVessel,
+        result.stillId,
+        props.batch._id,
+        result.chargeVolume,
+        result.chargeVolumeUnit,
+      )
+    }
+
+    // Transfer additions (proportional — communal vessels)
+    for (const addition of result.additions) {
+      if (addition.sourceVessel && (addition.volume || 0) > 0) {
+        await vesselStore.transferBatch(addition.sourceVessel, result.stillId, {
+          volume: addition.volume!,
+          volumeUnit: addition.volumeUnit || 'gallon',
+          abv: addition.abv || 0,
+          value: 0,
+        })
+      }
+    }
+
+    // Update stage vessel if still changed
+    if (result.stillId !== stage.value?.vessel) {
+      await batchStore.updateStageData(props.batch._id, 'Distilling', {
+        vessel: result.stillId,
+      })
+    }
+
+    // Create run with charge data pre-filled
+    const newRun: DistillingRun = {
+      runType: result.runType,
+      date: new Date(),
+      chargeVolume: result.chargeVolume,
+      chargeVolumeUnit: result.chargeVolumeUnit,
+      chargeAbv: result.chargeAbv,
+      chargeSourceVessel: result.chargeSourceVessel,
+      additions: result.additions.length > 0 ? result.additions : undefined,
+    }
+    if (result.runType === 'stripping') {
+      newRun.output = { vessel: '', volume: undefined, volumeUnit: 'gallon', abv: undefined, proofGallons: undefined }
+    } else {
+      newRun.collected = {
+        foreshots: { vessel: '', volume: undefined, volumeUnit: 'gallon', abv: undefined },
+        heads: { vessel: '', volume: undefined, volumeUnit: 'gallon', abv: undefined },
+        lateHeads: { vessel: '', volume: undefined, volumeUnit: 'gallon', abv: undefined },
+        hearts: { vessel: '', volume: undefined, volumeUnit: 'gallon', abv: undefined },
+        tails: { vessel: '', volume: undefined, volumeUnit: 'gallon', abv: undefined },
+      }
+    }
+    await batchStore.addDistillingRun(props.batch._id, newRun)
+  } catch (error: any) {
+    const toast = useToast()
+    toast.add({
+      title: 'Failed to add distilling run',
+      description: error?.data?.statusMessage || error?.data?.message || error?.message,
+      color: 'error',
+      icon: 'i-lucide-alert-circle',
     })
   } finally {
-    saving.value = false
+    addingRun.value = false
+  }
+}
+
+// Delete a run
+const deleteRun = async (runIndex: number) => {
+  await batchStore.deleteDistillingRun(props.batch._id, runIndex)
+}
+
+// Save stage-level fields (vessel, notes)
+const savingStage = ref(false)
+const saveStageFields = async () => {
+  savingStage.value = true
+  try {
+    await batchStore.updateStageData(props.batch._id, 'Distilling', {
+      vessel: localVessel.value || undefined,
+      notes: localNotes.value || undefined,
+    })
+  } finally {
+    savingStage.value = false
   }
 }
 </script>
 
 <template>
   <div class="bg-charcoal rounded-xl border border-copper/30 p-5">
+    <!-- Header -->
     <div class="flex items-center gap-2 mb-4">
       <UIcon name="i-lucide-flask-conical" class="text-lg text-copper" />
       <h3 class="text-lg font-bold text-parchment font-[Cormorant_Garamond]">Distilling</h3>
     </div>
 
-    <!-- Header info -->
-    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-5">
+    <!-- Stage info -->
+    <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-5">
       <div>
         <div class="text-xs text-parchment/60 uppercase tracking-wider mb-1">Still</div>
         <template v-if="editing">
-          <USelect v-model="local.vessel" :items="stillOptions" value-key="value" label-key="label" placeholder="Select still" />
+          <USelect v-model="localVessel" :items="stillOptions" value-key="value" label-key="label" placeholder="Select still" />
         </template>
         <div v-else class="text-sm text-parchment">{{ vesselName }}</div>
       </div>
@@ -191,181 +180,79 @@ const save = async () => {
         <div class="text-sm text-parchment">{{ startDate }}</div>
       </div>
       <div>
-        <div class="text-xs text-parchment/60 uppercase tracking-wider mb-1">Run Type</div>
+        <div class="text-xs text-parchment/60 uppercase tracking-wider mb-1">Overall Notes</div>
         <template v-if="editing">
-          <USelect v-model="local.runType" :items="runTypeOptions" placeholder="Select run type" />
+          <UTextarea v-model="localNotes" placeholder="Stage-level notes..." :rows="1" />
         </template>
-        <div v-else class="text-sm text-parchment capitalize">{{ stage?.runType || 'Not set' }}</div>
-      </div>
-      <div>
-        <div class="text-xs text-parchment/60 uppercase tracking-wider mb-1">Run Number</div>
-        <template v-if="editing">
-          <UInput v-model.number="local.runNumber" type="number" placeholder="1" />
-        </template>
-        <div v-else class="text-sm text-parchment">{{ stage?.runNumber || 'N/A' }}</div>
+        <div v-else class="text-sm text-parchment/60">{{ stage?.notes || 'None' }}</div>
       </div>
     </div>
 
-    <!-- Charge -->
-    <div class="mb-5">
-      <div class="text-xs text-parchment/60 uppercase tracking-wider mb-2">Charge</div>
-      <div v-if="editing" class="grid grid-cols-3 gap-3">
-        <UFormField label="Volume">
-          <UInput v-model.number="local.chargeVolume" type="number" placeholder="0" />
-        </UFormField>
-        <UFormField label="Unit">
-          <USelect v-model="local.chargeVolumeUnit" :items="volumeUnits" />
-        </UFormField>
-        <UFormField label="ABV %">
-          <UInput v-model.number="local.chargeAbv" type="number" placeholder="0" />
-        </UFormField>
+    <!-- Save stage fields -->
+    <div v-if="editing" class="flex justify-end mb-4">
+      <UButton @click="saveStageFields" :loading="savingStage" size="xs" variant="outline">Save Stage Info</UButton>
+    </div>
+
+    <!-- Summary stats -->
+    <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-5">
+      <div class="bg-brown/10 rounded-lg p-3 text-center">
+        <div class="text-xl font-bold text-parchment">{{ totalRuns }}</div>
+        <div class="text-xs text-parchment/50">Total Runs</div>
       </div>
-      <div v-else class="text-sm text-parchment/60">
-        <template v-if="stage?.chargeVolume">
-          {{ stage.chargeVolume }} {{ stage.chargeVolumeUnit }} @ {{ stage.chargeAbv }}% ABV
-        </template>
-        <template v-else>Not recorded</template>
+      <div class="bg-brown/10 rounded-lg p-3 text-center">
+        <div class="text-xl font-bold text-parchment">{{ strippingCount }}</div>
+        <div class="text-xs text-parchment/50">Stripping</div>
+      </div>
+      <div class="bg-brown/10 rounded-lg p-3 text-center">
+        <div class="text-xl font-bold text-parchment">{{ spiritCount }}</div>
+        <div class="text-xs text-parchment/50">Spirit</div>
+      </div>
+      <div class="bg-brown/10 rounded-lg p-3 text-center">
+        <div class="text-xl font-bold text-copper">{{ totalProofGallons.toFixed(2) }}</div>
+        <div class="text-xs text-parchment/50">Total PG</div>
       </div>
     </div>
 
-    <!-- Additions -->
-    <div class="mb-5">
-      <div class="text-xs text-parchment/60 uppercase tracking-wider mb-2">Additions</div>
-      <div v-if="editing" class="space-y-3">
-        <div class="p-3 rounded-lg border border-brown/20 bg-brown/5">
-          <div class="text-xs font-semibold text-parchment/60 uppercase mb-2">Tails Added Back</div>
-          <div class="grid grid-cols-3 gap-3">
-            <UFormField label="Volume">
-              <UInput v-model.number="local.additions.tails.volume" type="number" placeholder="0" />
-            </UFormField>
-            <UFormField label="Unit">
-              <USelect v-model="local.additions.tails.volumeUnit" :items="volumeUnits" />
-            </UFormField>
-            <UFormField label="ABV %">
-              <UInput v-model.number="local.additions.tails.abv" type="number" placeholder="0" />
-            </UFormField>
-          </div>
-        </div>
-        <div class="p-3 rounded-lg border border-brown/20 bg-brown/5">
-          <div class="text-xs font-semibold text-parchment/60 uppercase mb-2">Feints Added Back</div>
-          <div class="grid grid-cols-3 gap-3">
-            <UFormField label="Volume">
-              <UInput v-model.number="local.additions.feints.volume" type="number" placeholder="0" />
-            </UFormField>
-            <UFormField label="Unit">
-              <USelect v-model="local.additions.feints.volumeUnit" :items="volumeUnits" />
-            </UFormField>
-            <UFormField label="ABV %">
-              <UInput v-model.number="local.additions.feints.abv" type="number" placeholder="0" />
-            </UFormField>
-          </div>
-        </div>
-      </div>
-      <div v-else class="space-y-1 text-sm text-parchment/60">
-        <div v-if="stage?.additions?.tails?.volume">
-          Tails: {{ stage.additions.tails.volume }} {{ stage.additions.tails.volumeUnit }}
-          @ {{ stage.additions.tails.abv }}% ABV
-        </div>
-        <div v-if="stage?.additions?.feints?.volume">
-          Feints: {{ stage.additions.feints.volume }} {{ stage.additions.feints.volumeUnit }}
-          @ {{ stage.additions.feints.abv }}% ABV
-        </div>
-        <div v-if="!stage?.additions?.tails?.volume && !stage?.additions?.feints?.volume">
-          None
-        </div>
-      </div>
+    <!-- Run list -->
+    <div class="space-y-3">
+      <BatchDistillingRun
+        v-for="(run, index) in runs"
+        :key="run.runNumber || index"
+        :run="run"
+        :run-index="index"
+        :editing="editing"
+        :batch-id="batch._id"
+        @delete="deleteRun"
+      />
     </div>
 
-    <!-- Collected Cuts -->
-    <div>
-      <div class="text-xs text-parchment/60 uppercase tracking-wider mb-2">Collected Cuts</div>
-      <div v-if="editing" class="space-y-3">
-        <!-- Foreshots -->
-        <div class="p-3 rounded-lg border border-brown/20 bg-brown/5">
-          <div class="text-xs font-semibold text-parchment/60 uppercase mb-2">Foreshots</div>
-          <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
-            <UFormField label="Vessel">
-              <USelect v-model="local.collected.foreshots.vessel" :items="cutVesselOptions" value-key="value" label-key="label" placeholder="Vessel" />
-            </UFormField>
-            <UFormField label="Volume">
-              <UInput v-model.number="local.collected.foreshots.volume" type="number" placeholder="0" />
-            </UFormField>
-            <UFormField label="Unit">
-              <USelect v-model="local.collected.foreshots.volumeUnit" :items="volumeUnits" />
-            </UFormField>
-            <UFormField label="ABV %">
-              <UInput v-model.number="local.collected.foreshots.abv" type="number" placeholder="0" />
-            </UFormField>
-          </div>
-        </div>
-
-        <!-- Heads, Hearts, Tails -->
-        <div v-for="cut in (['heads', 'hearts', 'tails'] as const)" :key="cut" class="p-3 rounded-lg border border-brown/20 bg-brown/5">
-          <div class="text-xs font-semibold text-parchment/60 uppercase mb-2">{{ cut }}</div>
-          <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
-            <UFormField label="Vessel">
-              <USelect v-model="local.collected[cut].vessel" :items="cutVesselOptions" value-key="value" label-key="label" placeholder="Vessel" />
-            </UFormField>
-            <UFormField label="Volume">
-              <UInput v-model.number="local.collected[cut].volume" type="number" placeholder="0" />
-            </UFormField>
-            <UFormField label="Unit">
-              <USelect v-model="local.collected[cut].volumeUnit" :items="volumeUnits" />
-            </UFormField>
-            <UFormField label="ABV %">
-              <UInput v-model.number="local.collected[cut].abv" type="number" placeholder="0" />
-            </UFormField>
-          </div>
-        </div>
-
-        <!-- Total -->
-        <div class="p-3 rounded-lg border border-copper/20 bg-copper/5">
-          <div class="text-xs font-semibold text-copper uppercase mb-2">Total</div>
-          <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
-            <UFormField label="Volume">
-              <UInput v-model.number="local.collected.total.volume" type="number" placeholder="0" />
-            </UFormField>
-            <UFormField label="Unit">
-              <USelect v-model="local.collected.total.volumeUnit" :items="volumeUnits" />
-            </UFormField>
-            <UFormField label="ABV %">
-              <UInput v-model.number="local.collected.total.abv" type="number" placeholder="0" />
-            </UFormField>
-            <UFormField label="Proof Gallons">
-              <UInput v-model.number="local.collected.total.proofGallons" type="number" step="0.01" :placeholder="calculatedTotalPG?.toString() || '0'" />
-            </UFormField>
-          </div>
-        </div>
-      </div>
-
-      <!-- Read-only cuts display -->
-      <div v-else class="divide-y divide-brown/20">
-        <div v-for="cut in cuts" :key="cut.key" class="flex items-center justify-between py-2 gap-2">
-          <span class="text-sm font-medium text-parchment/60 uppercase w-20 shrink-0">{{ cut.label }}</span>
-          <span v-if="cut.key !== 'total'" class="text-sm text-parchment/50 truncate">{{ getVesselName((cut.data as any)?.vessel) }}</span>
-          <span v-else class="text-sm text-parchment/50">&mdash;</span>
-          <span class="text-sm text-parchment whitespace-nowrap">
-            {{ cut.data?.volume || 0 }} {{ cut.data?.volumeUnit || '' }}
-          </span>
-          <span class="text-sm text-parchment/60 whitespace-nowrap">{{ cut.data?.abv || 0 }}% ABV</span>
-          <span v-if="cut.key === 'total' && displayTotalPG" class="text-sm text-copper font-semibold whitespace-nowrap">
-            {{ displayTotalPG }} PG
-          </span>
-        </div>
-      </div>
+    <!-- Empty state -->
+    <div v-if="runs.length === 0" class="text-center py-8 text-parchment/50 text-sm">
+      No distilling runs recorded yet.
+      <span v-if="editing">Use the buttons below to add a run.</span>
     </div>
 
-    <!-- Notes -->
-    <div class="mt-5">
-      <div class="text-xs text-parchment/60 uppercase tracking-wider mb-1">Notes</div>
-      <template v-if="editing">
-        <UTextarea v-model="local.notes" placeholder="Distilling notes..." :rows="2" />
-      </template>
-      <div v-else class="text-sm text-parchment/60">{{ stage?.notes || 'None' }}</div>
-    </div>
-
-    <div v-if="editing" class="mt-4 flex justify-end">
-      <UButton @click="save" :loading="saving" size="sm">Save Distilling</UButton>
+    <!-- Add run buttons -->
+    <div v-if="editing" class="flex gap-3 mt-4">
+      <UButton
+        icon="i-lucide-plus"
+        variant="outline"
+        size="sm"
+        :loading="addingRun"
+        @click="addRun('stripping')"
+      >
+        Add Stripping Run
+      </UButton>
+      <UButton
+        icon="i-lucide-plus"
+        variant="outline"
+        color="primary"
+        size="sm"
+        :loading="addingRun"
+        @click="addRun('spirit')"
+      >
+        Add Spirit Run
+      </UButton>
     </div>
   </div>
 </template>

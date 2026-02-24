@@ -45,7 +45,7 @@ const submitForm = () => {
 				<UInput v-model="contactStore.contact.businessName" type="text" />
 			</UFormField>
 			<UFormField label="Type" name="type" class="col-span-2">
-				<USelect v-model="contactStore.contact.type" :options="options" />
+				<USelect v-model="contactStore.contact.type" :items="options" />
 			</UFormField>
 			<UFormField label="Website" name="website" class="col-span-2">
 				<UInput v-model="contactStore.contact.website" type="url" />

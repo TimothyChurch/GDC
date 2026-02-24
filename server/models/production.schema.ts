@@ -44,6 +44,14 @@ export const Production = defineMongooseModel({
 			type: Number,
 			required: true,
 		},
+		costs: {
+			batch: { type: Number, default: 0 },
+			barrel: { type: Number, default: 0 },
+			bottling: { type: Number, default: 0 },
+			labor: { type: Number, default: 0 },
+			taxes: { type: Number, default: 0 },
+			other: { type: Number, default: 0 },
+		},
 		productionCost: {
 			type: Number,
 			required: true,

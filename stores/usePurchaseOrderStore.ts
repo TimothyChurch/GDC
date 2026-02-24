@@ -101,6 +101,87 @@ export const usePurchaseOrderStore = defineStore('purchaseOrders', () => {
 		};
 	};
 
+	/**
+	 * Mark a PO as "Delivered" and auto-create inventory records
+	 * for each line item, adding the received quantities to current stock.
+	 *
+	 * @param poId - The PO to receive (uses current purchaseOrder if not provided)
+	 * @returns A summary array of { itemName, added, newStock, unit } for display
+	 */
+	const receivePurchaseOrder = async (
+		poId?: string,
+	): Promise<Array<{ itemName: string; added: number; newStock: number; unit: string }>> => {
+		const inventoryStore = useInventoryStore();
+		const itemStore = useItemStore();
+		const { convertQuantity } = useUnitConversion();
+
+		const po = poId
+			? purchaseOrders.value.find((p) => p._id === poId)
+			: purchaseOrder.value;
+		if (!po || po.items.length === 0) return [];
+
+		const summary: Array<{ itemName: string; added: number; newStock: number; unit: string }> = [];
+		const inventoryRecords: Array<{ item: string; quantity: number; date: Date }> = [];
+
+		for (const lineItem of po.items) {
+			const item = itemStore.getItemById(lineItem.item);
+			if (!item) continue;
+
+			// Skip items that don't track inventory
+			if (item.trackInventory === false) continue;
+
+			const inventoryUnit = item.inventoryUnit || lineItem.sizeUnit;
+
+			// Convert purchased amount to inventory units:
+			// PO has quantity (how many packs) x size (amount per pack) in sizeUnit
+			const totalPurchased = lineItem.quantity * lineItem.size;
+			const addedInInventoryUnits =
+				lineItem.sizeUnit === inventoryUnit
+					? totalPurchased
+					: convertQuantity(totalPurchased, lineItem.sizeUnit, inventoryUnit);
+
+			const currentStock = inventoryStore.getCurrentStock(lineItem.item);
+			const newStock = currentStock + addedInInventoryUnits;
+
+			inventoryRecords.push({
+				item: lineItem.item,
+				quantity: Math.round(newStock * 100) / 100, // round to 2 decimal places
+				date: new Date(),
+			});
+
+			summary.push({
+				itemName: item.name,
+				added: Math.round(addedInInventoryUnits * 100) / 100,
+				newStock: Math.round(newStock * 100) / 100,
+				unit: inventoryUnit,
+			});
+		}
+
+		if (inventoryRecords.length > 0) {
+			try {
+				await inventoryStore.createBulk(inventoryRecords);
+			} catch {
+				// Error toast already shown by createBulk
+				return [];
+			}
+		}
+
+		if (summary.length > 0) {
+			const summaryLines = summary.map(
+				(s) => `+${s.added} ${s.unit} ${s.itemName}`,
+			);
+			toast.add({
+				title: "Inventory updated from PO",
+				description: summaryLines.join(", "),
+				color: "success",
+				icon: "i-lucide-package-check",
+				duration: 8000,
+			});
+		}
+
+		return summary;
+	};
+
 	// Getters
 	const getPurchaseOrderByVendor = (vendorId: string): PurchaseOrder[] => {
 		return purchaseOrders.value.filter(
@@ -129,6 +210,7 @@ export const usePurchaseOrderStore = defineStore('purchaseOrders', () => {
 		updatePurchaseOrder,
 		deletePurchaseOrder,
 		resetCurrentPurchaseOrder,
+		receivePurchaseOrder,
 		getPurchaseOrderByVendor,
 		getPurchaseOrderById,
 		getPurchaseOrdersByItemId,

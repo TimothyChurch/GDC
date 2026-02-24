@@ -63,20 +63,11 @@ const advanceFromMashTun = async (mashTunId: string, targetVesselId: string) => 
           <div v-for="content in mashTun.contents" :key="content.batch">
             <div class="flex flex-col gap-2 items-center">
               <DashboardBatchCard :batchId="content.batch" />
-              <UDropdown :items="[getNextVesselOptions(content.batch).map((v: any) => ({ label: v.name, value: v._id }))]">
+              <UDropdownMenu :items="getNextVesselOptions(content.batch).map((v: any) => ({ label: v.name, onSelect: () => advanceFromMashTun(mashTun._id, v._id) }))">
                 <UButton size="sm" class="bg-orange-500/15 text-orange-400 border border-orange-500/25 hover:bg-orange-500/25 text-xs">
                   {{ getNextStageLabel(content.batch) }}
                 </UButton>
-                <template #item="{ item }">
-                  <UButton
-                    color="neutral"
-                    variant="ghost"
-                    size="sm"
-                    class="w-full text-xs"
-                    @click="advanceFromMashTun(mashTun._id, item.value)"
-                  >{{ item.label }}</UButton>
-                </template>
-              </UDropdown>
+              </UDropdownMenu>
             </div>
           </div>
         </div>

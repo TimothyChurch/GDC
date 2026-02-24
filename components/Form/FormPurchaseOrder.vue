@@ -32,12 +32,12 @@ const addItem = () => {
 // Items Table
 
 const itemsTableColumns = [
-  { label: "Item", key: "item" },
-  { label: "Quantity", key: "quantity" },
-  { label: "Size", key: "size" },
-  { label: "Price", key: "price" },
-  { label: "Total", key: "total" },
-  { key: "actions" },
+  { accessorKey: "item", header: "Item" },
+  { accessorKey: "quantity", header: "Quantity" },
+  { accessorKey: "size", header: "Size" },
+  { accessorKey: "price", header: "Price" },
+  { accessorKey: "total", header: "Total" },
+  { accessorKey: "actions", header: "" },
 ];
 const total = computed(() => {
   const runningTotal = ref(0);
@@ -63,15 +63,30 @@ const statusOptions = [
   "Delivered",
   "Cancelled",
 ];
+
+// Track original status to detect "Delivered" transition
+const originalStatus = purchaseOrderStore.purchaseOrder.status;
+
 // Submit Form
 const submitForm = async () => {
+  const statusChangedToDelivered =
+    purchaseOrderStore.purchaseOrder.status === "Delivered" && originalStatus !== "Delivered";
+
   purchaseOrderStore.purchaseOrder.total = total.value.value;
   const data = await purchaseOrderStore.updatePurchaseOrder();
   data.items.forEach((item) => {
-    itemStore.item = itemStore.items.find((i) => i._id === item.item) as Item
-    itemStore.item.purchaseHistory.push(data._id);
-    itemStore.updateItem();
+    const foundItem = itemStore.items.find((i) => i._id === item.item) as Item;
+    if (foundItem && !foundItem.purchaseHistory?.includes(data._id)) {
+      itemStore.item = foundItem;
+      itemStore.item.purchaseHistory?.push(data._id);
+      itemStore.updateItem();
+    }
   });
+
+  // Auto-update inventory when PO is marked as Delivered
+  if (statusChangedToDelivered) {
+    await purchaseOrderStore.receivePurchaseOrder(data._id);
+  }
 };
 </script>
 
@@ -105,38 +120,38 @@ const submitForm = async () => {
       </UFormField>
       <UFormField label="Status">
         <USelect
-          :options="statusOptions"
+          :items="statusOptions"
           v-model="purchaseOrderStore.purchaseOrder.status"
           placeholder="Select status" />
       </UFormField>
       <UFormField label="Vendor">
         <USelect
-          :options="contactStore.contacts"
+          :items="contactStore.contacts"
           v-model="purchaseOrderStore.purchaseOrder.vendor"
-          option-attribute="businessName"
-          value-attribute="_id" />
+          label-key="businessName"
+          value-key="_id" />
       </UFormField>
     </div>
     <UTable
-      :rows="purchaseOrderStore.purchaseOrder.items"
+      :data="purchaseOrderStore.purchaseOrder.items"
       :columns="itemsTableColumns">
-      <template #item-data="{ row }">
-        {{ itemStore.items.find((i) => i._id === row.item)?.name }}
+      <template #item-cell="{ row }">
+        {{ itemStore.items.find((i) => i._id === row.original.item)?.name }}
       </template>
-      <template #size-data="{ row }">
-        {{ row.size }} {{ row.sizeUnit }}
+      <template #size-cell="{ row }">
+        {{ row.original.size }} {{ row.original.sizeUnit }}
       </template>
-      <template #price-data="{ row }">
-        {{ Dollar.format(row.price) }}
+      <template #price-cell="{ row }">
+        {{ Dollar.format(row.original.price) }}
       </template>
-      <template #total-data="{ row }">
-        {{ Dollar.format(row.price * row.quantity) }}
+      <template #total-cell="{ row }">
+        {{ Dollar.format(row.original.price * row.original.quantity) }}
       </template>
-      <template #actions-data="{ row }">
+      <template #actions-cell="{ row }">
         <UButton
           color="neutral"
           icon="i-heroicons-trash-20-solid"
-          @click="removeItem(row)"
+          @click="removeItem(row.original)"
           >Delete Item</UButton
         >
       </template>
@@ -157,14 +172,14 @@ const submitForm = async () => {
       class="flex flex-wrap justify-between my-3 gap-3">
       <UFormField label="Item">
         <USelectMenu
-          :options="itemStore.items"
+          :items="itemStore.items"
           :search-input="{
             placeholder: 'Filter...',
             icon: 'i-lucide-search'
           }"
           v-model="newItem.item"
-          option-attribute="name"
-          value-attribute="_id" />
+          label-key="name"
+          value-key="_id" />
       </UFormField>
       <UFormField label="Quantity">
         <UInput v-model.number="newItem.quantity" />
@@ -173,7 +188,7 @@ const submitForm = async () => {
         <UInput v-model.number="newItem.size" />
       </UFormField>
       <UFormField label="Size Unit">
-        <USelect :options="allUnits" v-model="newItem.sizeUnit" />
+        <USelect :items="allUnits" v-model="newItem.sizeUnit" />
       </UFormField>
       <UFormField label="Price">
         <UInput v-model.number="newItem.price" />

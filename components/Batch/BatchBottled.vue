@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { Batch, BottledStage } from '~/types'
+import { LazyPanelProduction } from '#components'
 
 const props = defineProps<{
   batch: Batch
@@ -9,6 +10,9 @@ const props = defineProps<{
 const batchStore = useBatchStore()
 const productionStore = useProductionStore()
 const bottleStore = useBottleStore()
+const vesselStore = useVesselStore()
+const overlay = useOverlay()
+const toast = useToast()
 
 const stage = computed(() => props.batch.stages?.bottled as BottledStage | undefined)
 
@@ -27,6 +31,11 @@ const prodDate = computed(() => {
   return new Date(production.value.date).toLocaleDateString('en-US', {
     month: 'long', day: 'numeric', year: 'numeric',
   })
+})
+
+const totalCost = computed(() => {
+  if (!production.value) return 0
+  return production.value.productionCost || 0
 })
 
 // Editing state
@@ -53,19 +62,84 @@ const save = async () => {
     saving.value = false
   }
 }
+
+/** Open the production panel to create and link a production record to this batch */
+const creatingProduction = ref(false)
+const createProductionRecord = async () => {
+  creatingProduction.value = true
+  try {
+    // Gather vessel IDs that contain this batch
+    const batchVesselIds = vesselStore.vessels
+      .filter(v =>
+        (v.type.toLowerCase() === 'barrel' || v.type.toLowerCase() === 'tank') &&
+        v.contents?.some(c => c.batch === props.batch._id)
+      )
+      .map(v => v._id)
+
+    // Reset the production store to a fresh new production, pre-filled with batch data
+    productionStore.resetProduction()
+    productionStore.production.date = new Date()
+    productionStore.production.vessel = batchVesselIds
+
+    // Open the production panel with batch linkage prefill
+    const panel = overlay.create(LazyPanelProduction)
+    const result = await panel.open({
+      prefill: {
+        batchId: props.batch._id,
+        vessels: batchVesselIds,
+        date: new Date(),
+      },
+    })
+
+    // If a production ID was returned, the link was created successfully
+    if (result && typeof result === 'string') {
+      toast.add({
+        title: 'Production linked',
+        description: 'The bottling run has been recorded and linked to this batch.',
+        color: 'success',
+        icon: 'i-lucide-link',
+      })
+    }
+  } finally {
+    creatingProduction.value = false
+  }
+}
 </script>
 
 <template>
   <div class="bg-charcoal rounded-xl border border-green-500/30 p-5">
-    <div class="flex items-center gap-2 mb-4">
-      <UIcon name="i-lucide-wine" class="text-lg text-green-400" />
-      <h3 class="text-lg font-bold text-parchment font-[Cormorant_Garamond]">Bottled</h3>
+    <div class="flex items-center justify-between mb-4">
+      <div class="flex items-center gap-2">
+        <UIcon name="i-lucide-wine" class="text-lg text-green-400" />
+        <h3 class="text-lg font-bold text-parchment font-[Cormorant_Garamond]">Bottled</h3>
+      </div>
+      <!-- Create Production button when no record is linked -->
+      <UButton
+        v-if="!production && editing"
+        icon="i-lucide-plus"
+        size="sm"
+        variant="soft"
+        color="success"
+        :loading="creatingProduction"
+        @click="createProductionRecord"
+      >
+        Record Bottling Run
+      </UButton>
     </div>
 
     <!-- Production Record Link -->
     <template v-if="production">
-      <div class="mb-5 p-3 rounded-lg border border-green-500/20 bg-green-500/5">
-        <div class="text-xs font-semibold text-parchment/60 uppercase mb-3">Linked Production Record</div>
+      <div class="mb-5 p-4 rounded-lg border border-green-500/20 bg-green-500/5">
+        <div class="flex items-center justify-between mb-3">
+          <div class="text-xs font-semibold text-parchment/60 uppercase">Linked Production Record</div>
+          <NuxtLink
+            :to="`/admin/production/${production._id}`"
+            class="text-xs text-green-400 hover:text-green-300 transition-colors flex items-center gap-1"
+          >
+            <span>View Details</span>
+            <UIcon name="i-lucide-external-link" class="w-3 h-3" />
+          </NuxtLink>
+        </div>
         <div class="grid grid-cols-2 sm:grid-cols-4 gap-4">
           <div>
             <div class="text-xs text-parchment/60 uppercase tracking-wider mb-1">Date</div>
@@ -73,31 +147,46 @@ const save = async () => {
           </div>
           <div>
             <div class="text-xs text-parchment/60 uppercase tracking-wider mb-1">Bottle</div>
-            <div class="text-sm text-parchment">{{ bottleName }}</div>
+            <NuxtLink
+              v-if="production.bottle"
+              :to="`/admin/bottles/${production.bottle}`"
+              class="text-sm text-gold hover:text-copper transition-colors"
+            >
+              {{ bottleName }}
+            </NuxtLink>
+            <div v-else class="text-sm text-parchment">{{ bottleName }}</div>
           </div>
           <div>
             <div class="text-xs text-parchment/60 uppercase tracking-wider mb-1">Quantity</div>
-            <div class="text-sm text-parchment">{{ production.quantity }}</div>
+            <div class="text-sm text-parchment">{{ production.quantity }} bottles</div>
           </div>
           <div>
-            <div class="text-xs text-parchment/60 uppercase tracking-wider mb-1">Bottle Cost</div>
-            <div class="text-sm text-parchment">{{ Dollar.format(production.bottleCost || 0) }}</div>
+            <div class="text-xs text-parchment/60 uppercase tracking-wider mb-1">Total Cost</div>
+            <div class="text-sm text-parchment font-semibold">{{ Dollar.format(totalCost) }}</div>
           </div>
         </div>
-        <div class="mt-3">
-          <NuxtLink
-            to="/admin/production"
-            class="text-xs text-green-400 hover:text-green-300 transition-colors"
-          >
-            View Production Record &rarr;
-          </NuxtLink>
+        <div v-if="production.bottleCost" class="mt-2 pt-2 border-t border-green-500/10">
+          <span class="text-xs text-parchment/50">Cost per bottle: </span>
+          <span class="text-xs text-copper font-medium">{{ Dollar.format(production.bottleCost) }}</span>
         </div>
       </div>
     </template>
     <template v-else-if="!editing">
-      <div class="mb-5 text-center py-4">
-        <UIcon name="i-lucide-wine-off" class="text-2xl text-parchment/20 mx-auto mb-2" />
-        <p class="text-sm text-parchment/50">No production record linked</p>
+      <div class="mb-5 p-4 rounded-lg border border-brown/20 bg-brown/5">
+        <div class="text-center py-2">
+          <UIcon name="i-lucide-wine-off" class="text-2xl text-parchment/20 mx-auto mb-2" />
+          <p class="text-sm text-parchment/50 mb-3">No production record linked</p>
+          <UButton
+            icon="i-lucide-plus"
+            size="sm"
+            variant="soft"
+            color="success"
+            :loading="creatingProduction"
+            @click="createProductionRecord"
+          >
+            Record Bottling Run
+          </UButton>
+        </div>
       </div>
     </template>
 

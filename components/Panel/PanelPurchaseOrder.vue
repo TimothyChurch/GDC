@@ -7,26 +7,45 @@ const purchaseOrderStore = usePurchaseOrderStore();
 const contactStore = useContactStore();
 const itemStore = useItemStore();
 
+// Track the original status to detect "Delivered" transition
+const originalStatus = purchaseOrderStore.purchaseOrder.status;
+
 const { localData, isDirty, saving, save, cancel } = useFormPanel({
   source: () => purchaseOrderStore.purchaseOrder,
   async onSave(data) {
     data.total = total.value;
+    const statusChangedToDelivered =
+      data.status === "Delivered" && originalStatus !== "Delivered";
+
     Object.assign(purchaseOrderStore.purchaseOrder, data);
     const result = await purchaseOrderStore.updatePurchaseOrder();
-    // Update item purchase histories
+
+    // Update item purchase histories (existing behavior)
     result.items.forEach((item: PurchaseOrderItem) => {
       const foundItem = itemStore.items.find((i) => i._id === item.item);
       if (foundItem) {
-        itemStore.item = foundItem;
-        itemStore.item.purchaseHistory.push(result._id);
-        itemStore.updateItem();
+        if (!foundItem.purchaseHistory?.includes(result._id)) {
+          itemStore.item = foundItem;
+          itemStore.item.purchaseHistory?.push(result._id);
+          itemStore.updateItem();
+        }
       }
     });
+
+    // Auto-update inventory when PO is marked as Delivered
+    if (statusChangedToDelivered) {
+      await purchaseOrderStore.receivePurchaseOrder(result._id);
+    }
   },
   onClose: () => emit("close", true),
 });
 
 const isNew = !localData.value._id;
+
+/** Whether the user is switching status to Delivered for the first time */
+const isMarkingDelivered = computed(
+  () => localData.value.status === "Delivered" && originalStatus !== "Delivered",
+);
 
 const statusOptions = [
   "Pending",
@@ -101,6 +120,20 @@ const removeItem = (index: number) => {
                 class="w-full"
               />
             </UFormField>
+          </div>
+
+          <!-- Inventory update notice when marking as Delivered -->
+          <div
+            v-if="isMarkingDelivered && localData.items.length > 0"
+            class="flex items-start gap-2 rounded-lg border border-green-500/20 bg-green-500/5 px-3 py-2"
+          >
+            <UIcon name="i-lucide-package-check" class="text-green-400 shrink-0 mt-0.5" />
+            <div class="text-xs text-parchment/70">
+              <span class="font-semibold text-green-400">Inventory will be updated automatically</span>
+              when this order is saved as Delivered. Stock levels for
+              {{ localData.items.length }} item{{ localData.items.length !== 1 ? 's' : '' }}
+              will be increased based on the order quantities.
+            </div>
           </div>
 
           <UFormField label="Items">
@@ -182,7 +215,7 @@ const removeItem = (index: number) => {
             >Cancel</UButton
           >
           <UButton @click="save" :loading="saving" :disabled="!isDirty">
-            {{ isNew ? "Create" : "Save" }}
+            {{ isNew ? "Create" : isMarkingDelivered ? "Save & Update Inventory" : "Save" }}
           </UButton>
         </div>
       </div>

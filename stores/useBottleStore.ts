@@ -158,6 +158,10 @@ export const useBottleStore = defineStore("bottles", () => {
   const getBottleById = (id: string): Bottle =>
     bottles.value.find((b) => b._id === id) as Bottle;
 
+  const bottleNameId = computed(() => {
+    return activeBottles.value.map((b) => ({ id: b._id, label: b.name }));
+  });
+
   const selectBottle = (id: string) => {
     bottle.value = bottles.value.find((b) => b._id === id) as Bottle;
   };
@@ -178,6 +182,7 @@ export const useBottleStore = defineStore("bottles", () => {
     sortBottles,
     getName,
     getBottleById,
+    bottleNameId,
     selectBottle,
   };
 });

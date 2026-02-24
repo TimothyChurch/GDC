@@ -57,12 +57,33 @@ const productLinks: NavLink[] = [
   },
 ];
 
+const shoppingListCount = computed(() => {
+  const itemStore = useItemStore();
+  return itemStore.shoppingListItems.length;
+});
+
 const inventoryLinks: NavLink[] = [
+  {
+    label: "Inventory",
+    icon: "i-lucide-warehouse",
+    to: "/admin/inventory",
+    badge: lowInventoryCount,
+  },
+  {
+    label: "Shopping List",
+    icon: "i-lucide-shopping-cart",
+    to: "/admin/inventory/shopping-list",
+    badge: shoppingListCount,
+  },
+  {
+    label: "Count Inventory",
+    icon: "i-lucide-clipboard-check",
+    to: "/admin/inventory/input",
+  },
   {
     label: "Items",
     icon: "i-lucide-package",
     to: "/admin/items",
-    badge: lowInventoryCount,
   },
   {
     label: "Bottle Inventory",
@@ -96,7 +117,8 @@ const adminLinks: NavLink[] = [
   },
   { label: "Contacts", icon: "i-lucide-users", to: "/admin/contacts" },
   { label: "Users", icon: "i-lucide-user-cog", to: "/admin/users" },
-  { label: "Controls", icon: "i-lucide-settings", to: "/admin/controls" },
+  { label: "Controls", icon: "i-lucide-sliders-horizontal", to: "/admin/controls" },
+  { label: "Settings", icon: "i-lucide-settings", to: "/admin/settings" },
 ];
 
 const sections: NavSection[] = [

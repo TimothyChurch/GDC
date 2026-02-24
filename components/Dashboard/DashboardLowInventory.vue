@@ -37,7 +37,7 @@ const lowInventoryItems = computed<InventoryAlert[]>(() => {
   for (const [itemId, quantity] of latestInventoryByItem.value) {
     if (quantity <= LOW_INVENTORY_THRESHOLD) {
       const item = itemStore.getItemById(itemId);
-      if (item) {
+      if (item && item.trackInventory !== false) {
         alerts.push({
           id: itemId,
           name: item.name,
@@ -109,13 +109,22 @@ const statusText = (status: string) => {
           {{ allAlerts.length }}
         </span>
       </div>
-      <NuxtLink
-        to="/admin/items"
-        class="text-xs text-copper hover:text-gold transition-colors duration-200 flex items-center gap-1"
-      >
-        Manage
-        <UIcon name="i-lucide-arrow-right" class="text-sm" />
-      </NuxtLink>
+      <div class="flex items-center gap-3">
+        <NuxtLink
+          to="/admin/inventory/shopping-list"
+          class="text-xs text-copper hover:text-gold transition-colors duration-200 flex items-center gap-1"
+        >
+          Shopping List
+          <UIcon name="i-lucide-shopping-cart" class="text-sm" />
+        </NuxtLink>
+        <NuxtLink
+          to="/admin/items"
+          class="text-xs text-copper hover:text-gold transition-colors duration-200 flex items-center gap-1"
+        >
+          Manage
+          <UIcon name="i-lucide-arrow-right" class="text-sm" />
+        </NuxtLink>
+      </div>
     </div>
 
     <!-- Health indicators -->
@@ -135,7 +144,7 @@ const statusText = (status: string) => {
       <div class="flex items-center gap-1.5 text-xs">
         <div class="w-2 h-2 rounded-full bg-green-500" />
         <span class="text-parchment/50">
-          {{ itemStore.items.length - lowInventoryItems.length }} OK
+          {{ itemStore.items.filter(i => i.trackInventory !== false).length - lowInventoryItems.length }} OK
         </span>
       </div>
     </div>

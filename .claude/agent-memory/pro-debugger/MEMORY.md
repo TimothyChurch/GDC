@@ -22,6 +22,21 @@
 - Fix: add `throw error;` after the toast in the catch block so `useFormPanel` keeps the panel open on failure
 - Toast description should use `error?.data?.statusMessage || error?.data?.message` because Nuxt's `createError` uses `statusMessage`, not `message`
 
+### Lazy Component Import for useOverlay (Programmatic Usage)
+- When using `overlay.create(LazyComponent)` in `<script setup>`, the lazy component MUST be explicitly imported: `import { LazyXxx } from '#components'`
+- Nuxt auto-imports components for TEMPLATE use only; script-level variable references require explicit imports
+- Plain `.ts` composables (e.g., `useDeleteConfirm.ts`) also need `#components` imports
+- This is NOT flagged by IDE diagnostics but IS caught by `nuxi typecheck` as `TS2304: Cannot find name`
+- At runtime, the variable is `undefined`, causing `overlay.create(undefined)` to fail silently
+- **Fixed in**: BatchAdvanceAction.vue, BatchDistilling.vue (both needed `import { LazyModalDistillingCharge } from '#components'`)
+- All table components (TableBottles, TableItems, etc.) already had the correct pattern
+
+### Async Event Handlers Must Await Overlay Operations
+- When an `@click` handler calls an async function that uses `overlay.create().open()`, it must `await` the function
+- Without `await`, errors become unhandled promise rejections (silently swallowed)
+- Also add `catch` blocks to show error toasts for failed operations
+- **Fixed in**: BatchAdvanceAction.vue (`handleClick` now `async`, `advanceToDistilling` has `catch`), BatchDistilling.vue (`addRun` has `catch`)
+
 ## Architecture Notes
 - `useFormPanel` snapshots data via `JSON.parse(JSON.stringify(...))` which strips `undefined` values
 - Store `_id: undefined as unknown as string` vs `_id: ''` -- both work for the `!bottle.value._id` isNew check, but `undefined` is cleaner because JSON serialization strips it
@@ -45,6 +60,23 @@
 - `server/utils/validation.ts` -- all Yup schemas for create/update, `sanitize()`, `validateBody()`
 - `server/models/bottle.schema.ts` -- Bottle schema with `recipe: Schema.Types.ObjectId` ref
 - `server/models/inventory.schema.ts` -- Inventory schema with `item` (required ObjectId) and `location` (optional ObjectId ref to Vessel)
+
+### Vessel `current` Not Zeroed When Contents Emptied
+- `updateVessel()` in `useVesselStore` recalculates `vessel.current` from `contents` array before saving
+- BUG: The recalculation was inside `if (contents.length > 0)` — when contents became empty, `current` retained stale fill level
+- Affected ALL transfer paths: `fullTransfer`, `transferBatch`, `transferBatchContents`, and BatchAdvanceAction still-emptying
+- `fullTransfer` explicitly set `source.current = { volume: 0, ... }` but this was overwritten/ignored in some flows
+- Fix: Added `else` branch to zero out `current` when `contents` is empty (volume: 0, abv: 0, value: 0)
+- `VesselCard.vue` reads `vessel.current?.volume` for fill level display — must be zero for empty vessels
+- **Fixed in**: `stores/useVesselStore.ts` (updateVessel method)
+
+### UTable Pagination Requires getPaginationRowModel
+- Nuxt UI v4 UTable auto-provides `getCoreRowModel`, `getFilteredRowModel`, `getSortedRowModel`, `getExpandedRowModel`
+- But does **NOT** auto-provide `getPaginationRowModel` -- must be passed via `:pagination-options` prop
+- Without it, `v-model:pagination` tracks state but TanStack never slices rows (all rows render)
+- Fix pattern: `import { getPaginationRowModel } from '@tanstack/vue-table'` then `:pagination-options="{ getPaginationRowModel: getPaginationRowModel() }"`
+- UPagination `total` should use `tableRef.tableApi.getFilteredRowModel().rows.length` for search-accurate page counts
+- **Fixed in**: All 14 table components (Batches, Items, Bottles, Productions, Cocktails, Contacts, Vessels, Recipes, PurchaseOrders, Events, Users, Customers, InventoryCategory, InventoryInputs)
 
 ## Stores Fixed (error propagation + toast format)
 - `useBottleStore` -- throw error, statusMessage || message

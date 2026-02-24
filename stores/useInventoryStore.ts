@@ -41,6 +41,53 @@ export const useInventoryStore = defineStore("inventories", () => {
     return inventories.value.filter((inv) => inv.item === itemId);
   };
 
+  /** Get the current stock level for an item (most recent inventory record's quantity) */
+  const getCurrentStock = (itemId: string): number => {
+    const itemRecords = getInventoriesByItem(itemId);
+    if (itemRecords.length === 0) return 0;
+    const sorted = [...itemRecords].sort(
+      (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime(),
+    );
+    return sorted[0].quantity;
+  };
+
+  /**
+   * Create multiple inventory records at once.
+   * Used by PO receive and production completion flows.
+   * Returns the created records.
+   */
+  const createBulk = async (
+    records: Array<{ item: string; quantity: number; date?: Date; location?: string }>,
+  ): Promise<Inventory[]> => {
+    if (records.length === 0) return [];
+    saving.value = true;
+    try {
+      const payload = records.map((r) => ({
+        item: r.item,
+        quantity: r.quantity,
+        date: r.date || new Date(),
+        ...(r.location ? { location: r.location } : {}),
+      }));
+      const response = await $fetch("/api/inventory/bulk", {
+        method: "POST",
+        body: payload,
+      });
+      const created = response as Inventory[];
+      inventories.value.push(...created);
+      return created;
+    } catch (error: any) {
+      toast.add({
+        title: "Failed to create inventory records",
+        description: error?.data?.statusMessage || error?.data?.message,
+        color: "error",
+        icon: "i-lucide-alert-circle",
+      });
+      throw error;
+    } finally {
+      saving.value = false;
+    }
+  };
+
   const updateInventory = async (): Promise<void> => {
     saving.value = true;
     try {
@@ -129,6 +176,8 @@ export const useInventoryStore = defineStore("inventories", () => {
     ensureLoaded,
     getInventories,
     getInventoriesByItem,
+    getCurrentStock,
+    createBulk,
     updateInventory,
     resetInventory,
     deleteInventory,

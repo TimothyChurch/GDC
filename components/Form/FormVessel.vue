@@ -37,7 +37,7 @@ const submitForm = () => {
 				<UFormField label="Type">
 					<USelectMenu
 						v-model="vesselStore.vessel.type"
-						:options="vesselTypes"
+						:items="vesselTypes"
 						placeholder="Type"
 						creatable
 						searchable />
@@ -47,7 +47,7 @@ const submitForm = () => {
 						<UInput v-model="vesselStore.vessel.stats.weight" />
 						<USelect
 							v-model="vesselStore.vessel.stats.weightUnit"
-							:options="weightUnits" />
+							:items="weightUnits" />
 					</UFieldGroup>
 				</UFormField>
 				<UFormField label="Vessel Capacity">
@@ -55,7 +55,7 @@ const submitForm = () => {
 						<UInput v-model="vesselStore.vessel.stats.volume" />
 						<USelect
 							v-model="vesselStore.vessel.stats.volumeUnit"
-							:options="volumeUnits" />
+							:items="volumeUnits" />
 					</UFieldGroup>
 				</UFormField>
 			</div>
@@ -65,17 +65,26 @@ const submitForm = () => {
 				<UFormField label="Size">
 					<USelect
 						v-model="vesselStore.vessel.barrel.size"
-						:options="barrelSizes" />
+						:items="barrelSizes" />
 				</UFormField>
 				<UFormField label="Char Level">
 					<USelect
 						v-model="vesselStore.vessel.barrel.char"
-						:options="charLevels" />
+						:items="charLevels" />
 				</UFormField>
 				<UFormField label="Cost">
 					<UInput v-model="vesselStore.vessel.barrel.cost">
 						<template #leading> $ </template>
 					</UInput>
+				</UFormField>
+				<UFormField label="Used Barrel">
+					<div class="flex items-center gap-2">
+						<USwitch v-model="vesselStore.vessel.isUsed" />
+						<span class="text-xs text-parchment/50">Mark as previously used</span>
+					</div>
+				</UFormField>
+				<UFormField v-if="vesselStore.vessel.isUsed" label="Previous Contents">
+					<UInput v-model="vesselStore.vessel.previousContents" placeholder="e.g. Bourbon, Rum, Wine" />
 				</UFormField>
 			</div>
 			<UButton

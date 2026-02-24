@@ -1,4 +1,14 @@
-import type { Item } from "~/types";
+import type { Item, ItemCategory } from "~/types";
+import { getStockStatus } from "~/composables/useInventoryCategories";
+
+export interface ShoppingListItem {
+  item: Item;
+  currentStock: number;
+  reorderPoint: number;
+  usePerMonth: number;
+  suggestedOrderQty: number;
+  status: "Out of Stock" | "Low Stock";
+}
 
 export const useItemStore = defineStore("items", () => {
   const toast = useToast();
@@ -12,15 +22,14 @@ export const useItemStore = defineStore("items", () => {
     _id: '',
     name: "",
     type: "",
-    vendor: '',
     inventoryUnit: "",
-    purchaseSize: 0,
-    purchaseSizeUnit: "",
-    purchasePrice: 0,
     purchaseHistory: [],
     inventoryHistory: [],
-    brand: "",
-    pricePerUnit: 0,
+    category: 'Other',
+    trackInventory: true,
+    minStock: 0,
+    reorderPoint: 0,
+    usePerMonth: 0,
   });
 
   // CRUD actions
@@ -88,15 +97,14 @@ export const useItemStore = defineStore("items", () => {
       _id: '',
       name: "",
       type: "",
-      vendor: '',
       inventoryUnit: "",
-      purchaseSize: 0,
-      purchaseSizeUnit: "",
-      purchasePrice: 0,
       purchaseHistory: [],
       inventoryHistory: [],
-      brand: "",
-      pricePerUnit: 0,
+      category: 'Other',
+      trackInventory: true,
+      minStock: 0,
+      reorderPoint: 0,
+      usePerMonth: 0,
     };
   };
 
@@ -127,8 +135,7 @@ export const useItemStore = defineStore("items", () => {
     return items.value.filter(
       (i) =>
         i.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        i.type?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        i.vendor?.toLowerCase().includes(searchTerm.toLowerCase())
+        i.type?.toLowerCase().includes(searchTerm.toLowerCase())
     );
   };
 
@@ -163,9 +170,86 @@ export const useItemStore = defineStore("items", () => {
     return items.value.map((i) => ({ id: i._id, label: i.name }));
   });
 
-  const getPriceById = (id: string) => {
-    return items.value.find((i) => i._id === id)?.pricePerUnit;
+  const getItemsByCategory = (category: ItemCategory): Item[] => {
+    return items.value.filter((i) => (i.category || 'Other') === category && i.trackInventory !== false);
   };
+
+  const getVendorName = (itemId: string): string | null => {
+    const purchaseOrderStore = usePurchaseOrderStore();
+    const contactStore = useContactStore();
+    const sorted = [...purchaseOrderStore.purchaseOrders]
+      .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+    for (const po of sorted) {
+      if (po.items.some((i) => i.item === itemId)) {
+        return contactStore.getContactById(po.vendor)?.businessName || null;
+      }
+    }
+    return null;
+  };
+
+  const getVendorId = (itemId: string): string | null => {
+    const purchaseOrderStore = usePurchaseOrderStore();
+    const sorted = [...purchaseOrderStore.purchaseOrders]
+      .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+    for (const po of sorted) {
+      if (po.items.some((i) => i.item === itemId)) {
+        return po.vendor;
+      }
+    }
+    return null;
+  };
+
+  /**
+   * Items that need purchasing: tracked items with inventory history
+   * whose current stock is at or below the reorder point (or out of stock).
+   * Sorted by priority: out of stock first, then low stock, then alphabetically.
+   */
+  const shoppingListItems = computed<ShoppingListItem[]>(() => {
+    const inventoryStore = useInventoryStore();
+    const result: ShoppingListItem[] = [];
+
+    for (const itm of items.value) {
+      // Skip items not being tracked
+      if (itm.trackInventory === false) continue;
+
+      // Exclude items with no inventory history
+      const records = inventoryStore.getInventoriesByItem(itm._id);
+      if (records.length === 0) continue;
+
+      const currentStock = inventoryStore.getCurrentStock(itm._id);
+      const reorderPt = itm.reorderPoint || 0;
+      const stockStatus = getStockStatus(currentStock, reorderPt);
+
+      // Only include items that are low or out of stock
+      if (stockStatus === "In Stock") continue;
+
+      const perMonth = itm.usePerMonth || 0;
+      const minStk = itm.minStock || 0;
+
+      // Suggested order: 2 months of supply minus current stock, at least minStock
+      let suggestedQty = perMonth > 0
+        ? Math.ceil(perMonth * 2 - currentStock)
+        : Math.ceil(reorderPt * 2 - currentStock);
+      if (suggestedQty < minStk) suggestedQty = minStk;
+      if (suggestedQty < 1) suggestedQty = 1;
+
+      result.push({
+        item: itm,
+        currentStock,
+        reorderPoint: reorderPt,
+        usePerMonth: perMonth,
+        suggestedOrderQty: suggestedQty,
+        status: stockStatus as "Out of Stock" | "Low Stock",
+      });
+    }
+
+    // Sort: out of stock first, then low stock, then alphabetically
+    return result.sort((a, b) => {
+      if (a.status === "Out of Stock" && b.status !== "Out of Stock") return -1;
+      if (a.status !== "Out of Stock" && b.status === "Out of Stock") return 1;
+      return a.item.name.localeCompare(b.item.name);
+    });
+  });
 
   return {
     items,
@@ -184,6 +268,9 @@ export const useItemStore = defineStore("items", () => {
     search,
     latestPrice,
     itemNameId,
-    getPriceById,
+    getItemsByCategory,
+    getVendorName,
+    getVendorId,
+    shoppingListItems,
   };
 });

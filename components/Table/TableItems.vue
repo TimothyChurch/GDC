@@ -2,10 +2,10 @@
 import type { TableColumn } from "@nuxt/ui";
 import type { Item } from "~/types";
 import type { Row } from "@tanstack/vue-table";
+import { getPaginationRowModel } from "@tanstack/vue-table";
 
 const router = useRouter();
 const itemStore = useItemStore();
-const contactStore = useContactStore();
 const { confirm } = useDeleteConfirm();
 
 const UButton = resolveComponent("UButton");
@@ -49,27 +49,13 @@ const columns: TableColumn<Item>[] = [
     },
   },
   {
-    accessorKey: "vendor",
-    header: "Vendor",
-    cell: ({ row }) => {
-      return (
-        contactStore.getContactById(row.getValue("vendor"))?.businessName ||
-        "Unknown vendor"
-      );
-    },
-  },
-  {
-    accessorKey: "inventoryUnit",
-    header: "Inventory Units",
-  },
-  {
-    accessorKey: "pricePerUnit",
+    accessorKey: "category",
     header: ({ column }) => {
       const isSorted = column.getIsSorted();
       return h(UButton, {
         color: "neutral",
         variant: "ghost",
-        label: "Price per Unit",
+        label: "Category",
         icon: isSorted
           ? isSorted === "asc"
             ? "i-lucide-arrow-up-narrow-wide"
@@ -79,16 +65,29 @@ const columns: TableColumn<Item>[] = [
         onClick: () => column.toggleSorting(column.getIsSorted() === "asc"),
       });
     },
+  },
+  {
+    id: "vendor",
+    header: "Vendor",
     cell: ({ row }) => {
-      if ((row.getValue("pricePerUnit") as unknown as number) > 0) {
+      return itemStore.getVendorName(row.original._id) || "—";
+    },
+  },
+  {
+    accessorKey: "inventoryUnit",
+    header: "Inventory Units",
+  },
+  {
+    id: "pricePerUnit",
+    header: "Price per Unit",
+    cell: ({ row }) => {
+      const price = itemStore.latestPrice(row.original._id);
+      if (price > 0) {
         return (
-          Dollar.format(row.getValue("pricePerUnit")) +
-          " / " +
-          row.getValue("inventoryUnit")
+          Dollar.format(price) + " / " + (row.original.inventoryUnit || "")
         );
-      } else {
-        return "Price not set";
       }
+      return "Price not set";
     },
   },
   {
@@ -152,13 +151,18 @@ const openModal = async () => await modal.open();
 
 const globalFilter = ref("");
 const pagination = ref({ pageIndex: 0, pageSize: 10 });
+
+const tableRef = useTemplateRef('tableRef');
+const filteredTotal = computed(() =>
+  tableRef.value?.tableApi?.getFilteredRowModel().rows.length ?? itemStore.items.length
+);
 </script>
 
 <template>
   <TableWrapper
     v-model:search="globalFilter"
     v-model:pagination="pagination"
-    :total-items="itemStore.items.length"
+    :total-items="filteredTotal"
     :loading="itemStore.loading"
     search-placeholder="Search items..."
   >
@@ -174,8 +178,10 @@ const pagination = ref({ pageIndex: 0, pageSize: 10 });
     <!-- Desktop table -->
     <div class="hidden sm:block">
       <UTable
+        ref="tableRef"
         v-model:global-filter="globalFilter"
         v-model:pagination="pagination"
+        :pagination-options="{ getPaginationRowModel: getPaginationRowModel() }"
         :data="itemStore.items"
         :columns="columns"
         :loading="itemStore.loading"
@@ -216,8 +222,8 @@ const pagination = ref({ pageIndex: 0, pageSize: 10 });
             <span class="text-parchment/60">Price</span>
             <div class="text-copper font-semibold">
               {{
-                item.pricePerUnit > 0
-                  ? `${Dollar.format(item.pricePerUnit)} / ${item.inventoryUnit}`
+                itemStore.latestPrice(item._id) > 0
+                  ? `${Dollar.format(itemStore.latestPrice(item._id))} / ${item.inventoryUnit}`
                   : "Not set"
               }}
             </div>
@@ -225,10 +231,7 @@ const pagination = ref({ pageIndex: 0, pageSize: 10 });
           <div>
             <span class="text-parchment/60">Vendor</span>
             <div class="text-parchment/70">
-              {{
-                contactStore.getContactById(item.vendor)?.businessName ||
-                "Unknown"
-              }}
+              {{ itemStore.getVendorName(item._id) || "—" }}
             </div>
           </div>
         </div>

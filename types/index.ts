@@ -1,15 +1,17 @@
-import type { Batch, BatchStages, BatchLogEntry, BatchStageBase, MashingStage, FermentingStage, DistillingStage, MacerationStage, FilteringStage, BarrelAgingStage, StorageStage, BlendingStage, ProofingStage, BottledStage } from './interfaces/Batch';
+import type { Batch, BatchStages, BatchLogEntry, BatchStageBase, TastingNote, TransferLogEntry, MashingStage, FermentingStage, DistillingStage, DistillingRun, DistillingAddition, DistillingCut, MacerationStage, FilteringStage, BarrelAgingStage, StorageStage, BlendingStage, ProofingStage, BottledStage } from './interfaces/Batch';
 import type { Bottle } from './interfaces/Bottle';
-import type { Cocktail } from './interfaces/Cocktail';
+import type { Cocktail, CocktailIngredient, IngredientSourceType } from './interfaces/Cocktail';
 import type { Contact } from './interfaces/Contact';
 import type { Contents } from './interfaces/Contents';
 import type { GDCEvent } from './interfaces/Event';
 import type { Inventory } from './interfaces/Inventory';
-import type { Item } from './interfaces/Item';
-import type { Production } from './interfaces/Production';
+import type { Item, ItemCategory } from './interfaces/Item';
+import { ITEM_CATEGORIES } from './interfaces/Item';
+import type { Production, ProductionCosts } from './interfaces/Production';
 import type { PurchaseOrder } from './interfaces/PurchaseOrder';
 import type { PurchaseOrderItem } from './interfaces/PurchaseOrderItem';
 import type { Recipe } from './interfaces/Recipe';
+import type { Settings, SettingsTheme, SettingsDistillery } from './interfaces/Settings';
 import type { User } from './interfaces/User';
 import type { Vessel } from './interfaces/Vessel';
 
@@ -18,9 +20,14 @@ export type {
 	BatchStages,
 	BatchLogEntry,
 	BatchStageBase,
+	TastingNote,
+	TransferLogEntry,
 	MashingStage,
 	FermentingStage,
 	DistillingStage,
+	DistillingRun,
+	DistillingAddition,
+	DistillingCut,
 	MacerationStage,
 	FilteringStage,
 	BarrelAgingStage,
@@ -30,15 +37,24 @@ export type {
 	BottledStage,
 	Bottle,
 	Cocktail,
+	CocktailIngredient,
+	IngredientSourceType,
 	Contact,
 	Contents,
 	GDCEvent,
 	Inventory,
 	Item,
+	ItemCategory,
 	Production,
+	ProductionCosts,
 	PurchaseOrder,
 	PurchaseOrderItem,
 	Recipe,
+	Settings,
+	SettingsTheme,
+	SettingsDistillery,
 	User,
 	Vessel,
 };
+
+export { ITEM_CATEGORIES };

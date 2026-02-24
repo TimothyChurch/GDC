@@ -16,7 +16,7 @@ const stageBase = {
 };
 
 const cutSchema = {
-	vessel: vesselRef,
+	vessel: String,
 	volume: Number,
 	volumeUnit: String,
 	abv: Number,
@@ -60,6 +60,7 @@ export const Batch = defineMongooseModel({
 			required: true,
 		},
 		batchCost: Number,
+		barrelCost: Number,
 		notes: String,
 
 		// --- Stage data ---
@@ -98,6 +99,39 @@ export const Batch = defineMongooseModel({
 			},
 			distilling: {
 				...stageBase,
+				runs: [{
+					runNumber: Number,
+					runType: { type: String, enum: ['stripping', 'spirit'] },
+					date: Date,
+					chargeVolume: Number,
+					chargeVolumeUnit: String,
+					chargeAbv: Number,
+					chargeSourceVessel: String,
+					additions: [{
+						label: String,
+						sourceVessel: String,
+						volume: Number,
+						volumeUnit: String,
+						abv: Number,
+					}],
+					output: {
+						vessel: String,
+						volume: Number,
+						volumeUnit: String,
+						abv: Number,
+						proofGallons: Number,
+					},
+					collected: {
+						foreshots: cutSchema,
+						heads: cutSchema,
+						lateHeads: cutSchema,
+						hearts: cutSchema,
+						tails: cutSchema,
+					},
+					total: volumeFieldsWithPG,
+					notes: String,
+				}],
+				// Legacy fields preserved for existing documents
 				runType: { type: String, enum: ['stripping', 'spirit', 'single'] },
 				runNumber: Number,
 				chargeVolume: Number,
@@ -110,16 +144,11 @@ export const Batch = defineMongooseModel({
 				collected: {
 					foreshots: cutSchema,
 					heads: cutSchema,
+					lateHeads: cutSchema,
 					hearts: cutSchema,
 					tails: cutSchema,
 					total: volumeFieldsWithPG,
 				},
-				temperatures: [{
-					time: Date,
-					location: String,
-					value: Number,
-					unit: String,
-				}],
 			},
 			maceration: {
 				...stageBase,
@@ -216,6 +245,32 @@ export const Batch = defineMongooseModel({
 				labeledAbv: Number,
 			},
 		},
+
+		// --- Tasting notes ---
+		tastingNotes: [{
+			date: { type: Date, default: Date.now },
+			abv: Number,
+			notes: String,
+			addedBy: String,
+		}],
+
+		// --- Volume tracking across stages ---
+		stageVolumes: {
+			type: Map,
+			of: Number,
+			default: {},
+		},
+
+		// --- Transfer log ---
+		transferLog: [{
+			from: String,
+			to: String,
+			volume: Number,
+			volumeUnit: String,
+			date: { type: Date, default: Date.now },
+			vessel: String,
+			user: String,
+		}],
 
 		// --- Activity log ---
 		log: [{
