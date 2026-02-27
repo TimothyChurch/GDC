@@ -101,6 +101,7 @@ export const bottleCreateSchema = yup.object({
 export const cocktailCreateSchema = yup.object({
   name: yup.string().required("Name is required"),
   price: yup.number().min(0, "Price cannot be negative"),
+  preparation: yup.string().trim().max(50, "Preparation must be 50 characters or less"),
 });
 
 export const contactCreateSchema = yup.object({
@@ -266,6 +267,7 @@ export const bottleUpdateSchema = yup.object({
 export const cocktailUpdateSchema = yup.object({
   name: yup.string(),
   price: yup.number().min(0, "Price cannot be negative"),
+  preparation: yup.string().trim().max(50, "Preparation must be 50 characters or less"),
 });
 
 export const contactUpdateSchema = yup.object({

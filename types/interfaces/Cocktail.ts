@@ -17,6 +17,7 @@ export interface Cocktail {
 	menu?: string;
 	description?: string;
 	directions: string;
+	preparation?: string;
 	visible: boolean;
 	img?: string;
 	createdAt?: string;

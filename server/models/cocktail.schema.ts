@@ -55,6 +55,11 @@ export const Cocktail = defineMongooseModel({
 			type: String,
 			required: true,
 		},
+		preparation: {
+			type: String,
+			required: false,
+			trim: true,
+		},
 		visible: {
 			type: Boolean,
 			required: true,

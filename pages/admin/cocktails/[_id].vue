@@ -83,7 +83,7 @@ const menuLabel = computed(() => {
     <!-- Cocktail Info -->
     <div class="bg-charcoal rounded-xl border border-brown/30 p-5">
       <h3 class="text-lg font-bold text-parchment font-[Cormorant_Garamond] mb-4">Cocktail Info</h3>
-      <div class="grid grid-cols-2 sm:grid-cols-4 gap-4">
+      <div class="grid grid-cols-2 sm:grid-cols-5 gap-4">
         <div>
           <div class="text-xs text-parchment/60 uppercase tracking-wider mb-1">Glassware</div>
           <div class="text-sm text-parchment">{{ cocktail.glassware || 'N/A' }}</div>
@@ -91,6 +91,10 @@ const menuLabel = computed(() => {
         <div>
           <div class="text-xs text-parchment/60 uppercase tracking-wider mb-1">Menu</div>
           <div class="text-sm text-parchment">{{ menuLabel }}</div>
+        </div>
+        <div>
+          <div class="text-xs text-parchment/60 uppercase tracking-wider mb-1">Preparation</div>
+          <div class="text-sm text-parchment">{{ cocktail.preparation || 'Not specified' }}</div>
         </div>
         <div>
           <div class="text-xs text-parchment/60 uppercase tracking-wider mb-1">Visible</div>

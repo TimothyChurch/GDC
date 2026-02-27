@@ -9,7 +9,7 @@ const cost = computed(() => cocktailStore.cocktailCost(props.cocktail))
 </script>
 
 <template>
-  <div class="bg-charcoal rounded-xl border border-brown/30 p-4 hover:border-brown/50 transition-colors">
+  <NuxtLink :to="`/admin/cocktails/${cocktail._id}`" class="block bg-charcoal rounded-xl border border-brown/30 p-4 hover:border-brown/50 transition-colors cursor-pointer">
     <div class="flex items-start justify-between mb-3">
       <div>
         <div class="text-sm font-medium text-parchment">{{ cocktail.name }}</div>
@@ -20,7 +20,7 @@ const cost = computed(() => cocktailStore.cocktailCost(props.cocktail))
         size="xs"
         variant="ghost"
         :color="cocktail.visible ? 'neutral' : 'error'"
-        @click.stop="cocktailStore.toggleVisibility(cocktail._id)"
+        @click.stop.prevent="cocktailStore.toggleVisibility(cocktail._id)"
         :aria-label="cocktail.visible ? 'Hide cocktail' : 'Show cocktail'"
       />
     </div>
@@ -53,5 +53,5 @@ const cost = computed(() => cocktailStore.cocktailCost(props.cocktail))
         {{ cocktail.visible ? 'On Menu' : 'Hidden' }}
       </span>
     </div>
-  </div>
+  </NuxtLink>
 </template>

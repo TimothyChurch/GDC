@@ -31,17 +31,10 @@ export const useIngredientResolver = () => {
 
     if (ingredient.sourceType === 'bottle') {
       const bottle = bottleStore.getBottleById(id);
-      if (!bottle) return 0;
-      // Use production cost if available, else fall back to retail price / volume
-      const prodCost = bottleCost(id);
-      if (prodCost && prodCost > 0) return prodCost;
-      if (bottle.price && bottle.volume && bottle.volume > 0) {
-        // Convert bottle price per volume to cost per oz
-        const volumeUnit = bottle.volumeUnit || 'mL';
-        const volumeInOz = bottle.volume * convertUnitRatio(volumeUnit, 'fl oz');
-        return bottle.price / volumeInOz;
-      }
-      return 0;
+      if (!bottle?.price) return 0;
+      // Price per oz = sales price / standard 750 mL bottle converted to fl oz
+      const standardBottleOz = 750 * convertUnitRatio('mL', 'fl oz');
+      return bottle.price / standardBottleOz;
     }
 
     return itemStore.latestPrice(id);

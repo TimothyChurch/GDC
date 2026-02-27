@@ -21,9 +21,11 @@ const isNew = !localData.value._id;
 
 const cost = computed(() => totalIngredientCost(localData.value.ingredients));
 
-const glasswareOptions = ["Highball", "Lowball", "Martini", "Mug", "Shot glass", "Glencairn"];
-const menuOptions = ["main", "seasonal", "shots", "off menu"];
-const units = ["oz", "ml", "dash", "barspoon", "each"];
+const { glasswareOptions, menuOptions, unitOptions, addGlassware, removeGlassware, addMenu, removeMenu } = useCocktailOptions();
+const preparationOptions = ['Stirred', 'Shaken', 'Dry Shaken', 'Double Shaken', 'Built in Glass'];
+
+const newGlassware = ref('');
+const newMenu = ref('');
 
 const ingredientOptions = computed(() => {
   const items = itemStore.itemNameId.map((i) => ({
@@ -59,6 +61,35 @@ const addIngredient = () => {
 const removeIngredient = (index: number) => {
   localData.value.ingredients.splice(index, 1);
 };
+
+// Drag-and-drop reordering
+const dragIndex = ref<number | null>(null);
+
+const onDragStart = (index: number, event: DragEvent) => {
+  dragIndex.value = index;
+  if (event.dataTransfer) {
+    event.dataTransfer.effectAllowed = 'move';
+  }
+};
+
+const onDragOver = (index: number, event: DragEvent) => {
+  event.preventDefault();
+  if (event.dataTransfer) {
+    event.dataTransfer.dropEffect = 'move';
+  }
+};
+
+const onDrop = (index: number) => {
+  if (dragIndex.value === null || dragIndex.value === index) return;
+  const items = localData.value.ingredients;
+  const [moved] = items.splice(dragIndex.value, 1);
+  items.splice(index, 0, moved);
+  dragIndex.value = null;
+};
+
+const onDragEnd = () => {
+  dragIndex.value = null;
+};
 </script>
 
 <template>
@@ -75,12 +106,51 @@ const removeIngredient = (index: number) => {
           <UFormField label="Name">
             <UInput v-model="localData.name" placeholder="Cocktail name" />
           </UFormField>
-          <div class="grid grid-cols-2 gap-4">
+          <div class="grid grid-cols-3 gap-4">
             <UFormField label="Glassware">
-              <USelect v-model="localData.glassware" :items="glasswareOptions" />
+              <div class="flex gap-1">
+                <USelect v-model="localData.glassware" :items="glasswareOptions" class="flex-1" />
+                <UPopover>
+                  <UButton icon="i-lucide-settings-2" variant="ghost" size="xs" color="neutral" />
+                  <template #content>
+                    <div class="p-3 space-y-2 w-56">
+                      <p class="text-xs font-semibold text-parchment/70">Manage Glassware</p>
+                      <div v-for="g in glasswareOptions" :key="g" class="flex items-center justify-between text-sm">
+                        <span>{{ g }}</span>
+                        <UButton icon="i-lucide-x" size="xs" variant="ghost" color="error" @click="removeGlassware(g)" />
+                      </div>
+                      <div class="flex gap-1">
+                        <UInput v-model="newGlassware" placeholder="Add new..." size="xs" class="flex-1" @keyup.enter="addGlassware(newGlassware); newGlassware = ''" />
+                        <UButton icon="i-lucide-plus" size="xs" @click="addGlassware(newGlassware); newGlassware = ''" />
+                      </div>
+                    </div>
+                  </template>
+                </UPopover>
+              </div>
             </UFormField>
             <UFormField label="Menu">
-              <USelect v-model="localData.menu" :items="menuOptions" />
+              <div class="flex gap-1">
+                <USelect v-model="localData.menu" :items="menuOptions" class="flex-1" />
+                <UPopover>
+                  <UButton icon="i-lucide-settings-2" variant="ghost" size="xs" color="neutral" />
+                  <template #content>
+                    <div class="p-3 space-y-2 w-56">
+                      <p class="text-xs font-semibold text-parchment/70">Manage Menus</p>
+                      <div v-for="m in menuOptions" :key="m" class="flex items-center justify-between text-sm">
+                        <span class="capitalize">{{ m }}</span>
+                        <UButton icon="i-lucide-x" size="xs" variant="ghost" color="error" @click="removeMenu(m)" />
+                      </div>
+                      <div class="flex gap-1">
+                        <UInput v-model="newMenu" placeholder="Add new..." size="xs" class="flex-1" @keyup.enter="addMenu(newMenu); newMenu = ''" />
+                        <UButton icon="i-lucide-plus" size="xs" @click="addMenu(newMenu); newMenu = ''" />
+                      </div>
+                    </div>
+                  </template>
+                </UPopover>
+              </div>
+            </UFormField>
+            <UFormField label="Preparation">
+              <USelect v-model="localData.preparation" :items="preparationOptions" placeholder="Select preparation method" />
             </UFormField>
           </div>
 
@@ -89,13 +159,21 @@ const removeIngredient = (index: number) => {
               <div
                 v-for="(ingredient, index) in localData.ingredients"
                 :key="index"
-                class="flex items-center gap-2"
+                class="flex items-center gap-2 rounded px-1 py-0.5 transition-colors"
+                :class="dragIndex === index ? 'opacity-50 bg-brown/10' : ''"
+                draggable="true"
+                @dragstart="onDragStart(index, $event)"
+                @dragover="onDragOver(index, $event)"
+                @drop="onDrop(index)"
+                @dragend="onDragEnd"
               >
+                <UIcon name="i-lucide-grip-vertical" class="text-parchment/40 cursor-grab shrink-0" />
                 <span class="flex-1 text-sm truncate">
                   {{ getIngredientName(ingredient) }}
                   <span v-if="ingredient.sourceType === 'bottle'" class="text-xs text-copper/70 ml-1">(Bottle)</span>
                 </span>
-                <span class="text-sm text-parchment/60">{{ ingredient.amount }} {{ ingredient.unit }}</span>
+                <UInput v-model.number="ingredient.amount" type="number" step="0.25" class="w-16" size="xs" />
+                <USelect v-model="ingredient.unit" :items="unitOptions" class="w-20" size="xs" />
                 <UButton icon="i-lucide-trash-2" color="error" variant="ghost" size="xs" @click="removeIngredient(index)" />
               </div>
               <div class="flex gap-2 items-end">
@@ -107,7 +185,7 @@ const removeIngredient = (index: number) => {
                   placeholder="Select ingredient"
                 />
                 <UInput v-model.number="newIngredientAmount" type="number" placeholder="Amt" class="w-16" />
-                <USelect v-model="newIngredientUnit" :items="units" class="w-20" />
+                <USelect v-model="newIngredientUnit" :items="unitOptions" class="w-20" />
                 <UButton icon="i-lucide-plus" @click="addIngredient" size="sm" />
               </div>
             </div>

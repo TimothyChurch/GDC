@@ -4,8 +4,14 @@ import type { Cocktail } from "~/types";
 import type { Row } from "@tanstack/vue-table";
 import { getPaginationRowModel } from "@tanstack/vue-table";
 
+const props = defineProps<{
+  data?: Cocktail[]
+}>()
+
 const cocktailStore = useCocktailStore();
 const { confirm } = useDeleteConfirm();
+
+const cocktails = computed(() => props.data ?? cocktailStore.cocktails)
 
 const UButton = resolveComponent("UButton");
 const UDropdownMenu = resolveComponent("UDropdownMenu");
@@ -15,7 +21,7 @@ const pagination = ref({ pageIndex: 0, pageSize: 10 });
 
 const tableRef = useTemplateRef('tableRef');
 const filteredTotal = computed(() =>
-  tableRef.value?.tableApi?.getFilteredRowModel().rows.length ?? cocktailStore.cocktails.length
+  tableRef.value?.tableApi?.getFilteredRowModel().rows.length ?? cocktails.value.length
 );
 
 const columns: TableColumn<Cocktail>[] = [
@@ -155,7 +161,7 @@ const openModal = async () => await modal.open();
         v-model:global-filter="search"
         v-model:pagination="pagination"
         :pagination-options="{ getPaginationRowModel: getPaginationRowModel() }"
-        :data="cocktailStore.cocktails"
+        :data="cocktails"
         :columns="columns"
         :loading="cocktailStore.loading"
         :empty="'No cocktails found'"
@@ -172,7 +178,7 @@ const openModal = async () => await modal.open();
     <!-- Mobile card view -->
     <div class="sm:hidden space-y-3">
       <div
-        v-for="cocktail in cocktailStore.cocktails"
+        v-for="cocktail in cocktails"
         :key="cocktail._id"
         class="bg-charcoal rounded-lg border border-brown/30 p-4 cursor-pointer"
         @click="navigateTo(`/admin/cocktails/${cocktail._id}`)"
@@ -204,7 +210,7 @@ const openModal = async () => await modal.open();
           </div>
         </div>
       </div>
-      <div v-if="cocktailStore.cocktails.length === 0" class="text-center py-6 text-parchment/50 text-sm">
+      <div v-if="cocktails.length === 0" class="text-center py-6 text-parchment/50 text-sm">
         No cocktails found
       </div>
     </div>

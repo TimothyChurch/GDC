@@ -20,6 +20,7 @@ export const useCocktailStore = defineStore("cocktails", () => {
     menu: "",
     description: "",
     directions: "",
+    preparation: "",
     visible: true,
   });
 
@@ -93,6 +94,7 @@ export const useCocktailStore = defineStore("cocktails", () => {
       menu: "",
       description: "",
       directions: "",
+      preparation: "",
       visible: true,
     };
   };
