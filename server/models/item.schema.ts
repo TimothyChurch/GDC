@@ -38,6 +38,13 @@ export const Item = defineMongooseModel({
       type: Boolean,
       default: true,
     },
+    unitSize: {
+      type: Number,
+    },
+    unitLabel: {
+      type: String,
+      trim: true,
+    },
     minStock: {
       type: Number,
       default: 0,

@@ -171,15 +171,7 @@ const submitForm = async () => {
       v-if="additionalItem"
       class="flex flex-wrap justify-between my-3 gap-3">
       <UFormField label="Item">
-        <USelectMenu
-          :items="itemStore.items"
-          :search-input="{
-            placeholder: 'Filter...',
-            icon: 'i-lucide-search'
-          }"
-          v-model="newItem.item"
-          label-key="name"
-          value-key="_id" />
+        <BaseItemSelect v-model="newItem.item" />
       </UFormField>
       <UFormField label="Quantity">
         <UInput v-model.number="newItem.quantity" />

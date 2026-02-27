@@ -318,21 +318,26 @@ export const useVesselStore = defineStore('vessels', () => {
 		}
 
 		// Add to destination — merge if same batch exists
+		// Use destination vessel's stats unit, fall back to entry's unit
+		const destUnit = dest.stats?.volumeUnit || entry.volumeUnit;
+		const actualVolumeInDestUnit = actualVolume * convertUnitRatio(entry.volumeUnit, destUnit);
 		const destContents = dest.contents || [];
 		const existingDest = destContents.find((c) => c.batch === batchId);
 		if (existingDest) {
-			// Volume-weighted ABV merge
-			const totalVol = existingDest.volume + actualVolume;
+			// Convert existing dest entry to destUnit for merge
+			const existingInDestUnit = existingDest.volume * convertUnitRatio(existingDest.volumeUnit, destUnit);
+			const totalVol = existingInDestUnit + actualVolumeInDestUnit;
 			existingDest.abv = totalVol > 0
-				? (existingDest.abv * existingDest.volume + transferAbv * actualVolume) / totalVol
+				? (existingDest.abv * existingInDestUnit + transferAbv * actualVolumeInDestUnit) / totalVol
 				: 0;
 			existingDest.volume = totalVol;
+			existingDest.volumeUnit = destUnit;
 			existingDest.value += transferValue;
 		} else {
 			destContents.push({
 				batch: batchId,
-				volume: actualVolume,
-				volumeUnit,
+				volume: actualVolumeInDestUnit,
+				volumeUnit: destUnit,
 				abv: transferAbv,
 				value: transferValue,
 			});

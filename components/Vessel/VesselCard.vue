@@ -1,16 +1,26 @@
 <script setup lang="ts">
 import type { Vessel } from '~/types'
+import { convertUnitRatio } from '~/utils/conversions'
 
 const props = defineProps<{ vessel: Vessel }>()
 
 const batchStore = useBatchStore()
 const recipeStore = useRecipeStore()
 
+// Convert current volume to vessel's stats unit for consistent display
+const displayUnit = computed(() => props.vessel.stats?.volumeUnit || props.vessel.current?.volumeUnit || 'gal')
+
+const currentVolumeConverted = computed(() => {
+  const current = props.vessel.current?.volume
+  if (!current) return 0
+  const fromUnit = props.vessel.current?.volumeUnit || displayUnit.value
+  return current * convertUnitRatio(fromUnit, displayUnit.value)
+})
+
 const fillPercent = computed(() => {
   const max = props.vessel.stats?.volume
-  const current = props.vessel.current?.volume
-  if (!max || !current) return 0
-  return Math.min(100, (current / max) * 100)
+  if (!max || !currentVolumeConverted.value) return 0
+  return Math.min(100, (currentVolumeConverted.value / max) * 100)
 })
 
 const contentsNames = computed(() => {
@@ -33,6 +43,21 @@ const typeIcon = computed(() => {
   }
 })
 
+// ABV: prefer vessel.current.abv, fallback to volume-weighted average from contents
+const displayAbv = computed(() => {
+  if (props.vessel.current?.abv) return props.vessel.current.abv
+  const contents = props.vessel.contents
+  if (!contents?.length) return null
+  const withAbv = contents.filter(c => c.abv && c.volume)
+  if (withAbv.length === 0) return null
+  if (withAbv.length === 1) return withAbv[0].abv
+  // Volume-weighted average
+  const totalVol = withAbv.reduce((sum, c) => sum + c.volume, 0)
+  if (totalVol <= 0) return null
+  const weighted = withAbv.reduce((sum, c) => sum + c.volume * c.abv, 0)
+  return +(weighted / totalVol).toFixed(1)
+})
+
 const fillColor = computed(() => {
   if (fillPercent.value === 0) return 'bg-brown/20'
   if (fillPercent.value < 30) return 'bg-blue-500/60'
@@ -52,10 +77,10 @@ const fillColor = computed(() => {
         </div>
       </div>
       <span
-        v-if="vessel.current?.abv"
+        v-if="displayAbv"
         class="px-2 py-0.5 rounded-full text-[10px] font-semibold border bg-blue-500/15 text-blue-400 border-blue-500/25"
       >
-        {{ vessel.current.abv }}% ABV
+        {{ displayAbv }}% ABV
       </span>
     </div>
 
@@ -64,8 +89,8 @@ const fillColor = computed(() => {
       <div class="flex justify-between text-xs mb-1">
         <span class="text-parchment/60">Fill Level</span>
         <span class="text-parchment/60">
-          {{ vessel.current?.volume || 0 }}{{ vessel.current?.volumeUnit ? ` ${vessel.current.volumeUnit}` : '' }}
-          <span v-if="vessel.stats?.volume" class="text-parchment/50">/ {{ vessel.stats.volume }} {{ vessel.stats.volumeUnit || '' }}</span>
+          {{ +currentVolumeConverted.toFixed(2) }} {{ displayUnit }}
+          <span v-if="vessel.stats?.volume" class="text-parchment/50">/ {{ vessel.stats.volume }} {{ displayUnit }}</span>
         </span>
       </div>
       <div class="w-full h-2 rounded-full bg-brown/20 overflow-hidden">

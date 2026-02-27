@@ -1,30 +1,23 @@
 <script setup lang="ts">
-import { calculateProofGallons, toGallons } from '~/utils/proofGallons'
-import { normalizeDistillingRuns } from '~/utils/distillingMigration'
-
 /**
  * TABC Excise Tax Report
  *
  * Texas imposes excise tax on distilled spirits at $2.40 per gallon (wine gallons).
- * This is separate from the federal FET and is based on PRODUCTION (gallons produced),
- * not on removals like the federal tax.
- *
  * Tax Code § 201.43: Distiller's excise tax is $2.40 per gallon of distilled spirits
  * manufactured in Texas.
  *
  * Due date: 15th of the month following the reporting period.
  * Filed with TABC via the Compliance Portal along with the monthly production report.
  *
- * This report covers a calendar QUARTER for the quarterly excise tax filing option,
- * though monthly filing is also accepted. Most small distilleries file monthly.
+ * Tax is calculated from Production records: bottle volume × quantity → wine gallons × rate.
  */
 
 const props = defineProps<{
   month: string  // 'YYYY-MM'
 }>()
 
-const batchStore = useBatchStore()
-const recipeStore = useRecipeStore()
+const productionStore = useProductionStore()
+const bottleStore = useBottleStore()
 
 // ─── Date helpers ─────────────────────────────────────────────────────────────
 
@@ -42,97 +35,79 @@ const monthLabel = computed(() =>
 
 const TABC_TAX_RATE = 2.40 // $2.40 per wine gallon produced
 
-// ─── Batches distilled this month ─────────────────────────────────────────────
+// ─── Convert bottle volume to wine gallons ────────────────────────────────────
 
-const distilledBatches = computed(() =>
-  batchStore.batches.filter(b => {
-    const distDate = (b.stages as any)?.distilling?.startedAt
-      ? new Date((b.stages as any).distilling.startedAt)
-      : null
-    return distDate && distDate >= monthStart.value && distDate <= monthEnd.value
+function bottleToWineGallons(bottle: { volume?: number; volumeUnit?: string }): number {
+  const vol = bottle.volume || 750
+  const unit = (bottle.volumeUnit || 'mL').toLowerCase()
+  if (unit === 'ml' || unit.includes('milli')) return vol * 0.000264172
+  if (unit === 'l' || unit.includes('liter')) return vol * 0.264172
+  if (unit.includes('oz')) return vol * 0.0078125
+  if (unit.includes('gal')) return vol
+  return vol * 0.000264172 // default: assume mL
+}
+
+// ─── Productions this month ───────────────────────────────────────────────────
+
+const monthProductions = computed(() =>
+  productionStore.productions.filter(p => {
+    const prodDate = p.date ? new Date(p.date) : null
+    return prodDate && prodDate >= monthStart.value && prodDate <= monthEnd.value
   })
 )
 
-// ─── Production volume detail ─────────────────────────────────────────────────
+// ─── Tax line detail per production ───────────────────────────────────────────
 
 interface TaxLine {
-  batchId: string
-  batchNumber: string
-  recipe: string
+  productionId: string
+  bottleName: string
   spiritType: string
   date: string
-  heartsWineGallons: number
-  headsWineGallons: number
-  tailsWineGallons: number
-  totalWineGallons: number
-  taxableWineGallons: number  // hearts only — beverage spirits subject to tax
+  quantity: number
+  bottleSize: string
+  wineGallons: number
   taxDue: number
 }
 
 const taxLines = computed((): TaxLine[] => {
-  return distilledBatches.value.map(batch => {
-    const recipe = batch.recipe ? recipeStore.getRecipeById(batch.recipe) : null
-    const runs = normalizeDistillingRuns((batch.stages as any)?.distilling)
+  return monthProductions.value.map(prod => {
+    const bottle = prod.bottle ? bottleStore.getBottleById(prod.bottle) : null
+    const wgPerBottle = bottle ? bottleToWineGallons(bottle) : 0
+    const totalWG = wgPerBottle * (prod.quantity || 0)
 
-    let heartsVol = 0, headsVol = 0, lateHeadsVol = 0, tailsVol = 0
-
-    for (const run of runs) {
-      if (run.runType !== 'spirit' || !run.collected) continue
-      if (run.collected.hearts) {
-        const h = run.collected.hearts
-        heartsVol += toGallons(h.volume || 0, h.volumeUnit || 'gallon')
-      }
-      if (run.collected.heads) {
-        const h = run.collected.heads
-        headsVol += toGallons(h.volume || 0, h.volumeUnit || 'gallon')
-      }
-      if (run.collected.lateHeads) {
-        const lh = run.collected.lateHeads
-        lateHeadsVol += toGallons(lh.volume || 0, lh.volumeUnit || 'gallon')
-      }
-      if (run.collected.tails) {
-        const t = run.collected.tails
-        tailsVol += toGallons(t.volume || 0, t.volumeUnit || 'gallon')
-      }
-    }
-
-    const totalWG = heartsVol + headsVol + lateHeadsVol + tailsVol
-    const taxable = heartsVol  // only beverage spirits (hearts) are taxed
     return {
-      batchId: batch._id,
-      batchNumber: batch.batchNumber || batch._id.slice(-6).toUpperCase(),
-      recipe: recipe?.name || 'Unknown',
-      spiritType: recipe?.class || recipe?.type || 'Unknown',
-      date: (batch.stages as any)?.distilling?.startedAt
-        ? new Date((batch.stages as any).distilling.startedAt).toLocaleDateString()
+      productionId: prod._id,
+      bottleName: bottle?.name || 'Unknown',
+      spiritType: bottle?.class || bottle?.type || 'Unknown',
+      date: prod.date
+        ? new Date(prod.date).toLocaleDateString()
         : '--',
-      heartsWineGallons: heartsVol,
-      headsWineGallons: headsVol,
-      tailsWineGallons: tailsVol,
-      totalWineGallons: totalWG,
-      taxableWineGallons: taxable,
-      taxDue: taxable * TABC_TAX_RATE,
+      quantity: prod.quantity || 0,
+      bottleSize: bottle
+        ? `${bottle.volume || 750}${bottle.volumeUnit || 'mL'}`
+        : '--',
+      wineGallons: totalWG,
+      taxDue: totalWG * TABC_TAX_RATE,
     }
   }).sort((a, b) => a.date.localeCompare(b.date))
 })
 
 // ─── Totals ────────────────────────────────────────────────────────────────────
 
-const totalHeartsWG = computed(() => taxLines.value.reduce((s, l) => s + l.heartsWineGallons, 0))
-const totalHeadsWG = computed(() => taxLines.value.reduce((s, l) => s + l.headsWineGallons, 0))
-const totalTailsWG = computed(() => taxLines.value.reduce((s, l) => s + l.tailsWineGallons, 0))
-const totalTaxableWG = computed(() => taxLines.value.reduce((s, l) => s + l.taxableWineGallons, 0))
+const totalBottles = computed(() => taxLines.value.reduce((s, l) => s + l.quantity, 0))
+const totalTaxableWG = computed(() => taxLines.value.reduce((s, l) => s + l.wineGallons, 0))
 const totalTaxDue = computed(() => totalTaxableWG.value * TABC_TAX_RATE)
 
 // ─── Tax summary by spirit type ───────────────────────────────────────────────
 
 const taxByType = computed(() => {
-  const map = new Map<string, { wineGallons: number; taxDue: number; batches: number }>()
+  const map = new Map<string, { wineGallons: number; taxDue: number; productions: number; bottles: number }>()
   taxLines.value.forEach(line => {
-    const existing = map.get(line.spiritType) || { wineGallons: 0, taxDue: 0, batches: 0 }
-    existing.wineGallons += line.taxableWineGallons
+    const existing = map.get(line.spiritType) || { wineGallons: 0, taxDue: 0, productions: 0, bottles: 0 }
+    existing.wineGallons += line.wineGallons
     existing.taxDue += line.taxDue
-    existing.batches += 1
+    existing.productions += 1
+    existing.bottles += line.quantity
     map.set(line.spiritType, existing)
   })
   return Array.from(map.entries())
@@ -208,18 +183,16 @@ const isOverdue = computed(() => {
     <!-- Summary stats -->
     <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
       <div class="bg-charcoal rounded-lg border border-brown/30 p-4 text-center print:border-gray-300">
-        <div class="text-2xl font-bold text-parchment print:text-black">{{ distilledBatches.length }}</div>
-        <div class="text-xs text-parchment/60 mt-1 print:text-gray-500">Distillation Batches</div>
+        <div class="text-2xl font-bold text-parchment print:text-black">{{ monthProductions.length }}</div>
+        <div class="text-xs text-parchment/60 mt-1 print:text-gray-500">Production Runs</div>
       </div>
       <div class="bg-charcoal rounded-lg border border-brown/30 p-4 text-center print:border-gray-300">
-        <div class="text-2xl font-bold text-parchment print:text-black">{{ totalHeartsWG.toFixed(2) }}</div>
-        <div class="text-xs text-parchment/60 mt-1 print:text-gray-500">Taxable WG (Hearts)</div>
+        <div class="text-2xl font-bold text-parchment print:text-black">{{ totalBottles.toLocaleString() }}</div>
+        <div class="text-xs text-parchment/60 mt-1 print:text-gray-500">Bottles Produced</div>
       </div>
       <div class="bg-charcoal rounded-lg border border-brown/30 p-4 text-center print:border-gray-300">
-        <div class="text-2xl font-bold text-parchment/50 print:text-black">
-          {{ (totalHeadsWG + totalTailsWG).toFixed(2) }}
-        </div>
-        <div class="text-xs text-parchment/60 mt-1 print:text-gray-500">Non-Taxable WG (H&amp;T)</div>
+        <div class="text-2xl font-bold text-parchment print:text-black">{{ totalTaxableWG.toFixed(2) }}</div>
+        <div class="text-xs text-parchment/60 mt-1 print:text-gray-500">Taxable Wine Gallons</div>
       </div>
       <div class="bg-charcoal rounded-lg border border-brown/30 p-4 text-center print:border-gray-300">
         <div class="text-2xl font-bold text-gold print:text-black">${{ totalTaxDue.toFixed(2) }}</div>
@@ -235,7 +208,8 @@ const isOverdue = computed(() => {
           <thead>
             <tr class="border-b border-brown/20 print:border-gray-300">
               <th class="text-left py-2 px-3 text-parchment/50 font-medium print:text-gray-600">Spirit Type</th>
-              <th class="text-right py-2 px-3 text-parchment/50 font-medium print:text-gray-600">Batches</th>
+              <th class="text-right py-2 px-3 text-parchment/50 font-medium print:text-gray-600">Runs</th>
+              <th class="text-right py-2 px-3 text-parchment/50 font-medium print:text-gray-600">Bottles</th>
               <th class="text-right py-2 px-3 text-parchment/50 font-medium print:text-gray-600">Taxable WG</th>
               <th class="text-right py-2 px-3 text-parchment/50 font-medium print:text-gray-600">Rate</th>
               <th class="text-right py-2 px-3 text-parchment/50 font-medium print:text-gray-600">Tax Due</th>
@@ -248,14 +222,16 @@ const isOverdue = computed(() => {
               class="border-b border-brown/10 print:border-gray-200"
             >
               <td class="py-2 px-3 text-parchment print:text-black font-medium">{{ row.type }}</td>
-              <td class="py-2 px-3 text-right text-parchment/70 print:text-gray-700">{{ row.batches }}</td>
+              <td class="py-2 px-3 text-right text-parchment/70 print:text-gray-700">{{ row.productions }}</td>
+              <td class="py-2 px-3 text-right text-parchment/70 print:text-gray-700">{{ row.bottles.toLocaleString() }}</td>
               <td class="py-2 px-3 text-right text-parchment print:text-black">{{ row.wineGallons.toFixed(4) }}</td>
               <td class="py-2 px-3 text-right text-parchment/60 print:text-gray-600">${{ TABC_TAX_RATE.toFixed(2) }}/gal</td>
               <td class="py-2 px-3 text-right text-gold print:text-black font-bold">${{ row.taxDue.toFixed(2) }}</td>
             </tr>
             <tr class="border-t-2 border-brown/30 font-bold print:border-gray-400">
               <td class="py-2 px-3 text-parchment print:text-black">Total</td>
-              <td class="py-2 px-3 text-right text-parchment print:text-black">{{ distilledBatches.length }}</td>
+              <td class="py-2 px-3 text-right text-parchment print:text-black">{{ monthProductions.length }}</td>
+              <td class="py-2 px-3 text-right text-parchment print:text-black">{{ totalBottles.toLocaleString() }}</td>
               <td class="py-2 px-3 text-right text-parchment print:text-black">{{ totalTaxableWG.toFixed(4) }}</td>
               <td class="py-2 px-3"></td>
               <td class="py-2 px-3 text-right text-gold print:text-black">${{ totalTaxDue.toFixed(2) }}</td>
@@ -264,32 +240,31 @@ const isOverdue = computed(() => {
         </table>
       </div>
       <div v-else class="text-center py-6 text-parchment/50 text-sm">
-        No distillation batches in {{ monthLabel }}
+        No production runs in {{ monthLabel }}
       </div>
     </div>
 
-    <!-- Batch-level detail -->
+    <!-- Production detail -->
     <div class="bg-charcoal rounded-xl border border-brown/30 p-5 print:border-gray-300">
-      <h3 class="text-sm font-semibold text-parchment/70 mb-3 print:text-black">Batch Detail</h3>
+      <h3 class="text-sm font-semibold text-parchment/70 mb-3 print:text-black">Production Detail</h3>
       <div v-if="taxLines.length > 0" class="overflow-x-auto">
         <table class="w-full text-sm">
           <thead>
             <tr class="border-b border-brown/20 print:border-gray-300">
               <th class="text-left py-2 px-3 text-parchment/50 font-medium print:text-gray-600">Date</th>
-              <th class="text-left py-2 px-3 text-parchment/50 font-medium print:text-gray-600">Batch #</th>
-              <th class="text-left py-2 px-3 text-parchment/50 font-medium print:text-gray-600">Recipe / Spirit</th>
-              <th class="text-right py-2 px-3 text-parchment/50 font-medium print:text-gray-600">Hearts WG</th>
-              <th class="text-right py-2 px-3 text-parchment/50 font-medium print:text-gray-600">Heads WG</th>
-              <th class="text-right py-2 px-3 text-parchment/50 font-medium print:text-gray-600">Tails WG</th>
-              <th class="text-right py-2 px-3 text-parchment/50 font-medium print:text-gray-600">Taxable WG</th>
+              <th class="text-left py-2 px-3 text-parchment/50 font-medium print:text-gray-600">Product</th>
+              <th class="text-left py-2 px-3 text-parchment/50 font-medium print:text-gray-600">Spirit Type</th>
+              <th class="text-right py-2 px-3 text-parchment/50 font-medium print:text-gray-600">Qty</th>
+              <th class="text-right py-2 px-3 text-parchment/50 font-medium print:text-gray-600">Bottle Size</th>
+              <th class="text-right py-2 px-3 text-parchment/50 font-medium print:text-gray-600">Wine Gallons</th>
               <th class="text-right py-2 px-3 text-parchment/50 font-medium print:text-gray-600">Tax Due</th>
             </tr>
           </thead>
           <tbody>
             <NuxtLink
               v-for="line in taxLines"
-              :key="line.batchId"
-              :to="`/admin/batch/${line.batchId}`"
+              :key="line.productionId"
+              :to="`/admin/production/${line.productionId}`"
               custom
               v-slot="{ navigate }"
             >
@@ -298,23 +273,18 @@ const isOverdue = computed(() => {
                 @click="navigate"
               >
                 <td class="py-2 px-3 text-parchment/70 print:text-gray-700">{{ line.date }}</td>
-                <td class="py-2 px-3 text-parchment/60 print:text-gray-600 font-mono text-xs">{{ line.batchNumber }}</td>
-                <td class="py-2 px-3 text-parchment print:text-black">
-                  {{ line.recipe }}
-                  <span class="text-parchment/50 text-xs ml-1 print:text-gray-500">({{ line.spiritType }})</span>
-                </td>
-                <td class="py-2 px-3 text-right text-parchment print:text-black">{{ line.heartsWineGallons.toFixed(3) }}</td>
-                <td class="py-2 px-3 text-right text-parchment/50 print:text-gray-500">{{ line.headsWineGallons.toFixed(3) }}</td>
-                <td class="py-2 px-3 text-right text-parchment/50 print:text-gray-500">{{ line.tailsWineGallons.toFixed(3) }}</td>
-                <td class="py-2 px-3 text-right text-copper print:text-black font-semibold">{{ line.taxableWineGallons.toFixed(4) }}</td>
+                <td class="py-2 px-3 text-parchment print:text-black">{{ line.bottleName }}</td>
+                <td class="py-2 px-3 text-parchment/60 print:text-gray-600">{{ line.spiritType }}</td>
+                <td class="py-2 px-3 text-right text-parchment print:text-black">{{ line.quantity.toLocaleString() }}</td>
+                <td class="py-2 px-3 text-right text-parchment/60 print:text-gray-600">{{ line.bottleSize }}</td>
+                <td class="py-2 px-3 text-right text-copper print:text-black font-semibold">{{ line.wineGallons.toFixed(4) }}</td>
                 <td class="py-2 px-3 text-right text-gold print:text-black font-bold">${{ line.taxDue.toFixed(2) }}</td>
               </tr>
             </NuxtLink>
             <tr class="border-t-2 border-brown/30 font-bold print:border-gray-400">
               <td class="py-2 px-3 text-parchment print:text-black" colspan="3">Total</td>
-              <td class="py-2 px-3 text-right text-parchment print:text-black">{{ totalHeartsWG.toFixed(3) }}</td>
-              <td class="py-2 px-3 text-right text-parchment/50 print:text-gray-500">{{ totalHeadsWG.toFixed(3) }}</td>
-              <td class="py-2 px-3 text-right text-parchment/50 print:text-gray-500">{{ totalTailsWG.toFixed(3) }}</td>
+              <td class="py-2 px-3 text-right text-parchment print:text-black">{{ totalBottles.toLocaleString() }}</td>
+              <td class="py-2 px-3"></td>
               <td class="py-2 px-3 text-right text-parchment print:text-black">{{ totalTaxableWG.toFixed(4) }}</td>
               <td class="py-2 px-3 text-right text-gold print:text-black">${{ totalTaxDue.toFixed(2) }}</td>
             </tr>
@@ -322,7 +292,7 @@ const isOverdue = computed(() => {
         </table>
       </div>
       <div v-else class="text-center py-6 text-parchment/50 text-sm">
-        No distillation batches recorded for {{ monthLabel }}
+        No production runs recorded for {{ monthLabel }}
       </div>
     </div>
 
@@ -331,9 +301,9 @@ const isOverdue = computed(() => {
       <p class="text-xs text-parchment/50 leading-relaxed print:text-gray-600">
         <strong class="text-parchment/70 print:text-black">Note:</strong>
         Texas Tax Code § 201.43 imposes a $2.40 per gallon (wine gallon) excise tax on distilled spirits manufactured
-        in Texas. Only beverage spirits (hearts cut) are subject to tax; non-potable fractions (heads and tails)
-        are excluded provided they are properly documented. This report must reconcile with your TABC Monthly
-        Production Report (same filing period). Remit payment with your monthly report via the TABC Compliance Portal.
+        in Texas. Tax is calculated from production records: bottle volume × quantity produced = taxable wine gallons.
+        This report must reconcile with your TABC Monthly Production Report (same filing period).
+        Remit payment with your monthly report via the TABC Compliance Portal.
       </p>
     </div>
   </div>

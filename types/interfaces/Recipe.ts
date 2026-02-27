@@ -9,6 +9,7 @@ export interface Recipe {
   directions?: string;
   notes?: string;
   targetAbv?: number;
+  macerationDays?: number;
   pipeline: string[];
   pipelineTemplate?: string;
   createdAt?: string;

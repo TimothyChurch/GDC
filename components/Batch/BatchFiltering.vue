@@ -66,6 +66,21 @@ const save = async () => {
       passes: local.value.passes,
       notes: local.value.notes,
     })
+
+    // Update the vessel's contents with post-filter volume and ABV
+    if (local.value.vessel && local.value.postVolume != null && local.value.postAbv != null) {
+      const vessel = vesselStore.getVesselById(local.value.vessel)
+      if (vessel) {
+        vesselStore.setVessel(vessel._id)
+        const batchContent = vesselStore.vessel.contents?.find(c => c.batch === props.batch._id)
+        if (batchContent) {
+          batchContent.volume = local.value.postVolume
+          batchContent.volumeUnit = local.value.postVolumeUnit
+          batchContent.abv = local.value.postAbv
+        }
+        await vesselStore.updateVessel()
+      }
+    }
   } finally {
     saving.value = false
   }

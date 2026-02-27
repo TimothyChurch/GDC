@@ -13,43 +13,12 @@ const vesselStore = useVesselStore()
 const batch = computed(() => batchStore.getBatchById(route.params._id as string))
 const recipe = computed(() => batch.value?.recipe ? recipeStore.getRecipeById(batch.value.recipe) : undefined)
 
-const itemStore = useItemStore()
-const { convertQuantity, ingredientCost } = useUnitConversion()
-
 const containingVessels = computed(() => {
   if (!batch.value?._id) return []
   return vesselStore.vessels.filter(v =>
     v.contents?.some(c => c.batch === batch.value!._id)
   )
 })
-
-// Scale recipe ingredients to batch size
-const scaleFactor = computed(() => {
-  if (!batch.value || !recipe.value || !recipe.value.volume) return 1
-  const batchInRecipeUnits = convertQuantity(batch.value.batchSize, batch.value.batchSizeUnit, recipe.value.volumeUnit)
-  return batchInRecipeUnits / recipe.value.volume
-})
-
-const scaledIngredients = computed(() => {
-  if (!recipe.value?.items) return []
-  return recipe.value.items.map((ing) => {
-    const item = itemStore.getItemById(ing._id)
-    const pricePerUnit = latestPrice(ing._id)
-    const scaledAmount = ing.amount * scaleFactor.value
-    const cost = ingredientCost(pricePerUnit, scaledAmount, ing.unit, item?.inventoryUnit || ing.unit)
-    return {
-      id: ing._id,
-      name: item?.name || 'Unknown',
-      amount: scaledAmount,
-      unit: ing.unit,
-      cost,
-    }
-  })
-})
-
-const scaledTotalCost = computed(() =>
-  scaledIngredients.value.reduce((sum, ing) => sum + ing.cost, 0)
-)
 
 // Panel slide-over for editing
 import { LazyPanelBatch } from '#components'
@@ -60,22 +29,6 @@ const editBatch = () => {
   if (!batch.value) return
   batchStore.setBatch(batch.value._id)
   panel.open()
-}
-
-// Recalculate batch cost from current recipe prices
-const updatingCost = ref(false)
-const updateBatchCost = async () => {
-  if (!batch.value || !recipe.value) return
-  updatingCost.value = true
-  try {
-    const newRecipeCost = recipePrice(recipe.value)
-    batchStore.setBatch(batch.value._id)
-    batchStore.batch.recipeCost = newRecipeCost
-    batchStore.batch.batchCost = scaledTotalCost.value
-    await batchStore.updateBatch()
-  } finally {
-    updatingCost.value = false
-  }
 }
 
 // Stage helpers using batch pipeline
@@ -122,19 +75,27 @@ const advancableStages = computed(() => {
   return stages
 })
 
-// Dynamic component map
-const STAGE_COMPONENTS: Record<string, string> = {
-  'Mashing': 'BatchMashing',
-  'Fermenting': 'BatchFermenting',
-  'Distilling': 'BatchDistilling',
-  'Maceration': 'BatchMaceration',
-  'Filtering': 'BatchFiltering',
-  'Barrel Aging': 'BatchBarrelAging',
-  'Storage': 'BatchStorage',
-  'Blending': 'BatchBlending',
-  'Proofing': 'BatchProofing',
-  'Bottled': 'BatchBottled',
+// Dynamic component map — use resolveComponent for runtime resolution of auto-imported components
+const STAGE_COMPONENTS: Record<string, ReturnType<typeof resolveComponent>> = {
+  'Mashing': resolveComponent('BatchMashing'),
+  'Fermenting': resolveComponent('BatchFermenting'),
+  'Distilling': resolveComponent('BatchDistilling'),
+  'Maceration': resolveComponent('BatchMaceration'),
+  'Filtering': resolveComponent('BatchFiltering'),
+  'Barrel Aging': resolveComponent('BatchBarrelAging'),
+  'Storage': resolveComponent('BatchStorage'),
+  'Blending': resolveComponent('BatchBlending'),
+  'Proofing': resolveComponent('BatchProofing'),
+  'Bottled': resolveComponent('BatchBottled'),
 }
+
+// Stages rendered in reverse order (newest first), with overview staying on top
+const reversedReachedStages = computed(() => {
+  if (!batch.value) return []
+  return [...batch.value.pipeline]
+    .filter(s => hasReached(s) && STAGE_COMPONENTS[s])
+    .reverse()
+})
 
 </script>
 
@@ -178,50 +139,13 @@ const STAGE_COMPONENTS: Record<string, string> = {
 
     <BatchHeader :batch="batch" :recipe="recipe" />
 
-    <!-- Scaled Ingredients -->
-    <div v-if="scaledIngredients.length > 0" class="bg-charcoal rounded-xl border border-brown/30 p-5">
-      <div class="flex items-center justify-between mb-4">
-        <h3 class="text-lg font-bold text-parchment font-[Cormorant_Garamond]">
-          Ingredients
-          <span class="text-sm font-normal text-parchment/50 ml-2">
-            (scaled to {{ batch.batchSize }} {{ batch.batchSizeUnit }})
-          </span>
-        </h3>
-        <div class="flex items-center gap-3">
-          <span class="text-sm font-semibold text-gold">{{ Dollar.format(scaledTotalCost) }}</span>
-          <UButton
-            v-if="scaledTotalCost !== (batch.batchCost || 0)"
-            icon="i-lucide-refresh-cw"
-            size="xs"
-            variant="soft"
-            :loading="updatingCost"
-            @click="updateBatchCost"
-          >
-            Update Cost
-          </UButton>
-        </div>
-      </div>
-      <div class="divide-y divide-brown/20">
-        <div class="grid grid-cols-3 gap-4 pb-2 text-xs text-parchment/60 uppercase tracking-wider">
-          <span>Item</span>
-          <span>Amount</span>
-          <span class="text-right">Cost</span>
-        </div>
-        <div
-          v-for="ing in scaledIngredients"
-          :key="ing.id"
-          class="grid grid-cols-3 gap-4 py-2 text-sm"
-        >
-          <NuxtLink
-            :to="`/admin/items/${ing.id}`"
-            class="text-gold hover:text-copper transition-colors"
-          >
-            {{ ing.name }}
-          </NuxtLink>
-          <span class="text-parchment/60">{{ Number(ing.amount.toFixed(2)) }} {{ ing.unit }}</span>
-          <span class="text-parchment text-right">{{ Dollar.format(ing.cost) }}</span>
-        </div>
-      </div>
+    <!-- Upcoming advance action (no stage card for Upcoming) -->
+    <div v-if="batch.status === 'active' && advancableStages.includes('Upcoming')" class="flex justify-center">
+      <BatchAdvanceAction
+        :batch="batch"
+        source-stage="Upcoming"
+        @advanced="() => {}"
+      />
     </div>
 
     <!-- Current Vessels -->
@@ -244,26 +168,22 @@ const STAGE_COMPONENTS: Record<string, string> = {
       </div>
     </div>
 
-    <!-- Dynamic stage components based on pipeline -->
-    <template v-for="stage in batch.pipeline" :key="stage">
+    <!-- Dynamic stage components — newest stage first, overview stays on top -->
+    <template v-for="stage in reversedReachedStages" :key="stage">
       <component
-        v-if="hasReached(stage) && STAGE_COMPONENTS[stage]"
         :is="STAGE_COMPONENTS[stage]"
         :batch="batch"
         :editing="isEditable(stage)"
       />
+      <!-- Per-stage advance action directly below the card -->
+      <div v-if="batch.status === 'active' && advancableStages.includes(stage)" class="flex justify-center">
+        <BatchAdvanceAction
+          :batch="batch"
+          :source-stage="stage"
+          @advanced="() => {}"
+        />
+      </div>
     </template>
-
-    <!-- Per-stage advance actions (only for active batches) -->
-    <div v-if="batch.status === 'active' && advancableStages.length > 0" class="flex flex-wrap justify-center gap-3">
-      <BatchAdvanceAction
-        v-for="stage in advancableStages"
-        :key="stage"
-        :batch="batch"
-        :source-stage="stage"
-        @advanced="() => {}"
-      />
-    </div>
 
     <!-- Tasting Notes (visible on all stages) -->
     <BatchTastingNotes :batch="batch" />

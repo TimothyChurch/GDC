@@ -52,6 +52,7 @@ export interface DistillingCut {
 	volume?: number;
 	volumeUnit?: string;
 	abv?: number;
+	disposed?: boolean;
 }
 
 export interface DistillingRun {

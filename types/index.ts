@@ -11,7 +11,7 @@ import type { Production, ProductionCosts } from './interfaces/Production';
 import type { PurchaseOrder } from './interfaces/PurchaseOrder';
 import type { PurchaseOrderItem } from './interfaces/PurchaseOrderItem';
 import type { Recipe } from './interfaces/Recipe';
-import type { Settings, SettingsTheme, SettingsDistillery } from './interfaces/Settings';
+import type { Settings, SettingsTheme, SettingsDistillery, InventoryCategoryDef } from './interfaces/Settings';
 import type { User } from './interfaces/User';
 import type { Vessel } from './interfaces/Vessel';
 
@@ -53,6 +53,7 @@ export type {
 	Settings,
 	SettingsTheme,
 	SettingsDistillery,
+	InventoryCategoryDef,
 	User,
 	Vessel,
 };

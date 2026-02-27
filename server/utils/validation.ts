@@ -125,6 +125,8 @@ export const itemCreateSchema = yup.object({
   name: yup.string().required("Name is required"),
   category: yup.string(),
   trackInventory: yup.boolean(),
+  unitSize: yup.number().min(0, "Unit size cannot be negative").nullable(),
+  unitLabel: yup.string(),
   minStock: yup.number().min(0, "Min stock cannot be negative"),
   reorderPoint: yup.number().min(0, "Reorder point cannot be negative"),
   usePerMonth: yup.number().min(0, "Use per month cannot be negative"),
@@ -136,7 +138,8 @@ const productionCostsSchema = yup.object({
   barrel: yup.number().min(0, "Barrel cost cannot be negative").default(0),
   bottling: yup.number().min(0, "Bottling cost cannot be negative").default(0),
   labor: yup.number().min(0, "Labor cost cannot be negative").default(0),
-  taxes: yup.number().min(0, "Tax amount cannot be negative").default(0),
+  ttbTax: yup.number().min(0, "TTB tax cannot be negative").default(0),
+  tabcTax: yup.number().min(0, "TABC tax cannot be negative").default(0),
   other: yup.number().min(0, "Other cost cannot be negative").default(0),
 });
 
@@ -286,6 +289,8 @@ export const itemUpdateSchema = yup.object({
   name: yup.string(),
   category: yup.string(),
   trackInventory: yup.boolean(),
+  unitSize: yup.number().min(0, "Unit size cannot be negative").nullable(),
+  unitLabel: yup.string(),
   minStock: yup.number().min(0, "Min stock cannot be negative"),
   reorderPoint: yup.number().min(0, "Reorder point cannot be negative"),
   usePerMonth: yup.number().min(0, "Use per month cannot be negative"),
@@ -336,10 +341,18 @@ export const equipmentLogCreateSchema = yup.object({
   batch: yup.string().nullable(),
 });
 
+const inventoryCategoryDefSchema = yup.object({
+  key: yup.string().required("Key is required"),
+  label: yup.string().required("Label is required"),
+  category: yup.string().required("Category is required"),
+  icon: yup.string().default("i-lucide-box"),
+  description: yup.string().default(""),
+});
+
 export const settingsUpdateSchema = yup.object({
   itemCategories: yup
     .array()
-    .of(yup.string().required())
+    .of(inventoryCategoryDefSchema)
     .min(1, "At least one category is required"),
   barrelAgeDefaults: yup.object(),
   theme: yup.object({

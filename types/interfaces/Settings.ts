@@ -1,3 +1,11 @@
+export interface InventoryCategoryDef {
+  key: string;
+  label: string;
+  category: string;
+  icon: string;
+  description: string;
+}
+
 export interface SettingsTheme {
   primaryColor: string;
 }
@@ -13,7 +21,7 @@ export interface SettingsDistillery {
 
 export interface Settings {
   _id: string;
-  itemCategories: string[];
+  itemCategories: InventoryCategoryDef[];
   barrelAgeDefaults: Record<string, number>;
   theme: SettingsTheme;
   distillery: SettingsDistillery;

@@ -35,6 +35,40 @@ const estimatedABV = computed(() => {
   return ((first - last) * 131.25).toFixed(2)
 })
 
+// OG for per-reading calculations (use explicit OG or first reading)
+const effectiveOG = computed(() => {
+  if (stage.value?.originalGravity) return stage.value.originalGravity
+  if (sortedReadings.value.length > 0) return sortedReadings.value[0].gravity
+  return null
+})
+
+// Potential ABV based on OG (assumes fermentation to 1.000)
+const potentialABV = computed(() => {
+  if (!effectiveOG.value) return null
+  return (effectiveOG.value - 1.0) * 131.25
+})
+
+// Per-reading ABV: (OG - gravity) * 131.25
+const readingABV = (gravity: number) => {
+  if (!effectiveOG.value || !gravity) return null
+  return ((effectiveOG.value - gravity) * 131.25).toFixed(1)
+}
+
+// Per-reading % done vs initial potential
+const readingPercentDone = (gravity: number) => {
+  if (!effectiveOG.value || !gravity || !potentialABV.value) return null
+  const currentABV = (effectiveOG.value - gravity) * 131.25
+  return Math.min(100, Math.max(0, (currentABV / potentialABV.value) * 100)).toFixed(0)
+}
+
+// Start date display
+const startDate = computed(() => {
+  if (!stage.value?.startedAt) return 'Not set'
+  return new Date(stage.value.startedAt).toLocaleDateString('en-US', {
+    month: 'long', day: 'numeric', year: 'numeric',
+  })
+})
+
 const chartData = computed(() => ({
   labels: sortedReadings.value.map((r) =>
     new Date(r.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
@@ -86,6 +120,7 @@ const addReading = async () => {
 // Edit fields
 const local = ref({
   vessel: stage.value?.vessel || '',
+  startedAt: stage.value?.startedAt ? new Date(stage.value.startedAt) : new Date(),
   yeastStrain: stage.value?.yeastStrain || '',
   pitchTemp: stage.value?.pitchTemp,
   pitchTempUnit: stage.value?.pitchTempUnit || 'F',
@@ -106,6 +141,7 @@ const saveEdits = async () => {
   try {
     await batchStore.updateStageData(props.batch._id, 'Fermenting', {
       vessel: local.value.vessel || undefined,
+      startedAt: local.value.startedAt,
       yeastStrain: local.value.yeastStrain,
       pitchTemp: local.value.pitchTemp,
       pitchTempUnit: local.value.pitchTempUnit,
@@ -144,11 +180,15 @@ const saveEdits = async () => {
       </div>
     </div>
 
-    <!-- Vessel, Yeast, Pitch Temp -->
-    <div v-if="editing" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
+    <!-- Vessel, Pitch Date, Yeast, Pitch Temp -->
+    <div v-if="editing" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 mb-4">
       <div>
         <div class="text-xs text-parchment/60 uppercase tracking-wider mb-1">Vessel</div>
         <USelect v-model="local.vessel" :items="fermenterOptions" value-key="value" label-key="label" placeholder="Select fermenter" />
+      </div>
+      <div>
+        <div class="text-xs text-parchment/60 uppercase tracking-wider mb-1">Pitch Date</div>
+        <SiteDatePicker v-model="local.startedAt" />
       </div>
       <div>
         <div class="text-xs text-parchment/60 uppercase tracking-wider mb-1">Yeast Strain</div>
@@ -166,10 +206,14 @@ const saveEdits = async () => {
         <UTextarea v-model="local.notes" placeholder="Fermentation notes..." :rows="2" />
       </div>
     </div>
-    <div v-else class="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-4">
+    <div v-else class="grid grid-cols-2 sm:grid-cols-5 gap-4 mb-4">
       <div>
         <div class="text-xs text-parchment/60 uppercase tracking-wider mb-1">Vessel</div>
         <div class="text-sm text-parchment">{{ vesselName }}</div>
+      </div>
+      <div>
+        <div class="text-xs text-parchment/60 uppercase tracking-wider mb-1">Pitch Date</div>
+        <div class="text-sm text-parchment">{{ startDate }}</div>
       </div>
       <div v-if="stage?.yeastStrain">
         <div class="text-xs text-parchment/60 uppercase tracking-wider mb-1">Yeast</div>
@@ -247,17 +291,32 @@ const saveEdits = async () => {
     <div v-if="sortedReadings.length > 0">
       <div class="text-xs text-parchment/60 uppercase tracking-wider mb-2">Readings</div>
       <div class="divide-y divide-brown/20">
+        <div class="grid grid-cols-5 gap-2 pb-2 text-xs text-parchment/50 uppercase tracking-wider">
+          <span>Date</span>
+          <span>Gravity</span>
+          <span>ABV</span>
+          <span>% Done</span>
+          <span>Temp</span>
+        </div>
         <div
           v-for="(reading, i) in sortedReadings"
           :key="i"
-          class="flex items-center justify-between py-2 text-sm"
+          class="grid grid-cols-5 gap-2 py-2 text-sm items-center"
         >
           <span class="text-parchment/60">
             {{ new Date(reading.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) }}
           </span>
           <span class="text-parchment">{{ reading.gravity }}</span>
-          <span class="text-parchment/60">{{ reading.temperature }}&deg;{{ reading.temperatureUnit }}</span>
-          <span v-if="reading.pH" class="text-parchment/60">pH {{ reading.pH }}</span>
+          <span class="text-yellow-400">
+            {{ readingABV(reading.gravity) ? `${readingABV(reading.gravity)}%` : '—' }}
+          </span>
+          <span class="text-parchment/60">
+            {{ readingPercentDone(reading.gravity) ? `${readingPercentDone(reading.gravity)}%` : '—' }}
+          </span>
+          <span class="text-parchment/60">
+            <template v-if="reading.temperature">{{ reading.temperature }}&deg;{{ reading.temperatureUnit }}</template>
+            <template v-else>—</template>
+          </span>
         </div>
       </div>
     </div>

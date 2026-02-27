@@ -10,7 +10,10 @@ const props = defineProps<{
 const vesselStore = useVesselStore()
 const batchStore = useBatchStore()
 
+const recipeStore = useRecipeStore()
+
 const stage = computed(() => props.batch.stages?.proofing as ProofingStage | undefined)
+const recipe = computed(() => props.batch?.recipe ? recipeStore.getRecipeById(props.batch.recipe) : undefined)
 
 const vesselName = computed(() => {
   if (!stage.value?.vessel) return 'Not assigned'
@@ -24,12 +27,28 @@ const startDate = computed(() => {
   })
 })
 
+// Auto-populate defaults from the vessel containing this batch
+const vesselDefaults = computed(() => {
+  const vessels = vesselStore.vessels.filter(v =>
+    v.contents?.some(c => c.batch === props.batch._id)
+  )
+  if (vessels.length === 0) return null
+  // Use the first vessel that has this batch
+  const v = vessels[0]
+  const batchContent = v.contents?.find(c => c.batch === props.batch._id)
+  return {
+    volume: batchContent?.volume || v.current?.volume,
+    volumeUnit: batchContent?.volumeUnit || v.current?.volumeUnit || 'gallon',
+    abv: batchContent?.abv || v.current?.abv,
+  }
+})
+
 const local = ref({
   vessel: stage.value?.vessel || '',
-  startAbv: stage.value?.startAbv,
-  startVolume: stage.value?.startVolume,
-  startVolumeUnit: stage.value?.startVolumeUnit || 'gallon',
-  targetAbv: stage.value?.targetAbv,
+  startAbv: stage.value?.startAbv ?? vesselDefaults.value?.abv,
+  startVolume: stage.value?.startVolume ?? vesselDefaults.value?.volume,
+  startVolumeUnit: stage.value?.startVolumeUnit || vesselDefaults.value?.volumeUnit || 'gallon',
+  targetAbv: stage.value?.targetAbv ?? recipe.value?.targetAbv,
   waterAdded: stage.value?.waterAdded,
   waterAddedUnit: stage.value?.waterAddedUnit || 'gallon',
   waterSource: stage.value?.waterSource || '',
@@ -43,6 +62,21 @@ const local = ref({
 const tankOptions = computed(() =>
   vesselStore.tanks.map((v) => ({ label: v.name, value: v._id }))
 )
+
+// Auto-populate start volume/ABV when vessel is selected (only if not already set)
+watch(() => local.value.vessel, (newVesselId) => {
+  if (!newVesselId || !props.editing) return
+  const vessel = vesselStore.getVesselById(newVesselId)
+  if (!vessel) return
+  const batchContent = vessel.contents?.find(c => c.batch === props.batch._id)
+  if (!local.value.startVolume) {
+    local.value.startVolume = batchContent?.volume || vessel.current?.volume
+    local.value.startVolumeUnit = batchContent?.volumeUnit || vessel.current?.volumeUnit || 'gallon'
+  }
+  if (!local.value.startAbv) {
+    local.value.startAbv = batchContent?.abv || vessel.current?.abv
+  }
+})
 
 // Auto-calculate water needed: (startAbv / targetAbv * startVolume) - startVolume
 const calculatedWaterNeeded = computed(() => {
@@ -148,6 +182,14 @@ const save = async () => {
         <span v-if="stage?.targetAbv" class="text-cyan-400 font-semibold">Target: {{ stage.targetAbv }}%</span>
         <span v-if="!stage?.startAbv && !stage?.startVolume">Not recorded</span>
       </div>
+    </div>
+
+    <!-- Auto-populated hint -->
+    <div v-if="editing && vesselDefaults && !stage?.startAbv" class="mb-4 px-3 py-2 rounded-lg bg-cyan-500/5 border border-cyan-500/15">
+      <span class="text-xs text-cyan-400/70">
+        <UIcon name="i-lucide-info" class="inline-block mr-1" />
+        Defaults pulled from vessel: {{ vesselDefaults.volume }} {{ vesselDefaults.volumeUnit }} @ {{ vesselDefaults.abv }}% ABV
+      </span>
     </div>
 
     <!-- Water needed helper -->

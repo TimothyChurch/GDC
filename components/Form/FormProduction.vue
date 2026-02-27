@@ -15,6 +15,8 @@ const schema = yup.object({
 	quantity: yup.number().positive('Must be greater than 0').required('Quantity is required'),
 });
 
+const updateInventory = ref(true);
+
 // Labels for vessels based on their contents
 const vesselLabels = computed(() => {
 	const vessels = vesselStore.vessels.filter(
@@ -92,7 +94,8 @@ const productionCost = computed(() => {
 		calculatedBarrelCost.value +
 		calculatedBottlingCost.value +
 		(productionsStore.production.costs?.labor || 0) +
-		(productionsStore.production.costs?.taxes || 0) +
+		(productionsStore.production.costs?.ttbTax || 0) +
+		(productionsStore.production.costs?.tabcTax || 0) +
 		(productionsStore.production.costs?.other || 0)
 	);
 });
@@ -116,7 +119,8 @@ const saveProduction = async () => {
 		barrel: calculatedBarrelCost.value,
 		bottling: calculatedBottlingCost.value,
 		labor: productionsStore.production.costs?.labor || 0,
-		taxes: productionsStore.production.costs?.taxes || 0,
+		ttbTax: productionsStore.production.costs?.ttbTax || 0,
+		tabcTax: productionsStore.production.costs?.tabcTax || 0,
 		other: productionsStore.production.costs?.other || 0,
 	};
 	productionsStore.production.productionCost = productionCost.value;
@@ -134,8 +138,8 @@ const saveProduction = async () => {
 
 	await productionsStore.updateProduction();
 
-	// Auto-adjust inventory for new productions only (not edits)
-	if (isNewProduction) {
+	// Auto-adjust inventory for new productions only (not edits), if toggle is on
+	if (isNewProduction && updateInventory.value) {
 		await productionsStore.adjustInventoryForProduction(inventoryData);
 	}
 };
@@ -174,37 +178,13 @@ const saveProduction = async () => {
 					searchable />
 			</UFormField>
 			<UFormField label="Glassware" name="bottling.glassware">
-				<USelectMenu
-					v-model="productionsStore.production.bottling.glassware"
-					:items="
-						itemStore.items.filter(
-							(item) => item.type?.toLowerCase() === 'glass bottle'
-						)
-					"
-					label-key="name"
-					value-key="_id" />
+				<BaseItemSelect v-model="productionsStore.production.bottling.glassware" filter-by-type="glass bottle" create-type="glass bottle" create-category="Bottling" />
 			</UFormField>
 			<UFormField label="Cap" name="bottling.cap">
-				<USelect
-					v-model="productionsStore.production.bottling.cap"
-					:items="
-						itemStore.items.filter(
-							(item) => item.type?.toLowerCase() === 'bottle cap'
-						)
-					"
-					label-key="name"
-					value-key="_id" />
+				<BaseItemSelect v-model="productionsStore.production.bottling.cap" filter-by-type="bottle cap" create-type="bottle cap" create-category="Bottling" />
 			</UFormField>
 			<UFormField label="Label" name="bottling.label">
-				<USelectMenu
-					v-model="productionsStore.production.bottling.label"
-					:items="
-						itemStore.items.filter(
-							(item) => item.type?.toLowerCase() === 'label'
-						)
-					"
-					label-key="name"
-					value-key="_id" />
+				<BaseItemSelect v-model="productionsStore.production.bottling.label" filter-by-type="label" create-type="label" create-category="Bottling" />
 			</UFormField>
 			<UFormField label="Quantity" name="quantity">
 				<UInput
@@ -219,6 +199,23 @@ const saveProduction = async () => {
 					Dollar.format(productionCost / productionsStore.production.quantity)
 				}}
 			</UFormField>
+			<div
+				v-if="!productionsStore.production._id"
+				class="flex items-center justify-between rounded-lg border px-3 py-2 my-3"
+				:class="updateInventory ? 'border-green-500/20 bg-green-500/5' : 'border-amber-500/20 bg-amber-500/5'">
+				<div class="flex items-center gap-2">
+					<UIcon
+						:name="updateInventory ? 'i-lucide-package-check' : 'i-lucide-package-x'"
+						:class="updateInventory ? 'text-green-400' : 'text-amber-400'" />
+					<div>
+						<div class="text-sm text-parchment">Update Inventory</div>
+						<div class="text-[10px] text-parchment/50">
+							{{ updateInventory ? 'Bottle stock will be increased and materials decreased' : 'No inventory changes — use for recording historical productions' }}
+						</div>
+					</div>
+				</div>
+				<USwitch v-model="updateInventory" />
+			</div>
 			<UButton type="submit" :loading="productionsStore.saving">Submit</UButton>
 		</UForm>
 	</div>

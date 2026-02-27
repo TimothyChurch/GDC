@@ -5,7 +5,7 @@ export const ITEM_CATEGORIES = [
   "Bar Supplies",
   "Other",
 ] as const;
-export type ItemCategory = (typeof ITEM_CATEGORIES)[number];
+export type ItemCategory = string;
 
 export interface Item {
   _id: string;
@@ -16,6 +16,8 @@ export interface Item {
   inventoryHistory?: string[];
   category?: ItemCategory;
   trackInventory?: boolean;
+  unitSize?: number;
+  unitLabel?: string;
   minStock?: number;
   reorderPoint?: number;
   usePerMonth?: number;

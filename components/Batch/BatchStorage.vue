@@ -12,6 +12,14 @@ const batchStore = useBatchStore()
 
 const stage = computed(() => props.batch.stages?.storage as StorageStage | undefined)
 
+// All vessels containing this batch in storage
+const containingVessels = computed(() => {
+  if (!props.batch?._id) return []
+  return vesselStore.vessels.filter(v =>
+    v.contents?.some(c => c.batch === props.batch._id)
+  )
+})
+
 const vesselName = computed(() => {
   if (!stage.value?.vessel) return 'Not assigned'
   return vesselStore.getVesselById(stage.value.vessel)?.name || 'Unknown'
@@ -81,19 +89,48 @@ const save = async () => {
 
 <template>
   <div class="bg-charcoal rounded-xl border border-purple-500/30 p-5">
-    <div class="flex items-center gap-2 mb-4">
-      <UIcon name="i-lucide-warehouse" class="text-lg text-purple-400" />
-      <h3 class="text-lg font-bold text-parchment font-[Cormorant_Garamond]">Storage</h3>
+    <div class="flex items-center justify-between mb-4">
+      <div class="flex items-center gap-2">
+        <UIcon name="i-lucide-warehouse" class="text-lg text-purple-400" />
+        <h3 class="text-lg font-bold text-parchment font-[Cormorant_Garamond]">Storage</h3>
+      </div>
+      <div class="flex items-center gap-3">
+        <span v-if="stage?.abv" class="px-2 py-0.5 rounded-full text-xs font-semibold border bg-purple-500/15 text-purple-400 border-purple-500/25">
+          {{ stage.abv }}% ABV
+        </span>
+        <span v-if="displayProofGallons" class="text-sm text-purple-400 font-semibold">
+          {{ displayProofGallons }} PG
+        </span>
+      </div>
     </div>
 
-    <!-- Vessel & Start Date -->
-    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
+    <!-- Vessel Cards Grid -->
+    <div v-if="containingVessels.length > 0 && !editing" class="mb-5">
+      <div class="text-xs text-parchment/60 uppercase tracking-wider mb-3">Current Vessels</div>
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+        <VesselCard
+          v-for="vessel in containingVessels"
+          :key="vessel._id"
+          :vessel="vessel"
+        />
+      </div>
+    </div>
+
+    <!-- Editing: Vessel & Start Date -->
+    <div v-if="editing" class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
       <div>
         <div class="text-xs text-parchment/60 uppercase tracking-wider mb-1">Vessel</div>
-        <template v-if="editing">
-          <USelect v-model="local.vessel" :items="tankOptions" value-key="value" label-key="label" placeholder="Select tank" />
-        </template>
-        <div v-else class="text-sm text-parchment">{{ vesselName }}</div>
+        <USelect v-model="local.vessel" :items="tankOptions" value-key="value" label-key="label" placeholder="Select tank" />
+      </div>
+      <div>
+        <div class="text-xs text-parchment/60 uppercase tracking-wider mb-1">Start Date</div>
+        <div class="text-sm text-parchment">{{ startDate }}</div>
+      </div>
+    </div>
+    <div v-else-if="containingVessels.length === 0" class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
+      <div>
+        <div class="text-xs text-parchment/60 uppercase tracking-wider mb-1">Vessel</div>
+        <div class="text-sm text-parchment">{{ vesselName }}</div>
       </div>
       <div>
         <div class="text-xs text-parchment/60 uppercase tracking-wider mb-1">Start Date</div>
@@ -101,10 +138,10 @@ const save = async () => {
       </div>
     </div>
 
-    <!-- Volume, ABV, Proof Gallons -->
-    <div class="mb-4">
+    <!-- Volume, ABV, Proof Gallons (edit mode or when no vessel cards shown) -->
+    <div v-if="editing" class="mb-4">
       <div class="text-xs text-parchment/60 uppercase tracking-wider mb-2">Contents</div>
-      <div v-if="editing" class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+      <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
         <UFormField label="Volume">
           <UInput v-model.number="local.volume" type="number" placeholder="0" />
         </UFormField>
@@ -118,11 +155,28 @@ const save = async () => {
           <UInput v-model.number="local.proofGallons" type="number" step="0.01" :placeholder="calculatedProofGallons?.toString() || '0'" />
         </UFormField>
       </div>
-      <div v-else class="flex flex-wrap gap-6 text-sm text-parchment/60">
+    </div>
+    <div v-else-if="containingVessels.length === 0" class="mb-4">
+      <div class="text-xs text-parchment/60 uppercase tracking-wider mb-2">Contents</div>
+      <div class="flex flex-wrap gap-6 text-sm text-parchment/60">
         <span v-if="stage?.volume">Volume: {{ stage.volume }} {{ stage.volumeUnit }}</span>
         <span v-if="stage?.abv">ABV: {{ stage.abv }}%</span>
         <span v-if="displayProofGallons" class="text-purple-400 font-semibold">PG: {{ displayProofGallons }}</span>
         <span v-if="!stage?.volume && !stage?.abv">Not recorded</span>
+      </div>
+    </div>
+
+    <!-- Summary stats when vessel cards are shown -->
+    <div v-if="!editing && containingVessels.length > 0" class="mb-4">
+      <div class="flex flex-wrap gap-6 text-sm">
+        <div>
+          <span class="text-parchment/50">Total Volume: </span>
+          <span class="text-parchment">{{ stage?.volume || 0 }} {{ stage?.volumeUnit || 'gallon' }}</span>
+        </div>
+        <div>
+          <span class="text-parchment/50">Start Date: </span>
+          <span class="text-parchment">{{ startDate }}</span>
+        </div>
       </div>
     </div>
 

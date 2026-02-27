@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { Batch, BlendingStage } from '~/types'
+import { convertUnitRatio } from '~/utils/conversions'
 
 const props = defineProps<{
   batch: Batch
@@ -8,6 +9,9 @@ const props = defineProps<{
 
 const vesselStore = useVesselStore()
 const batchStore = useBatchStore()
+const recipeStore = useRecipeStore()
+const router = useRouter()
+const toast = useToast()
 
 const stage = computed(() => props.batch.stages?.blending as BlendingStage | undefined)
 
@@ -58,19 +62,94 @@ const removeComponent = (index: number) => {
   }
 }
 
-// Calculate total blended volume from components
+// Target unit for blending totals: use result unit or first component's unit
+const blendTargetUnit = computed(() => local.value.resultVolumeUnit || local.value.components[0]?.volumeUnit || 'gallon')
+
+// Calculate total blended volume from components (converted to common unit)
 const calculatedTotalVolume = computed(() => {
-  const total = local.value.components.reduce((sum, c) => sum + (c.volume || 0), 0)
+  const target = blendTargetUnit.value
+  const total = local.value.components.reduce((sum, c) => {
+    return sum + (c.volume || 0) * convertUnitRatio(c.volumeUnit || target, target)
+  }, 0)
   return total > 0 ? +total.toFixed(2) : null
 })
 
-// Calculate blended ABV (volume-weighted average)
+// Calculate blended ABV (volume-weighted average, using converted volumes)
 const calculatedBlendedAbv = computed(() => {
-  const totalVolume = local.value.components.reduce((sum, c) => sum + (c.volume || 0), 0)
+  const target = blendTargetUnit.value
+  const totalVolume = local.value.components.reduce((sum, c) => {
+    return sum + (c.volume || 0) * convertUnitRatio(c.volumeUnit || target, target)
+  }, 0)
   if (totalVolume <= 0) return null
-  const weightedAbv = local.value.components.reduce((sum, c) => sum + (c.volume || 0) * (c.abv || 0), 0)
+  const weightedAbv = local.value.components.reduce((sum, c) => {
+    const converted = (c.volume || 0) * convertUnitRatio(c.volumeUnit || target, target)
+    return sum + converted * (c.abv || 0)
+  }, 0)
   return +(weightedAbv / totalVolume).toFixed(2)
 })
+
+const recipe = computed(() => props.batch?.recipe ? recipeStore.getRecipeById(props.batch.recipe) : undefined)
+
+// Get the next stage after Blending in the pipeline
+const nextStageAfterBlending = computed(() => {
+  const idx = props.batch.pipeline.indexOf('Blending')
+  if (idx === -1 || idx >= props.batch.pipeline.length - 1) return null
+  return props.batch.pipeline[idx + 1]
+})
+
+// Create a new blended batch with "Mixed" prefix
+const creatingBlend = ref(false)
+const createBlendedBatch = async () => {
+  const resultVol = stage.value?.resultVolume || calculatedTotalVolume.value
+  const resultAbvVal = stage.value?.resultAbv || calculatedBlendedAbv.value
+  if (!resultVol || !recipe.value) return
+
+  creatingBlend.value = true
+  try {
+    // Build the pipeline starting from the stage after Blending
+    const blendIdx = props.batch.pipeline.indexOf('Blending')
+    const remainingPipeline = blendIdx >= 0
+      ? props.batch.pipeline.slice(blendIdx + 1)
+      : ['Storage', 'Proofing', 'Bottled']
+
+    // Create the blended batch
+    batchStore.resetBatch()
+    const blendedBatch = batchStore.batch
+    blendedBatch.recipe = props.batch.recipe
+    blendedBatch.pipeline = remainingPipeline
+    blendedBatch.currentStage = remainingPipeline[0] || 'Storage'
+    blendedBatch.status = 'active'
+    blendedBatch.batchSize = resultVol
+    blendedBatch.batchSizeUnit = stage.value?.resultVolumeUnit || props.batch.batchSizeUnit || 'gallon'
+    blendedBatch.recipeCost = props.batch.recipeCost || 0
+    blendedBatch.stageVolumes = { [remainingPipeline[0] || 'Storage']: resultVol }
+    blendedBatch.notes = `Mixed blend from batch ${props.batch.batchNumber || props.batch._id}. Class: Mixed ${recipe.value.class || ''}`.trim()
+
+    await batchStore.updateBatch()
+
+    toast.add({
+      title: 'Blended batch created',
+      description: `Mixed ${recipe.value.class || 'Spirit'} — ${resultVol} ${blendedBatch.batchSizeUnit}`,
+      color: 'success',
+      icon: 'i-lucide-git-merge',
+    })
+
+    // Navigate to the new batch
+    const newBatch = batchStore.batches[batchStore.batches.length - 1]
+    if (newBatch?._id) {
+      router.push(`/admin/batch/${newBatch._id}`)
+    }
+  } catch (error: any) {
+    toast.add({
+      title: 'Failed to create blended batch',
+      description: error?.message || 'Unknown error',
+      color: 'error',
+      icon: 'i-lucide-alert-circle',
+    })
+  } finally {
+    creatingBlend.value = false
+  }
+}
 
 const saving = ref(false)
 const save = async () => {
@@ -164,7 +243,7 @@ const save = async () => {
         <!-- Calculated blend preview -->
         <div v-if="calculatedTotalVolume" class="mt-2 px-3 py-2 rounded-lg bg-pink-500/10 border border-pink-500/20">
           <span class="text-xs text-pink-400">
-            Calculated: {{ calculatedTotalVolume }} {{ local.components[0]?.volumeUnit || 'gallon' }}
+            Calculated: {{ calculatedTotalVolume }} {{ blendTargetUnit }}
             <template v-if="calculatedBlendedAbv"> @ {{ calculatedBlendedAbv }}% ABV</template>
           </span>
         </div>
@@ -216,7 +295,19 @@ const save = async () => {
       <div v-else class="text-sm text-parchment/60">{{ stage?.notes || 'None' }}</div>
     </div>
 
-    <div v-if="editing" class="mt-4 flex justify-end">
+    <div v-if="editing" class="mt-4 flex items-center justify-between">
+      <UButton
+        v-if="(stage?.resultVolume || calculatedTotalVolume) && recipe"
+        icon="i-lucide-git-merge"
+        variant="soft"
+        color="success"
+        size="sm"
+        :loading="creatingBlend"
+        @click="createBlendedBatch"
+      >
+        Create Mixed {{ recipe?.class || 'Spirit' }} Batch
+      </UButton>
+      <div v-else />
       <UButton @click="save" :loading="saving" size="sm">Save Blending</UButton>
     </div>
   </div>

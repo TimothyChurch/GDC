@@ -1,8 +1,7 @@
 <script setup lang="ts">
-import { INVENTORY_CATEGORIES } from '~/composables/useInventoryCategories'
-
 definePageMeta({ layout: 'admin' })
 
+const categories = useInventoryCategories()
 const itemStore = useItemStore()
 const inventoryStore = useInventoryStore()
 
@@ -18,7 +17,7 @@ function getLatestQuantity(itemId: string): number {
 }
 
 const categorizedItems = computed(() =>
-  INVENTORY_CATEGORIES.map((cat) => {
+  categories.value.map((cat) => {
     const allItems = itemStore.getItemsByCategory(cat.category)
     const items = showOutOfStock.value
       ? allItems
@@ -29,7 +28,7 @@ const categorizedItems = computed(() =>
 
 const outOfStockTotal = computed(() => {
   let count = 0
-  for (const cat of INVENTORY_CATEGORIES) {
+  for (const cat of categories.value) {
     const items = itemStore.getItemsByCategory(cat.category)
     count += items.filter(item => getLatestQuantity(item._id) <= 0).length
   }

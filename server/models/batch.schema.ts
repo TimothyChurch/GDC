@@ -20,6 +20,7 @@ const cutSchema = {
 	volume: Number,
 	volumeUnit: String,
 	abv: Number,
+	disposed: Boolean,
 };
 
 export const Batch = defineMongooseModel({

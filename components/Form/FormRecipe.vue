@@ -101,14 +101,7 @@ const saveRecipe = () => {
 				</div>
 				<!-- Add new ingredient -->
 				<div class="grid grid-cols-[1fr_80px_100px_36px] gap-2 items-center pt-2 border-t border-brown/20">
-					<USelectMenu
-						:items="itemStore.items.map((i) => ({ label: i.name, value: i._id }))"
-						v-model="newitem._id"
-						value-key="value"
-						placeholder="Add item..."
-						searchable
-						size="sm"
-					/>
+					<BaseItemSelect v-model="newitem._id" placeholder="Add item..." size="sm" />
 					<UInput v-model.number="newitem.amount" type="number" placeholder="Amt" size="sm" step="any" min="0" />
 					<USelectMenu
 						v-model="newitem.unit"

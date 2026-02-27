@@ -33,7 +33,7 @@ const resolvedVessels = computed(() => {
 const hasCostBreakdown = computed(() => {
   if (!production.value?.costs) return false
   const c = production.value.costs
-  return (c.batch || 0) + (c.barrel || 0) + (c.bottling || 0) + (c.labor || 0) + (c.taxes || 0) + (c.other || 0) > 0
+  return (c.batch || 0) + (c.barrel || 0) + (c.bottling || 0) + (c.labor || 0) + (c.ttbTax || 0) + (c.tabcTax || 0) + (c.other || 0) > 0
 })
 
 const costBreakdownLines = computed(() => {
@@ -44,7 +44,8 @@ const costBreakdownLines = computed(() => {
     { label: 'Barrel', value: c.barrel || 0, icon: 'i-lucide-cylinder' },
     { label: 'Bottling Materials', value: c.bottling || 0, icon: 'i-lucide-package' },
     { label: 'Labor', value: c.labor || 0, icon: 'i-lucide-hard-hat' },
-    { label: 'Taxes', value: c.taxes || 0, icon: 'i-lucide-landmark' },
+    { label: 'TTB Federal Excise Tax', value: c.ttbTax || 0, icon: 'i-lucide-landmark' },
+    { label: 'TABC Texas Excise Tax', value: c.tabcTax || 0, icon: 'i-lucide-map-pin' },
     { label: 'Other', value: c.other || 0, icon: 'i-lucide-ellipsis' },
   ].filter(line => line.value > 0)
 })

@@ -51,6 +51,9 @@ export const Recipe = defineMongooseModel({
     targetAbv: {
       type: Number,
     },
+    macerationDays: {
+      type: Number,
+    },
     pipeline: {
       type: [String],
       required: true,

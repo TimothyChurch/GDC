@@ -38,6 +38,33 @@ const totalCost = computed(() => {
   return production.value.productionCost || 0
 })
 
+const costPerBottle = computed(() => {
+  if (!production.value) return 0
+  return production.value.bottleCost || 0
+})
+
+// Bottle product info for sales value calculation
+const bottleProduct = computed(() => {
+  if (!production.value?.bottle) return null
+  return bottleStore.getBottleById(production.value.bottle)
+})
+
+const bottleCount = computed(() => {
+  return stage.value?.bottleCount || production.value?.quantity || 0
+})
+
+// Total potential sales value = bottle count * retail price
+const totalSalesValue = computed(() => {
+  if (!bottleProduct.value?.price || !bottleCount.value) return null
+  return bottleCount.value * bottleProduct.value.price
+})
+
+// Profit margin = sales value - total cost
+const profitMargin = computed(() => {
+  if (totalSalesValue.value == null || !totalCost.value) return null
+  return totalSalesValue.value - totalCost.value
+})
+
 // Editing state
 const local = ref({
   bottleCount: stage.value?.bottleCount,
@@ -165,9 +192,36 @@ const createProductionRecord = async () => {
             <div class="text-sm text-parchment font-semibold">{{ Dollar.format(totalCost) }}</div>
           </div>
         </div>
-        <div v-if="production.bottleCost" class="mt-2 pt-2 border-t border-green-500/10">
-          <span class="text-xs text-parchment/50">Cost per bottle: </span>
-          <span class="text-xs text-copper font-medium">{{ Dollar.format(production.bottleCost) }}</span>
+        <!-- Cost & Sales Summary -->
+        <div class="mt-3 pt-3 border-t border-green-500/10 grid grid-cols-2 sm:grid-cols-4 gap-4">
+          <div>
+            <div class="text-xs text-parchment/50">Cost / Bottle</div>
+            <div class="text-sm text-copper font-medium">{{ costPerBottle ? Dollar.format(costPerBottle) : 'N/A' }}</div>
+          </div>
+          <div>
+            <div class="text-xs text-parchment/50">Total Cost</div>
+            <div class="text-sm text-parchment font-medium">{{ totalCost ? Dollar.format(totalCost) : 'N/A' }}</div>
+          </div>
+          <div>
+            <div class="text-xs text-parchment/50">Potential Sales</div>
+            <div class="text-sm font-medium" :class="totalSalesValue ? 'text-green-400' : 'text-parchment/40'">
+              {{ totalSalesValue ? Dollar.format(totalSalesValue) : 'N/A' }}
+            </div>
+            <div v-if="bottleProduct?.price" class="text-[10px] text-parchment/40">
+              {{ bottleCount }} x {{ Dollar.format(bottleProduct.price) }}
+            </div>
+          </div>
+          <div>
+            <div class="text-xs text-parchment/50">Profit Margin</div>
+            <div
+              v-if="profitMargin != null"
+              class="text-sm font-semibold"
+              :class="profitMargin >= 0 ? 'text-green-400' : 'text-error-400'"
+            >
+              {{ Dollar.format(profitMargin) }}
+            </div>
+            <div v-else class="text-sm text-parchment/40">N/A</div>
+          </div>
         </div>
       </div>
     </template>

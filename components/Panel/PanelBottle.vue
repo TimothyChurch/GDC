@@ -50,6 +50,7 @@ const newType = (type: string) => {
               label-key="name"
               value-key="_id"
               v-model="localData.recipe"
+              class="w-full"
             />
           </UFormField>
           <div class="grid grid-cols-2 gap-4">
@@ -57,6 +58,7 @@ const newType = (type: string) => {
               <USelectMenu
                 v-model="localData.class"
                 :items="liquorClasses.map((i) => i.class)"
+                class="w-full"
               />
             </UFormField>
             <UFormField label="Type">
@@ -70,6 +72,7 @@ const newType = (type: string) => {
                 "
                 create-item
                 @create="newType"
+                class="w-full"
               />
             </UFormField>
           </div>

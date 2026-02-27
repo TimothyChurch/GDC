@@ -68,8 +68,7 @@ const columns: TableColumn<Item>[] = [
     header: 'Inventory',
     cell: ({ row }) => {
       const qty = getLatestQuantity(row.original._id)
-      const unit = row.original.inventoryUnit || ''
-      return `${qty} ${unit}`
+      return formatWithUnits(qty, row.original)
     },
   },
   {
@@ -229,7 +228,7 @@ const filteredTotal = computed(() =>
           <div>
             <span class="text-parchment/60">Stock</span>
             <div class="text-parchment font-semibold">
-              {{ getLatestQuantity(item._id) }} {{ item.inventoryUnit || '' }}
+              {{ formatWithUnits(getLatestQuantity(item._id), item) }}
             </div>
           </div>
           <div>

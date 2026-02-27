@@ -78,6 +78,13 @@
 - UPagination `total` should use `tableRef.tableApi.getFilteredRowModel().rows.length` for search-accurate page counts
 - **Fixed in**: All 14 table components (Batches, Items, Bottles, Productions, Cocktails, Contacts, Vessels, Recipes, PurchaseOrders, Events, Users, Customers, InventoryCategory, InventoryInputs)
 
+### UTabs Named Slots Require `slot` Property on Tab Items
+- Nuxt UI v4 UTabs resolves content slot names via `item.slot || 'content'` (see `Tabs.vue` line 99)
+- The `value` property controls the Reka UI tab trigger value; it does NOT map to Vue slot names
+- If tab items only have `value` but no `slot`, all tabs fall through to `#content` slot -- named slots like `#categories` are never rendered
+- Fix: add `slot: "name"` to each tab item matching the template slot name
+- **Fixed in**: `pages/admin/settings.vue` (all 4 tabs: categories, barrels, theme, distillery)
+
 ## Stores Fixed (error propagation + toast format)
 - `useBottleStore` -- throw error, statusMessage || message
 - `useInventoryStore` -- throw error, statusMessage || message, strip empty ObjectId fields

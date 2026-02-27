@@ -306,10 +306,33 @@ const formatDate = (d?: Date | string) => {
         <div class="text-xs text-parchment/60 uppercase tracking-wider mb-2">Collected Cuts</div>
         <div class="space-y-2">
           <div v-for="cut in cutLabels" :key="cut" class="p-3 rounded border border-brown/10 bg-brown/5">
-            <div class="text-xs font-semibold text-parchment/60 uppercase mb-2">{{ cutDisplayLabels[cut] || cut }}</div>
+            <div class="flex items-center justify-between mb-2">
+              <div class="text-xs font-semibold text-parchment/60 uppercase">{{ cutDisplayLabels[cut] || cut }}</div>
+              <label class="flex items-center gap-1.5 cursor-pointer">
+                <input
+                  type="checkbox"
+                  :checked="local.collected![cut]!.disposed || local.collected![cut]!.vessel === 'disposed'"
+                  class="rounded border-brown/30 bg-charcoal text-error-500 focus:ring-error-500/50"
+                  @change="(e: Event) => {
+                    const checked = (e.target as HTMLInputElement).checked
+                    local.collected![cut]!.disposed = checked
+                    if (checked) local.collected![cut]!.vessel = 'disposed'
+                    else if (local.collected![cut]!.vessel === 'disposed') local.collected![cut]!.vessel = ''
+                  }"
+                />
+                <span class="text-xs text-parchment/50">Disposed</span>
+              </label>
+            </div>
             <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
               <UFormField label="Vessel">
-                <USelect v-model="local.collected![cut]!.vessel" :items="cutVesselOptions" value-key="value" label-key="label" placeholder="Vessel" />
+                <USelect
+                  v-model="local.collected![cut]!.vessel"
+                  :items="cutVesselOptions"
+                  value-key="value"
+                  label-key="label"
+                  placeholder="Vessel"
+                  :disabled="local.collected![cut]!.disposed"
+                />
               </UFormField>
               <UFormField label="Volume">
                 <UInput v-model.number="local.collected![cut]!.volume" type="number" placeholder="0" />
@@ -390,7 +413,12 @@ const formatDate = (d?: Date | string) => {
         <div class="divide-y divide-brown/10">
           <div v-for="cut in displayCuts" :key="cut.key" class="flex items-center justify-between py-1.5 gap-2">
             <span class="text-xs font-medium text-parchment/60 uppercase w-20 shrink-0">{{ cut.label }}</span>
-            <span class="text-sm text-parchment/50 truncate">{{ getVesselName(cut.data?.vessel) }}</span>
+            <span class="text-sm truncate" :class="cut.data?.disposed || cut.data?.vessel === 'disposed' ? 'text-error-400' : 'text-parchment/50'">
+              <template v-if="cut.data?.disposed || cut.data?.vessel === 'disposed'">
+                <UIcon name="i-lucide-trash-2" class="inline-block mr-0.5 text-xs" /> Disposed
+              </template>
+              <template v-else>{{ getVesselName(cut.data?.vessel) }}</template>
+            </span>
             <span class="text-sm text-parchment whitespace-nowrap">
               {{ cut.data?.volume || 0 }} {{ cut.data?.volumeUnit || 'gallon' }}
             </span>

@@ -1,8 +1,7 @@
 <script setup lang="ts">
-import { INVENTORY_CATEGORIES } from '~/composables/useInventoryCategories'
-
 definePageMeta({ layout: 'admin' })
 
+const categories = useInventoryCategories()
 const toast = useToast()
 const itemStore = useItemStore()
 const inventoryStore = useInventoryStore()
@@ -16,26 +15,52 @@ interface CountEntry {
   name: string
   unit: string
   quantity: number
+  unitSize: number
+  unitLabel: string
+  unitInput: number
 }
 
 const countData = ref<Record<string, CountEntry[]>>({})
 
 // Initialize count data per category
 watch(
-  () => itemStore.items,
+  [() => itemStore.items, categories],
   () => {
-    for (const cat of INVENTORY_CATEGORIES) {
+    for (const cat of categories.value) {
       const items = itemStore.getItemsByCategory(cat.category)
       countData.value[cat.key] = items.map((item) => ({
         _id: item._id,
         name: item.name,
         unit: item.inventoryUnit || '',
         quantity: 0,
+        unitSize: item.unitSize || 0,
+        unitLabel: item.unitLabel || '',
+        unitInput: 0,
       }))
     }
   },
   { immediate: true }
 )
+
+function hasPackaging(entry: CountEntry) {
+  return entry.unitSize > 0 && entry.unitLabel
+}
+
+function onUnitInputChange(entry: CountEntry) {
+  if (hasPackaging(entry)) {
+    entry.quantity = entry.unitInput * entry.unitSize
+  }
+}
+
+function formatLastCount(entry: CountEntry, qty: number) {
+  const base = `${qty} ${entry.unit}`
+  if (hasPackaging(entry)) {
+    const count = Math.round((qty / entry.unitSize) * 100) / 100
+    const label = count === 1 ? entry.unitLabel : `${entry.unitLabel}s`
+    return `${base} (${count} ${label})`
+  }
+  return base
+}
 
 function getLastCount(itemId: string) {
   const records = inventoryStore.inventories
@@ -57,11 +82,13 @@ function getFilteredEntries(key: string) {
   return entries.filter((e) => e.name.toLowerCase().includes(term))
 }
 
-const tabs = INVENTORY_CATEGORIES.map((cat) => ({
-  label: cat.label,
-  value: cat.key,
-  icon: cat.icon,
-}))
+const tabs = computed(() =>
+  categories.value.map((cat) => ({
+    label: cat.label,
+    value: cat.key,
+    icon: cat.icon,
+  }))
+)
 
 const submitInventory = async () => {
   saving.value = true
@@ -136,12 +163,29 @@ const printSheet = () => {
                 >
                   <td class="px-4 py-2 text-sm font-medium text-parchment">{{ entry.name }}</td>
                   <td class="px-4 py-2">
-                    <UInput v-model="entry.quantity" type="number" min="0" class="text-center" />
+                    <template v-if="hasPackaging(entry)">
+                      <UInput
+                        v-model="entry.unitInput"
+                        type="number"
+                        min="0"
+                        class="text-center"
+                        @update:model-value="onUnitInputChange(entry)"
+                      />
+                      <div class="text-xs text-parchment/50 text-center mt-1">
+                        = {{ entry.quantity }} {{ entry.unit }}
+                      </div>
+                    </template>
+                    <UInput v-else v-model="entry.quantity" type="number" min="0" class="text-center" />
                   </td>
-                  <td class="px-4 py-2 text-center text-sm text-parchment/60">{{ entry.unit }}</td>
+                  <td class="px-4 py-2 text-center text-sm text-parchment/60">
+                    <template v-if="hasPackaging(entry)">
+                      # of {{ entry.unitLabel }}s
+                    </template>
+                    <template v-else>{{ entry.unit }}</template>
+                  </td>
                   <td class="px-4 py-2 text-center text-xs text-parchment/50">
                     <template v-if="getLastCount(entry._id)">
-                      {{ getLastCount(entry._id)!.quantity }} {{ entry.unit }}
+                      {{ formatLastCount(entry, getLastCount(entry._id)!.quantity) }}
                       <span class="text-parchment/50">({{ new Date(getLastCount(entry._id)!.date).toLocaleDateString() }})</span>
                     </template>
                     <span v-else class="text-parchment/20">--</span>
@@ -174,15 +218,23 @@ const printSheet = () => {
           >
             <div class="text-sm font-medium text-parchment mb-3">{{ entry.name }}</div>
             <div class="grid grid-cols-2 gap-2 mb-3">
-              <UFormField label="Quantity">
-                <UInput v-model="entry.quantity" type="number" min="0" />
-              </UFormField>
-              <div class="text-xs text-parchment/60 flex items-end pb-2">{{ entry.unit }}</div>
+              <template v-if="hasPackaging(entry)">
+                <UFormField :label="`# of ${entry.unitLabel}s`">
+                  <UInput v-model="entry.unitInput" type="number" min="0" @update:model-value="onUnitInputChange(entry)" />
+                </UFormField>
+                <div class="text-xs text-parchment/60 flex items-end pb-2">= {{ entry.quantity }} {{ entry.unit }}</div>
+              </template>
+              <template v-else>
+                <UFormField label="Quantity">
+                  <UInput v-model="entry.quantity" type="number" min="0" />
+                </UFormField>
+                <div class="text-xs text-parchment/60 flex items-end pb-2">{{ entry.unit }}</div>
+              </template>
             </div>
             <div class="flex justify-between items-center text-xs">
               <template v-if="getLastCount(entry._id)">
                 <span class="text-parchment/50">
-                  Last: {{ getLastCount(entry._id)!.quantity }} ({{ new Date(getLastCount(entry._id)!.date).toLocaleDateString() }})
+                  Last: {{ formatLastCount(entry, getLastCount(entry._id)!.quantity) }} ({{ new Date(getLastCount(entry._id)!.date).toLocaleDateString() }})
                 </span>
               </template>
               <span v-else class="text-parchment/20">No previous count</span>

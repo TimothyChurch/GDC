@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { convertUnitRatio } from '~/utils/conversions';
+
 const vesselStore = useVesselStore();
 const batchStore = useBatchStore();
 const recipeStore = useRecipeStore();
@@ -59,9 +61,11 @@ const getContentLabel = (vessel: any) => {
 
 const getVesselVolume = (vessel: any) => {
   if (!vessel.contents || vessel.contents.length === 0) return null;
-  const totalVol = vessel.contents.reduce((sum: number, c: any) => sum + (c.volume || 0), 0);
-  const unit = vessel.contents[0]?.volumeUnit || 'gal';
-  return `${totalVol} ${unit}`;
+  const targetUnit = vessel.stats?.volumeUnit || vessel.contents[0]?.volumeUnit || 'gal';
+  const totalVol = vessel.contents.reduce((sum: number, c: any) => {
+    return sum + (c.volume || 0) * convertUnitRatio(c.volumeUnit || targetUnit, targetUnit);
+  }, 0);
+  return `${+totalVol.toFixed(2)} ${targetUnit}`;
 };
 
 const hasContents = (vessel: any) => vessel.contents && vessel.contents.length > 0;

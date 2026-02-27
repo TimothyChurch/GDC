@@ -1,8 +1,7 @@
 <script setup lang="ts">
-import { INVENTORY_CATEGORIES, getStockStatus } from '~/composables/useInventoryCategories'
-
 definePageMeta({ layout: 'admin' })
 
+const categories = useInventoryCategories()
 const itemStore = useItemStore()
 const inventoryStore = useInventoryStore()
 
@@ -29,7 +28,7 @@ function getCategoryStats(category: string) {
 }
 
 const categoryCards = computed(() =>
-  INVENTORY_CATEGORIES.map((cat) => {
+  categories.value.map((cat) => {
     const stats = getCategoryStats(cat.category)
     return { ...cat, stats }
   })

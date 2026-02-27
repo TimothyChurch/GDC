@@ -1,7 +1,15 @@
-import type { Settings } from "~/types";
+import type { Settings, InventoryCategoryDef } from "~/types";
+
+const DEFAULT_CATEGORIES: InventoryCategoryDef[] = [
+  { key: "bottling", label: "Bottling Supplies", category: "Bottling", icon: "i-lucide-wine", description: "Bottles, caps, labels, shrink wraps, and packaging materials" },
+  { key: "ingredients", label: "Base Ingredients", category: "Base Ingredient", icon: "i-lucide-wheat", description: "Grains, sugars, yeast, and primary fermentation ingredients" },
+  { key: "botanicals", label: "Botanicals", category: "Botanical", icon: "i-lucide-leaf", description: "Herbs, spices, citrus peels, and botanical flavorings" },
+  { key: "bar-supplies", label: "Bar Supplies", category: "Bar Supplies", icon: "i-lucide-cup-soda", description: "Mixers, garnishes, glassware, and bar tools" },
+  { key: "other", label: "Other", category: "Other", icon: "i-lucide-box", description: "Cleaning supplies, lab supplies, and miscellaneous items" },
+];
 
 const DEFAULT_SETTINGS: Omit<Settings, "_id"> = {
-  itemCategories: ["Bottling", "Base Ingredient", "Botanical", "Bar Supplies", "Other"],
+  itemCategories: DEFAULT_CATEGORIES,
   barrelAgeDefaults: {
     "5 Gallon": 12,
     "10 Gallon": 15,

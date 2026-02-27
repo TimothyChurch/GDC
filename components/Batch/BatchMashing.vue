@@ -8,6 +8,48 @@ const props = defineProps<{
 
 const vesselStore = useVesselStore()
 const batchStore = useBatchStore()
+const recipeStore = useRecipeStore()
+const itemStore = useItemStore()
+const { convertQuantity, ingredientCost } = useUnitConversion()
+
+// Scaled ingredients from recipe
+const recipe = computed(() => props.batch?.recipe ? recipeStore.getRecipeById(props.batch.recipe) : undefined)
+
+const scaleFactor = computed(() => {
+  if (!props.batch || !recipe.value?.volume) return 1
+  const batchInRecipeUnits = convertQuantity(props.batch.batchSize, props.batch.batchSizeUnit, recipe.value.volumeUnit)
+  return batchInRecipeUnits / recipe.value.volume
+})
+
+const scaledIngredients = computed(() => {
+  if (!recipe.value?.items) return []
+  return recipe.value.items.map((ing) => {
+    const item = itemStore.getItemById(ing._id)
+    const pricePerUnit = latestPrice(ing._id)
+    const scaledAmount = ing.amount * scaleFactor.value
+    const cost = ingredientCost(pricePerUnit, scaledAmount, ing.unit, item?.inventoryUnit || ing.unit)
+    return { id: ing._id, name: item?.name || 'Unknown', amount: scaledAmount, unit: ing.unit, cost }
+  })
+})
+
+const scaledTotalCost = computed(() =>
+  scaledIngredients.value.reduce((sum, ing) => sum + ing.cost, 0)
+)
+
+const updatingCost = ref(false)
+const updateBatchCost = async () => {
+  if (!props.batch || !recipe.value) return
+  updatingCost.value = true
+  try {
+    const newRecipeCost = recipePrice(recipe.value)
+    batchStore.setBatch(props.batch._id)
+    batchStore.batch.recipeCost = newRecipeCost
+    batchStore.batch.batchCost = scaledTotalCost.value
+    await batchStore.updateBatch()
+  } finally {
+    updatingCost.value = false
+  }
+}
 
 const stage = computed(() => props.batch.stages?.mashing as MashingStage | undefined)
 
@@ -73,6 +115,47 @@ const save = async () => {
     <div class="flex items-center gap-2 mb-4">
       <UIcon name="i-lucide-flame" class="text-lg text-orange-400" />
       <h3 class="text-lg font-bold text-parchment font-[Cormorant_Garamond]">Mashing</h3>
+    </div>
+
+    <!-- Scaled Ingredients (grain bill) -->
+    <div v-if="scaledIngredients.length > 0" class="mb-5 pb-4 border-b border-brown/20">
+      <div class="flex items-center justify-between mb-3">
+        <div class="text-xs text-parchment/60 uppercase tracking-wider">
+          Ingredients
+          <span class="text-parchment/40 ml-1">(scaled to {{ batch.batchSize }} {{ batch.batchSizeUnit }})</span>
+        </div>
+        <div class="flex items-center gap-3">
+          <span class="text-sm font-semibold text-gold">{{ Dollar.format(scaledTotalCost) }}</span>
+          <UButton
+            v-if="scaledTotalCost !== (batch.batchCost || 0)"
+            icon="i-lucide-refresh-cw"
+            size="xs"
+            variant="soft"
+            :loading="updatingCost"
+            @click="updateBatchCost"
+          >
+            Update Cost
+          </UButton>
+        </div>
+      </div>
+      <div class="divide-y divide-brown/10">
+        <div class="grid grid-cols-3 gap-4 pb-2 text-xs text-parchment/50 uppercase tracking-wider">
+          <span>Item</span>
+          <span>Amount</span>
+          <span class="text-right">Cost</span>
+        </div>
+        <div
+          v-for="ing in scaledIngredients"
+          :key="ing.id"
+          class="grid grid-cols-3 gap-4 py-2 text-sm"
+        >
+          <NuxtLink :to="`/admin/items/${ing.id}`" class="text-gold hover:text-copper transition-colors">
+            {{ ing.name }}
+          </NuxtLink>
+          <span class="text-parchment/60">{{ Number(ing.amount.toFixed(2)) }} {{ ing.unit }}</span>
+          <span class="text-parchment text-right">{{ Dollar.format(ing.cost) }}</span>
+        </div>
+      </div>
     </div>
 
     <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-4">

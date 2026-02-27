@@ -9,20 +9,22 @@ const props = defineProps<{
 const batchStore = useBatchStore()
 const vesselStore = useVesselStore()
 const itemStore = useItemStore()
+const recipeStore = useRecipeStore()
 
 const stage = computed(() => props.batch.stages?.maceration as MacerationStage | undefined)
+const recipe = computed(() => props.batch?.recipe ? recipeStore.getRecipeById(props.batch.recipe) : undefined)
 
 const vesselName = computed(() => {
   if (!stage.value?.vessel) return 'Not assigned'
   return vesselStore.getVesselById(stage.value.vessel)?.name || 'Unknown'
 })
 
-const computedDuration = computed(() => {
+const elapsedDays = computed(() => {
   const start = stage.value?.startDate
-  const end = stage.value?.endDate
-  if (!start || !end) return null
+  if (!start) return null
+  const end = stage.value?.endDate || new Date()
   const ms = new Date(end).getTime() - new Date(start).getTime()
-  return Math.round(ms / (1000 * 60 * 60))
+  return Math.round(ms / (1000 * 60 * 60 * 24))
 })
 
 const formatDate = (d?: Date | string) => {
@@ -50,7 +52,7 @@ const local = ref({
   endDate: stage.value?.endDate ? new Date(stage.value.endDate) : undefined as Date | undefined,
   temperature: stage.value?.temperature,
   temperatureUnit: stage.value?.temperatureUnit || 'F',
-  duration: stage.value?.duration,
+  duration: stage.value?.duration ?? recipe.value?.macerationDays,
   notes: stage.value?.notes || '',
 })
 
@@ -70,10 +72,6 @@ const newBotanical = ref({
   weight: undefined as number | undefined,
   weightUnit: 'g',
 })
-
-const itemOptions = computed(() =>
-  itemStore.items.map((i) => ({ label: i.name, value: i._id }))
-)
 
 const addBotanical = async () => {
   const botanicals = [
@@ -159,13 +157,16 @@ const save = async () => {
         </div>
       </div>
       <div>
-        <div class="text-xs text-parchment/60 uppercase tracking-wider mb-1">Duration (hours)</div>
+        <div class="text-xs text-parchment/60 uppercase tracking-wider mb-1">Desired Days</div>
         <template v-if="editing">
-          <UInput v-model.number="local.duration" type="number" placeholder="24" />
+          <UInput v-model.number="local.duration" type="number" placeholder="e.g. 7" />
+          <div v-if="recipe?.macerationDays && !stage?.duration" class="text-xs text-parchment/40 mt-1">
+            Default from recipe: {{ recipe.macerationDays }} days
+          </div>
         </template>
         <div v-else class="text-sm text-parchment">
-          <template v-if="stage?.duration">{{ stage.duration }}h</template>
-          <template v-else-if="computedDuration">{{ computedDuration }}h (computed)</template>
+          <template v-if="stage?.duration">{{ stage.duration }} days</template>
+          <template v-else-if="recipe?.macerationDays">{{ recipe.macerationDays }} days <span class="text-parchment/40">(from recipe)</span></template>
           <template v-else>N/A</template>
         </div>
       </div>
@@ -186,6 +187,18 @@ const save = async () => {
           <SiteDatePicker v-model="local.endDate" />
         </template>
         <div v-else class="text-sm text-parchment">{{ formatDate(stage?.endDate) }}</div>
+      </div>
+    </div>
+
+    <!-- Elapsed Days indicator -->
+    <div v-if="elapsedDays != null && !editing" class="mb-5 px-3 py-2 rounded-lg bg-emerald-500/10 border border-emerald-500/20">
+      <div class="flex items-center justify-between text-sm">
+        <span class="text-emerald-400">
+          Elapsed: {{ elapsedDays }} day{{ elapsedDays !== 1 ? 's' : '' }}
+        </span>
+        <span v-if="stage?.duration || recipe?.macerationDays" class="text-parchment/50">
+          {{ Math.max(0, (stage?.duration || recipe?.macerationDays || 0) - elapsedDays) }} day{{ Math.max(0, (stage?.duration || recipe?.macerationDays || 0) - elapsedDays) !== 1 ? 's' : '' }} remaining
+        </span>
       </div>
     </div>
 
@@ -238,7 +251,7 @@ const save = async () => {
         <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
           <div class="col-span-2 sm:col-span-1">
             <div class="text-xs text-parchment/60 mb-1">Item (optional)</div>
-            <USelect v-model="newBotanical.item" :items="itemOptions" value-key="value" label-key="label" placeholder="Select item" />
+            <BaseItemSelect v-model="newBotanical.item" placeholder="Select item" size="sm" />
           </div>
           <div>
             <div class="text-xs text-parchment/60 mb-1">Name</div>

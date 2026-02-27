@@ -10,11 +10,13 @@ const itemStore = useItemStore()
 const contactStore = useContactStore()
 const purchaseOrderStore = usePurchaseOrderStore()
 const inventoryStore = useInventoryStore()
+const vesselStore = useVesselStore()
+const { confirm } = useDeleteConfirm()
 
 const item = computed(() => itemStore.getItemById(route.params._id as string))
 
-// Panel slide-over for editing
-import { LazyPanelItem } from '#components'
+// Panel slide-over for editing item
+import { LazyPanelItem, LazyPanelInventory } from '#components'
 const overlay = useOverlay()
 const panel = overlay.create(LazyPanelItem)
 
@@ -22,6 +24,33 @@ const editItem = () => {
   if (!item.value) return
   itemStore.setItem(item.value._id)
   panel.open()
+}
+
+// Inventory panel
+const inventoryPanel = overlay.create(LazyPanelInventory)
+
+const addInventoryRecord = () => {
+  inventoryStore.resetInventory()
+  inventoryStore.inventory.item = route.params._id as string
+  inventoryPanel.open()
+}
+
+const editInventoryRecord = (inv: any) => {
+  inventoryStore.inventory = JSON.parse(JSON.stringify(inv))
+  inventoryPanel.open()
+}
+
+const deleteInventoryRecord = async (inv: any) => {
+  const confirmed = await confirm('Inventory Record')
+  if (confirmed) {
+    await inventoryStore.deleteInventory(inv._id)
+  }
+}
+
+const vesselName = (locationId: string) => {
+  if (!locationId) return null
+  const vessel = vesselStore.vessels.find((v) => v._id === locationId)
+  return vessel?.name || null
 }
 
 const latestVendorId = computed(() => {
@@ -125,6 +154,10 @@ const stockStatusColor = computed(() =>
           <div class="text-xs text-parchment/60 uppercase tracking-wider mb-1">Inventory Unit</div>
           <div class="text-sm text-parchment">{{ item.inventoryUnit || 'N/A' }}</div>
         </div>
+        <div v-if="item.unitSize && item.unitLabel">
+          <div class="text-xs text-parchment/60 uppercase tracking-wider mb-1">Packaging</div>
+          <div class="text-sm text-parchment">{{ item.unitSize }} {{ item.inventoryUnit || '' }} {{ item.unitLabel }}s</div>
+        </div>
         <div>
           <div class="text-xs text-parchment/60 uppercase tracking-wider mb-1">Latest Price/Unit</div>
           <div class="text-sm text-parchment font-semibold">
@@ -142,7 +175,7 @@ const stockStatusColor = computed(() =>
           </div>
           <div>
             <div class="text-xs text-parchment/60 uppercase tracking-wider mb-1">Current Stock</div>
-            <div class="text-sm text-parchment font-semibold">{{ currentStock }} {{ item.inventoryUnit || '' }}</div>
+            <div class="text-sm text-parchment font-semibold">{{ formatWithUnits(currentStock, item) }}</div>
           </div>
           <div>
             <div class="text-xs text-parchment/60 uppercase tracking-wider mb-1">Reorder Point</div>
@@ -199,24 +232,62 @@ const stockStatusColor = computed(() =>
 
     <!-- Inventory History -->
     <div v-if="item.trackInventory !== false" class="bg-charcoal rounded-xl border border-brown/30 p-5">
-      <h3 class="text-lg font-bold text-parchment font-[Cormorant_Garamond] mb-4">Inventory History</h3>
+      <div class="flex items-center justify-between mb-4">
+        <h3 class="text-lg font-bold text-parchment font-[Cormorant_Garamond]">Inventory History</h3>
+        <UButton
+          icon="i-lucide-plus"
+          size="sm"
+          variant="outline"
+          @click="addInventoryRecord"
+        >
+          Add Record
+        </UButton>
+      </div>
       <div v-if="inventoryRecords.length > 0" class="divide-y divide-brown/20">
-        <div class="grid grid-cols-2 gap-4 pb-2 text-xs text-parchment/60 uppercase tracking-wider">
+        <div class="grid grid-cols-4 gap-4 pb-2 text-xs text-parchment/60 uppercase tracking-wider hidden sm:grid">
           <span>Date</span>
-          <span class="text-right">Quantity</span>
+          <span>Quantity</span>
+          <span>Location</span>
+          <span class="text-right">Actions</span>
         </div>
         <div
           v-for="inv in inventoryRecords"
           :key="inv._id"
-          class="grid grid-cols-2 gap-4 py-2 text-sm"
+          class="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-4 py-2 text-sm group"
         >
           <span class="text-parchment">{{ new Date(inv.date).toLocaleDateString() }}</span>
-          <span class="text-parchment text-right">{{ inv.quantity }}</span>
+          <span class="text-parchment">{{ formatWithUnits(inv.quantity, item) }}</span>
+          <span class="text-parchment/60 hidden sm:block">{{ vesselName(inv.location || '') || '—' }}</span>
+          <div class="flex items-center justify-end gap-1">
+            <UButton
+              icon="i-lucide-pencil"
+              size="xs"
+              variant="ghost"
+              color="neutral"
+              @click="editInventoryRecord(inv)"
+            />
+            <UButton
+              icon="i-lucide-trash-2"
+              size="xs"
+              variant="ghost"
+              color="error"
+              @click="deleteInventoryRecord(inv)"
+            />
+          </div>
         </div>
       </div>
       <div v-else class="text-center py-6">
         <UIcon name="i-lucide-archive" class="text-2xl text-parchment/20 mx-auto mb-2" />
         <p class="text-sm text-parchment/50">No inventory records</p>
+        <UButton
+          icon="i-lucide-plus"
+          size="sm"
+          variant="outline"
+          class="mt-3"
+          @click="addInventoryRecord"
+        >
+          Add First Record
+        </UButton>
       </div>
     </div>
   </div>

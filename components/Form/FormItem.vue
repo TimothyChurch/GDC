@@ -7,6 +7,8 @@ const categories = useItemCategories();
 const schema = yup.object({
 	name: yup.string().required('Item name is required'),
 	category: yup.string(),
+	unitSize: yup.number().min(0, 'Unit size cannot be negative'),
+	unitLabel: yup.string(),
 	minStock: yup.number().min(0, 'Min stock cannot be negative'),
 	reorderPoint: yup.number().min(0, 'Reorder point cannot be negative'),
 	usePerMonth: yup.number().min(0, 'Use per month cannot be negative'),
@@ -18,9 +20,16 @@ const categoryItems = computed(() =>
 	categories.value.map((c) => ({ label: c, value: c }))
 );
 
+const unitLabelOptions = ref([...UNIT_LABEL_OPTIONS])
+
 const addType = (type: string) => {
 	itemInventoryTypes.value.push(type);
 	itemStore.item.type = type;
+};
+
+const addUnitLabel = (label: string) => {
+	unitLabelOptions.value.push(label);
+	itemStore.item.unitLabel = label;
 };
 const handleSubmit = () => {
 	itemStore.updateItem();
@@ -58,6 +67,25 @@ const handleSubmit = () => {
 						:items="categoryItems"
 						class="w-full" />
 				</UFormField>
+				<template v-if="itemStore.item.trackInventory">
+					<UFormField label="Unit Label" name="unitLabel" class="md:col-span-3">
+						<USelectMenu
+							v-model="itemStore.item.unitLabel"
+							:items="unitLabelOptions"
+							placeholder="e.g. bag, box, case"
+							create-item
+							@create="addUnitLabel"
+							class="w-full" />
+					</UFormField>
+					<UFormField label="Unit Size" name="unitSize" class="md:col-span-3">
+						<UInput
+							type="number"
+							v-model="itemStore.item.unitSize"
+							:placeholder="`Amount per ${itemStore.item.unitLabel || 'unit'} in ${itemStore.item.inventoryUnit || 'units'}`"
+							min="0"
+							class="w-full" />
+					</UFormField>
+				</template>
 				<UFormField label="Min Stock" name="minStock" class="md:col-span-2">
 					<UInput type="number" v-model="itemStore.item.minStock" min="0" class="w-full" />
 				</UFormField>

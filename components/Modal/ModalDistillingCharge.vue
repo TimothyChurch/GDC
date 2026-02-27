@@ -48,15 +48,16 @@ const sourceVesselOptions = computed(() => {
     })
 })
 
-// Still options with capacity hints
+// Still options with capacity hints (convert current to vessel's stats unit)
 const stillOptions = computed(() => {
   return vesselStore.stills.map((v) => {
-    const currentVol = v.current?.volume || 0
+    const statsUnit = v.stats?.volumeUnit || 'gal'
+    const currentVol = (v.current?.volume || 0) * convertUnitRatio(v.current?.volumeUnit || statsUnit, statsUnit)
     const capacity = v.stats?.volume || 0
     const hint = capacity > 0
-      ? `${currentVol.toFixed(1)}/${capacity.toFixed(0)} ${v.stats?.volumeUnit || 'gal'}`
+      ? `${currentVol.toFixed(1)}/${capacity.toFixed(0)} ${statsUnit}`
       : currentVol > 0
-        ? `${currentVol.toFixed(1)} in use`
+        ? `${currentVol.toFixed(1)} ${statsUnit} in use`
         : 'empty'
     return {
       label: `${v.name} (${hint})`,

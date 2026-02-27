@@ -85,10 +85,9 @@ const columns: TableColumn<ShoppingListItem>[] = [
     },
     cell: ({ row }) => {
       const stock = row.original.currentStock;
-      const unit = row.original.item.inventoryUnit || "units";
       const colorClass =
         stock <= 0 ? "text-red-400 font-bold" : "text-amber-400 font-semibold";
-      return h("span", { class: colorClass }, `${stock} ${unit}`);
+      return h("span", { class: colorClass }, formatWithUnits(stock, row.original.item));
     },
   },
   {
@@ -131,11 +130,10 @@ const columns: TableColumn<ShoppingListItem>[] = [
     },
     cell: ({ row }) => {
       const qty = row.original.suggestedOrderQty;
-      const unit = row.original.item.inventoryUnit || "units";
       return h(
         "span",
         { class: "text-gold font-semibold" },
-        `${qty} ${unit}`,
+        formatWithUnits(qty, row.original.item),
       );
     },
   },
@@ -322,8 +320,7 @@ const lowStockCount = computed(
                     : 'text-amber-400 font-semibold'
                 "
               >
-                {{ entry.currentStock }}
-                {{ entry.item.inventoryUnit || "units" }}
+                {{ formatWithUnits(entry.currentStock, entry.item) }}
               </div>
             </div>
             <div>
@@ -339,8 +336,7 @@ const lowStockCount = computed(
             <div>
               <span class="text-parchment/60">Order Qty</span>
               <div class="text-gold font-semibold">
-                {{ entry.suggestedOrderQty }}
-                {{ entry.item.inventoryUnit || "units" }}
+                {{ formatWithUnits(entry.suggestedOrderQty, entry.item) }}
               </div>
             </div>
           </div>

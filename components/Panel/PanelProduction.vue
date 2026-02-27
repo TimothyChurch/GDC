@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { calculateProofGallons } from '~/utils/proofGallons'
+
 /** Optional prefill data for batch-to-production flow */
 export interface ProductionPrefill {
   batchId?: string
@@ -34,7 +36,8 @@ const { localData, isDirty, saving, save, cancel } = useFormPanel({
       barrel: calculatedBarrelCost.value,
       bottling: calculatedBottlingCost.value,
       labor: localData.value.costs?.labor || 0,
-      taxes: localData.value.costs?.taxes || 0,
+      ttbTax: calculatedTtbTax.value,
+      tabcTax: calculatedTabcTax.value,
       other: localData.value.costs?.other || 0,
     };
     data.productionCost = totalProductionCost.value;
@@ -45,7 +48,7 @@ const { localData, isDirty, saving, save, cancel } = useFormPanel({
     await productionsStore.updateProduction();
 
     // Auto-adjust inventory for new productions only (not edits)
-    if (isNewProduction) {
+    if (isNewProduction && updateInventory.value) {
       await productionsStore.adjustInventoryForProduction({
         quantity: data.quantity,
         bottle: data.bottle,
@@ -63,13 +66,15 @@ if (!localData.value.costs) {
     barrel: 0,
     bottling: 0,
     labor: 0,
-    taxes: 0,
+    ttbTax: 0,
+    tabcTax: 0,
     other: 0,
   };
 }
 
 const isNew = !localData.value._id;
 const currentStep = ref(1);
+const updateInventory = ref(true);
 
 const vesselLabels = computed(() => {
   const vessels = vesselStore.vessels.filter(
@@ -180,6 +185,44 @@ const calculatedBottlingCost = computed(() => {
   return (glassCost + capCost + labelCost) * (localData.value.quantity || 0);
 });
 
+// ─── Tax Constants (matching report components) ─────────────────────────────
+const TTB_CBMA_TIER1_RATE = 2.70  // $/proof gallon (CBMA Tier 1)
+const TABC_TAX_RATE = 2.40        // $/wine gallon (Texas Tax Code § 201.43)
+
+/** Convert bottle volume to wine gallons */
+function bottleToWineGallons(bottle: { volume?: number; volumeUnit?: string }): number {
+  const vol = bottle.volume || 750
+  const unit = (bottle.volumeUnit || 'mL').toLowerCase()
+  if (unit === 'ml' || unit.includes('milli')) return vol * 0.000264172
+  if (unit === 'l' || unit.includes('liter')) return vol * 0.264172
+  if (unit.includes('oz')) return vol * 0.0078125
+  if (unit.includes('gal')) return vol
+  return vol * 0.000264172 // default: assume mL
+}
+
+/** TTB Federal Excise Tax: proof gallons × CBMA Tier 1 rate */
+const calculatedTtbTax = computed(() => {
+  const bottle = localData.value.bottle
+    ? bottleStore.getBottleById(localData.value.bottle)
+    : null
+  if (!bottle || !localData.value.quantity) return 0
+  const wgPerBottle = bottleToWineGallons(bottle)
+  const totalWG = wgPerBottle * localData.value.quantity
+  const proofGallons = calculateProofGallons(totalWG, 'gallon', bottle.abv || 0)
+  return +(proofGallons * TTB_CBMA_TIER1_RATE).toFixed(2)
+})
+
+/** TABC Texas Excise Tax: wine gallons × $2.40/gal */
+const calculatedTabcTax = computed(() => {
+  const bottle = localData.value.bottle
+    ? bottleStore.getBottleById(localData.value.bottle)
+    : null
+  if (!bottle || !localData.value.quantity) return 0
+  const wgPerBottle = bottleToWineGallons(bottle)
+  const totalWG = wgPerBottle * localData.value.quantity
+  return +(totalWG * TABC_TAX_RATE).toFixed(2)
+})
+
 /** Total production cost: all cost categories summed */
 const totalProductionCost = computed(() => {
   return (
@@ -187,7 +230,8 @@ const totalProductionCost = computed(() => {
     calculatedBarrelCost.value +
     calculatedBottlingCost.value +
     (localData.value.costs?.labor || 0) +
-    (localData.value.costs?.taxes || 0) +
+    calculatedTtbTax.value +
+    calculatedTabcTax.value +
     (localData.value.costs?.other || 0)
   );
 });
@@ -234,7 +278,8 @@ const wizardSave = async () => {
         barrel: calculatedBarrelCost.value,
         bottling: calculatedBottlingCost.value,
         labor: data.costs?.labor || 0,
-        taxes: data.costs?.taxes || 0,
+        ttbTax: calculatedTtbTax.value,
+        tabcTax: calculatedTabcTax.value,
         other: data.costs?.other || 0,
       };
       data.productionCost = totalProductionCost.value;
@@ -243,12 +288,14 @@ const wizardSave = async () => {
       Object.assign(productionsStore.production, data);
       const newId = await productionsStore.createAndReturnId(data);
       if (newId) {
-        // Auto-adjust inventory for the new production
-        await productionsStore.adjustInventoryForProduction({
-          quantity: data.quantity,
-          bottle: data.bottle,
-          bottling: data.bottling,
-        });
+        // Auto-adjust inventory for the new production (if toggle is on)
+        if (updateInventory.value) {
+          await productionsStore.adjustInventoryForProduction({
+            quantity: data.quantity,
+            bottle: data.bottle,
+            bottling: data.bottling,
+          });
+        }
 
         await batchStore.updateStageData(linkedBatchId.value, 'Bottled', {
           productionRecord: newId,
@@ -269,7 +316,8 @@ const costBreakdownLines = computed(() => [
   { label: "Barrel", value: calculatedBarrelCost.value, auto: true },
   { label: "Bottling Materials", value: calculatedBottlingCost.value, auto: true },
   { label: "Labor", value: localData.value.costs?.labor || 0, auto: false },
-  { label: "Taxes", value: localData.value.costs?.taxes || 0, auto: false },
+  { label: "TTB Federal Excise Tax", value: calculatedTtbTax.value, auto: true },
+  { label: "TABC Texas Excise Tax", value: calculatedTabcTax.value, auto: true },
   { label: "Other", value: localData.value.costs?.other || 0, auto: false },
 ]);
 </script>
@@ -364,40 +412,13 @@ const costBreakdownLines = computed(() => [
               />
             </UFormField>
             <UFormField label="Glassware">
-              <USelectMenu
-                v-model="localData.bottling.glassware"
-                :items="
-                  itemStore.items.filter(
-                    (i) => i.type?.toLowerCase() === 'glass bottle',
-                  )
-                "
-                label-key="name"
-                value-key="_id"
-              />
+              <BaseItemSelect v-model="localData.bottling.glassware" filter-by-type="glass bottle" create-type="glass bottle" create-category="Bottling" />
             </UFormField>
             <UFormField label="Cap">
-              <USelect
-                v-model="localData.bottling.cap"
-                :items="
-                  itemStore.items.filter(
-                    (i) => i.type?.toLowerCase() === 'bottle cap',
-                  )
-                "
-                label-key="name"
-                value-key="_id"
-              />
+              <BaseItemSelect v-model="localData.bottling.cap" filter-by-type="bottle cap" create-type="bottle cap" create-category="Bottling" />
             </UFormField>
             <UFormField label="Label">
-              <USelectMenu
-                v-model="localData.bottling.label"
-                :items="
-                  itemStore.items.filter(
-                    (i) => i.type?.toLowerCase() === 'label',
-                  )
-                "
-                label-key="name"
-                value-key="_id"
-              />
+              <BaseItemSelect v-model="localData.bottling.label" filter-by-type="label" create-type="label" create-category="Bottling" />
             </UFormField>
             <UFormField label="Quantity">
               <UInput v-model="localData.quantity" type="number" />
@@ -446,20 +467,35 @@ const costBreakdownLines = computed(() => [
                   </template>
                 </UFormField>
 
+                <!-- Auto-calculated tax costs -->
+                <div class="grid grid-cols-2 gap-3">
+                  <UFormField label="TTB Federal Tax">
+                    <UInput
+                      :model-value="calculatedTtbTax.toFixed(2)"
+                      disabled
+                      icon="i-lucide-lock"
+                    />
+                    <template #hint>
+                      <span class="text-[10px] text-parchment/50">$2.70/PG (CBMA Tier 1)</span>
+                    </template>
+                  </UFormField>
+                  <UFormField label="TABC Texas Tax">
+                    <UInput
+                      :model-value="calculatedTabcTax.toFixed(2)"
+                      disabled
+                      icon="i-lucide-lock"
+                    />
+                    <template #hint>
+                      <span class="text-[10px] text-parchment/50">$2.40/wine gallon</span>
+                    </template>
+                  </UFormField>
+                </div>
+
                 <!-- Manual cost entries -->
-                <div class="grid grid-cols-3 gap-3">
+                <div class="grid grid-cols-2 gap-3">
                   <UFormField label="Labor">
                     <UInput
                       v-model="localData.costs!.labor"
-                      type="number"
-                      step="0.01"
-                      min="0"
-                      placeholder="0.00"
-                    />
-                  </UFormField>
-                  <UFormField label="Taxes">
-                    <UInput
-                      v-model="localData.costs!.taxes"
                       type="number"
                       step="0.01"
                       min="0"
@@ -552,43 +588,13 @@ const costBreakdownLines = computed(() => [
                 />
               </UFormField>
               <UFormField label="Glassware">
-                <USelectMenu
-                  v-model="localData.bottling.glassware"
-                  :items="
-                    itemStore.items.filter(
-                      (i) => i.type?.toLowerCase() === 'glass bottle',
-                    )
-                  "
-                  label-key="name"
-                  value-key="_id"
-                  class="w-full"
-                />
+                <BaseItemSelect v-model="localData.bottling.glassware" filter-by-type="glass bottle" create-type="glass bottle" create-category="Bottling" />
               </UFormField>
               <UFormField label="Cap">
-                <USelect
-                  v-model="localData.bottling.cap"
-                  :items="
-                    itemStore.items.filter(
-                      (i) => i.type?.toLowerCase() === 'bottle cap',
-                    )
-                  "
-                  label-key="name"
-                  value-key="_id"
-                  class="w-full"
-                />
+                <BaseItemSelect v-model="localData.bottling.cap" filter-by-type="bottle cap" create-type="bottle cap" create-category="Bottling" />
               </UFormField>
               <UFormField label="Label">
-                <USelectMenu
-                  v-model="localData.bottling.label"
-                  :items="
-                    itemStore.items.filter(
-                      (i) => i.type?.toLowerCase() === 'label',
-                    )
-                  "
-                  label-key="name"
-                  value-key="_id"
-                  class="w-full"
-                />
+                <BaseItemSelect v-model="localData.bottling.label" filter-by-type="label" create-type="label" create-category="Bottling" />
               </UFormField>
               <UFormField label="Quantity">
                 <UInput v-model="localData.quantity" type="number" />
@@ -643,6 +649,40 @@ const costBreakdownLines = computed(() => [
 
               <USeparator />
 
+              <!-- Auto-calculated excise taxes -->
+              <div class="space-y-2">
+                <div
+                  class="flex justify-between items-center text-sm bg-brown/10 rounded-lg px-3 py-2"
+                >
+                  <div class="flex items-center gap-2">
+                    <UIcon name="i-lucide-landmark" class="text-parchment/50 w-4 h-4" />
+                    <div>
+                      <span class="text-parchment/70">TTB Federal Excise Tax</span>
+                      <span class="text-[10px] text-parchment/40 ml-1">($2.70/PG)</span>
+                    </div>
+                  </div>
+                  <span class="text-parchment font-medium">{{
+                    Dollar.format(calculatedTtbTax)
+                  }}</span>
+                </div>
+                <div
+                  class="flex justify-between items-center text-sm bg-brown/10 rounded-lg px-3 py-2"
+                >
+                  <div class="flex items-center gap-2">
+                    <UIcon name="i-lucide-map-pin" class="text-parchment/50 w-4 h-4" />
+                    <div>
+                      <span class="text-parchment/70">TABC Texas Excise Tax</span>
+                      <span class="text-[10px] text-parchment/40 ml-1">($2.40/WG)</span>
+                    </div>
+                  </div>
+                  <span class="text-parchment font-medium">{{
+                    Dollar.format(calculatedTabcTax)
+                  }}</span>
+                </div>
+              </div>
+
+              <USeparator />
+
               <!-- Manual cost entries -->
               <div class="space-y-3">
                 <UFormField label="Labor Cost">
@@ -653,16 +693,6 @@ const costBreakdownLines = computed(() => [
                     min="0"
                     placeholder="0.00"
                     icon="i-lucide-hard-hat"
-                  />
-                </UFormField>
-                <UFormField label="Excise Taxes">
-                  <UInput
-                    v-model="localData.costs!.taxes"
-                    type="number"
-                    step="0.01"
-                    min="0"
-                    placeholder="0.00"
-                    icon="i-lucide-landmark"
                   />
                 </UFormField>
                 <UFormField label="Other Costs">
@@ -683,6 +713,26 @@ const costBreakdownLines = computed(() => [
               <h3 class="text-sm font-semibold text-parchment/70">
                 Review Production
               </h3>
+
+              <!-- Inventory Toggle -->
+              <div
+                class="flex items-center justify-between rounded-lg border px-3 py-2"
+                :class="updateInventory ? 'border-green-500/20 bg-green-500/5' : 'border-amber-500/20 bg-amber-500/5'"
+              >
+                <div class="flex items-center gap-2">
+                  <UIcon
+                    :name="updateInventory ? 'i-lucide-package-check' : 'i-lucide-package-x'"
+                    :class="updateInventory ? 'text-green-400' : 'text-amber-400'"
+                  />
+                  <div>
+                    <div class="text-sm text-parchment">Update Inventory</div>
+                    <div class="text-[10px] text-parchment/50">
+                      {{ updateInventory ? 'Bottle stock will be increased and materials decreased' : 'No inventory changes — use for recording historical productions' }}
+                    </div>
+                  </div>
+                </div>
+                <USwitch v-model="updateInventory" />
+              </div>
               <div
                 class="bg-brown/10 rounded-lg border border-brown/20 p-4 space-y-3"
               >
