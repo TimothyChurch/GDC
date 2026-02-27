@@ -1,18 +1,17 @@
 <script setup lang="ts">
-const cocktailStore = useCocktailStore();
-const { getIngredientName } = useIngredientResolver();
+const cocktailStore = usePublicCocktailStore();
 
-const featuredCocktails = ref<typeof cocktailStore.cocktails>([]);
-
-onMounted(() => {
-  const visible = cocktailStore.cocktails.filter((c) => c.visible !== false);
-  featuredCocktails.value = [...visible].sort(() => Math.random() - 0.5).slice(0, 3);
+// SSR-safe featured selection: seeded shuffle produces the same order on
+// server and client (rotates daily). Computed so it reacts to store loads.
+const featuredCocktails = computed(() => {
+  if (!cocktailStore.cocktails.length) return [];
+  return seededShuffle(cocktailStore.cocktails, todaySeed()).slice(0, 3);
 });
 
-const getIngredientNames = (cocktail: { ingredients: { item: string; amount: number; unit: string; sourceType?: string }[] }) => {
+const getIngredientNames = (cocktail: { ingredients: { name: string }[] }) => {
   return cocktail.ingredients
-    .map((ing) => getIngredientName(ing as any))
-    .filter((name) => name && name !== 'Unknown Item' && name !== 'Unknown Bottle')
+    .map((ing) => ing.name)
+    .filter((name) => name && name !== 'Unknown')
     .join(", ");
 };
 </script>

@@ -1,29 +1,23 @@
 <script setup lang="ts">
 import type { TableColumn } from "@nuxt/ui";
 import type { GDCEvent } from "~/types";
-import type { Row } from "@tanstack/vue-table";
 import { getPaginationRowModel } from "@tanstack/vue-table";
 
 const eventStore = useEventStore();
 const { confirm } = useDeleteConfirm();
 
-const UButton = resolveComponent("UButton");
-const UDropdownMenu = resolveComponent("UDropdownMenu");
 const UBadge = resolveComponent("UBadge");
 
-const search = ref("");
-const pagination = ref({ pageIndex: 0, pageSize: 10 });
 const statusFilter = ref<string>("All");
-
-const tableRef = useTemplateRef('tableRef');
-const filteredTotal = computed(() =>
-  tableRef.value?.tableApi?.getFilteredRowModel().rows.length ?? filteredEvents.value.length
-);
 
 const filteredEvents = computed(() => {
   if (statusFilter.value === "All") return eventStore.events;
   return eventStore.events.filter((e) => e.status === statusFilter.value);
 });
+
+const { search, pagination, tableRef, filteredTotal } = useTableState(
+  computed(() => filteredEvents.value.length)
+);
 
 const statusColors: Record<string, string> = {
   Pending: "warning",
@@ -33,7 +27,7 @@ const statusColors: Record<string, string> = {
 };
 
 function formatDate(val: string) {
-  if (!val) return "—";
+  if (!val) return "\u2014";
   return new Date(val).toLocaleDateString("en-US", {
     month: "short",
     day: "numeric",
@@ -43,8 +37,8 @@ function formatDate(val: string) {
 
 function getContactName(row: GDCEvent): string {
   const c = row.contact as any;
-  if (!c || typeof c === "string") return "—";
-  return c.businessName || `${c.firstName || ""} ${c.lastName || ""}`.trim() || "—";
+  if (!c || typeof c === "string") return "\u2014";
+  return c.businessName || `${c.firstName || ""} ${c.lastName || ""}`.trim() || "\u2014";
 }
 
 function getContactEmail(row: GDCEvent): string {
@@ -60,44 +54,12 @@ function getContactPhone(row: GDCEvent): string {
 }
 
 const columns: TableColumn<GDCEvent>[] = [
-  {
-    id: "expand",
-    cell: ({ row }) =>
-      h(UButton, {
-        color: "neutral",
-        variant: "ghost",
-        icon: "i-lucide-chevron-down",
-        square: true,
-        "aria-label": "Expand",
-        ui: {
-          leadingIcon: [
-            "transition-transform",
-            row.getIsExpanded() ? "duration-200 rotate-180" : "",
-          ],
-        },
-        onClick: () => row.toggleExpanded(),
-      }),
-  },
-  {
+  expandColumn<GDCEvent>(),
+  sortableColumn<GDCEvent>("date", "Date", {
     id: "date",
-    header: ({ column }) => {
-      const isSorted = column.getIsSorted();
-      return h(UButton, {
-        color: "neutral",
-        variant: "ghost",
-        label: "Date",
-        icon: isSorted
-          ? isSorted === "asc"
-            ? "i-lucide-arrow-up-narrow-wide"
-            : "i-lucide-arrow-down-wide-narrow"
-          : "i-lucide-arrow-up-down",
-        class: "-mx-2.5",
-        onClick: () => column.toggleSorting(column.getIsSorted() === "asc"),
-      });
-    },
     accessorFn: (row) => row.date,
     cell: ({ getValue }) => formatDate(getValue() as string),
-  },
+  }),
   {
     id: "contact",
     header: "Contact",
@@ -120,35 +82,7 @@ const columns: TableColumn<GDCEvent>[] = [
       }, () => status);
     },
   },
-  {
-    id: "actions",
-    cell: ({ row }) => {
-      return h(
-        "div",
-        { class: "text-right" },
-        h(
-          UDropdownMenu,
-          {
-            content: { align: "end" },
-            items: getRowItems(row),
-            "aria-label": "Actions dropdown",
-          },
-          () =>
-            h(UButton, {
-              icon: "i-lucide-ellipsis-vertical",
-              color: "neutral",
-              variant: "ghost",
-              class: "ml-auto",
-              "aria-label": "Actions dropdown",
-            })
-        )
-      );
-    },
-  },
-];
-
-function getRowItems(row: Row<GDCEvent>) {
-  return [
+  actionsColumn<GDCEvent>((row) => [
     {
       label: "Edit event",
       onSelect() {
@@ -168,8 +102,8 @@ function getRowItems(row: Row<GDCEvent>) {
         }
       },
     },
-  ];
-}
+  ]),
+];
 
 // Panel slide-over
 import { LazyPanelEvent } from "#components";

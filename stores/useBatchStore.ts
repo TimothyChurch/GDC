@@ -1,5 +1,3 @@
-import { defineStore } from 'pinia';
-import { ref } from 'vue';
 import type { Batch, BatchStages, DistillingRun, Recipe, TastingNote, TransferLogEntry } from '~/types';
 import { STAGE_KEY_MAP, isStageActive, getActiveStages, hasStageVolumes, getStageIndex } from '~/composables/batchPipeline';
 
@@ -24,19 +22,18 @@ const defaultBatch = (): Batch => ({
 export const useBatchStore = defineStore('batches', () => {
 	const toast = useToast();
 
-	// State
-	const batches = ref<Batch[]>([]);
-	const loaded = ref(false);
-	const loading = ref(false);
-	const saving = ref(false);
-	const batch = ref<Batch>(defaultBatch());
+	const crud = useCrudStore<Batch>({
+		name: 'Batch',
+		apiPath: '/api/batch',
+		defaultItem: defaultBatch,
+	});
 
 	// --- Computed filters ---
 	const activeBatches = computed(() =>
-		batches.value.filter((b) => b.status === 'active')
+		crud.items.value.filter((b) => b.status === 'active'),
 	);
 	const completedBatches = computed(() =>
-		batches.value.filter((b) => b.status === 'completed')
+		crud.items.value.filter((b) => b.status === 'completed'),
 	);
 
 	// Stage-based filters using getBatchesInStage for volume-aware lookups
@@ -48,87 +45,19 @@ export const useBatchStore = defineStore('batches', () => {
 	const barrelAgingBatches = computed(() => getBatchesInStage('Barrel Aging'));
 	const macerationBatches = computed(() => getBatchesInStage('Maceration'));
 
-	// --- CRUD Actions ---
-	const getBatches = async (): Promise<void> => {
-		loading.value = true;
-		try {
-			const response = await $fetch('/api/batch');
-			batches.value = response as Batch[];
-		} finally {
-			loading.value = false;
-		}
-	};
-
-	const ensureLoaded = async () => {
-		if (!loaded.value) {
-			try {
-				await getBatches();
-				loaded.value = true;
-			} catch {
-				// loaded stays false — will retry on next call
-			}
-		}
-	};
-
-	const setBatch = (id: string): void => {
-		const found = batches.value.find((b) => b._id === id);
-		if (found) batch.value = JSON.parse(JSON.stringify(found));
-	};
-
+	// --- Custom updateBatch that wraps saveItem ---
+	// Batch has custom pre-create logic (add log entry, initialize stageVolumes)
 	const updateBatch = async (): Promise<void> => {
-		saving.value = true;
-		try {
-			const isNew = !batch.value._id;
-			if (isNew) {
-				const recipeStore = useRecipeStore();
-				const recipeName = recipeStore.getRecipeById(batch.value.recipe)?.name;
-				addLogEntry(batch.value, 'Batch created', recipeName ? `From recipe: ${recipeName}` : undefined);
-				// Initialize stageVolumes for new batches
-				if (!batch.value.stageVolumes || Object.keys(batch.value.stageVolumes).length === 0) {
-					batch.value.stageVolumes = { 'Upcoming': batch.value.batchSize || 0 };
-				}
-				const { _id, ...createData } = batch.value;
-				const response = await $fetch('/api/batch/create', {
-					method: 'POST',
-					body: JSON.stringify(createData),
-				});
-				batches.value.push(response as Batch);
-			} else {
-				const response = await $fetch(`/api/batch/${batch.value._id}`, {
-					method: 'PUT',
-					body: JSON.stringify(batch.value),
-				});
-				const index = batches.value.findIndex((b) => b._id === batch.value._id);
-				if (index !== -1) {
-					batches.value[index] = response as Batch;
-				}
+		const isNew = !crud.item.value._id;
+		if (isNew) {
+			const recipeStore = useRecipeStore();
+			const recipeName = recipeStore.getRecipeById(crud.item.value.recipe)?.name;
+			addLogEntry(crud.item.value, 'Batch created', recipeName ? `From recipe: ${recipeName}` : undefined);
+			if (!crud.item.value.stageVolumes || Object.keys(crud.item.value.stageVolumes).length === 0) {
+				crud.item.value.stageVolumes = { 'Upcoming': crud.item.value.batchSize || 0 };
 			}
-			toast.add({ title: `Batch ${isNew ? 'created' : 'updated'}`, color: 'success', icon: 'i-lucide-check-circle' });
-			resetBatch();
-		} catch (error: any) {
-			toast.add({ title: 'Failed to save batch', description: error?.data?.message, color: 'error', icon: 'i-lucide-alert-circle' });
-		} finally {
-			saving.value = false;
 		}
-	};
-
-	const deleteBatch = async (id: string): Promise<void> => {
-		saving.value = true;
-		try {
-			await $fetch(`/api/batch/${id}`, {
-				method: 'DELETE',
-			});
-			batches.value = batches.value.filter((b) => b._id !== id);
-			toast.add({ title: 'Batch deleted', color: 'success', icon: 'i-lucide-check-circle' });
-		} catch (error: any) {
-			toast.add({ title: 'Failed to delete batch', description: error?.data?.message, color: 'error', icon: 'i-lucide-alert-circle' });
-		} finally {
-			saving.value = false;
-		}
-	};
-
-	const resetBatch = (): void => {
-		batch.value = defaultBatch();
+		await crud.saveItem();
 	};
 
 	// --- Helper: initialize stageVolumes on legacy batch ---
@@ -164,7 +93,7 @@ export const useBatchStore = defineStore('batches', () => {
 	/** Start the first production stage with optional partial volume transfer */
 	const startFirstStage = async (batchId: string, vesselId: string, transferVolume?: number): Promise<void> => {
 		const vesselStore = useVesselStore();
-		const target = batches.value.find((b) => b._id === batchId);
+		const target = crud.items.value.find((b) => b._id === batchId);
 		if (!target) return;
 
 		ensureStageVolumes(target);
@@ -173,7 +102,6 @@ export const useBatchStore = defineStore('batches', () => {
 		const upcomingVolume = target.stageVolumes!['Upcoming'] || target.batchSize || 0;
 		const actualVolume = transferVolume != null ? Math.min(transferVolume, upcomingVolume) : upcomingVolume;
 
-		// Deduct from Upcoming
 		const remainingUpcoming = upcomingVolume - actualVolume;
 		if (remainingUpcoming > 0.001) {
 			target.stageVolumes!['Upcoming'] = remainingUpcoming;
@@ -181,17 +109,14 @@ export const useBatchStore = defineStore('batches', () => {
 			delete target.stageVolumes!['Upcoming'];
 		}
 
-		// Add to first stage
 		target.stageVolumes![firstStage] = (target.stageVolumes![firstStage] || 0) + actualVolume;
 
-		// Update currentStage to furthest reached
 		const firstStageIdx = getStageIndex(target.pipeline, firstStage);
 		const currentIdx = target.currentStage === 'Upcoming' ? -1 : getStageIndex(target.pipeline, target.currentStage);
 		if (firstStageIdx > currentIdx) {
 			target.currentStage = firstStage;
 		}
 
-		// Initialize stage data only on first transfer to this stage
 		const stageKey = STAGE_KEY_MAP[firstStage] as keyof BatchStages;
 		if (stageKey) {
 			if (!target.stages[stageKey]) {
@@ -215,10 +140,9 @@ export const useBatchStore = defineStore('batches', () => {
 		});
 		addLogEntry(target, `Transferred ${actualVolume} ${target.batchSizeUnit || 'gal'} to ${firstStage}`);
 
-		batch.value = target;
+		crud.item.value = target;
 		await updateBatch();
 
-		// Add batch contents to the vessel (proportional)
 		if (vesselId) {
 			await vesselStore.addContents(vesselId, {
 				batch: batchId,
@@ -230,10 +154,7 @@ export const useBatchStore = defineStore('batches', () => {
 		}
 	};
 
-	/** Advance a batch from sourceStage to targetStage with optional partial volume.
-	 *  destinationVolume: when provided, the destination stage receives this amount
-	 *  instead of the deducted source amount (e.g. distilling output is less than input).
-	 */
+	/** Advance a batch from sourceStage to targetStage with optional partial volume. */
 	const advanceToStage = async (
 		batchId: string,
 		targetStage: string,
@@ -242,12 +163,11 @@ export const useBatchStore = defineStore('batches', () => {
 		sourceStage?: string,
 		destinationVolume?: number,
 	): Promise<void> => {
-		const target = batches.value.find((b) => b._id === batchId);
+		const target = crud.items.value.find((b) => b._id === batchId);
 		if (!target) return;
 
 		ensureStageVolumes(target);
 
-		// Determine source stage: explicit param, or stage before targetStage in pipeline
 		const targetIdx = getStageIndex(target.pipeline, targetStage);
 		let fromStage = sourceStage;
 		if (!fromStage) {
@@ -264,30 +184,25 @@ export const useBatchStore = defineStore('batches', () => {
 		const actualVolume = transferVolume != null ? Math.min(transferVolume, sourceVolume) : sourceVolume;
 		if (actualVolume <= 0) return;
 
-		// Deduct from source
 		const remainingSource = sourceVolume - actualVolume;
 		if (remainingSource > 0.001) {
 			target.stageVolumes![fromStage] = remainingSource;
 		} else {
 			delete target.stageVolumes![fromStage];
-			// Mark source stage as completed when volume reaches 0
 			const sourceKey = STAGE_KEY_MAP[fromStage] as keyof BatchStages;
 			if (sourceKey && target.stages[sourceKey]) {
 				(target.stages[sourceKey] as any).completedAt = new Date();
 			}
 		}
 
-		// Add to destination (use destinationVolume when output differs from input, e.g. distilling)
 		const destVol = destinationVolume != null ? destinationVolume : actualVolume;
 		target.stageVolumes![targetStage] = (target.stageVolumes![targetStage] || 0) + destVol;
 
-		// Update currentStage only if targetStage is further in pipeline
 		const currentIdx = target.currentStage === 'Upcoming' ? -1 : getStageIndex(target.pipeline, target.currentStage);
 		if (targetIdx > currentIdx) {
 			target.currentStage = targetStage;
 		}
 
-		// Initialize new stage data only on first transfer to this stage
 		const newStageKey = STAGE_KEY_MAP[targetStage] as keyof BatchStages;
 		if (newStageKey) {
 			if (!target.stages[newStageKey]) {
@@ -302,7 +217,6 @@ export const useBatchStore = defineStore('batches', () => {
 			}
 		}
 
-		// Mark batch completed only when ALL volume reaches Bottled
 		if (targetStage === 'Bottled') {
 			const activeNonBottled = Object.entries(target.stageVolumes!)
 				.filter(([stage, vol]) => stage !== 'Bottled' && vol > 0);
@@ -324,13 +238,13 @@ export const useBatchStore = defineStore('batches', () => {
 			addLogEntry(target, `Transferred ${actualVolume} ${target.batchSizeUnit || 'gal'} from ${fromStage} to ${targetStage}`);
 		}
 
-		batch.value = target;
+		crud.item.value = target;
 		await updateBatch();
 	};
 
 	/** Update data for a specific stage */
 	const updateStageData = async (batchId: string, stageName: string, data: Record<string, any>, logMessage?: string): Promise<void> => {
-		const target = batches.value.find((b) => b._id === batchId);
+		const target = crud.items.value.find((b) => b._id === batchId);
 		if (!target) return;
 
 		const stageKey = STAGE_KEY_MAP[stageName] as keyof BatchStages;
@@ -343,14 +257,14 @@ export const useBatchStore = defineStore('batches', () => {
 
 		addLogEntry(target, logMessage || `Updated ${stageName} data`);
 
-		batch.value = target;
+		crud.item.value = target;
 		await updateBatch();
 	};
 
 	// --- Distilling run management ---
 
 	const addDistillingRun = async (batchId: string, run: DistillingRun): Promise<void> => {
-		const target = batches.value.find((b) => b._id === batchId);
+		const target = crud.items.value.find((b) => b._id === batchId);
 		if (!target) return;
 
 		if (!target.stages.distilling) {
@@ -364,12 +278,12 @@ export const useBatchStore = defineStore('batches', () => {
 
 		addLogEntry(target, `Added distilling run #${run.runNumber}`, `${run.runType} run`);
 
-		batch.value = target;
+		crud.item.value = target;
 		await updateBatch();
 	};
 
 	const updateDistillingRun = async (batchId: string, runIndex: number, data: Partial<DistillingRun>): Promise<void> => {
-		const target = batches.value.find((b) => b._id === batchId);
+		const target = crud.items.value.find((b) => b._id === batchId);
 		if (!target?.stages?.distilling) return;
 
 		const distilling = target.stages.distilling as any;
@@ -379,12 +293,12 @@ export const useBatchStore = defineStore('batches', () => {
 
 		addLogEntry(target, `Updated distilling run #${distilling.runs[runIndex].runNumber}`);
 
-		batch.value = target;
+		crud.item.value = target;
 		await updateBatch();
 	};
 
 	const deleteDistillingRun = async (batchId: string, runIndex: number): Promise<void> => {
-		const target = batches.value.find((b) => b._id === batchId);
+		const target = crud.items.value.find((b) => b._id === batchId);
 		if (!target?.stages?.distilling) return;
 
 		const distilling = target.stages.distilling as any;
@@ -393,14 +307,13 @@ export const useBatchStore = defineStore('batches', () => {
 		const removedNumber = distilling.runs[runIndex].runNumber;
 		distilling.runs.splice(runIndex, 1);
 
-		// Re-number remaining runs
 		distilling.runs.forEach((r: DistillingRun, i: number) => {
 			r.runNumber = i + 1;
 		});
 
 		addLogEntry(target, `Deleted distilling run #${removedNumber}`);
 
-		batch.value = target;
+		crud.item.value = target;
 		await updateBatch();
 	};
 
@@ -419,16 +332,16 @@ export const useBatchStore = defineStore('batches', () => {
 
 	/** Add a manual note to a batch's activity log */
 	const addNote = async (batchId: string, note: string): Promise<void> => {
-		const target = batches.value.find((b) => b._id === batchId);
+		const target = crud.items.value.find((b) => b._id === batchId);
 		if (!target) return;
 		addLogEntry(target, 'Note added', note);
-		batch.value = target;
+		crud.item.value = target;
 		await updateBatch();
 	};
 
 	/** Add a tasting note to a batch */
 	const addTastingNote = async (batchId: string, note: Omit<TastingNote, 'addedBy'>): Promise<void> => {
-		const target = batches.value.find((b) => b._id === batchId);
+		const target = crud.items.value.find((b) => b._id === batchId);
 		if (!target) return;
 		if (!target.tastingNotes) target.tastingNotes = [];
 		target.tastingNotes.push({
@@ -436,45 +349,40 @@ export const useBatchStore = defineStore('batches', () => {
 			addedBy: getCurrentUserName(),
 		});
 		addLogEntry(target, 'Tasting note added', note.abv ? `ABV: ${note.abv}%` : undefined);
-		batch.value = target;
+		crud.item.value = target;
 		await updateBatch();
 	};
 
 	/** Delete a tasting note from a batch by index */
 	const deleteTastingNote = async (batchId: string, noteIndex: number): Promise<void> => {
-		const target = batches.value.find((b) => b._id === batchId);
+		const target = crud.items.value.find((b) => b._id === batchId);
 		if (!target || !target.tastingNotes?.[noteIndex]) return;
 		target.tastingNotes.splice(noteIndex, 1);
 		addLogEntry(target, 'Tasting note removed');
-		batch.value = target;
+		crud.item.value = target;
 		await updateBatch();
 	};
 
 	// --- Getters ---
-	const getBatchById = (id: string): Batch | undefined => {
-		return batches.value.find((b) => b._id === id);
-	};
 
 	/** Get batches that have volume in a given stage (volume-aware) */
 	const getBatchesInStage = (stage: string): Batch[] => {
-		return batches.value.filter((b) => {
+		return crud.items.value.filter((b) => {
 			if (b.status !== 'active') return false;
-			// Volume-aware: check stageVolumes
 			if (hasStageVolumes(b)) {
 				return isStageActive(b, stage);
 			}
-			// Legacy fallback: use currentStage
 			return b.currentStage === stage;
 		});
 	};
 
-	/** Legacy getter — still uses currentStage only */
+	/** Legacy getter -- still uses currentStage only */
 	const getBatchesByCurrentStage = (stage: string): Batch[] => {
-		return batches.value.filter((b) => b.currentStage === stage && b.status === 'active');
+		return crud.items.value.filter((b) => b.currentStage === stage && b.status === 'active');
 	};
 
 	const getBatchByStatus = (status: string): Batch[] => {
-		return batches.value.filter((b) => b.status === status);
+		return crud.items.value.filter((b) => b.status === status);
 	};
 
 	/** Get all distinct stages that have active batches (volume-aware) */
@@ -494,7 +402,7 @@ export const useBatchStore = defineStore('batches', () => {
 
 	const getRecipeNameByBatchId = (id: string): string | undefined => {
 		const recipeStore = useRecipeStore();
-		const b = getBatchById(id);
+		const b = crud.getById(id);
 		if (b?.recipe) {
 			const recipe = recipeStore.getRecipeById(b.recipe) as Recipe;
 			return recipe?.name;
@@ -502,12 +410,17 @@ export const useBatchStore = defineStore('batches', () => {
 	};
 
 	return {
-		// State
-		batches,
-		batch,
-		loaded,
-		loading,
-		saving,
+		...crud,
+		// Domain aliases for backward compatibility
+		batches: crud.items,
+		batch: crud.item,
+		getBatches: crud.getAll,
+		deleteBatch: crud.deleteItem,
+		resetBatch: crud.resetItem,
+		setBatch: crud.setItem,
+		getBatchById: crud.getById,
+		// Custom updateBatch (adds log entry for new batches)
+		updateBatch,
 		// Computed filters
 		activeBatches,
 		completedBatches,
@@ -519,13 +432,6 @@ export const useBatchStore = defineStore('batches', () => {
 		barrelAgingBatches,
 		macerationBatches,
 		activeStages,
-		// CRUD
-		ensureLoaded,
-		getBatches,
-		setBatch,
-		updateBatch,
-		deleteBatch,
-		resetBatch,
 		// Pipeline advancement
 		advanceToStage,
 		startFirstStage,
@@ -540,7 +446,6 @@ export const useBatchStore = defineStore('batches', () => {
 		addTastingNote,
 		deleteTastingNote,
 		// Getters
-		getBatchById,
 		getBatchesInStage,
 		getBatchesByCurrentStage,
 		getBatchByStatus,

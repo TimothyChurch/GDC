@@ -61,13 +61,12 @@ const saveRecipe = () => {
 					label-key="type"
 					value-key="type" />
 			</UFormField>
-			<UFormField label="Volume" name="volume">
-				<UInput v-model="recipeStore.recipe.volume" type="number" />
-			</UFormField>
-			<UFormField label="Volume Unit" name="volumeUnit">
-				<USelectMenu
-					v-model="recipeStore.recipe.volumeUnit"
-					:items="volumeUnits" />
+			<UFormField label="Volume" name="volume" class="col-span-full">
+				<BaseQuantityInput
+					v-model:value="recipeStore.recipe.volume"
+					v-model:unit="recipeStore.recipe.volumeUnit"
+					:unit-options="volumeUnits"
+					placeholder="Volume" />
 			</UFormField>
 
 			<!-- Inline-editable ingredient rows -->

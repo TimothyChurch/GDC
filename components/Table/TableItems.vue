@@ -1,76 +1,25 @@
 <script setup lang="ts">
 import type { TableColumn } from "@nuxt/ui";
 import type { Item } from "~/types";
-import type { Row } from "@tanstack/vue-table";
 import { getPaginationRowModel } from "@tanstack/vue-table";
 
 const router = useRouter();
 const itemStore = useItemStore();
 const { confirm } = useDeleteConfirm();
 
-const UButton = resolveComponent("UButton");
-const UDropdownMenu = resolveComponent("UDropdownMenu");
+const { search, pagination, tableRef, filteredTotal } = useTableState(
+  computed(() => itemStore.items.length)
+);
 
 const columns: TableColumn<Item>[] = [
-  {
-    accessorKey: "name",
-    header: ({ column }) => {
-      const isSorted = column.getIsSorted();
-      return h(UButton, {
-        color: "neutral",
-        variant: "ghost",
-        label: "Name",
-        icon: isSorted
-          ? isSorted === "asc"
-            ? "i-lucide-arrow-up-narrow-wide"
-            : "i-lucide-arrow-down-wide-narrow"
-          : "i-lucide-arrow-up-down",
-        class: "-mx-2.5",
-        onClick: () => column.toggleSorting(column.getIsSorted() === "asc"),
-      });
-    },
-  },
-  {
-    accessorKey: "type",
-    header: ({ column }) => {
-      const isSorted = column.getIsSorted();
-      return h(UButton, {
-        color: "neutral",
-        variant: "ghost",
-        label: "Type",
-        icon: isSorted
-          ? isSorted === "asc"
-            ? "i-lucide-arrow-up-narrow-wide"
-            : "i-lucide-arrow-down-wide-narrow"
-          : "i-lucide-arrow-up-down",
-        class: "-mx-2.5",
-        onClick: () => column.toggleSorting(column.getIsSorted() === "asc"),
-      });
-    },
-  },
-  {
-    accessorKey: "category",
-    header: ({ column }) => {
-      const isSorted = column.getIsSorted();
-      return h(UButton, {
-        color: "neutral",
-        variant: "ghost",
-        label: "Category",
-        icon: isSorted
-          ? isSorted === "asc"
-            ? "i-lucide-arrow-up-narrow-wide"
-            : "i-lucide-arrow-down-wide-narrow"
-          : "i-lucide-arrow-up-down",
-        class: "-mx-2.5",
-        onClick: () => column.toggleSorting(column.getIsSorted() === "asc"),
-      });
-    },
-  },
+  sortableColumn<Item>("name", "Name"),
+  sortableColumn<Item>("type", "Type"),
+  sortableColumn<Item>("category", "Category"),
   {
     id: "vendor",
     header: "Vendor",
     cell: ({ row }) => {
-      return itemStore.getVendorName(row.original._id) || "—";
+      return itemStore.getVendorName(row.original._id) || "\u2014";
     },
   },
   {
@@ -90,35 +39,7 @@ const columns: TableColumn<Item>[] = [
       return "Price not set";
     },
   },
-  {
-    id: "actions",
-    cell: ({ row }) => {
-      return h(
-        "div",
-        { class: "text-right" },
-        h(
-          UDropdownMenu,
-          {
-            content: { align: "end" },
-            items: getRowItems(row),
-            "aria-label": "Actions dropdown",
-          },
-          () =>
-            h(UButton, {
-              icon: "i-lucide-ellipsis-vertical",
-              color: "neutral",
-              variant: "ghost",
-              class: "ml-auto",
-              "aria-label": "Actions dropdown",
-            }),
-        ),
-      );
-    },
-  },
-];
-
-function getRowItems(row: Row<Item>) {
-  return [
+  actionsColumn<Item>((row) => [
     {
       label: "Edit item",
       onSelect() {
@@ -136,8 +57,8 @@ function getRowItems(row: Row<Item>) {
         }
       },
     },
-  ];
-}
+  ]),
+];
 
 // Panel slide-over
 import { LazyPanelItem } from "#components";
@@ -148,19 +69,11 @@ const newItem = () => {
   openModal();
 };
 const openModal = async () => await modal.open();
-
-const globalFilter = ref("");
-const pagination = ref({ pageIndex: 0, pageSize: 10 });
-
-const tableRef = useTemplateRef('tableRef');
-const filteredTotal = computed(() =>
-  tableRef.value?.tableApi?.getFilteredRowModel().rows.length ?? itemStore.items.length
-);
 </script>
 
 <template>
   <TableWrapper
-    v-model:search="globalFilter"
+    v-model:search="search"
     v-model:pagination="pagination"
     :total-items="filteredTotal"
     :loading="itemStore.loading"
@@ -179,7 +92,7 @@ const filteredTotal = computed(() =>
     <div class="hidden sm:block">
       <UTable
         ref="tableRef"
-        v-model:global-filter="globalFilter"
+        v-model:global-filter="search"
         v-model:pagination="pagination"
         :pagination-options="{ getPaginationRowModel: getPaginationRowModel() }"
         :data="itemStore.items"
@@ -231,7 +144,7 @@ const filteredTotal = computed(() =>
           <div>
             <span class="text-parchment/60">Vendor</span>
             <div class="text-parchment/70">
-              {{ itemStore.getVendorName(item._id) || "—" }}
+              {{ itemStore.getVendorName(item._id) || "\u2014" }}
             </div>
           </div>
         </div>

@@ -1,16 +1,14 @@
 <script setup lang="ts">
-import type { Cocktail } from "~/types";
+import type { PublicCocktail } from "~/types";
 
 const props = defineProps<{
-  cocktail: Cocktail;
+  cocktail: PublicCocktail;
 }>();
-
-const { getIngredientName } = useIngredientResolver();
 
 const ingredientNames = computed(() => {
   return props.cocktail.ingredients
-    .map((ing) => getIngredientName(ing))
-    .filter((name) => name && name !== 'Unknown Item' && name !== 'Unknown Bottle')
+    .map((ing) => ing.name)
+    .filter((name) => name && name !== 'Unknown')
     .join(", ");
 });
 </script>

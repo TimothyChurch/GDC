@@ -1,43 +1,18 @@
 <script setup lang="ts">
 import type { TableColumn } from "@nuxt/ui";
 import type { Recipe } from "~/types";
-import type { Row } from "@tanstack/vue-table";
 import { getPaginationRowModel } from "@tanstack/vue-table";
 
 const router = useRouter();
 const recipeStore = useRecipeStore();
 const { confirm } = useDeleteConfirm();
 
-const UButton = resolveComponent("UButton");
-const UDropdownMenu = resolveComponent("UDropdownMenu");
-
-const search = ref("");
-const pagination = ref({ pageIndex: 0, pageSize: 10 });
-
-const tableRef = useTemplateRef('tableRef');
-const filteredTotal = computed(() =>
-  tableRef.value?.tableApi?.getFilteredRowModel().rows.length ?? recipeStore.recipes.length
+const { search, pagination, tableRef, filteredTotal } = useTableState(
+  computed(() => recipeStore.recipes.length)
 );
 
 const columns: TableColumn<Recipe>[] = [
-  {
-    id: "expand",
-    cell: ({ row }) =>
-      h(UButton, {
-        color: "neutral",
-        variant: "ghost",
-        icon: "i-lucide-chevron-down",
-        square: true,
-        "aria-label": "Expand",
-        ui: {
-          leadingIcon: [
-            "transition-transform",
-            row.getIsExpanded() ? "duration-200 rotate-180" : "",
-          ],
-        },
-        onClick: () => row.toggleExpanded(),
-      }),
-  },
+  expandColumn<Recipe>(),
   {
     accessorKey: "name",
     header: "Name",
@@ -55,35 +30,7 @@ const columns: TableColumn<Recipe>[] = [
     cell: ({ row }) =>
       `${row.original.volume} ${row.original.volumeUnit}` || "N/A",
   },
-  {
-    id: "actions",
-    cell: ({ row }) => {
-      return h(
-        "div",
-        { class: "text-right" },
-        h(
-          UDropdownMenu,
-          {
-            content: { align: "end" },
-            items: getRowItems(row),
-            "aria-label": "Actions dropdown",
-          },
-          () =>
-            h(UButton, {
-              icon: "i-lucide-ellipsis-vertical",
-              color: "neutral",
-              variant: "ghost",
-              class: "ml-auto",
-              "aria-label": "Actions dropdown",
-            })
-        )
-      );
-    },
-  },
-];
-
-function getRowItems(row: Row<Recipe>) {
-  return [
+  actionsColumn<Recipe>((row) => [
     {
       label: "Edit recipe",
       onSelect() {
@@ -101,8 +48,9 @@ function getRowItems(row: Row<Recipe>) {
         }
       },
     },
-  ];
-}
+  ]),
+];
+
 // Modal component info
 import { LazyPanelRecipe } from "#components";
 const overlay = useOverlay();

@@ -13,6 +13,8 @@ import type { PurchaseOrderItem } from './interfaces/PurchaseOrderItem';
 import type { Recipe } from './interfaces/Recipe';
 import type { Settings, SettingsTheme, SettingsDistillery, InventoryCategoryDef } from './interfaces/Settings';
 import type { User } from './interfaces/User';
+import type { PublicBottle } from './interfaces/PublicBottle';
+import type { PublicCocktail, PublicCocktailIngredient } from './interfaces/PublicCocktail';
 import type { Vessel } from './interfaces/Vessel';
 
 export type {
@@ -54,6 +56,9 @@ export type {
 	SettingsTheme,
 	SettingsDistillery,
 	InventoryCategoryDef,
+	PublicBottle,
+	PublicCocktail,
+	PublicCocktailIngredient,
 	User,
 	Vessel,
 };

@@ -1,8 +1,8 @@
 <script setup lang="ts">
-import type { Cocktail } from '~/types';
+import type { PublicCocktail } from '~/types';
 
 defineProps<{
-	cocktails: Cocktail[];
+	cocktails: PublicCocktail[];
 }>();
 </script>
 

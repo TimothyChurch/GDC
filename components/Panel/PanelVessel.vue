@@ -24,14 +24,8 @@ const vesselTypes = computed(() => {
   return types.sort((a, b) => a.localeCompare(b));
 });
 
-const barrelSizes = [
-  "5 Gallon",
-  "10 Gallon",
-  "15 Gallon",
-  "30 Gallon",
-  "53 Gallon",
-];
-const charLevels = ["Char 1", "Char 2", "Char 3", "Char 4", "Char 5"];
+const barrelSizes = BARREL_SIZES;
+const charLevels = CHAR_LEVELS;
 
 const sizeDefault = computed(() => getBarrelAgeDefault(localData.value.barrel?.size));
 </script>
@@ -69,28 +63,20 @@ const sizeDefault = computed(() => getBarrelAgeDefault(localData.value.barrel?.s
               class="w-full"
             />
           </UFormField>
-          <div class="grid grid-cols-2 gap-4">
-            <UFormField label="Weight">
-              <UInput v-model="localData.stats.weight" type="number" />
-            </UFormField>
-            <UFormField label="Weight Unit">
-              <USelect
-                v-model="localData.stats.weightUnit"
-                :items="weightUnits"
-              />
-            </UFormField>
-          </div>
-          <div class="grid grid-cols-2 gap-4">
-            <UFormField label="Capacity">
-              <UInput v-model="localData.stats.volume" type="number" />
-            </UFormField>
-            <UFormField label="Volume Unit">
-              <USelect
-                v-model="localData.stats.volumeUnit"
-                :items="volumeUnits"
-              />
-            </UFormField>
-          </div>
+          <UFormField label="Weight">
+            <BaseQuantityInput
+              v-model:value="localData.stats.weight"
+              v-model:unit="localData.stats.weightUnit"
+              :unit-options="weightUnits"
+            />
+          </UFormField>
+          <UFormField label="Capacity">
+            <BaseQuantityInput
+              v-model:value="localData.stats.volume"
+              v-model:unit="localData.stats.volumeUnit"
+              :unit-options="volumeUnits"
+            />
+          </UFormField>
           <template v-if="localData.type === 'Barrel'">
             <UFormField label="Barrel Size">
               <USelect

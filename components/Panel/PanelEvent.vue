@@ -14,8 +14,8 @@ const { localData, isDirty, saving, save, cancel } = useFormPanel({
 
 const isNew = !localData.value._id;
 
-const typeOptions = ['Private Class', 'Private Event', 'Tasting'];
-const statusOptions = ['Pending', 'Confirmed', 'Completed', 'Cancelled'];
+const typeOptions = EVENT_TYPES;
+const statusOptions = EVENT_STATUS_OPTIONS;
 
 // Resolve populated contact display
 const contactDisplay = computed(() => {

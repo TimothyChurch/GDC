@@ -1,23 +1,16 @@
 <script setup lang="ts">
 const route = useRoute();
-const bottleStore = useBottleStore();
-const cocktailStore = useCocktailStore();
-const itemStore = useItemStore();
+const bottleStore = usePublicBottleStore();
+const cocktailStore = usePublicCocktailStore();
 
 const bottle = computed(() => {
-  const b = bottleStore.getBottleById(route.params.id as string);
-  if (b?.archived) return undefined;
-  return b;
+  return bottleStore.getBottleById(route.params.id as string);
 });
 
 const relatedCocktails = computed(() => {
   if (!bottle.value) return [];
 
-  const bottleId = bottle.value._id;
-
-  // Use bottle type (e.g. "Vodka", "Bourbon Whisky") as the primary match term.
-  // Fall back to class only for simple single-concept classes (e.g. "Gin", "Rum")
-  // but NOT compound ones like "Liqueur/Cordial" or "Neutral Spirits or Alcohol".
+  // Build search terms from the bottle's name, type, and class
   const bottleType = bottle.value.type && bottle.value.type !== 'N/A'
     ? bottle.value.type.toLowerCase()
     : null;
@@ -28,28 +21,19 @@ const relatedCocktails = computed(() => {
 
   if (!typeTerm && !bottleName) return [];
 
+  // Match against resolved ingredient names (already strings in public store)
   return cocktailStore.cocktails
-    .filter((c) => c.visible !== false)
     .filter((c) =>
       c.ingredients.some((ing) => {
-        // Direct bottle ID match (sourceType === 'bottle')
-        if (ing.sourceType === 'bottle' && ing.item.toString() === bottleId) {
+        const ingName = ing.name.toLowerCase();
+
+        // Match by type term (e.g. "vodka" matches ingredient name "House Vodka")
+        if (typeTerm && (ingName.includes(typeTerm) || typeTerm.includes(ingName))) {
           return true;
         }
-
-        // Fuzzy matching for item-type ingredients
-        if (ing.sourceType !== 'bottle') {
-          const item = itemStore.getItemById(ing.item.toString());
-          if (!item) return false;
-          const itemType = item.type?.toLowerCase() || '';
-          const itemName = item.name?.toLowerCase() || '';
-
-          if (typeTerm && itemType && (itemType.includes(typeTerm) || typeTerm.includes(itemType))) {
-            return true;
-          }
-          if (bottleName && itemName && (itemName.includes(bottleName) || bottleName.includes(itemName))) {
-            return true;
-          }
+        // Match by bottle name (e.g. "Island Gin" matches ingredient "Island Gin")
+        if (bottleName && (ingName.includes(bottleName) || bottleName.includes(ingName))) {
+          return true;
         }
         return false;
       })

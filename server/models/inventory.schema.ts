@@ -26,5 +26,14 @@ export const Inventory = defineMongooseModel({
       required: true,
     },
   },
-  options: { timestamps: true },
+  options: {
+    timestamps: true,
+    autoIndex: true,
+  },
+  hooks(schema) {
+    // Compound index: efficient per-item queries sorted by date (newest first)
+    schema.index({ item: 1, date: -1 });
+    // Date-range index: efficient lookback queries (e.g., last 90 days)
+    schema.index({ date: -1 });
+  },
 });

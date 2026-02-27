@@ -11,15 +11,8 @@ const vesselTypes = computed(() => {
 	return vessels.sort((a, b) => a.localeCompare(b));
 });
 
-const barrelSizes = [
-	'5 Gallon',
-	'10 Gallon',
-	'15 Gallon',
-	'30 Gallon',
-	'53 Gallon',
-];
-
-const charLevels = ['Char 1', 'Char 2', 'Char 3', 'Char 4', 'Char 5'];
+const barrelSizes = BARREL_SIZES;
+const charLevels = CHAR_LEVELS;
 
 const submitForm = () => {
 	vesselStore.updateVessel();
@@ -43,20 +36,16 @@ const submitForm = () => {
 						searchable />
 				</UFormField>
 				<UFormField label="Vessel Weight">
-					<UFieldGroup>
-						<UInput v-model="vesselStore.vessel.stats.weight" />
-						<USelect
-							v-model="vesselStore.vessel.stats.weightUnit"
-							:items="weightUnits" />
-					</UFieldGroup>
+					<BaseQuantityInput
+						v-model:value="vesselStore.vessel.stats.weight"
+						v-model:unit="vesselStore.vessel.stats.weightUnit"
+						:unit-options="weightUnits" />
 				</UFormField>
 				<UFormField label="Vessel Capacity">
-					<UFieldGroup>
-						<UInput v-model="vesselStore.vessel.stats.volume" />
-						<USelect
-							v-model="vesselStore.vessel.stats.volumeUnit"
-							:items="volumeUnits" />
-					</UFieldGroup>
+					<BaseQuantityInput
+						v-model:value="vesselStore.vessel.stats.volume"
+						v-model:unit="vesselStore.vessel.stats.volumeUnit"
+						:unit-options="volumeUnits" />
 				</UFormField>
 			</div>
 			<div

@@ -1,16 +1,10 @@
-import { defineStore } from 'pinia';
 import type { Vessel, Contents } from '~/types';
 import { convertUnitRatio } from '~/utils/conversions';
 
 export const useVesselStore = defineStore('vessels', () => {
 	const toast = useToast();
 
-	// State
-	const vessels = ref<Vessel[]>([]);
-	const loaded = ref(false);
-	const loading = ref(false);
-	const saving = ref(false);
-	const vessel = ref<Vessel>({
+	const defaultVessel = (): Vessel => ({
 		_id: '',
 		name: '',
 		type: '',
@@ -37,181 +31,92 @@ export const useVesselStore = defineStore('vessels', () => {
 		previousContents: '',
 		targetAge: undefined,
 	});
-	const fermenters = computed(() =>
-		vessels.value.filter((v) => v.type === 'Fermenter')
-	);
-	const mashTuns = computed(() =>
-		vessels.value.filter((v) => v.type === 'Mash Tun')
-	);
-	const stills = computed(() =>
-		vessels.value.filter((v) => v.type === 'Still')
-	);
-	const tanks = computed(() => vessels.value.filter((v) => v.type === 'Tank'));
-	const barrels = computed(() =>
-		vessels.value.filter((v) => v.type === 'Barrel')
-	);
+
+	const crud = useCrudStore<Vessel>({
+		name: 'Vessel',
+		apiPath: '/api/vessel',
+		defaultItem: defaultVessel,
+	});
+
+	// Computed filters by type
+	const fermenters = computed(() => crud.items.value.filter((v) => v.type === 'Fermenter'));
+	const mashTuns = computed(() => crud.items.value.filter((v) => v.type === 'Mash Tun'));
+	const stills = computed(() => crud.items.value.filter((v) => v.type === 'Still'));
+	const tanks = computed(() => crud.items.value.filter((v) => v.type === 'Tank'));
+	const barrels = computed(() => crud.items.value.filter((v) => v.type === 'Barrel'));
 	const emptyBarrels = computed(() =>
 		barrels.value.filter(
-			(v) => !v.contents || v.contents.length === 0 || (v.current?.volume ?? 0) === 0
-		)
+			(v) => !v.contents || v.contents.length === 0 || (v.current?.volume ?? 0) === 0,
+		),
 	);
 
-	// Actions
-	const getVessels = async (): Promise<void> => {
-		loading.value = true;
-		try {
-			const response = await $fetch('/api/vessel');
-			vessels.value = response as Vessel[];
-		} finally {
-			loading.value = false;
-		}
-	};
-
-	const ensureLoaded = async () => {
-		if (!loaded.value) {
-			try {
-				await getVessels();
-				loaded.value = true;
-			} catch {
-				// loaded stays false — will retry on next call
-			}
-		}
-	};
-
-	const getVesselById = (id: string) => {
-		return vessels.value.find((v) => v._id === id);
-	};
-
+	// Override setVessel to reset first (original behavior)
 	const setVessel = (id: string) => {
-		resetVessel();
-		const found = vessels.value.find((v) => v._id === id);
-		if (found) vessel.value = JSON.parse(JSON.stringify(found));
+		crud.resetItem();
+		const found = crud.items.value.find((v) => v._id === id);
+		if (found) crud.item.value = JSON.parse(JSON.stringify(found));
 	};
 
+	/**
+	 * Custom updateVessel that recalculates `current` from `contents` before saving.
+	 * This is domain logic that doesn't fit the generic CRUD pattern.
+	 * Note: intentionally swallows errors (original behavior) -- callers like
+	 * fullTransfer/transferBatch don't expect throws.
+	 */
 	const updateVessel = async (): Promise<void> => {
-		if (vessel.value.contents && vessel.value.contents.length > 0) {
-			const targetUnit = vessel.value.stats?.volumeUnit || vessel.value.contents[0]!.volumeUnit;
-			const totalVolume = vessel.value.contents.reduce(
-				(acc, c) => acc + c.volume * convertUnitRatio(c.volumeUnit, targetUnit), 0
+		if (crud.item.value.contents && crud.item.value.contents.length > 0) {
+			const targetUnit = crud.item.value.stats?.volumeUnit || crud.item.value.contents[0]!.volumeUnit;
+			const totalVolume = crud.item.value.contents.reduce(
+				(acc, c) => acc + c.volume * convertUnitRatio(c.volumeUnit, targetUnit), 0,
 			);
 			const weightedAbv = totalVolume > 0
-				? vessel.value.contents.reduce(
-					(acc, c) => acc + c.abv * (c.volume * convertUnitRatio(c.volumeUnit, targetUnit)), 0
+				? crud.item.value.contents.reduce(
+					(acc, c) => acc + c.abv * (c.volume * convertUnitRatio(c.volumeUnit, targetUnit)), 0,
 				) / totalVolume
 				: 0;
-			vessel.value.current = {
+			crud.item.value.current = {
 				volume: totalVolume,
 				volumeUnit: targetUnit,
 				abv: weightedAbv,
-				value: vessel.value.contents.reduce((acc, c) => acc + c.value, 0),
+				value: crud.item.value.contents.reduce((acc, c) => acc + c.value, 0),
 			};
 		} else {
-			// Contents empty — reset current to zero so fill level clears
-			vessel.value.current = {
+			crud.item.value.current = {
 				volume: 0,
-				volumeUnit: vessel.value.current?.volumeUnit || '',
+				volumeUnit: crud.item.value.current?.volumeUnit || '',
 				abv: 0,
 				value: 0,
 			};
 		}
-		saving.value = true;
 		try {
-			const isNew = !vessel.value._id;
-			if (isNew) {
-				const { _id, ...createData } = vessel.value;
-				const response = await $fetch('/api/vessel/create', {
-					method: 'POST',
-					body: createData,
-				});
-				vessels.value.push(response as Vessel);
-			} else {
-				const response = await $fetch(`/api/vessel/${vessel.value._id}`, {
-					method: 'PUT',
-					body: vessel.value,
-				});
-				const index = vessels.value.findIndex((v) => v._id === vessel.value._id);
-				if (index !== -1) {
-					vessels.value[index] = response as Vessel;
-				}
-			}
-			toast.add({ title: `Vessel ${isNew ? 'created' : 'updated'}`, color: 'success', icon: 'i-lucide-check-circle' });
-			resetVessel();
-		} catch (error: any) {
-			toast.add({ title: 'Failed to save vessel', description: error?.data?.message, color: 'error', icon: 'i-lucide-alert-circle' });
-		} finally {
-			saving.value = false;
+			await crud.saveItem();
+		} catch {
+			// Error toast already shown by saveItem -- swallow to match original behavior
 		}
-	};
-
-	const deleteVessel = async (id: string): Promise<void> => {
-		saving.value = true;
-		try {
-			await $fetch(`/api/vessel/${id}`, {
-				method: 'DELETE',
-			});
-			vessels.value = vessels.value.filter((v) => v._id !== id);
-			toast.add({ title: 'Vessel deleted', color: 'success', icon: 'i-lucide-check-circle' });
-		} catch (error: any) {
-			toast.add({ title: 'Failed to delete vessel', description: error?.data?.message, color: 'error', icon: 'i-lucide-alert-circle' });
-		} finally {
-			saving.value = false;
-		}
-	};
-
-	const resetVessel = (): void => {
-		vessel.value = {
-			_id: '',
-			name: '',
-			type: '',
-			stats: {
-				weight: undefined,
-				weightUnit: '',
-				volume: undefined,
-				volumeUnit: '',
-			},
-			barrel: {
-				size: '',
-				char: '',
-				cost: undefined,
-			},
-			current: {
-				volume: 0,
-				volumeUnit: '',
-				abv: 0,
-				value: 0,
-			},
-			contents: [],
-			cost: undefined,
-			isUsed: false,
-			previousContents: '',
-			targetAge: undefined,
-		};
 	};
 
 	const emptyVessel = async (id: string) => {
 		setVessel(id);
 
 		// For barrels, tag as used and record previous contents from the batch's recipe
-		if (vessel.value.type === 'Barrel' && vessel.value.contents?.length) {
-			vessel.value.isUsed = true;
-			// Resolve spirit type from the first batch's recipe
+		if (crud.item.value.type === 'Barrel' && crud.item.value.contents?.length) {
+			crud.item.value.isUsed = true;
 			const batchStore = useBatchStore();
 			const recipeStore = useRecipeStore();
-			const firstBatchId = vessel.value.contents[0]?.batch;
+			const firstBatchId = crud.item.value.contents[0]?.batch;
 			if (firstBatchId) {
 				const batch = batchStore.getBatchById(firstBatchId);
 				if (batch?.recipe) {
 					const recipe = recipeStore.getRecipeById(batch.recipe);
 					if (recipe) {
-						// Use recipe type if available, otherwise fall back to recipe name
-						vessel.value.previousContents = recipe.type || recipe.name;
+						crud.item.value.previousContents = recipe.type || recipe.name;
 					}
 				}
 			}
 		}
 
-		vessel.value.contents = [];
-		vessel.value.current = {
+		crud.item.value.contents = [];
+		crud.item.value.current = {
 			volume: 0,
 			volumeUnit: '',
 			abv: 0,
@@ -221,37 +126,34 @@ export const useVesselStore = defineStore('vessels', () => {
 	};
 
 	const fullTransfer = async (sourceId: string, destId: string): Promise<void> => {
-		const source = vessels.value.find((v) => v._id === sourceId);
-		const dest = vessels.value.find((v) => v._id === destId);
+		const source = crud.items.value.find((v) => v._id === sourceId);
+		const dest = crud.items.value.find((v) => v._id === destId);
 		if (!source || !dest) return;
 
 		const sourceContents = source.contents || [];
 		const destContents = dest.contents || [];
 
-		// Append source contents to destination
 		dest.contents = [...destContents, ...sourceContents];
-		// Clear source
 		source.contents = [];
 		source.current = { volume: 0, volumeUnit: '', abv: 0, value: 0 };
 
-		// Save both vessels
-		vessel.value = dest;
+		crud.item.value = dest;
 		await updateVessel();
-		vessel.value = source;
+		crud.item.value = source;
 		await updateVessel();
 
 		toast.add({ title: 'Transfer complete', color: 'success', icon: 'i-lucide-check-circle' });
 	};
 
 	const transferBatch = async (sourceId: string, destId: string, transfer: { volume: number; volumeUnit: string; abv: number; value: number }): Promise<void> => {
-		const source = vessels.value.find((v) => v._id === sourceId);
-		const dest = vessels.value.find((v) => v._id === destId);
+		const source = crud.items.value.find((v) => v._id === sourceId);
+		const dest = crud.items.value.find((v) => v._id === destId);
 		if (!source || !dest) return;
 
 		const sourceContents = source.contents || [];
 		const normalUnit = sourceContents[0]?.volumeUnit || transfer.volumeUnit;
 		const totalSourceVolume = sourceContents.reduce(
-			(acc, c) => acc + c.volume * convertUnitRatio(c.volumeUnit, normalUnit), 0
+			(acc, c) => acc + c.volume * convertUnitRatio(c.volumeUnit, normalUnit), 0,
 		);
 		if (totalSourceVolume <= 0) return;
 
@@ -259,7 +161,6 @@ export const useVesselStore = defineStore('vessels', () => {
 		const ratio = transferInNormalUnit / totalSourceVolume;
 		const newDestContents: Contents[] = [];
 
-		// Split each content entry proportionally
 		sourceContents.forEach((content) => {
 			const transferVolume = content.volume * ratio;
 			content.volume -= transferVolume;
@@ -273,14 +174,12 @@ export const useVesselStore = defineStore('vessels', () => {
 			});
 		});
 
-		// Remove empty contents from source
 		source.contents = sourceContents.filter((c) => c.volume > 0);
 		dest.contents = [...(dest.contents || []), ...newDestContents];
 
-		// Save both vessels
-		vessel.value = dest;
+		crud.item.value = dest;
 		await updateVessel();
-		vessel.value = source;
+		crud.item.value = source;
 		await updateVessel();
 
 		toast.add({ title: 'Partial transfer complete', color: 'success', icon: 'i-lucide-check-circle' });
@@ -293,38 +192,32 @@ export const useVesselStore = defineStore('vessels', () => {
 		volume: number,
 		volumeUnit: string,
 	): Promise<void> => {
-		const source = vessels.value.find((v) => v._id === sourceId);
-		const dest = vessels.value.find((v) => v._id === destId);
+		const source = crud.items.value.find((v) => v._id === sourceId);
+		const dest = crud.items.value.find((v) => v._id === destId);
 		if (!source || !dest) return;
 
 		const sourceContents = source.contents || [];
 		const entry = sourceContents.find((c) => c.batch === batchId);
 		if (!entry || entry.volume <= 0) return;
 
-		// Convert requested volume to entry's stored unit before clamping
 		const volumeInEntryUnit = volume * convertUnitRatio(volumeUnit, entry.volumeUnit);
 		const actualVolume = Math.min(volumeInEntryUnit, entry.volume);
 		const ratio = actualVolume / entry.volume;
 		const transferValue = entry.value * ratio;
 		const transferAbv = entry.abv;
 
-		// Reduce source entry
 		entry.volume -= actualVolume;
 		entry.value -= transferValue;
 
-		// Remove if depleted
 		if (entry.volume < 0.001) {
 			source.contents = sourceContents.filter((c) => c !== entry);
 		}
 
-		// Add to destination — merge if same batch exists
-		// Use destination vessel's stats unit, fall back to entry's unit
 		const destUnit = dest.stats?.volumeUnit || entry.volumeUnit;
 		const actualVolumeInDestUnit = actualVolume * convertUnitRatio(entry.volumeUnit, destUnit);
 		const destContents = dest.contents || [];
 		const existingDest = destContents.find((c) => c.batch === batchId);
 		if (existingDest) {
-			// Convert existing dest entry to destUnit for merge
 			const existingInDestUnit = existingDest.volume * convertUnitRatio(existingDest.volumeUnit, destUnit);
 			const totalVol = existingInDestUnit + actualVolumeInDestUnit;
 			existingDest.abv = totalVol > 0
@@ -344,47 +237,47 @@ export const useVesselStore = defineStore('vessels', () => {
 			dest.contents = destContents;
 		}
 
-		// Save both vessels
-		vessel.value = source;
+		crud.item.value = source;
 		await updateVessel();
-		vessel.value = dest;
+		crud.item.value = dest;
 		await updateVessel();
 	};
 
 	const addContents = async (vesselId: string, contents: Contents): Promise<void> => {
-		const target = vessels.value.find((v) => v._id === vesselId);
+		const target = crud.items.value.find((v) => v._id === vesselId);
 		if (!target) return;
 
 		target.contents = [...(target.contents || []), contents];
 
-		vessel.value = target;
+		crud.item.value = target;
 		await updateVessel();
 	};
 
-	// Getters
 	const getVesselByType = (type: string): Vessel[] => {
-		return vessels.value.filter((v) => v.type === type);
+		return crud.items.value.filter((v) => v.type === type);
 	};
 
 	return {
-		vessels,
-		vessel,
-		loaded,
-		loading,
-		saving,
+		...crud,
+		// Domain aliases for backward compatibility
+		vessels: crud.items,
+		vessel: crud.item,
+		getVessels: crud.getAll,
+		deleteVessel: crud.deleteItem,
+		resetVessel: crud.resetItem,
+		getVesselById: crud.getById,
+		// Override setVessel (resets first)
+		setVessel,
+		// Override updateVessel (recalculates current from contents)
+		updateVessel,
+		// Computed filters
 		fermenters,
 		mashTuns,
 		stills,
 		tanks,
 		barrels,
 		emptyBarrels,
-		ensureLoaded,
-		getVessels,
-		setVessel,
-		getVesselById,
-		updateVessel,
-		deleteVessel,
-		resetVessel,
+		// Domain-specific
 		emptyVessel,
 		getVesselByType,
 		fullTransfer,

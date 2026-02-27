@@ -11,36 +11,12 @@ const bottleStore = useBottleStore();
 const { confirm } = useDeleteConfirm();
 const { isLowStock } = useBottleStock();
 
-const UButton = resolveComponent("UButton");
-const UDropdownMenu = resolveComponent("UDropdownMenu");
-
-const search = ref("");
-const pagination = ref({ pageIndex: 0, pageSize: 10 });
-
-const tableRef = useTemplateRef('tableRef');
-const filteredTotal = computed(() =>
-  tableRef.value?.tableApi?.getFilteredRowModel().rows.length ?? props.bottles.length
+const { search, pagination, tableRef, filteredTotal } = useTableState(
+  computed(() => props.bottles.length)
 );
 
 const columns: TableColumn<Bottle>[] = [
-  {
-    accessorKey: "name",
-    header: ({ column }) => {
-      const isSorted = column.getIsSorted();
-      return h(UButton, {
-        color: "neutral",
-        variant: "ghost",
-        label: "Name",
-        icon: isSorted
-          ? isSorted === "asc"
-            ? "i-lucide-arrow-up-narrow-wide"
-            : "i-lucide-arrow-down-wide-narrow"
-          : "i-lucide-arrow-up-down",
-        class: "-mx-2.5",
-        onClick: () => column.toggleSorting(column.getIsSorted() === "asc"),
-      });
-    },
-  },
+  sortableColumn<Bottle>("name", "Name"),
   {
     id: "classType",
     header: "Class / Type",
@@ -56,25 +32,9 @@ const columns: TableColumn<Bottle>[] = [
     header: "ABV",
     cell: ({ row }) => row.original.abv ? `${row.original.abv}%` : "N/A",
   },
-  {
-    accessorKey: "price",
-    header: ({ column }) => {
-      const isSorted = column.getIsSorted();
-      return h(UButton, {
-        color: "neutral",
-        variant: "ghost",
-        label: "Price",
-        icon: isSorted
-          ? isSorted === "asc"
-            ? "i-lucide-arrow-up-narrow-wide"
-            : "i-lucide-arrow-down-wide-narrow"
-          : "i-lucide-arrow-up-down",
-        class: "-mx-2.5",
-        onClick: () => column.toggleSorting(column.getIsSorted() === "asc"),
-      });
-    },
+  sortableColumn<Bottle>("price", "Price", {
     cell: ({ row }) => Dollar.format(row.original.price || 0),
-  },
+  }),
   {
     accessorKey: "inStock",
     header: "Status",
@@ -110,35 +70,7 @@ const columns: TableColumn<Bottle>[] = [
       return h("div", { class: "flex items-center gap-1.5" }, badges);
     },
   },
-  {
-    id: "actions",
-    cell: ({ row }) => {
-      return h(
-        "div",
-        { class: "text-right" },
-        h(
-          UDropdownMenu,
-          {
-            content: { align: "end" },
-            items: getRowItems(row),
-            "aria-label": "Actions dropdown",
-          },
-          () =>
-            h(UButton, {
-              icon: "i-lucide-ellipsis-vertical",
-              color: "neutral",
-              variant: "ghost",
-              class: "ml-auto",
-              "aria-label": "Actions dropdown",
-            })
-        )
-      );
-    },
-  },
-];
-
-function getRowItems(row: Row<Bottle>) {
-  return [
+  actionsColumn<Bottle>((row) => [
     {
       label: "View Details",
       onSelect() {
@@ -162,8 +94,8 @@ function getRowItems(row: Row<Bottle>) {
         }
       },
     },
-  ];
-}
+  ]),
+];
 
 // Panel slide-over
 import { LazyPanelBottle } from "#components";

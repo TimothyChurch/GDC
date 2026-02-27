@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import type { TableColumn } from "@nuxt/ui";
 import type { Cocktail } from "~/types";
-import type { Row } from "@tanstack/vue-table";
 import { getPaginationRowModel } from "@tanstack/vue-table";
 
 const props = defineProps<{
@@ -13,36 +12,12 @@ const { confirm } = useDeleteConfirm();
 
 const cocktails = computed(() => props.data ?? cocktailStore.cocktails)
 
-const UButton = resolveComponent("UButton");
-const UDropdownMenu = resolveComponent("UDropdownMenu");
-
-const search = ref("");
-const pagination = ref({ pageIndex: 0, pageSize: 10 });
-
-const tableRef = useTemplateRef('tableRef');
-const filteredTotal = computed(() =>
-  tableRef.value?.tableApi?.getFilteredRowModel().rows.length ?? cocktails.value.length
+const { search, pagination, tableRef, filteredTotal } = useTableState(
+  computed(() => cocktails.value.length)
 );
 
 const columns: TableColumn<Cocktail>[] = [
-  {
-    id: "expand",
-    cell: ({ row }) =>
-      h(UButton, {
-        color: "neutral",
-        variant: "ghost",
-        icon: "i-lucide-chevron-down",
-        square: true,
-        "aria-label": "Expand",
-        ui: {
-          leadingIcon: [
-            "transition-transform",
-            row.getIsExpanded() ? "duration-200 rotate-180" : "",
-          ],
-        },
-        onClick: () => row.toggleExpanded(),
-      }),
-  },
+  expandColumn<Cocktail>(),
   {
     accessorKey: "name",
     header: "Name",
@@ -77,35 +52,7 @@ const columns: TableColumn<Cocktail>[] = [
     header: "Visible",
     cell: ({ row }) => (row.original.visible ? "Yes" : "No"),
   },
-  {
-    id: "actions",
-    cell: ({ row }) => {
-      return h(
-        "div",
-        { class: "text-right" },
-        h(
-          UDropdownMenu,
-          {
-            content: { align: "end" },
-            items: getRowItems(row),
-            "aria-label": "Actions dropdown",
-          },
-          () =>
-            h(UButton, {
-              icon: "i-lucide-ellipsis-vertical",
-              color: "neutral",
-              variant: "ghost",
-              class: "ml-auto",
-              "aria-label": "Actions dropdown",
-            })
-        )
-      );
-    },
-  },
-];
-
-function getRowItems(row: Row<Cocktail>) {
-  return [
+  actionsColumn<Cocktail>((row) => [
     {
       label: "View Details",
       onSelect() {
@@ -129,8 +76,9 @@ function getRowItems(row: Row<Cocktail>) {
         }
       },
     },
-  ];
-}
+  ]),
+];
+
 // Modal component info
 import { LazyPanelCocktail } from "#components";
 const overlay = useOverlay();

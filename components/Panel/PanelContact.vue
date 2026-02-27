@@ -14,7 +14,7 @@ const { localData, isDirty, saving, save, cancel } = useFormPanel({
 
 const isNew = !localData.value._id;
 
-const typeOptions = ["Vendor", "Customer", "Distributor", "Employee", "Supplier", "Other"];
+const typeOptions = CONTACT_TYPES;
 </script>
 
 <template>

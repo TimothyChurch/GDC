@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import type { TableColumn } from "@nuxt/ui";
 import type { PurchaseOrder } from "~/types";
-import type { Row } from "@tanstack/vue-table";
 import { getPaginationRowModel } from "@tanstack/vue-table";
 
 const props = defineProps<{
@@ -16,196 +15,81 @@ const { confirm } = useDeleteConfirm();
 
 const tableData = computed(() => props.data ?? purchaseOrderStore.purchaseOrders)
 
-const UButton = resolveComponent("UButton");
-const UDropdownMenu = resolveComponent("UDropdownMenu");
-
-const search = ref("");
-const pagination = ref({ pageIndex: 0, pageSize: 10 });
-
-const tableRef = useTemplateRef('tableRef');
-const filteredTotal = computed(() =>
-  tableRef.value?.tableApi?.getFilteredRowModel().rows.length ?? tableData.value.length
+const { search, pagination, tableRef, filteredTotal } = useTableState(
+  computed(() => tableData.value.length)
 );
 
 const columns: TableColumn<PurchaseOrder>[] = [
-  {
-    id: "expand",
-    cell: ({ row }) =>
-      h(UButton, {
-        color: "neutral",
-        variant: "ghost",
-        icon: "i-lucide-chevron-down",
-        square: true,
-        "aria-label": "Expand",
-        ui: {
-          leadingIcon: [
-            "transition-transform",
-            row.getIsExpanded() ? "duration-200 rotate-180" : "",
-          ],
-        },
-        onClick: () => row.toggleExpanded(),
-      }),
-  },
-  {
-    accessorKey: "status",
-    header: ({ column }) => {
-      const isSorted = column.getIsSorted();
-      return h(UButton, {
-        color: "neutral",
-        variant: "ghost",
-        label: "Status",
-        icon: isSorted
-          ? isSorted === "asc"
-            ? "i-lucide-arrow-up-narrow-wide"
-            : "i-lucide-arrow-down-wide-narrow"
-          : "i-lucide-arrow-up-down",
-        class: "-mx-2.5",
-        onClick: () => column.toggleSorting(column.getIsSorted() === "asc"),
-      });
-    },
-  },
-  {
-    accessorKey: "vendor",
-    header: ({ column }) => {
-      const isSorted = column.getIsSorted();
-      return h(UButton, {
-        color: "neutral",
-        variant: "ghost",
-        label: "Vendor",
-        icon: isSorted
-          ? isSorted === "asc"
-            ? "i-lucide-arrow-up-narrow-wide"
-            : "i-lucide-arrow-down-wide-narrow"
-          : "i-lucide-arrow-up-down",
-        class: "-mx-2.5",
-        onClick: () => column.toggleSorting(column.getIsSorted() === "asc"),
-      });
-    },
+  expandColumn<PurchaseOrder>(),
+  sortableColumn<PurchaseOrder>("status", "Status"),
+  sortableColumn<PurchaseOrder>("vendor", "Vendor", {
     cell: ({ row }) => {
       const contact = contactStore.getContactById(row.original.vendor);
       if (contact?.firstName) return `${contact.firstName} ${contact.lastName}`;
       return contact?.businessName || "Unknown";
     },
-  },
-  {
-    accessorKey: "total",
-    header: ({ column }) => {
-      const isSorted = column.getIsSorted();
-      return h(UButton, {
-        color: "neutral",
-        variant: "ghost",
-        label: "Total Amount",
-        icon: isSorted
-          ? isSorted === "asc"
-            ? "i-lucide-arrow-up-narrow-wide"
-            : "i-lucide-arrow-down-wide-narrow"
-          : "i-lucide-arrow-up-down",
-        class: "-mx-2.5",
-        onClick: () => column.toggleSorting(column.getIsSorted() === "asc"),
-      });
-    },
+  }),
+  sortableColumn<PurchaseOrder>("total", "Total Amount", {
     cell: ({ row }) => Dollar.format(row.original.total),
-  },
-  {
-    accessorKey: "date",
-    header: ({ column }) => {
-      const isSorted = column.getIsSorted();
-      return h(UButton, {
-        color: "neutral",
-        variant: "ghost",
-        label: "Date",
-        icon: isSorted
-          ? isSorted === "asc"
-            ? "i-lucide-arrow-up-narrow-wide"
-            : "i-lucide-arrow-down-wide-narrow"
-          : "i-lucide-arrow-up-down",
-        class: "-mx-2.5",
-        onClick: () => column.toggleSorting(column.getIsSorted() === "asc"),
-      });
-    },
+  }),
+  sortableColumn<PurchaseOrder>("date", "Date", {
     cell: ({ row }) => new Date(row.original.date).toLocaleDateString(),
-  },
-  {
-    id: "actions",
-    cell: ({ row }) => {
-      return h(
-        "div",
-        { class: "text-right" },
-        h(
-          UDropdownMenu,
-          {
-            content: { align: "end" },
-            items: getRowItems(row),
-            "aria-label": "Actions dropdown",
-          },
-          () =>
-            h(UButton, {
-              icon: "i-lucide-ellipsis-vertical",
-              color: "neutral",
-              variant: "ghost",
-              class: "ml-auto",
-              "aria-label": "Actions dropdown",
-            })
-        )
-      );
-    },
-  },
-];
-
-function getRowItems(row: Row<PurchaseOrder>) {
-  const items: any[] = [
-    {
-      label: "View Details",
-      onSelect() {
-        router.push(`/admin/purchaseOrders/${row.original._id}`);
+  }),
+  actionsColumn<PurchaseOrder>((row) => {
+    const items: any[] = [
+      {
+        label: "View Details",
+        onSelect() {
+          router.push(`/admin/purchaseOrders/${row.original._id}`);
+        },
       },
-    },
-    {
-      label: "Edit order",
-      onSelect() {
-        purchaseOrderStore.purchaseOrder = JSON.parse(JSON.stringify(row.original));
-        openPanel();
+      {
+        label: "Edit order",
+        onSelect() {
+          purchaseOrderStore.purchaseOrder = JSON.parse(JSON.stringify(row.original));
+          openPanel();
+        },
       },
-    },
-  ];
+    ];
 
-  // Add "Mark as Received" if PO is not already Delivered or Cancelled
-  if (row.original.status !== "Delivered" && row.original.status !== "Cancelled") {
+    // Add "Mark as Received" if PO is not already Delivered or Cancelled
+    if (row.original.status !== "Delivered" && row.original.status !== "Cancelled") {
+      items.push({
+        label: "Mark as Received",
+        async onSelect() {
+          purchaseOrderStore.purchaseOrder = JSON.parse(JSON.stringify(row.original));
+          purchaseOrderStore.purchaseOrder.status = "Delivered";
+          const result = await purchaseOrderStore.updatePurchaseOrder();
+          // Update item purchase histories
+          result.items.forEach((item: any) => {
+            const foundItem = itemStore.items.find((i) => i._id === item.item);
+            if (foundItem && !foundItem.purchaseHistory?.includes(result._id)) {
+              itemStore.item = foundItem;
+              itemStore.item.purchaseHistory?.push(result._id);
+              itemStore.updateItem();
+            }
+          });
+          // Auto-update inventory
+          await purchaseOrderStore.receivePurchaseOrder(result._id);
+        },
+      });
+    }
+
     items.push({
-      label: "Mark as Received",
-      async onSelect() {
-        purchaseOrderStore.purchaseOrder = JSON.parse(JSON.stringify(row.original));
-        purchaseOrderStore.purchaseOrder.status = "Delivered";
-        const result = await purchaseOrderStore.updatePurchaseOrder();
-        // Update item purchase histories
-        result.items.forEach((item) => {
-          const foundItem = itemStore.items.find((i) => i._id === item.item);
-          if (foundItem && !foundItem.purchaseHistory?.includes(result._id)) {
-            itemStore.item = foundItem;
-            itemStore.item.purchaseHistory?.push(result._id);
-            itemStore.updateItem();
-          }
-        });
-        // Auto-update inventory
-        await purchaseOrderStore.receivePurchaseOrder(result._id);
+      label: "Delete order",
+      variant: "danger",
+      async onClick() {
+        const vendorName = contactStore.getContactById(row.original.vendor)?.businessName || "this order";
+        const confirmed = await confirm("Purchase Order", vendorName);
+        if (confirmed) {
+          purchaseOrderStore.deletePurchaseOrder(row.original._id);
+        }
       },
     });
-  }
 
-  items.push({
-    label: "Delete order",
-    variant: "danger",
-    async onClick() {
-      const vendorName = contactStore.getContactById(row.original.vendor)?.businessName || "this order";
-      const confirmed = await confirm("Purchase Order", vendorName);
-      if (confirmed) {
-        purchaseOrderStore.deletePurchaseOrder(row.original._id);
-      }
-    },
-  });
-
-  return items;
-}
+    return items;
+  }),
+];
 
 // Panel slide-over
 import { LazyPanelPurchaseOrder } from "#components";

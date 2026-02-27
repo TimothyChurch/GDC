@@ -6,6 +6,9 @@ const bottleStore = useBottleStore()
 const inventoryStore = useInventoryStore()
 const productionStore = useProductionStore()
 
+// Reports need full history for accurate delta and value calculations
+onMounted(() => inventoryStore.loadAllHistory())
+
 // Toggle: show out-of-stock items (default off)
 const showOutOfStock = ref(false)
 

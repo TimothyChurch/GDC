@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { Cocktail } from "~/types";
+import type { PublicCocktail } from "~/types";
 
 useSeoMeta({
   title: 'Cocktail Menu | Galveston Distilling Co',
@@ -10,10 +10,7 @@ useSeoMeta({
   ogUrl: 'https://galvestondistilling.com/menu',
 });
 
-const cocktailStore = useCocktailStore();
-const itemStore = useItemStore();
-const bottleStore = useBottleStore();
-const { getIngredientName } = useIngredientResolver();
+const cocktailStore = usePublicCocktailStore();
 
 const search = ref("");
 const activeCategory = ref("All");
@@ -43,26 +40,16 @@ const getSpiritCategory = (text: string): string | null => {
   return null;
 };
 
-const getBaseSpirit = (cocktail: Cocktail): string | null => {
+// Ingredient names are already resolved server-side, so match against them directly
+const getBaseSpirit = (cocktail: PublicCocktail): string | null => {
   for (const ing of cocktail.ingredients) {
-    if (ing.sourceType === 'bottle') {
-      const bottle = bottleStore.getBottleById(ing.item as unknown as string);
-      if (!bottle) continue;
-      const category = getSpiritCategory(bottle.type || "") || getSpiritCategory(bottle.class || "") || getSpiritCategory(bottle.name || "");
-      if (category) return category;
-    } else {
-      const item = itemStore.getItemById(ing.item as unknown as string);
-      if (!item) continue;
-      const category = getSpiritCategory(item.type || "") || getSpiritCategory(item.name || "");
-      if (category) return category;
-    }
+    const category = getSpiritCategory(ing.name);
+    if (category) return category;
   }
   return null;
 };
 
-const visibleCocktails = computed(() => {
-  return cocktailStore.cocktails.filter((c) => c.visible === true);
-});
+const visibleCocktails = computed(() => cocktailStore.cocktails);
 
 const categories = computed(() => {
   const menus = visibleCocktails.value
@@ -99,7 +86,7 @@ const filteredCocktails = computed(() => {
       (c) =>
         c.name.toLowerCase().includes(q) ||
         c.ingredients.some((ing) =>
-          getIngredientName(ing).toLowerCase().includes(q)
+          ing.name.toLowerCase().includes(q)
         )
     );
   }
@@ -210,7 +197,7 @@ const clearFilters = () => {
         <CardCocktail
           v-for="cocktail in filteredCocktails"
           :key="cocktail._id"
-          :cocktail="cocktail as Cocktail"
+          :cocktail="cocktail"
         />
       </div>
     </div>

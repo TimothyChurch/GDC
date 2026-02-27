@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import type { TableColumn } from "@nuxt/ui";
 import type { Contact } from "~/types";
-import type { Row } from "@tanstack/vue-table";
 import { getPaginationRowModel } from "@tanstack/vue-table";
 
 const router = useRouter();
@@ -9,18 +8,9 @@ const contactStore = useContactStore();
 contactStore.ensureLoaded();
 const { confirm } = useDeleteConfirm();
 
-const UButton = resolveComponent("UButton");
-const UDropdownMenu = resolveComponent("UDropdownMenu");
 const UBadge = resolveComponent("UBadge");
 
-const search = ref("");
-const pagination = ref({ pageIndex: 0, pageSize: 10 });
 const newsletterOnly = ref(false);
-
-const tableRef = useTemplateRef('tableRef');
-const filteredTotal = computed(() =>
-  tableRef.value?.tableApi?.getFilteredRowModel().rows.length ?? filteredContacts.value.length
-);
 
 const filteredContacts = computed(() => {
   if (newsletterOnly.value) {
@@ -29,42 +19,14 @@ const filteredContacts = computed(() => {
   return contactStore.contacts;
 });
 
+const { search, pagination, tableRef, filteredTotal } = useTableState(
+  computed(() => filteredContacts.value.length)
+);
+
 const columns: TableColumn<Contact>[] = [
-  {
-    id: "expand",
-    cell: ({ row }) =>
-      h(UButton, {
-        color: "neutral",
-        variant: "ghost",
-        icon: "i-lucide-chevron-down",
-        square: true,
-        "aria-label": "Expand",
-        ui: {
-          leadingIcon: [
-            "transition-transform",
-            row.getIsExpanded() ? "duration-200 rotate-180" : "",
-          ],
-        },
-        onClick: () => row.toggleExpanded(),
-      }),
-  },
-  {
+  expandColumn<Contact>(),
+  sortableColumn<Contact>("name", "Name", {
     id: "name",
-    header: ({ column }) => {
-      const isSorted = column.getIsSorted();
-      return h(UButton, {
-        color: "neutral",
-        variant: "ghost",
-        label: "Name",
-        icon: isSorted
-          ? isSorted === "asc"
-            ? "i-lucide-arrow-up-narrow-wide"
-            : "i-lucide-arrow-down-wide-narrow"
-          : "i-lucide-arrow-up-down",
-        class: "-mx-2.5",
-        onClick: () => column.toggleSorting(column.getIsSorted() === "asc"),
-      });
-    },
     accessorFn: (row) => row.businessName || `${row.firstName || ""} ${row.lastName || ""}`.trim(),
     cell: ({ row, getValue }) => {
       const name = getValue() as string;
@@ -79,54 +41,9 @@ const columns: TableColumn<Contact>[] = [
       }
       return name;
     },
-  },
-  {
-    accessorKey: "type",
-    header: ({ column }) => {
-      const isSorted = column.getIsSorted();
-      return h(UButton, {
-        color: "neutral",
-        variant: "ghost",
-        label: "Type",
-        icon: isSorted
-          ? isSorted === "asc"
-            ? "i-lucide-arrow-up-narrow-wide"
-            : "i-lucide-arrow-down-wide-narrow"
-          : "i-lucide-arrow-up-down",
-        class: "-mx-2.5",
-        onClick: () => column.toggleSorting(column.getIsSorted() === "asc"),
-      });
-    },
-  },
-  {
-    id: "actions",
-    cell: ({ row }) => {
-      return h(
-        "div",
-        { class: "text-right" },
-        h(
-          UDropdownMenu,
-          {
-            content: { align: "end" },
-            items: getRowItems(row),
-            "aria-label": "Actions dropdown",
-          },
-          () =>
-            h(UButton, {
-              icon: "i-lucide-ellipsis-vertical",
-              color: "neutral",
-              variant: "ghost",
-              class: "ml-auto",
-              "aria-label": "Actions dropdown",
-            })
-        )
-      );
-    },
-  },
-];
-
-function getRowItems(row: Row<Contact>) {
-  return [
+  }),
+  sortableColumn<Contact>("type", "Type"),
+  actionsColumn<Contact>((row) => [
     {
       label: "View Details",
       onSelect() {
@@ -151,8 +68,8 @@ function getRowItems(row: Row<Contact>) {
         }
       },
     },
-  ];
-}
+  ]),
+];
 
 // Panel slide-over
 import { LazyPanelContact } from "#components";

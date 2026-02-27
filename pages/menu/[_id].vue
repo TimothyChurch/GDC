@@ -1,22 +1,10 @@
 <script setup lang="ts">
 const route = useRoute();
-const cocktailStore = useCocktailStore();
-const itemStore = useItemStore();
-const bottleStore = useBottleStore();
-const { getIngredientName } = useIngredientResolver();
+const cocktailStore = usePublicCocktailStore();
 
 await cocktailStore.ensureLoaded();
-await itemStore.ensureLoaded();
-await bottleStore.ensureLoaded();
 
 const cocktail = computed(() => cocktailStore.getCocktailById(route.params._id as string));
-
-// Redirect hidden cocktails back to menu
-watch(cocktail, (c) => {
-  if (c && c.visible === false) {
-    navigateTo('/menu');
-  }
-}, { immediate: true });
 
 useSeoMeta({
   title: () => cocktail.value ? `${cocktail.value.name} | Galveston Distilling Co` : 'Cocktail | Galveston Distilling Co',
@@ -160,7 +148,7 @@ const formattedAmount = (amount: number): string => {
                 {{ formattedAmount(ing.amount) }} {{ ing.unit }}
               </span>
               <span class="font-medium">
-                {{ getIngredientName(ing) }}
+                {{ ing.name }}
               </span>
             </li>
           </ul>

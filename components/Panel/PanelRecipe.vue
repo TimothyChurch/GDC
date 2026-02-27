@@ -89,18 +89,14 @@ const removeItem = (itemId: string) => {
               />
             </UFormField>
           </div>
-          <div class="grid grid-cols-2 gap-4">
-            <UFormField label="Volume">
-              <UInput v-model="localData.volume" type="number" />
-            </UFormField>
-            <UFormField label="Volume Unit">
-              <USelectMenu
-                v-model="localData.volumeUnit"
-                :items="volumeUnits"
-                class="w-full"
-              />
-            </UFormField>
-          </div>
+          <UFormField label="Volume">
+            <BaseQuantityInput
+              v-model:value="localData.volume"
+              v-model:unit="localData.volumeUnit"
+              :unit-options="volumeUnits"
+              placeholder="Volume"
+            />
+          </UFormField>
 
           <UFormField label="Ingredients">
             <div class="space-y-2">

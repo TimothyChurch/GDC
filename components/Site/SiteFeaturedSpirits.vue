@@ -1,11 +1,12 @@
 <script setup lang="ts">
-const bottleStore = useBottleStore();
+const bottleStore = usePublicBottleStore();
 
-const featuredBottles = ref<typeof bottleStore.bottles>([]);
-
-onMounted(() => {
+// SSR-safe featured selection: seeded shuffle produces the same order on
+// server and client (rotates daily). Computed so it reacts to store loads.
+const featuredBottles = computed(() => {
   const inStock = bottleStore.activeBottles.filter((b) => b.inStock);
-  featuredBottles.value = [...inStock].sort(() => Math.random() - 0.5).slice(0, 4);
+  if (!inStock.length) return [];
+  return seededShuffle(inStock, todaySeed()).slice(0, 4);
 });
 </script>
 

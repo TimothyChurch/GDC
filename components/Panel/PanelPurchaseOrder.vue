@@ -47,13 +47,7 @@ const isMarkingDelivered = computed(
   () => localData.value.status === "Delivered" && originalStatus !== "Delivered",
 );
 
-const statusOptions = [
-  "Pending",
-  "Confirmed",
-  "Shipped",
-  "Delivered",
-  "Cancelled",
-];
+const statusOptions = PO_STATUS_OPTIONS;
 
 const total = computed(() => {
   return localData.value.items.reduce(

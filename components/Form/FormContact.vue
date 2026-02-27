@@ -14,14 +14,7 @@ const schema = yup.object({
 	address: yup.string(),
 });
 
-const options = [
-	"Vendor",
-	"Customer",
-	"Distributor",
-	"Employee",
-	"Supplier",
-	"Other",
-];
+const options = CONTACT_TYPES;
 
 const submitForm = () => {
 	contactStore.updateContact(contactStore.contact);

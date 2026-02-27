@@ -1,72 +1,20 @@
 <script setup lang="ts">
 import type { TableColumn } from "@nuxt/ui";
 import type { Inventory } from "~/types";
-import type { Row } from "@tanstack/vue-table";
 import { getPaginationRowModel } from "@tanstack/vue-table";
 
 const inventoryStore = useInventoryStore();
 const { confirm } = useDeleteConfirm();
 
-const UButton = resolveComponent("UButton");
-const UDropdownMenu = resolveComponent("UDropdownMenu");
-
-const search = ref("");
-const pagination = ref({ pageIndex: 0, pageSize: 10 });
-
-const tableRef = useTemplateRef('tableRef');
-const filteredTotal = computed(() =>
-  tableRef.value?.tableApi?.getFilteredRowModel().rows.length ?? inventoryStore.inventories.length
+const { search, pagination, tableRef, filteredTotal } = useTableState(
+  computed(() => inventoryStore.inventories.length)
 );
 
 const columns: TableColumn<Inventory>[] = [
-  {
-    accessorKey: "date",
-    header: ({ column }) => {
-      const isSorted = column.getIsSorted();
-      return h(UButton, {
-        color: "neutral",
-        variant: "ghost",
-        label: "Date",
-        icon: isSorted
-          ? isSorted === "asc"
-            ? "i-lucide-arrow-up-narrow-wide"
-            : "i-lucide-arrow-down-wide-narrow"
-          : "i-lucide-arrow-up-down",
-        class: "-mx-2.5",
-        onClick: () => column.toggleSorting(column.getIsSorted() === "asc"),
-      });
-    },
+  sortableColumn<Inventory>("date", "Date", {
     cell: ({ row }) => new Date(row.original.date).toLocaleDateString(),
-  },
-  {
-    id: "actions",
-    cell: ({ row }) => {
-      return h(
-        "div",
-        { class: "text-right" },
-        h(
-          UDropdownMenu,
-          {
-            content: { align: "end" },
-            items: getRowItems(row),
-            "aria-label": "Actions dropdown",
-          },
-          () =>
-            h(UButton, {
-              icon: "i-lucide-ellipsis-vertical",
-              color: "neutral",
-              variant: "ghost",
-              class: "ml-auto",
-              "aria-label": "Actions dropdown",
-            })
-        )
-      );
-    },
-  },
-];
-
-function getRowItems(row: Row<Inventory>) {
-  return [
+  }),
+  actionsColumn<Inventory>((row) => [
     {
       label: "Edit record",
       onSelect() {
@@ -84,8 +32,8 @@ function getRowItems(row: Row<Inventory>) {
         }
       },
     },
-  ];
-}
+  ]),
+];
 
 // Panel slide-over
 import { LazyPanelInventory } from "#components";

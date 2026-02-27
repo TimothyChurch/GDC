@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import type { TableColumn } from "@nuxt/ui";
 import type { Production } from "~/types";
-import type { Row } from "@tanstack/vue-table";
 import { getPaginationRowModel } from "@tanstack/vue-table";
 
 const router = useRouter();
@@ -10,43 +9,20 @@ const vesselStore = useVesselStore();
 const bottlestore = useBottleStore();
 const { confirm } = useDeleteConfirm();
 
-const UButton = resolveComponent("UButton");
-const UDropdownMenu = resolveComponent("UDropdownMenu");
-
-const search = ref("");
-const pagination = ref({ pageIndex: 0, pageSize: 10 });
+const { search, pagination, tableRef, filteredTotal } = useTableState(
+  computed(() => productionsStore.productions.length)
+);
 const sorting = ref([{ id: "date", desc: true }]);
 
-const tableRef = useTemplateRef('tableRef');
-const filteredTotal = computed(() =>
-  tableRef.value?.tableApi?.getFilteredRowModel().rows.length ?? productionsStore.productions.length
-);
-
 const columns: TableColumn<Production>[] = [
-  {
-    accessorKey: "date",
-    header: ({ column }) => {
-      const isSorted = column.getIsSorted();
-      return h(UButton, {
-        color: "neutral",
-        variant: "ghost",
-        label: "Date",
-        icon: isSorted
-          ? isSorted === "asc"
-            ? "i-lucide-arrow-up-narrow-wide"
-            : "i-lucide-arrow-down-wide-narrow"
-          : "i-lucide-arrow-up-down",
-        class: "-mx-2.5",
-        onClick: () => column.toggleSorting(column.getIsSorted() === "asc"),
-      });
-    },
+  sortableColumn<Production>("date", "Date", {
     cell: ({ row }) =>
       new Date(row.original.date).toLocaleString("en-US", {
         year: "numeric",
         month: "long",
         day: "numeric",
       }),
-  },
+  }),
   {
     accessorKey: "vessel",
     header: "Vessel",
@@ -75,35 +51,7 @@ const columns: TableColumn<Production>[] = [
     header: "Bottle Cost",
     cell: ({ row }) => Dollar.format(row.original.bottleCost),
   },
-  {
-    id: "actions",
-    cell: ({ row }) => {
-      return h(
-        "div",
-        { class: "text-right" },
-        h(
-          UDropdownMenu,
-          {
-            content: { align: "end" },
-            items: getRowItems(row),
-            "aria-label": "Actions dropdown",
-          },
-          () =>
-            h(UButton, {
-              icon: "i-lucide-ellipsis-vertical",
-              color: "neutral",
-              variant: "ghost",
-              class: "ml-auto",
-              "aria-label": "Actions dropdown",
-            })
-        )
-      );
-    },
-  },
-];
-
-function getRowItems(row: Row<Production>) {
-  return [
+  actionsColumn<Production>((row) => [
     {
       label: "View Details",
       onSelect() {
@@ -127,8 +75,8 @@ function getRowItems(row: Row<Production>) {
         }
       },
     },
-  ];
-}
+  ]),
+];
 
 // Panel slide-over
 import { LazyPanelProduction } from "#components";

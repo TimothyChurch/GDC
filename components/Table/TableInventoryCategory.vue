@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import type { TableColumn } from '@nuxt/ui'
 import type { Item, ItemCategory } from '~/types'
-import type { Row } from '@tanstack/vue-table'
 import { getPaginationRowModel } from '@tanstack/vue-table'
 import { getStockStatus, getStockStatusColor } from '~/composables/useInventoryCategories'
 
@@ -14,9 +13,7 @@ const itemStore = useItemStore()
 const inventoryStore = useInventoryStore()
 const { confirm } = useDeleteConfirm()
 
-const UButton = resolveComponent('UButton')
 const UBadge = resolveComponent('UBadge')
-const UDropdownMenu = resolveComponent('UDropdownMenu')
 
 const showOutOfStock = ref(false)
 
@@ -28,7 +25,7 @@ function getLatestQuantity(itemId: string): number {
   const sorted = [...records].sort((a, b) =>
     new Date(b.date).getTime() - new Date(a.date).getTime()
   )
-  return sorted[0].quantity
+  return sorted[0]?.quantity ?? 0
 }
 
 const outOfStockCount = computed(() =>
@@ -40,25 +37,12 @@ const categoryItems = computed(() => {
   return allCategoryItems.value.filter(item => getLatestQuantity(item._id) > 0)
 })
 
+const { search, pagination, tableRef, filteredTotal } = useTableState(
+  computed(() => categoryItems.value.length)
+)
+
 const columns: TableColumn<Item>[] = [
-  {
-    accessorKey: 'name',
-    header: ({ column }) => {
-      const isSorted = column.getIsSorted()
-      return h(UButton, {
-        color: 'neutral',
-        variant: 'ghost',
-        label: 'Name',
-        icon: isSorted
-          ? isSorted === 'asc'
-            ? 'i-lucide-arrow-up-narrow-wide'
-            : 'i-lucide-arrow-down-wide-narrow'
-          : 'i-lucide-arrow-up-down',
-        class: '-mx-2.5',
-        onClick: () => column.toggleSorting(column.getIsSorted() === 'asc'),
-      })
-    },
-  },
+  sortableColumn<Item>('name', 'Name'),
   {
     accessorKey: 'type',
     header: 'Type',
@@ -92,35 +76,7 @@ const columns: TableColumn<Item>[] = [
       return h(UBadge, { color, variant: 'subtle', size: 'sm' }, () => status)
     },
   },
-  {
-    id: 'actions',
-    cell: ({ row }) => {
-      return h(
-        'div',
-        { class: 'text-right' },
-        h(
-          UDropdownMenu,
-          {
-            content: { align: 'end' },
-            items: getRowItems(row),
-            'aria-label': 'Actions dropdown',
-          },
-          () =>
-            h(UButton, {
-              icon: 'i-lucide-ellipsis-vertical',
-              color: 'neutral',
-              variant: 'ghost',
-              class: 'ml-auto',
-              'aria-label': 'Actions dropdown',
-            }),
-        ),
-      )
-    },
-  },
-]
-
-function getRowItems(row: Row<Item>) {
-  return [
+  actionsColumn<Item>((row) => [
     {
       label: 'Edit item',
       onSelect() {
@@ -138,8 +94,8 @@ function getRowItems(row: Row<Item>) {
         }
       },
     },
-  ]
-}
+  ]),
+]
 
 // Panel slide-over
 import { LazyPanelItem } from '#components'
@@ -151,19 +107,11 @@ const newItem = () => {
   openModal()
 }
 const openModal = async () => await modal.open()
-
-const globalFilter = ref('')
-const pagination = ref({ pageIndex: 0, pageSize: 10 })
-
-const tableRef = useTemplateRef('tableRef')
-const filteredTotal = computed(() =>
-  tableRef.value?.tableApi?.getFilteredRowModel().rows.length ?? categoryItems.value.length
-)
 </script>
 
 <template>
   <TableWrapper
-    v-model:search="globalFilter"
+    v-model:search="search"
     v-model:pagination="pagination"
     :total-items="filteredTotal"
     :loading="itemStore.loading"
@@ -191,7 +139,7 @@ const filteredTotal = computed(() =>
     <div class="hidden sm:block">
       <UTable
         ref="tableRef"
-        v-model:global-filter="globalFilter"
+        v-model:global-filter="search"
         v-model:pagination="pagination"
         :pagination-options="{ getPaginationRowModel: getPaginationRowModel() }"
         :data="categoryItems"

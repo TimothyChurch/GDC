@@ -1,21 +1,13 @@
 <script setup lang="ts">
 import type { TableColumn } from '@nuxt/ui'
 import type { User } from '~/types'
-import type { Row } from '@tanstack/vue-table'
 import { getPaginationRowModel } from '@tanstack/vue-table'
 
 const userStore = useUserStore()
 const { confirm } = useDeleteConfirm()
 
-const UButton = resolveComponent('UButton')
-const UDropdownMenu = resolveComponent('UDropdownMenu')
-
-const search = ref('')
-const pagination = ref({ pageIndex: 0, pageSize: 10 })
-
-const tableRef = useTemplateRef('tableRef')
-const filteredTotal = computed(() =>
-  tableRef.value?.tableApi?.getFilteredRowModel().rows.length ?? userStore.users.length
+const { search, pagination, tableRef, filteredTotal } = useTableState(
+  computed(() => userStore.users.length)
 )
 
 const columns: TableColumn<User>[] = [
@@ -32,35 +24,7 @@ const columns: TableColumn<User>[] = [
     accessorKey: 'email',
     header: 'Email',
   },
-  {
-    id: 'actions',
-    cell: ({ row }) => {
-      return h(
-        'div',
-        { class: 'text-right' },
-        h(
-          UDropdownMenu,
-          {
-            content: { align: 'end' },
-            items: getRowItems(row),
-            'aria-label': 'Actions dropdown',
-          },
-          () =>
-            h(UButton, {
-              icon: 'i-lucide-ellipsis-vertical',
-              color: 'neutral',
-              variant: 'ghost',
-              class: 'ml-auto',
-              'aria-label': 'Actions dropdown',
-            })
-        )
-      )
-    },
-  },
-]
-
-function getRowItems(row: Row<User>) {
-  return [
+  actionsColumn<User>((row) => [
     {
       label: 'Edit user',
       onSelect() {
@@ -79,8 +43,8 @@ function getRowItems(row: Row<User>) {
         }
       },
     },
-  ]
-}
+  ]),
+]
 
 // Panel slide-over
 import { LazyPanelUser } from '#components'

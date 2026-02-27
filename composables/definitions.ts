@@ -1,6 +1,62 @@
 export const estimateCocktailPrice = (cost: number): number =>
   ((cost - 1.5) / 2.5) * 4 + 7;
 
+// ---------------------------------------------------------------------------
+// Centralized dropdown option lists
+// ---------------------------------------------------------------------------
+
+/** Standard barrel sizes for vessel barrel fields */
+export const BARREL_SIZES: string[] = [
+  '5 Gallon',
+  '10 Gallon',
+  '15 Gallon',
+  '30 Gallon',
+  '53 Gallon',
+];
+
+/** Char levels for barrel vessels */
+export const CHAR_LEVELS: string[] = [
+  'Char 1',
+  'Char 2',
+  'Char 3',
+  'Char 4',
+  'Char 5',
+];
+
+/** Purchase order status options */
+export const PO_STATUS_OPTIONS: string[] = [
+  'Pending',
+  'Confirmed',
+  'Shipped',
+  'Delivered',
+  'Cancelled',
+];
+
+/** Contact type options */
+export const CONTACT_TYPES: string[] = [
+  'Vendor',
+  'Customer',
+  'Distributor',
+  'Employee',
+  'Supplier',
+  'Other',
+];
+
+/** Event type options */
+export const EVENT_TYPES: string[] = [
+  'Private Class',
+  'Private Event',
+  'Tasting',
+];
+
+/** Event status options */
+export const EVENT_STATUS_OPTIONS: string[] = [
+  'Pending',
+  'Confirmed',
+  'Completed',
+  'Cancelled',
+];
+
 /** Hardcoded fallback barrel aging targets (months) keyed by vessel barrel.size */
 const BARREL_AGE_FALLBACK: Record<string, number> = {
   '5 Gallon': 12,

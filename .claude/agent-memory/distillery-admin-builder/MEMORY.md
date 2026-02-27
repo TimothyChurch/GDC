@@ -84,6 +84,15 @@ See `patterns.md` for reusable component patterns discovered.
 - **Quick action**: PO detail page has "Mark as Received" button (green), PO table has dropdown option
 - **Important**: `updateProduction()` calls `resetProduction()` after save, so production data for inventory adjustment must be captured BEFORE the update call
 
+### useCrudStore Factory (Feb 2026)
+- `composables/useCrudStore.ts` -- generic CRUD factory for Pinia stores
+- Returns: `items`, `item`, `loading`, `saving`, `loaded`, `getAll`, `ensureLoaded`, `setItem`, `resetItem`, `saveItem`, `deleteItem`, `getById`
+- Options: `name`, `apiPath`, `defaultItem()`, optional `sort()`, `beforeCreate()`, `beforeUpdate()`, `resetOnSave` (default true)
+- 12 stores refactored (all except `useSettingsStore` which is a singleton pattern)
+- Each store re-exports domain-specific aliases (e.g., `bottles: crud.items`, `updateBottle: crud.saveItem`) for backward compatibility
+- Stores with custom save logic (Batch, Vessel) wrap `crud.saveItem()` in their own `updateBatch`/`updateVessel`
+- Inventory store overrides `ensureLoaded` and has custom `getInventories(params)` because its getAll takes query params
+
 ### Shopping List Feature (Feb 2026)
 - `ShoppingListItem` interface exported from `stores/useItemStore.ts` (item, currentStock, reorderPoint, usePerMonth, suggestedOrderQty, status)
 - `shoppingListItems` computed in useItemStore: filters tracked items with inventory history that are low/out of stock

@@ -1,8 +1,8 @@
 <script setup lang="ts">
-import type { Bottle } from "~/types/interfaces/Bottle";
+import type { PublicBottle } from "~/types";
 
 defineProps<{
-  bottle: Bottle;
+  bottle: PublicBottle;
 }>();
 </script>
 

@@ -8,7 +8,7 @@ useSeoMeta({
   ogUrl: 'https://galvestondistilling.com/bottles',
 });
 
-const bottleStore = useBottleStore();
+const bottleStore = usePublicBottleStore();
 
 const activeClass = ref("All");
 

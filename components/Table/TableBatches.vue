@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import type { TableColumn } from "@nuxt/ui";
 import type { Batch } from "~/types";
-import type { Row } from "@tanstack/vue-table";
 import { getPaginationRowModel } from "@tanstack/vue-table";
 
 const props = defineProps<{ data?: Batch[] }>();
@@ -11,13 +10,11 @@ const batchStore = useBatchStore();
 const recipeStore = useRecipeStore();
 const { confirm } = useDeleteConfirm();
 
-const UButton = resolveComponent("UButton");
-const UDropdownMenu = resolveComponent("UDropdownMenu");
-
-const search = ref("");
-const pagination = ref({ pageIndex: 0, pageSize: 10 });
-
 const tableData = computed(() => props.data ?? batchStore.batches);
+
+const { search, pagination, tableRef, filteredTotal } = useTableState(
+  computed(() => tableData.value.length)
+);
 
 import { STAGE_DISPLAY, stageBgColor, stageTextColor, hasStageVolumes, getActiveStages, getStageVolume } from '~/composables/batchPipeline'
 
@@ -37,73 +34,24 @@ function statusBadgeColor(status: string) {
 }
 
 const columns: TableColumn<Batch>[] = [
-  {
-    accessorKey: "recipe",
-    header: ({ column }) => {
-      const isSorted = column.getIsSorted();
-      return h(UButton, {
-        color: "neutral",
-        variant: "ghost",
-        label: "Recipe",
-        icon: isSorted
-          ? isSorted === "asc"
-            ? "i-lucide-arrow-up-narrow-wide"
-            : "i-lucide-arrow-down-wide-narrow"
-          : "i-lucide-arrow-up-down",
-        class: "-mx-2.5",
-        onClick: () => column.toggleSorting(column.getIsSorted() === "asc"),
-      });
-    },
+  sortableColumn<Batch>("recipe", "Recipe", {
     cell: ({ row }) => recipeStore.getRecipeById(row.original.recipe)?.name || "Unknown",
-  },
-  {
-    accessorKey: "batchCost",
-    header: ({ column }) => {
-      const isSorted = column.getIsSorted();
-      return h(UButton, {
-        color: "neutral",
-        variant: "ghost",
-        label: "Batch Cost",
-        icon: isSorted
-          ? isSorted === "asc"
-            ? "i-lucide-arrow-up-narrow-wide"
-            : "i-lucide-arrow-down-wide-narrow"
-          : "i-lucide-arrow-up-down",
-        class: "-mx-2.5",
-        onClick: () => column.toggleSorting(column.getIsSorted() === "asc"),
-      });
-    },
+  }),
+  sortableColumn<Batch>("batchCost", "Batch Cost", {
     cell: ({ row }) => Dollar.format(row.original.batchCost || 0),
-  },
+  }),
   {
     id: "batchSize",
     accessorKey: "batchSize",
     header: "Size",
     cell: ({ row }) => `${row.original.batchSize || 0} ${row.original.batchSizeUnit || ''}`.trim(),
   },
-  {
-    accessorKey: "currentStage",
-    header: ({ column }) => {
-      const isSorted = column.getIsSorted();
-      return h(UButton, {
-        color: "neutral",
-        variant: "ghost",
-        label: "Stage",
-        icon: isSorted
-          ? isSorted === "asc"
-            ? "i-lucide-arrow-up-narrow-wide"
-            : "i-lucide-arrow-down-wide-narrow"
-          : "i-lucide-arrow-up-down",
-        class: "-mx-2.5",
-        onClick: () => column.toggleSorting(column.getIsSorted() === "asc"),
-      });
-    },
+  sortableColumn<Batch>("currentStage", "Stage", {
     cell: ({ row }) => {
       const batch = row.original;
       const badges: any[] = [];
 
       if (hasStageVolumes(batch) && getActiveStages(batch).length > 1) {
-        // Multi-stage: show each active stage with volume
         const unit = (batch.batchSizeUnit || 'gallon').replace(/gallon/i, 'g').replace(/liter/i, 'L');
         for (const stage of getActiveStages(batch)) {
           const vol = getStageVolume(batch, stage);
@@ -131,36 +79,8 @@ const columns: TableColumn<Batch>[] = [
 
       return h("div", { class: "flex items-center gap-1.5 flex-wrap" }, badges);
     },
-  },
-  {
-    id: "actions",
-    cell: ({ row }) => {
-      return h(
-        "div",
-        { class: "text-right" },
-        h(
-          UDropdownMenu,
-          {
-            content: { align: "end" },
-            items: getRowItems(row),
-            "aria-label": "Actions dropdown",
-          },
-          () =>
-            h(UButton, {
-              icon: "i-lucide-ellipsis-vertical",
-              color: "neutral",
-              variant: "ghost",
-              class: "ml-auto",
-              "aria-label": "Actions dropdown",
-            })
-        )
-      );
-    },
-  },
-];
-
-function getRowItems(row: Row<Batch>) {
-  return [
+  }),
+  actionsColumn<Batch>((row) => [
     {
       label: "Details",
       onSelect() {
@@ -184,8 +104,8 @@ function getRowItems(row: Row<Batch>) {
         }
       },
     },
-  ];
-}
+  ]),
+];
 
 // Panel slide-over
 import { LazyPanelBatch } from "#components";
@@ -197,11 +117,6 @@ const addItem = () => {
   batchStore.resetBatch();
   openPanel();
 };
-
-const tableRef = useTemplateRef('tableRef');
-const filteredTotal = computed(() =>
-  tableRef.value?.tableApi?.getFilteredRowModel().rows.length ?? tableData.value.length
-);
 </script>
 
 <template>

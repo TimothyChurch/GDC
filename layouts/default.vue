@@ -1,10 +1,9 @@
 <script setup>
-// Load stores needed for public pages
+// Load lightweight public stores for visitor-facing pages
 onMounted(async () => {
   await Promise.all([
-    useBottleStore().ensureLoaded(),
-    useCocktailStore().ensureLoaded(),
-    useItemStore().ensureLoaded(),
+    usePublicBottleStore().ensureLoaded(),
+    usePublicCocktailStore().ensureLoaded(),
   ]);
 });
 </script>

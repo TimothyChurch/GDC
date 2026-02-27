@@ -56,13 +56,7 @@ const removeItem = (item: PurchaseOrderItem) => {
     1
   );
 };
-const statusOptions = [
-  "Pending",
-  "Confirmed",
-  "Shipped",
-  "Delivered",
-  "Cancelled",
-];
+const statusOptions = PO_STATUS_OPTIONS;
 
 // Track original status to detect "Delivered" transition
 const originalStatus = purchaseOrderStore.purchaseOrder.status;
@@ -177,10 +171,11 @@ const submitForm = async () => {
         <UInput v-model.number="newItem.quantity" />
       </UFormField>
       <UFormField label="Size">
-        <UInput v-model.number="newItem.size" />
-      </UFormField>
-      <UFormField label="Size Unit">
-        <USelect :items="allUnits" v-model="newItem.sizeUnit" />
+        <BaseQuantityInput
+          v-model:value="newItem.size"
+          v-model:unit="newItem.sizeUnit"
+          :unit-options="allUnits"
+          placeholder="Size" />
       </UFormField>
       <UFormField label="Price">
         <UInput v-model.number="newItem.price" />

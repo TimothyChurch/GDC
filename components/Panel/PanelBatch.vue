@@ -101,18 +101,14 @@ const scaledPrice = computed(() => {
           <UFormField label="Recipe Cost">
             <span class="text-sm">{{ price }}</span>
           </UFormField>
-          <div class="grid grid-cols-2 gap-4">
-            <UFormField label="Batch Size">
-              <UInput
-                v-model="localData.batchSize"
-                type="number"
-                placeholder="Volume"
-              />
-            </UFormField>
-            <UFormField label="Size Unit">
-              <USelect v-model="localData.batchSizeUnit" :items="volumeUnits" />
-            </UFormField>
-          </div>
+          <UFormField label="Batch Size">
+            <BaseQuantityInput
+              v-model:value="localData.batchSize"
+              v-model:unit="localData.batchSizeUnit"
+              :unit-options="volumeUnits"
+              placeholder="Volume"
+            />
+          </UFormField>
           <UFormField label="Batch Cost">
             <span class="text-sm">{{ Dollar.format(scaledPrice) }}</span>
           </UFormField>

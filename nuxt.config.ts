@@ -55,6 +55,9 @@ export default defineNuxtConfig({
       },
     },
     '/admin/**': { ssr: false },
+    '/api/bottle/public': { swr: 300 },
+    '/api/cocktail/public': { swr: 300 },
+    '/api/event/upcoming': { swr: 60 },
   },
   runtimeConfig: {
     // Server — Nuxt auto-maps NUXT_SESSION_SECRET, NUXT_DOMAIN, etc. at runtime

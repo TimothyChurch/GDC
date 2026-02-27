@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import type { TableColumn } from "@nuxt/ui";
 import type { Contact } from "~/types";
-import type { Row } from "@tanstack/vue-table";
 import { getPaginationRowModel } from "@tanstack/vue-table";
 
 const router = useRouter();
@@ -10,16 +9,10 @@ const eventStore = useEventStore();
 contactStore.ensureLoaded();
 const { confirm } = useDeleteConfirm();
 
-const UButton = resolveComponent("UButton");
-const UDropdownMenu = resolveComponent("UDropdownMenu");
 const UBadge = resolveComponent("UBadge");
 
-const search = ref("");
-const pagination = ref({ pageIndex: 0, pageSize: 10 });
-
-const tableRef = useTemplateRef('tableRef');
-const filteredTotal = computed(() =>
-  tableRef.value?.tableApi?.getFilteredRowModel().rows.length ?? customers.value.length
+const { search, pagination, tableRef, filteredTotal } = useTableState(
+  computed(() => customers.value.length)
 );
 
 const customers = computed(() => contactStore.getCustomers());
@@ -29,41 +22,9 @@ function eventCount(contactId: string): number {
 }
 
 const columns: TableColumn<Contact>[] = [
-  {
-    id: "expand",
-    cell: ({ row }) =>
-      h(UButton, {
-        color: "neutral",
-        variant: "ghost",
-        icon: "i-lucide-chevron-down",
-        square: true,
-        "aria-label": "Expand",
-        ui: {
-          leadingIcon: [
-            "transition-transform",
-            row.getIsExpanded() ? "duration-200 rotate-180" : "",
-          ],
-        },
-        onClick: () => row.toggleExpanded(),
-      }),
-  },
-  {
+  expandColumn<Contact>(),
+  sortableColumn<Contact>("name", "Name", {
     id: "name",
-    header: ({ column }) => {
-      const isSorted = column.getIsSorted();
-      return h(UButton, {
-        color: "neutral",
-        variant: "ghost",
-        label: "Name",
-        icon: isSorted
-          ? isSorted === "asc"
-            ? "i-lucide-arrow-up-narrow-wide"
-            : "i-lucide-arrow-down-wide-narrow"
-          : "i-lucide-arrow-up-down",
-        class: "-mx-2.5",
-        onClick: () => column.toggleSorting(column.getIsSorted() === "asc"),
-      });
-    },
     accessorFn: (row) =>
       row.businessName || `${row.firstName || ""} ${row.lastName || ""}`.trim(),
     cell: ({ row, getValue }) => {
@@ -79,14 +40,14 @@ const columns: TableColumn<Contact>[] = [
       }
       return name;
     },
-  },
+  }),
   {
     id: "email",
     header: "Email",
     accessorKey: "email",
     cell: ({ getValue }) => {
       const email = getValue() as string;
-      if (!email) return "—";
+      if (!email) return "\u2014";
       return h("a", { href: `mailto:${email}`, class: "text-copper hover:text-gold transition-colors", onClick: (e: Event) => e.stopPropagation() }, email);
     },
   },
@@ -96,7 +57,7 @@ const columns: TableColumn<Contact>[] = [
     accessorKey: "phone",
     cell: ({ getValue }) => {
       const phone = getValue() as string;
-      return phone || "—";
+      return phone || "\u2014";
     },
   },
   {
@@ -111,35 +72,7 @@ const columns: TableColumn<Contact>[] = [
       return h("span", { class: "text-parchment/50" }, "0");
     },
   },
-  {
-    id: "actions",
-    cell: ({ row }) => {
-      return h(
-        "div",
-        { class: "text-right" },
-        h(
-          UDropdownMenu,
-          {
-            content: { align: "end" },
-            items: getRowItems(row),
-            "aria-label": "Actions dropdown",
-          },
-          () =>
-            h(UButton, {
-              icon: "i-lucide-ellipsis-vertical",
-              color: "neutral",
-              variant: "ghost",
-              class: "ml-auto",
-              "aria-label": "Actions dropdown",
-            })
-        )
-      );
-    },
-  },
-];
-
-function getRowItems(row: Row<Contact>) {
-  return [
+  actionsColumn<Contact>((row) => [
     {
       label: "View Details",
       onSelect() {
@@ -166,8 +99,8 @@ function getRowItems(row: Row<Contact>) {
         }
       },
     },
-  ];
-}
+  ]),
+];
 
 // Panel slide-over
 import { LazyPanelContact } from "#components";

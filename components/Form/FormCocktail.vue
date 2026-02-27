@@ -36,17 +36,7 @@ const selectedIngredient = ref('');
 const newIngredientAmount = ref(0);
 const newIngredientUnit = ref('');
 
-const glasswareOptions = [
-	"Highball",
-	"Lowball",
-	"Martini",
-	"Mug",
-	"Shot glass",
-	"Glencairn",
-];
-const menuOptions = ["main", "seasonal", "shots", "off menu"];
-
-const units = ["oz", "ml", "dash", "barspoon", "each"];
+const { glasswareOptions, menuOptions, unitOptions } = useCocktailOptions();
 
 const addIngredient = () => {
 	if (!selectedIngredient.value) return;
@@ -144,7 +134,7 @@ const saveCocktail = async () => {
 							class="flex flex-shrink max-w-20" />
 						<USelect
 							v-model="newIngredientUnit"
-							:items="units"
+							:items="unitOptions"
 							class="max-w-20" />
 						<UButton
 							@click="addIngredient"
