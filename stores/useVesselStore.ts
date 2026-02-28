@@ -54,7 +54,7 @@ export const useVesselStore = defineStore('vessels', () => {
 	const setVessel = (id: string) => {
 		crud.resetItem();
 		const found = crud.items.value.find((v) => v._id === id);
-		if (found) crud.item.value = JSON.parse(JSON.stringify(found));
+		if (found) crud.item.value = structuredClone(toRaw(found));
 	};
 
 	/**

@@ -6,7 +6,7 @@ export default defineEventHandler(async (event) => {
 	try {
 		const existing = await Contact.findOne({ email: validated.email });
 		if (existing) {
-			await Contact.findByIdAndUpdate(existing._id, { newsletter: true });
+			await Contact.findByIdAndUpdate(existing._id, { newsletter: true, type: 'Customer' });
 			return { success: true, message: 'You\'re now subscribed to our newsletter!' };
 		}
 

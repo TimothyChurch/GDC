@@ -5,8 +5,11 @@ export default defineEventHandler(async (event) => {
 
 	try {
 		// Check if this email already exists as a contact
+		let contactId: string | undefined;
 		const existing = await Contact.findOne({ email: validated.email });
 		if (existing) {
+			contactId = existing._id.toString();
+
 			// Update existing contact with inquiry info in notes
 			const notePrefix = `[${validated.topic}] `;
 			const existingNotes = existing.notes || '';
@@ -21,17 +24,27 @@ export default defineEventHandler(async (event) => {
 				lastName: validated.lastName || existing.lastName,
 				phone: validated.phone || existing.phone,
 			});
-
-			return { success: true, message: "Thanks for reaching out! We'll get back to you soon." };
+		} else {
+			const newContact = await Contact.create({
+				firstName: validated.firstName,
+				lastName: validated.lastName,
+				email: validated.email,
+				phone: validated.phone || undefined,
+				type: 'Inquiry',
+				notes: `[${validated.topic}] ${validated.message}`,
+			});
+			contactId = newContact._id.toString();
 		}
 
-		await Contact.create({
+		// Create a Message document for the admin inbox
+		await Message.create({
+			contact: contactId,
 			firstName: validated.firstName,
 			lastName: validated.lastName,
 			email: validated.email,
 			phone: validated.phone || undefined,
-			type: 'Inquiry',
-			notes: `[${validated.topic}] ${validated.message}`,
+			topic: validated.topic,
+			message: validated.message,
 		});
 
 		return { success: true, message: "Thanks for reaching out! We'll get back to you soon." };

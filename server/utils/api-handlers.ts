@@ -153,8 +153,8 @@ export function createGetByIdHandler(
         });
       }
       return doc;
-    } catch (error: any) {
-      if (error.statusCode) throw error;
+    } catch (error: unknown) {
+      if (isH3Error(error)) throw error;
       throw createError({
         statusCode: 500,
         statusMessage: `Failed to fetch ${label}`,
@@ -249,8 +249,8 @@ export function createUpdateHandler(
         });
       }
       return updated;
-    } catch (error: any) {
-      if (error.statusCode) throw error;
+    } catch (error: unknown) {
+      if (isH3Error(error)) throw error;
       throw createError({
         statusCode: 500,
         statusMessage: `Failed to update ${label}`,
@@ -300,8 +300,8 @@ export function createDeleteHandler(
         });
       }
       return { message: `${model.modelName} deleted successfully` };
-    } catch (error: any) {
-      if (error.statusCode) throw error;
+    } catch (error: unknown) {
+      if (isH3Error(error)) throw error;
       throw createError({
         statusCode: 500,
         statusMessage: `Failed to delete ${label}`,

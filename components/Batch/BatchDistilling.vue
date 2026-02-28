@@ -125,11 +125,11 @@ const addRun = async (defaultRunType: 'stripping' | 'spirit') => {
       }
     }
     await batchStore.addDistillingRun(props.batch._id, newRun)
-  } catch (error: any) {
+  } catch (error: unknown) {
     const toast = useToast()
     toast.add({
       title: 'Failed to add distilling run',
-      description: error?.data?.statusMessage || error?.data?.message || error?.message,
+      description: getErrorMessage(error),
       color: 'error',
       icon: 'i-lucide-alert-circle',
     })

@@ -18,20 +18,14 @@ const { search, pagination, tableRef, filteredTotal } = useTableState(
 
 const columns: TableColumn<Cocktail>[] = [
   expandColumn<Cocktail>(),
-  {
-    accessorKey: "name",
-    header: "Name",
-  },
-  {
-    accessorKey: "glassware",
-    header: "Glassware",
-  },
-  {
-    accessorKey: "cost",
-    header: "Cost",
+  sortableColumn<Cocktail>("name", "Name"),
+  sortableColumn<Cocktail>("glassware", "Glassware"),
+  sortableColumn<Cocktail>("cost", "Cost", {
+    id: "cost",
+    accessorFn: (row) => cocktailStore.cocktailCost(row._id.toString()),
     cell: ({ row }) =>
       Dollar.format(cocktailStore.cocktailCost(row.original._id.toString())),
-  },
+  }),
   {
     header: "Approx Price",
     cell: ({ row }) =>
@@ -42,16 +36,12 @@ const columns: TableColumn<Cocktail>[] = [
           7
       ),
   },
-  {
-    accessorKey: "price",
-    header: "Price",
+  sortableColumn<Cocktail>("price", "Price", {
     cell: ({ row }) => Dollar.format(row.original.price),
-  },
-  {
-    accessorKey: "visible",
-    header: "Visible",
+  }),
+  sortableColumn<Cocktail>("visible", "Visible", {
     cell: ({ row }) => (row.original.visible ? "Yes" : "No"),
-  },
+  }),
   actionsColumn<Cocktail>((row) => [
     {
       label: "View Details",
@@ -99,7 +89,7 @@ const openModal = async () => await modal.open();
     search-placeholder="Search cocktails..."
   >
     <template #actions>
-      <UButton icon="i-heroicons-plus-circle" size="xl" @click="newCocktail" variant="ghost">Add Cocktail</UButton>
+      <UButton icon="i-lucide-plus-circle" size="xl" @click="newCocktail" variant="ghost">Add Cocktail</UButton>
     </template>
     <!-- Desktop table -->
     <div class="hidden sm:block">
@@ -112,11 +102,13 @@ const openModal = async () => await modal.open();
         :data="cocktails"
         :columns="columns"
         :loading="cocktailStore.loading"
-        :empty="'No cocktails found'"
         class="max-h-full"
         @select="(_e: Event, row: any) => navigateTo(`/admin/cocktails/${row.original._id}`)"
         :ui="{ tr: 'cursor-pointer' }"
       >
+        <template #empty>
+          <BaseEmptyState icon="i-lucide-martini" title="No cocktails found" description="Add cocktails to build your menu" action-label="Add Cocktail" @action="newCocktail" />
+        </template>
         <template #expanded="{ row }">
           <TableCocktailExpand :ingredients="row.original.ingredients" />
         </template>
@@ -126,7 +118,11 @@ const openModal = async () => await modal.open();
     <!-- Mobile card view -->
     <div class="sm:hidden space-y-3">
       <div
-        v-for="cocktail in cocktails"
+        v-for="cocktail in cocktails.filter(c => {
+          if (!search) return true;
+          const term = search.toLowerCase();
+          return c.name.toLowerCase().includes(term) || (c.glassware || '').toLowerCase().includes(term);
+        })"
         :key="cocktail._id"
         class="bg-charcoal rounded-lg border border-brown/30 p-4 cursor-pointer"
         @click="navigateTo(`/admin/cocktails/${cocktail._id}`)"
@@ -158,9 +154,7 @@ const openModal = async () => await modal.open();
           </div>
         </div>
       </div>
-      <div v-if="cocktails.length === 0" class="text-center py-6 text-parchment/50 text-sm">
-        No cocktails found
-      </div>
+      <BaseEmptyState v-if="cocktails.length === 0" icon="i-lucide-martini" title="No cocktails found" description="Add cocktails to build your menu" action-label="Add Cocktail" @action="newCocktail" />
     </div>
   </TableWrapper>
 </template>

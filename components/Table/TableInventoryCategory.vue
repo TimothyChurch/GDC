@@ -145,16 +145,23 @@ const openModal = async () => await modal.open()
         :data="categoryItems"
         :columns="columns"
         :loading="itemStore.loading"
-        :empty="'No items found'"
         @select="(_e: Event, row: any) => router.push(`/admin/items/${row.original._id}`)"
         :ui="{ tr: 'cursor-pointer' }"
-      />
+      >
+        <template #empty>
+          <BaseEmptyState icon="i-lucide-package" title="No items found" description="Add items to this category to track inventory" action-label="Add Item" @action="newItem" />
+        </template>
+      </UTable>
     </div>
 
     <!-- Mobile card view -->
     <div class="sm:hidden space-y-3">
       <div
-        v-for="item in categoryItems"
+        v-for="item in categoryItems.filter(i => {
+          if (!search) return true;
+          const term = search.toLowerCase();
+          return i.name.toLowerCase().includes(term) || (i.type || '').toLowerCase().includes(term);
+        })"
         :key="item._id"
         class="bg-charcoal rounded-lg border border-brown/30 p-4 cursor-pointer"
         @click="router.push(`/admin/items/${item._id}`)"
@@ -187,12 +194,7 @@ const openModal = async () => await modal.open()
           </div>
         </div>
       </div>
-      <div
-        v-if="categoryItems.length === 0"
-        class="text-center py-6 text-parchment/50 text-sm"
-      >
-        No items in this category
-      </div>
+      <BaseEmptyState v-if="categoryItems.length === 0" icon="i-lucide-package" title="No items in this category" description="Add items to this category to track inventory" action-label="Add Item" @action="newItem" />
     </div>
   </TableWrapper>
 </template>

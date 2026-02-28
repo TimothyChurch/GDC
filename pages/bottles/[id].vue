@@ -80,11 +80,14 @@ useSeoMeta({
           <div class="grid lg:grid-cols-2 gap-10 lg:gap-16 items-start">
             <!-- Bottle image -->
             <div class="aspect-[3/4] bg-charcoal/5 dark:bg-parchment/5 rounded-xl overflow-hidden flex items-center justify-center">
-              <img
+              <NuxtImg
                 v-if="bottle.img"
                 :src="bottle.img"
                 :alt="bottle.name"
                 class="w-full h-full object-cover"
+                width="600"
+                height="800"
+                format="webp"
               />
               <Icon v-else name="carbon:wine-bottle" class="text-8xl text-brown/10 dark:text-parchment/10" />
             </div>

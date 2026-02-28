@@ -35,6 +35,10 @@ const columns: TableColumn<CocktailIngredient>[] = [
 
 <template>
   <div>
-    <UTable :data="props.ingredients" :columns="columns" :empty="'No ingredients'" />
+    <UTable :data="props.ingredients" :columns="columns">
+      <template #empty>
+        <BaseEmptyState icon="i-lucide-list" title="No ingredients" />
+      </template>
+    </UTable>
   </div>
 </template>

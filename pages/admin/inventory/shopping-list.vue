@@ -264,29 +264,21 @@ const lowStockCount = computed(
           :data="itemStore.shoppingListItems"
           :columns="columns"
           :loading="itemStore.loading"
-          :empty="'All stocked up! No items need purchasing.'"
           :ui="{ tr: 'cursor-pointer' }"
           @select="
             (_e: Event, row: any) =>
               router.push(`/admin/items/${row.original.item._id}`)
           "
-        />
+        >
+          <template #empty>
+            <BaseEmptyState icon="i-lucide-package-check" title="All stocked up!" description="No items need purchasing." />
+          </template>
+        </UTable>
       </div>
 
       <!-- Mobile card view -->
       <div class="sm:hidden space-y-3">
-        <div
-          v-if="itemStore.shoppingListItems.length === 0"
-          class="text-center py-12"
-        >
-          <UIcon
-            name="i-lucide-package-check"
-            class="text-4xl text-green-400/40 mb-3"
-          />
-          <p class="text-sm text-parchment/50">
-            All stocked up! No items need purchasing.
-          </p>
-        </div>
+        <BaseEmptyState v-if="itemStore.shoppingListItems.length === 0" icon="i-lucide-package-check" title="All stocked up!" description="No items need purchasing." />
         <div
           v-for="entry in itemStore.shoppingListItems"
           :key="entry.item._id"

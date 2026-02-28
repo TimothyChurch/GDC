@@ -139,10 +139,10 @@ const createBlendedBatch = async () => {
     if (newBatch?._id) {
       router.push(`/admin/batch/${newBatch._id}`)
     }
-  } catch (error: any) {
+  } catch (error: unknown) {
     toast.add({
       title: 'Failed to create blended batch',
-      description: error?.message || 'Unknown error',
+      description: getErrorMessage(error),
       color: 'error',
       icon: 'i-lucide-alert-circle',
     })

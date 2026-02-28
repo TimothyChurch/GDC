@@ -6,7 +6,7 @@ const isOpen = calculatorModalStatus;
 <template>
   <div>
     <USlideover v-model:open="isOpen">
-      <UButton color="neutral" variant="ghost" icon="i-heroicons-calculator" />
+      <UButton color="neutral" variant="ghost" icon="i-lucide-calculator" />
       <template #content>
         <Proofing class="w-full" />
         <UButton

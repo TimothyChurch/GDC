@@ -18,6 +18,7 @@ onMounted(async () => {
     useRecipeStore().ensureLoaded(),
     useVesselStore().ensureLoaded(),
     useEventStore().ensureLoaded(),
+    useMessageStore().ensureLoaded(),
     useSettingsStore().ensureLoaded(),
   ]);
 

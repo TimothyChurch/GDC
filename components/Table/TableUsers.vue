@@ -11,19 +11,16 @@ const { search, pagination, tableRef, filteredTotal } = useTableState(
 )
 
 const columns: TableColumn<User>[] = [
-  {
-    accessorKey: 'firstName',
-    header: 'Name',
+  sortableColumn<User>('firstName', 'Name', {
+    id: 'firstName',
+    accessorFn: (row) => `${row.firstName || ''} ${row.lastName || ''}`.trim(),
     cell: ({ row }) => {
       const first = row.original.firstName || ''
       const last = row.original.lastName || ''
       return `${first} ${last}`.trim() || 'N/A'
     },
-  },
-  {
-    accessorKey: 'email',
-    header: 'Email',
-  },
+  }),
+  sortableColumn<User>('email', 'Email'),
   actionsColumn<User>((row) => [
     {
       label: 'Edit user',
@@ -79,16 +76,26 @@ const addUser = () => {
         :data="userStore.users"
         :columns="columns"
         :loading="userStore.loading"
-        :empty="'No users found'"
-      />
+        @select="(_e: Event, row: any) => { userStore.setUser(row.original._id); openPanel() }"
+        :ui="{ tr: 'cursor-pointer' }"
+      >
+        <template #empty>
+          <BaseEmptyState icon="i-lucide-user" title="No users found" description="Add users to manage admin access" action-label="Add User" @action="addUser" />
+        </template>
+      </UTable>
     </div>
 
     <!-- Mobile card view -->
     <div class="sm:hidden space-y-3">
       <div
-        v-for="user in userStore.users"
+        v-for="user in userStore.users.filter(u => {
+          if (!search) return true;
+          const term = search.toLowerCase();
+          return (u.firstName || '').toLowerCase().includes(term) || (u.lastName || '').toLowerCase().includes(term) || (u.email || '').toLowerCase().includes(term);
+        })"
         :key="user._id"
-        class="bg-charcoal rounded-lg border border-brown/30 p-4"
+        class="bg-charcoal rounded-lg border border-brown/30 p-4 cursor-pointer"
+        @click="userStore.setUser(user._id); openPanel()"
       >
         <div class="flex items-center gap-3">
           <div class="w-8 h-8 rounded-full bg-copper/20 flex items-center justify-center text-xs font-bold text-copper">
@@ -100,9 +107,7 @@ const addUser = () => {
           </div>
         </div>
       </div>
-      <div v-if="userStore.users.length === 0" class="text-center py-6 text-parchment/50 text-sm">
-        No users found
-      </div>
+      <BaseEmptyState v-if="userStore.users.length === 0" icon="i-lucide-user" title="No users found" description="Add users to manage admin access" action-label="Add User" @action="addUser" />
     </div>
   </TableWrapper>
 </template>

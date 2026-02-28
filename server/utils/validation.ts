@@ -20,6 +20,7 @@ export function sanitize<T extends Record<string, any>>(obj: T): T {
   if (obj === null || obj === undefined) return obj;
   if (typeof obj !== "object") return obj;
   if (Array.isArray(obj)) return obj.map(sanitize) as unknown as T;
+  if (obj instanceof Date) return obj;
 
   const result: Record<string, any> = {};
   for (const [key, value] of Object.entries(obj)) {
@@ -218,6 +219,17 @@ export const contactInquirySchema = yup.object({
     .min(10, "Message must be at least 10 characters"),
 });
 
+export const messageCreateSchema = yup.object({
+  contact: yup.string(),
+  firstName: yup.string().trim().max(100, "First name must be 100 characters or less").required("First name is required"),
+  lastName: yup.string().trim().max(100, "Last name must be 100 characters or less").required("Last name is required"),
+  email: yup.string().trim().email("Invalid email").required("Email is required"),
+  phone: yup.string().trim().max(20, "Phone must be 20 characters or less"),
+  topic: yup.string().trim().max(100, "Topic must be 100 characters or less").required("Please select a topic"),
+  message: yup.string().trim().max(5000, "Message must be 5000 characters or less").required("Message is required").min(10, "Message must be at least 10 characters"),
+  read: yup.boolean(),
+}).noUnknown();
+
 export const vesselCreateSchema = yup.object({
   name: yup.string().required("Name is required"),
   type: yup.string().required("Type is required"),
@@ -328,6 +340,17 @@ export const eventUpdateSchema = yup.object({
     .oneOf(["Pending", "Confirmed", "Completed", "Cancelled"]),
   notes: yup.string(),
 });
+
+export const messageUpdateSchema = yup.object({
+  contact: yup.string(),
+  firstName: yup.string().trim().max(100, "First name must be 100 characters or less"),
+  lastName: yup.string().trim().max(100, "Last name must be 100 characters or less"),
+  email: yup.string().trim().email("Invalid email"),
+  phone: yup.string().trim().max(20, "Phone must be 20 characters or less"),
+  topic: yup.string().trim().max(100, "Topic must be 100 characters or less"),
+  message: yup.string().trim().max(5000, "Message must be 5000 characters or less"),
+  read: yup.boolean(),
+}).noUnknown();
 
 export const vesselUpdateSchema = yup.object({
   name: yup.string(),

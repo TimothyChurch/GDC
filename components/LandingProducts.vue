@@ -67,10 +67,14 @@ const products = [
 					class="group relative">
 					<div
 						class="h-56 w-full overflow-hidden rounded-md bg-gray-200 group-hover:opacity-75 lg:h-72 xl:h-80">
-						<img
+						<NuxtImg
 							:src="product.imageSrc"
 							:alt="product.imageAlt"
-							class="size-full object-cover object-center" />
+							class="size-full object-cover object-center"
+							width="320"
+							height="320"
+							loading="lazy"
+						/>
 					</div>
 					<h3 class="mt-4 text-sm text-gray-700">
 						<NuxtLink :to="product.href">

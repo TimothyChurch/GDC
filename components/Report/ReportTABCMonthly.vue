@@ -1,289 +1,44 @@
 <script setup lang="ts">
-import { calculateProofGallons, toGallons } from '~/utils/proofGallons'
-import { normalizeDistillingRuns } from '~/utils/distillingMigration'
-
 /**
  * TABC Monthly Production and Disposition Report
  *
  * Texas Alcoholic Beverage Commission requires Distiller's and Rectifier's
  * permit holders to file monthly reports covering:
  *
- * PRODUCTION:
- *   - Gallons of distilled spirits produced by spirit type
- *   - Both wine gallons and proof gallons
- *   - Grain/material inputs
- *
- * DISPOSITION (how spirits left the DSP):
- *   - Sold to TABC-licensed distributors
- *   - Sold direct-to-consumer (tasting room/package store)
- *   - Transferred to storage/aging
- *   - Any losses or adjustments
- *
- * INVENTORY:
- *   - On-hand at beginning of period
- *   - On-hand at end of period
+ * PRODUCTION: Gallons of distilled spirits produced by spirit type (WG and PG)
+ * DISPOSITION: How spirits left the DSP (bottled, sold, transferred)
+ * INVENTORY: On-hand at beginning/end of period
  *
  * TABC reports in WINE GALLONS (not proof gallons like TTB).
  * Texas excise tax is $2.40 per wine gallon of spirits produced.
- *
  * Reports due by the 15th of the following month.
- * Filed via TABC Compliance Portal.
  */
 
 const props = defineProps<{
   month: string  // 'YYYY-MM'
 }>()
 
-const batchStore = useBatchStore()
-const productionStore = useProductionStore()
-const bottleStore = useBottleStore()
-const recipeStore = useRecipeStore()
-const itemStore = useItemStore()
-const vesselStore = useVesselStore()
+const monthRef = computed(() => props.month)
 
-// ─── Date helpers ─────────────────────────────────────────────────────────────
-
-const monthStart = computed(() => {
-  const [y, m] = props.month.split('-').map(Number)
-  return new Date(y, m - 1, 1)
-})
-const monthEnd = computed(() => {
-  const [y, m] = props.month.split('-').map(Number)
-  return new Date(y, m, 0, 23, 59, 59)
-})
-const monthLabel = computed(() =>
-  monthStart.value.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })
-)
-
-// TABC report due date: 15th of following month
-const dueDate = computed(() => {
-  const [y, m] = props.month.split('-').map(Number)
-  const nextMonth = m === 12 ? 1 : m + 1
-  const nextYear = m === 12 ? y + 1 : y
-  return new Date(nextYear, nextMonth - 1, 15).toLocaleDateString('en-US', {
-    month: 'long', day: 'numeric', year: 'numeric'
-  })
-})
-
-const isOverdue = computed(() => new Date() > new Date(monthEnd.value.getFullYear(), monthEnd.value.getMonth() + 1, 15))
-
-// ─── Section 1: Production ────────────────────────────────────────────────────
-
-const distilledBatches = computed(() =>
-  batchStore.batches.filter(b => {
-    const distDate = (b.stages as any)?.distilling?.startedAt
-      ? new Date((b.stages as any).distilling.startedAt)
-      : null
-    if (!distDate) return false
-    return distDate >= monthStart.value && distDate <= monthEnd.value
-  })
-)
-
-// Production by spirit type — wine gallons (TABC reports in wine gallons)
-const productionByType = computed(() => {
-  const map = new Map<string, { wineGallons: number; proofGallons: number; batches: number }>()
-
-  distilledBatches.value.forEach(batch => {
-    const recipe = batch.recipe ? recipeStore.getRecipeById(batch.recipe) : null
-    const spiritType = recipe?.class || recipe?.type || 'Unknown'
-    const runs = normalizeDistillingRuns((batch.stages as any)?.distilling)
-
-    let heartsVol = 0
-    let heartsAbvWeighted = 0
-
-    for (const run of runs) {
-      if (run.runType === 'spirit' && run.collected?.hearts) {
-        const h = run.collected.hearts
-        const vol = toGallons(h.volume || 0, h.volumeUnit || 'gallon')
-        heartsVol += vol
-        heartsAbvWeighted += vol * (h.abv || 0)
-      }
-    }
-    if (heartsVol === 0) return
-
-    const avgAbv = heartsAbvWeighted / heartsVol
-    const pg = calculateProofGallons(heartsVol, 'gallon', avgAbv)
-
-    const existing = map.get(spiritType) || { wineGallons: 0, proofGallons: 0, batches: 0 }
-    existing.wineGallons += heartsVol
-    existing.proofGallons += pg
-    existing.batches += 1
-    map.set(spiritType, existing)
-  })
-
-  return Array.from(map.entries()).map(([type, data]) => ({ type, ...data }))
-    .sort((a, b) => b.wineGallons - a.wineGallons)
-})
-
-const totalProductionWG = computed(() =>
-  productionByType.value.reduce((s, t) => s + t.wineGallons, 0)
-)
-const totalProductionPG = computed(() =>
-  productionByType.value.reduce((s, t) => s + t.proofGallons, 0)
-)
-
-// Heads/late heads/tails (non-beverage spirits — must be reported)
-// Late heads are aggregated into the heads total for regulatory reporting
-const headsAndTails = computed(() => {
-  let headsWG = 0, tailsWG = 0, headsAbvWt = 0, tailsAbvWt = 0
-
-  distilledBatches.value.forEach(batch => {
-    const runs = normalizeDistillingRuns((batch.stages as any)?.distilling)
-    for (const run of runs) {
-      if (run.runType !== 'spirit' || !run.collected) continue
-      const heads = run.collected.heads
-      const lateHeads = run.collected.lateHeads
-      const tails = run.collected.tails
-      if (heads) {
-        const vol = toGallons(heads.volume || 0, heads.volumeUnit || 'gallon')
-        headsWG += vol
-        headsAbvWt += vol * (heads.abv || 0)
-      }
-      if (lateHeads) {
-        const vol = toGallons(lateHeads.volume || 0, lateHeads.volumeUnit || 'gallon')
-        headsWG += vol
-        headsAbvWt += vol * (lateHeads.abv || 0)
-      }
-      if (tails) {
-        const vol = toGallons(tails.volume || 0, tails.volumeUnit || 'gallon')
-        tailsWG += vol
-        tailsAbvWt += vol * (tails.abv || 0)
-      }
-    }
-  })
-
-  const headsAvgAbv = headsWG > 0 ? headsAbvWt / headsWG : 0
-  const tailsAvgAbv = tailsWG > 0 ? tailsAbvWt / tailsWG : 0
-
-  return {
-    headsWG,
-    headsPG: calculateProofGallons(headsWG, 'gallon', headsAvgAbv),
-    tailsWG,
-    tailsPG: calculateProofGallons(tailsWG, 'gallon', tailsAvgAbv),
-  }
-})
-
-// ─── Section 2: Materials (grain bill inputs) ─────────────────────────────────
-
-const materialsUsed = computed(() => {
-  const map = new Map<string, { amount: number; unit: string }>()
-  distilledBatches.value.forEach(batch => {
-    const recipe = batch.recipe ? recipeStore.getRecipeById(batch.recipe) : null
-    if (!recipe?.items?.length) return
-    recipe.items.forEach(ing => {
-      const item = itemStore.getItemById(ing.item)
-      const name = item?.name || 'Unknown Material'
-      const unit = ing.unit || 'units'
-      const key = `${name}||${unit}`
-      const existing = map.get(key) || { amount: 0, unit }
-      existing.amount += ing.amount || 0
-      map.set(key, existing)
-    })
-  })
-  return Array.from(map.entries())
-    .map(([key, data]) => ({ name: key.split('||')[0], amount: data.amount, unit: data.unit }))
-    .sort((a, b) => a.name.localeCompare(b.name))
-})
-
-// ─── Section 3: Disposition ───────────────────────────────────────────────────
-
-// Bottles produced this month = spirits transferred from DSP bonded to taxpaid
-function bottleToWineGallons(bottle: { volume?: number; volumeUnit?: string }): number {
-  const vol = bottle.volume || 750
-  const unit = (bottle.volumeUnit || 'mL').toLowerCase()
-  if (unit === 'ml' || unit.includes('milli')) return vol * 0.000264172
-  if (unit === 'l' || unit.includes('liter')) return vol * 0.264172
-  if (unit.includes('oz')) return vol * 0.0078125
-  if (unit.includes('gal')) return vol
-  return vol * 0.000264172
-}
-
-const monthlyProductions = computed(() =>
-  productionStore.productions.filter(p => {
-    const d = new Date(p.date)
-    return d >= monthStart.value && d <= monthEnd.value
-  })
-)
-
-const dispositionByProduct = computed(() => {
-  const map = new Map<string, {
-    product: string
-    spiritType: string
-    bottles: number
-    bottleSize: string
-    wineGallons: number
-    proofGallons: number
-    abv: number
-  }>()
-
-  monthlyProductions.value.forEach(p => {
-    const bottle = bottleStore.getBottleById(p.bottle)
-    if (!bottle) return
-    const abv = bottle.abv || 0
-    const wgPerBottle = bottleToWineGallons(bottle)
-    const totalWG = wgPerBottle * (p.quantity || 0)
-    const key = bottle._id
-    const existing = map.get(key) || {
-      product: bottle.name,
-      spiritType: bottle.class || bottle.type || 'Unknown',
-      bottles: 0,
-      bottleSize: `${bottle.volume || 750}${bottle.volumeUnit || 'mL'}`,
-      wineGallons: 0,
-      proofGallons: 0,
-      abv,
-    }
-    existing.bottles += p.quantity || 0
-    existing.wineGallons += totalWG
-    existing.proofGallons += calculateProofGallons(totalWG, 'gallon', abv)
-    map.set(key, existing)
-  })
-
-  return Array.from(map.values()).sort((a, b) => b.wineGallons - a.wineGallons)
-})
-
-const totalDispositionWG = computed(() =>
-  dispositionByProduct.value.reduce((s, d) => s + d.wineGallons, 0)
-)
-const totalDispositionBottles = computed(() =>
-  dispositionByProduct.value.reduce((s, d) => s + d.bottles, 0)
-)
-
-// ─── Section 4: Storage / Inventory ──────────────────────────────────────────
-
-// Barreled this month
-const barreledThisMonth = computed(() =>
-  batchStore.batches.filter(b => {
-    const d = (b.stages as any)?.barrelAging?.entry?.date
-      ? new Date((b.stages as any).barrelAging.entry.date)
-      : null
-    return d && d >= monthStart.value && d <= monthEnd.value
-  })
-)
-const barreledWG = computed(() => {
-  let wg = 0
-  barreledThisMonth.value.forEach(b => {
-    const entry = (b.stages as any)?.barrelAging?.entry
-    if (entry) wg += toGallons(entry.volume || 0, entry.volumeUnit || 'gal')
-  })
-  return wg
-})
-
-// Barrel inventory on hand
-const onHandBarrelWG = computed(() => {
-  let wg = 0
-  vesselStore.barrels.filter(b => b.contents?.length).forEach(barrel =>
-    barrel.contents?.forEach(c => {
-      wg += toGallons(c.volume || 0, c.volumeUnit || 'gal')
-    })
-  )
-  return wg
-})
-
-// ─── Texas excise tax calculation ────────────────────────────────────────────
-// Texas imposes $2.40 per GALLON (wine gallons) on distilled spirits produced
-// Note: TABC uses wine gallons for their excise calculation, unlike TTB's proof gallons
-const TABC_TAX_RATE = 2.40
-const tabcTaxDue = computed(() => totalProductionWG.value * TABC_TAX_RATE)
+const {
+  monthLabel,
+  dueDate,
+  isOverdue,
+  distilledBatches,
+  productionByType,
+  totalProductionWG,
+  totalProductionPG,
+  headsAndTails,
+  materialsUsed,
+  dispositionByProduct,
+  totalDispositionWG,
+  totalDispositionBottles,
+  barreledThisMonth,
+  barreledWG,
+  onHandBarrelWG,
+  tabcTaxDue,
+  vesselStore,
+} = useTABCCalculations(monthRef)
 </script>
 
 <template>
@@ -345,11 +100,7 @@ const tabcTaxDue = computed(() => totalProductionWG.value * TABC_TAX_RATE)
             </tr>
           </thead>
           <tbody>
-            <tr
-              v-for="row in productionByType"
-              :key="row.type"
-              class="border-b border-brown/10 print:border-gray-200"
-            >
+            <tr v-for="row in productionByType" :key="row.type" class="border-b border-brown/10 print:border-gray-200">
               <td class="py-2 px-3 text-parchment print:text-black font-medium">{{ row.type }}</td>
               <td class="py-2 px-3 text-right text-parchment/70 print:text-gray-700">{{ row.batches }}</td>
               <td class="py-2 px-3 text-right text-parchment print:text-black font-semibold">{{ row.wineGallons.toFixed(2) }}</td>
@@ -411,11 +162,7 @@ const tabcTaxDue = computed(() => totalProductionWG.value * TABC_TAX_RATE)
             </tr>
           </thead>
           <tbody>
-            <tr
-              v-for="mat in materialsUsed"
-              :key="mat.name"
-              class="border-b border-brown/10 print:border-gray-200"
-            >
+            <tr v-for="mat in materialsUsed" :key="mat.name" class="border-b border-brown/10 print:border-gray-200">
               <td class="py-2 px-3 text-parchment print:text-black">{{ mat.name }}</td>
               <td class="py-2 px-3 text-right text-parchment print:text-black">{{ mat.amount.toFixed(2) }}</td>
               <td class="py-2 px-3 text-parchment/60 print:text-gray-600">{{ mat.unit }}</td>
@@ -445,11 +192,7 @@ const tabcTaxDue = computed(() => totalProductionWG.value * TABC_TAX_RATE)
             </tr>
           </thead>
           <tbody>
-            <tr
-              v-for="row in dispositionByProduct"
-              :key="row.product"
-              class="border-b border-brown/10 print:border-gray-200"
-            >
+            <tr v-for="row in dispositionByProduct" :key="row.product" class="border-b border-brown/10 print:border-gray-200">
               <td class="py-2 px-3 text-parchment print:text-black font-medium">{{ row.product }}</td>
               <td class="py-2 px-3 text-parchment/60 print:text-gray-600">{{ row.spiritType }}</td>
               <td class="py-2 px-3 text-center text-parchment/60 print:text-gray-600">{{ row.bottleSize }}</td>

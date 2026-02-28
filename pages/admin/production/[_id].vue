@@ -68,13 +68,17 @@ const panel = overlay.create(LazyPanelProduction)
 
 const editProduction = () => {
   if (!production.value) return
-  productionStore.production = JSON.parse(JSON.stringify(production.value))
+  productionStore.production = structuredClone(toRaw(production.value))
   panel.open()
 }
 </script>
 
 <template>
-  <div v-if="production" class="space-y-6">
+  <div v-if="!productionStore.loaded" class="flex items-center justify-center py-12">
+    <UIcon name="i-lucide-loader-2" class="animate-spin text-3xl text-parchment/30" />
+  </div>
+
+  <div v-else-if="production" class="space-y-6">
     <AdminPageHeader
       :title="bottleName"
       :subtitle="formattedDate"

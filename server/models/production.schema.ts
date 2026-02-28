@@ -62,5 +62,9 @@ export const Production = defineMongooseModel({
 			required: true,
 		},
 	},
-	options: { timestamps: true },
+	options: { timestamps: true, autoIndex: true },
+	hooks(schema) {
+		// Compound index: efficient per-bottle queries sorted by date (newest first)
+		schema.index({ bottle: 1, date: -1 });
+	},
 });

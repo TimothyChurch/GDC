@@ -68,44 +68,22 @@ const actionItems = computed<ActionItem[]>(() => {
     });
   }
 
-  // Low inventory items that need reordering
-  const latestInventoryByItem = new Map<string, number>();
-  const sortedInventories = [...inventoryStore.inventories]
-    .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
-  for (const inv of sortedInventories) {
-    if (!latestInventoryByItem.has(inv.item)) {
-      latestInventoryByItem.set(inv.item, inv.quantity);
+  // Low inventory items that need reordering — use each item's reorderPoint
+  for (const item of itemStore.items) {
+    if (!item.reorderPoint || item.reorderPoint <= 0) continue;
+    const stock = inventoryStore.getCurrentStock(item._id);
+    if (stock <= item.reorderPoint) {
+      items.push({
+        id: `reorder-${item._id}`,
+        title: `Reorder: ${item.name}`,
+        description: `Only ${stock} ${item.inventoryUnit || 'units'} remaining (reorder point: ${item.reorderPoint})`,
+        priority: stock <= 1 ? 'high' : 'medium',
+        icon: 'i-lucide-shopping-cart',
+        category: 'Inventory',
+        link: `/admin/items/${item._id}`,
+      });
     }
   }
-  // PLACEHOLDER: Replace threshold with per-item configurable values
-  const REORDER_THRESHOLD = 5;
-  for (const [itemId, quantity] of latestInventoryByItem) {
-    if (quantity <= REORDER_THRESHOLD) {
-      const item = itemStore.getItemById(itemId);
-      if (item) {
-        items.push({
-          id: `reorder-${itemId}`,
-          title: `Reorder: ${item.name}`,
-          description: `Only ${quantity} ${item.inventoryUnit || 'units'} remaining`,
-          priority: quantity <= 1 ? 'high' : 'medium',
-          icon: 'i-lucide-shopping-cart',
-          category: 'Inventory',
-          link: `/admin/items/${itemId}`,
-        });
-      }
-    }
-  }
-
-  // PLACEHOLDER: Replace with real event/deadline data
-  items.push({
-    id: 'placeholder-event-1',
-    title: 'Review tasting room schedule',
-    description: 'Ensure weekend staffing is confirmed',
-    priority: 'low',
-    icon: 'i-lucide-calendar',
-    category: 'Events',
-    // PLACEHOLDER: Replace with real events page link
-  });
 
   // Sort by priority
   const priorityOrder = { high: 0, medium: 1, low: 2 };

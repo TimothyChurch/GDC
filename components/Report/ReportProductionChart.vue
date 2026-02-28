@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { Bar, Line, Doughnut } from 'vue-chartjs'
+useChartRegistration()
 import type { Production } from '~/types'
 
 const props = defineProps<{

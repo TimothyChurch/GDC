@@ -1,5 +1,5 @@
 <script setup lang="ts">
-useSeoMeta({
+useServerSeoMeta({
   title: 'Payment Status | Galveston Distilling Co',
   robots: 'noindex, nofollow',
 });

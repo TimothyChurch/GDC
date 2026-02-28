@@ -5,8 +5,8 @@ interface UseFormPanelOptions<T> {
 }
 
 export function useFormPanel<T extends Record<string, any>>(options: UseFormPanelOptions<T>) {
-  const snapshot = JSON.parse(JSON.stringify(options.source()))
-  const localData = ref<T>(JSON.parse(JSON.stringify(snapshot))) as Ref<T>
+  const snapshot = structuredClone(toRaw(options.source()))
+  const localData = ref<T>(structuredClone(snapshot)) as Ref<T>
   const saving = ref(false)
 
   const isDirty = computed(() => {

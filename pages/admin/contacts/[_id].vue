@@ -39,7 +39,7 @@ const panel = overlay.create(LazyPanelContact)
 
 const editContact = () => {
   if (!contact.value) return
-  contactStore.contact = JSON.parse(JSON.stringify(contact.value))
+  contactStore.contact = structuredClone(toRaw(contact.value))
   panel.open()
 }
 
@@ -56,7 +56,11 @@ function poStatusColor(status: string) {
 </script>
 
 <template>
-  <div v-if="contact" class="space-y-6">
+  <div v-if="!contactStore.loaded" class="flex items-center justify-center py-12">
+    <UIcon name="i-lucide-loader-2" class="animate-spin text-3xl text-parchment/30" />
+  </div>
+
+  <div v-else-if="contact" class="space-y-6">
     <AdminPageHeader
       :title="displayName"
       :subtitle="contact.type || undefined"

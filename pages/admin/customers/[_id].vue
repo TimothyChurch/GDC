@@ -6,6 +6,9 @@ const router = useRouter()
 
 const contactStore = useContactStore()
 const eventStore = useEventStore()
+const messageStore = useMessageStore()
+const { confirm } = useDeleteConfirm()
+const toast = useToast()
 
 const contact = computed(() => contactStore.getContactById(route.params._id as string))
 
@@ -17,6 +20,10 @@ const displayName = computed(() => {
 const customerEvents = computed(() => {
   const evts = eventStore.getEventsByContact(route.params._id as string)
   return [...evts].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
+})
+
+const customerMessages = computed(() => {
+  return messageStore.getMessagesByContact(route.params._id as string, contact.value?.email)
 })
 
 function statusColor(status: string) {
@@ -46,7 +53,7 @@ const eventPanel = overlay.create(LazyPanelEvent)
 
 const editContact = () => {
   if (!contact.value) return
-  contactStore.contact = JSON.parse(JSON.stringify(contact.value))
+  contactStore.contact = structuredClone(toRaw(contact.value))
   contactPanel.open()
 }
 
@@ -57,10 +64,38 @@ const editEvent = (evt: any) => {
   }
   eventPanel.open()
 }
+
+const addEvent = () => {
+  eventStore.resetEvent()
+  eventStore.event.contact = route.params._id as string
+  eventPanel.open()
+}
+
+const deleteContact = async () => {
+  if (!contact.value) return
+  const confirmed = await confirm('Customer', displayName.value)
+  if (!confirmed) return
+  await contactStore.deleteContact(contact.value._id)
+  toast.add({ title: 'Customer deleted', color: 'success', icon: 'i-lucide-trash-2' })
+  router.push('/admin/customers')
+}
+
+function formatMessageDate(dateStr?: string): string {
+  if (!dateStr) return ''
+  return new Date(dateStr).toLocaleDateString('en-US', {
+    month: 'short',
+    day: 'numeric',
+    year: 'numeric',
+  })
+}
 </script>
 
 <template>
-  <div v-if="contact" class="space-y-6">
+  <div v-if="!contactStore.loaded" class="flex items-center justify-center py-12">
+    <UIcon name="i-lucide-loader-2" class="animate-spin text-3xl text-parchment/30" />
+  </div>
+
+  <div v-else-if="contact" class="space-y-6">
     <AdminPageHeader
       :title="displayName"
       subtitle="Customer"
@@ -82,6 +117,15 @@ const editEvent = (evt: any) => {
           @click="editContact"
         >
           Edit
+        </UButton>
+        <UButton
+          icon="i-lucide-trash-2"
+          color="error"
+          variant="soft"
+          size="sm"
+          @click="deleteContact"
+        >
+          Delete
         </UButton>
       </template>
     </AdminPageHeader>
@@ -134,7 +178,17 @@ const editEvent = (evt: any) => {
 
     <!-- Events -->
     <div class="bg-charcoal rounded-xl border border-brown/30 p-5">
-      <h3 class="text-lg font-bold text-parchment font-[Cormorant_Garamond] mb-4">Events</h3>
+      <div class="flex items-center justify-between mb-4">
+        <h3 class="text-lg font-bold text-parchment font-[Cormorant_Garamond]">Events</h3>
+        <UButton
+          icon="i-lucide-plus"
+          variant="ghost"
+          size="sm"
+          @click="addEvent"
+        >
+          Add Event
+        </UButton>
+      </div>
       <div v-if="customerEvents.length > 0" class="divide-y divide-brown/20">
         <div class="grid grid-cols-5 gap-4 pb-2 text-xs text-parchment/60 uppercase tracking-wider hidden sm:grid">
           <span>Date</span>
@@ -153,7 +207,14 @@ const editEvent = (evt: any) => {
               </span>
             </span>
             <span class="text-parchment/80 hidden sm:block">{{ evt.groupSize }}</span>
-            <span class="text-right">
+            <span class="text-right flex items-center justify-end gap-1">
+              <UButton
+                icon="i-lucide-eye"
+                color="neutral"
+                variant="ghost"
+                size="xs"
+                @click="router.push(`/admin/events/${evt._id}`)"
+              />
               <UButton
                 icon="i-lucide-pencil"
                 color="neutral"
@@ -172,6 +233,54 @@ const editEvent = (evt: any) => {
       <div v-else class="text-center py-6">
         <UIcon name="i-lucide-calendar" class="text-2xl text-parchment/20 mx-auto mb-2" />
         <p class="text-sm text-parchment/50">No events for this customer</p>
+      </div>
+    </div>
+
+    <!-- Messages -->
+    <div class="bg-charcoal rounded-xl border border-brown/30 p-5">
+      <h3 class="text-lg font-bold text-parchment font-[Cormorant_Garamond] mb-4">Messages</h3>
+      <div v-if="customerMessages.length > 0" class="divide-y divide-brown/20">
+        <div v-for="msg in customerMessages" :key="msg._id" class="py-3 first:pt-0 last:pb-0">
+          <div class="flex items-start justify-between gap-3">
+            <div class="flex-1 min-w-0">
+              <div class="flex items-center gap-2 mb-1">
+                <div
+                  :class="[
+                    'w-2 h-2 rounded-full shrink-0',
+                    !msg.read ? 'bg-gold' : 'bg-brown/30',
+                  ]"
+                />
+                <UBadge
+                  :color="({
+                    'General Inquiry': 'info',
+                    'Private Events': 'warning',
+                    'Private Class Request': 'primary',
+                    'Distillery Tours': 'success',
+                    'Wholesale / Distribution': 'secondary',
+                  } as Record<string, any>)[msg.topic] || 'neutral'"
+                  variant="subtle"
+                  size="sm"
+                >
+                  {{ msg.topic }}
+                </UBadge>
+                <span class="text-xs text-parchment/40">{{ formatMessageDate(msg.createdAt) }}</span>
+              </div>
+              <p class="text-sm text-parchment/70 line-clamp-2">{{ msg.message }}</p>
+            </div>
+            <NuxtLink :to="`/admin/inbox/${msg._id}`">
+              <UButton
+                icon="i-lucide-external-link"
+                color="neutral"
+                variant="ghost"
+                size="xs"
+              />
+            </NuxtLink>
+          </div>
+        </div>
+      </div>
+      <div v-else class="text-center py-6">
+        <UIcon name="i-lucide-mail" class="text-2xl text-parchment/20 mx-auto mb-2" />
+        <p class="text-sm text-parchment/50">No messages from this customer</p>
       </div>
     </div>
   </div>

@@ -1,12 +1,12 @@
 <script setup lang="ts">
 import type { PublicCocktail } from "~/types";
 
-useSeoMeta({
+useServerSeoMeta({
   title: 'Cocktail Menu | Galveston Distilling Co',
   description: 'Explore our handcrafted cocktail menu featuring island-inspired drinks made with our own spirits.',
   ogTitle: 'Cocktail Menu | Galveston Distilling Co',
   ogDescription: 'Explore our handcrafted cocktail menu featuring island-inspired drinks made with our own spirits.',
-  ogImage: '/images/og-menu.jpg',
+  ogImage: 'https://galvestondistilling.com/images/og-menu.jpg',
   ogUrl: 'https://galvestondistilling.com/menu',
 });
 
@@ -170,7 +170,7 @@ const clearFilters = () => {
           <template v-if="search?.length" #trailing>
             <UButton
               variant="ghost"
-              icon="i-heroicons-x-mark"
+              icon="i-lucide-x"
               size="sm"
               @click="search = ''"
             />

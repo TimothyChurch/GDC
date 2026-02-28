@@ -82,7 +82,7 @@ const columns: TableColumn<Contact>[] = [
     {
       label: "Edit customer",
       onSelect() {
-        contactStore.contact = JSON.parse(JSON.stringify(row.original));
+        contactStore.contact = structuredClone(toRaw(row.original));
         openPanel();
       },
     },
@@ -134,7 +134,7 @@ const addCustomer = () => {
     search-placeholder="Search customers..."
   >
     <template #actions>
-      <UButton icon="i-heroicons-plus-circle" size="xl" @click="addCustomer" variant="ghost">
+      <UButton icon="i-lucide-plus-circle" size="xl" @click="addCustomer" variant="ghost">
         Add Customer
       </UButton>
     </template>
@@ -149,8 +149,10 @@ const addCustomer = () => {
         :data="customers"
         :columns="columns"
         :loading="contactStore.loading"
-        :empty="'No customers found'"
       >
+        <template #empty>
+          <BaseEmptyState icon="i-lucide-building-2" title="No customers found" description="Add customers to track events and relationships" action-label="Add Customer" @action="addCustomer" />
+        </template>
         <template #expanded="{ row }">
           <div class="flex gap-6 flex-wrap py-2 px-4">
             <UFormField label="Address">
@@ -209,9 +211,7 @@ const addCustomer = () => {
           </div>
         </div>
       </div>
-      <div v-if="customers.length === 0" class="text-center py-6 text-parchment/50 text-sm">
-        No customers found
-      </div>
+      <BaseEmptyState v-if="customers.length === 0" icon="i-lucide-building-2" title="No customers found" description="Add customers to track events and relationships" action-label="Add Customer" @action="addCustomer" />
     </div>
   </TableWrapper>
 </template>

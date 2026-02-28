@@ -1,15 +1,15 @@
 # Overview
 
-The next focus is going to be on the cocktail page. We will be adjust the admin side of the sight as well as the guest side. Any additional approvements above what are listed can be impliemented but list them when complete
+Various bugs that have been found while using the app.
 
-# TODOS — ALL COMPLETE
+# COMPLETED (2026-02-27)
 
-    - [x] The cards on the initial admin cocktail page need to link when clicked to the cocktails individual page
-    - [x] There need to be a search bar and various filters for this page to help to find cocktails
-    - [x] The hidden and shown toggle need to be applied to the guest side cocktail menu so that hidden cocktails are not show to patrons.
-    - [x] The ingredients on the ingredient list need to be able to be rearranged so that when it is printed they are in the correct order.
-    - [x] You should be able to  adjust ingredients in line vs having to delete and replace them in order to change quantities.
-    - [x] The list of menus needs to be able to be added to and edited as needed.
-    - [x] The list of glassware needs to be able to be edited and added to as needed.
-    - [x] There should be an option for preparation. A cocktails can be stirred, shaken, dry/double shaken, or built in the glass
-    - [x] On the guest side of the website  there needs to be an individual cocktail page that can be accessed by clicking on the recipe. This will have the photo, glassware, ingredients with volumes, and direction. The costs should not show up on this page.
+    - [x] The recipe for batches that are macerated needs to be shown for a maceration card the same as it is for the mash card
+    - [x] The pagnation of all the tables isn't working. The initial number is shown but you are unable to page through to later things.
+    - [x] On the barrel page, I would like clicking on the barrel to lead to the batch page for that barrel
+    - [x] Due to the number of batches that will be in a barrel at any given time, I would like to remove it from the batches page
+    - [x] The Customer newsletter sign up doesn't add to our customer list on our admin page. Instead it shows up in the contacts witha newsletter chip. I'd like that to show up in customers
+    - [x] I do not see where the "Send us a message" on our contact page sends the info. This should show up on as a message. We might need an inbox for these to land for them to be seen.
+    - [x] The items page need filtering options to filter by the category of the items.
+
+# TODOS

@@ -35,10 +35,13 @@ const isActive = (link: string) => {
 
         <div class="flex justify-center">
           <NuxtLink to="/">
-            <img
+            <NuxtImg
               src="/images/Logo.png"
               alt="Galveston Distilling Company"
               class="h-20 px-2"
+              width="80"
+              height="80"
+              format="webp"
             />
           </NuxtLink>
         </div>
@@ -56,10 +59,13 @@ const isActive = (link: string) => {
       <!-- Mobile nav bar -->
       <div class="flex items-center justify-between py-3 lg:hidden">
         <NuxtLink to="/">
-          <img
+          <NuxtImg
             src="/images/Logo.png"
             alt="Galveston Distilling Company"
             class="h-14"
+            width="56"
+            height="56"
+            format="webp"
           />
         </NuxtLink>
         <button
@@ -77,10 +83,13 @@ const isActive = (link: string) => {
       <template #content>
         <div class="flex flex-col h-full bg-charcoal p-6">
           <div class="flex items-center justify-between mb-8">
-            <img
+            <NuxtImg
               src="/images/Logo.png"
               alt="Galveston Distilling Company"
               class="h-16"
+              width="64"
+              height="64"
+              format="webp"
             />
             <button
               @click="mobileOpen = false"

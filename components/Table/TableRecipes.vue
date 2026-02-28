@@ -5,6 +5,7 @@ import { getPaginationRowModel } from "@tanstack/vue-table";
 
 const router = useRouter();
 const recipeStore = useRecipeStore();
+const itemStore = useItemStore();
 const { confirm } = useDeleteConfirm();
 
 const { search, pagination, tableRef, filteredTotal } = useTableState(
@@ -13,23 +14,13 @@ const { search, pagination, tableRef, filteredTotal } = useTableState(
 
 const columns: TableColumn<Recipe>[] = [
   expandColumn<Recipe>(),
-  {
-    accessorKey: "name",
-    header: "Name",
-  },
-  {
-    accessorKey: "class",
-    header: "Class",
-  },
-  {
-    accessorKey: "type",
-    header: "Type",
-  },
-  {
-    header: "Volume",
+  sortableColumn<Recipe>("name", "Name"),
+  sortableColumn<Recipe>("class", "Class"),
+  sortableColumn<Recipe>("type", "Type"),
+  sortableColumn<Recipe>("volume", "Volume", {
     cell: ({ row }) =>
       `${row.original.volume} ${row.original.volumeUnit}` || "N/A",
-  },
+  }),
   actionsColumn<Recipe>((row) => [
     {
       label: "Edit recipe",
@@ -71,7 +62,7 @@ const openModal = async () => await modal.open();
     search-placeholder="Search recipes..."
   >
     <template #actions>
-      <UButton icon="i-heroicons-plus-circle" size="xl" @click="newRecipe" variant="ghost">Add Recipe</UButton>
+      <UButton icon="i-lucide-plus-circle" size="xl" @click="newRecipe" variant="ghost">Add Recipe</UButton>
     </template>
     <!-- Desktop table -->
     <div class="hidden sm:block">
@@ -83,13 +74,19 @@ const openModal = async () => await modal.open();
         :data="recipeStore.recipes"
         :columns="columns"
         :loading="recipeStore.loading"
-        :empty="'No recipes found'"
         @select="(_e: Event, row: any) => router.push(`/admin/recipes/${row.original._id}`)"
         :ui="{ tr: 'cursor-pointer' }"
       >
+        <template #empty>
+          <BaseEmptyState icon="i-lucide-book-open" title="No recipes found" description="Create a recipe to define ingredient lists for your batches" action-label="Add Recipe" @action="newRecipe" />
+        </template>
         <template #expanded="{ row }">
-          <div v-for="item in row.original.items" :key="item._id">
-            {{ item }}
+          <div class="py-2 px-4 space-y-1">
+            <div v-for="item in row.original.items" :key="item._id" class="flex items-center gap-2 text-sm">
+              <span class="text-parchment">{{ itemStore.getItemById(item._id)?.name || item._id }}</span>
+              <span class="text-parchment/60">{{ item.amount }} {{ item.unit }}</span>
+            </div>
+            <div v-if="!row.original.items?.length" class="text-sm text-parchment/50">No ingredients</div>
           </div>
         </template>
       </UTable>
@@ -98,7 +95,11 @@ const openModal = async () => await modal.open();
     <!-- Mobile card view -->
     <div class="sm:hidden space-y-3">
       <div
-        v-for="recipe in recipeStore.recipes"
+        v-for="recipe in recipeStore.recipes.filter(r => {
+          if (!search) return true;
+          const term = search.toLowerCase();
+          return r.name.toLowerCase().includes(term) || (r.class || '').toLowerCase().includes(term) || (r.type || '').toLowerCase().includes(term);
+        })"
         :key="recipe._id"
         class="bg-charcoal rounded-lg border border-brown/30 p-4 cursor-pointer"
         @click="router.push(`/admin/recipes/${recipe._id}`)"
@@ -120,9 +121,7 @@ const openModal = async () => await modal.open();
           </div>
         </div>
       </div>
-      <div v-if="recipeStore.recipes.length === 0" class="text-center py-6 text-parchment/50 text-sm">
-        No recipes found
-      </div>
+      <BaseEmptyState v-if="recipeStore.recipes.length === 0" icon="i-lucide-book-open" title="No recipes found" description="Create a recipe to define ingredient lists for your batches" action-label="Add Recipe" @action="newRecipe" />
     </div>
   </TableWrapper>
 </template>

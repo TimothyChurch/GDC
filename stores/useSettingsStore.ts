@@ -39,8 +39,7 @@ export const useSettingsStore = defineStore("settings", () => {
   async function fetchSettings() {
     loading.value = true;
     try {
-      const response = await $fetch("/api/settings");
-      settings.value = response as Settings;
+      settings.value = await $fetch<Settings>("/api/settings");
     } catch {
       toast.add({
         title: "Failed to load settings",
@@ -66,20 +65,19 @@ export const useSettingsStore = defineStore("settings", () => {
   async function updateSettings(data: Partial<Settings>) {
     saving.value = true;
     try {
-      const response = await $fetch("/api/settings", {
+      settings.value = await $fetch<Settings>("/api/settings", {
         method: "PUT",
         body: data,
       });
-      settings.value = response as Settings;
       toast.add({
         title: "Settings saved",
         color: "success",
         icon: "i-lucide-check-circle",
       });
-    } catch (error: any) {
+    } catch (error: unknown) {
       toast.add({
         title: "Failed to save settings",
-        description: error?.data?.statusMessage || error?.data?.message,
+        description: getErrorMessage(error),
         color: "error",
         icon: "i-lucide-alert-circle",
       });

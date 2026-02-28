@@ -13,10 +13,15 @@ const { search, pagination, tableRef, filteredTotal } = useTableState(
 const columns: TableColumn<Vessel>[] = [
   sortableColumn<Vessel>("name", "Name"),
   sortableColumn<Vessel>("type", "Type"),
-  {
-    accessorKey: "current",
-    header: "Current",
-  },
+  sortableColumn<Vessel>("current", "Current", {
+    id: "current",
+    accessorFn: (row) => row.current?.volume || 0,
+    cell: ({ row }) => {
+      const v = row.original.current;
+      if (!v?.volume || v.volume <= 0) return 'Empty';
+      return `${v.volume} ${v.volumeUnit || 'gal'}${v.abv ? ` @ ${v.abv}%` : ''}`;
+    },
+  }),
   actionsColumn<Vessel>((row) => [
     {
       label: "View Details",
@@ -26,14 +31,17 @@ const columns: TableColumn<Vessel>[] = [
     },
     {
       label: "Empty Vessel",
-      onSelect() {
-        vesselStore.emptyVessel(row.original._id);
+      async onClick() {
+        const confirmed = await confirm("Vessel", row.original.name);
+        if (confirmed) {
+          vesselStore.emptyVessel(row.original._id);
+        }
       },
     },
     {
       label: "Edit vessel",
       onSelect() {
-        vesselStore.vessel = JSON.parse(JSON.stringify(row.original));
+        vesselStore.vessel = structuredClone(toRaw(row.original));
         openPanel();
       },
     },
@@ -71,7 +79,7 @@ const addVessel = () => {
     search-placeholder="Search vessels..."
   >
     <template #actions>
-      <UButton icon="i-heroicons-plus-circle" size="xl" @click="addVessel" variant="ghost">Add Vessel</UButton>
+      <UButton icon="i-lucide-plus-circle" size="xl" @click="addVessel" variant="ghost">Add Vessel</UButton>
     </template>
     <!-- Desktop table -->
     <div class="hidden sm:block">
@@ -83,16 +91,26 @@ const addVessel = () => {
         :data="vesselStore.vessels"
         :columns="columns"
         :loading="vesselStore.loading"
-        :empty="'No vessels found'"
-      />
+        @select="(_e: Event, row: any) => navigateTo(`/admin/vessels/${row.original._id}`)"
+        :ui="{ tr: 'cursor-pointer' }"
+      >
+        <template #empty>
+          <BaseEmptyState icon="i-lucide-container" title="No vessels found" description="Add vessels to track your equipment" action-label="Add Vessel" @action="addVessel" />
+        </template>
+      </UTable>
     </div>
 
     <!-- Mobile card view -->
     <div class="sm:hidden space-y-3">
       <div
-        v-for="vessel in vesselStore.vessels"
+        v-for="vessel in vesselStore.vessels.filter(v => {
+          if (!search) return true;
+          const term = search.toLowerCase();
+          return v.name.toLowerCase().includes(term) || (v.type || '').toLowerCase().includes(term);
+        })"
         :key="vessel._id"
-        class="bg-charcoal rounded-lg border border-brown/30 p-4"
+        class="bg-charcoal rounded-lg border border-brown/30 p-4 cursor-pointer"
+        @click="navigateTo(`/admin/vessels/${vessel._id}`)"
       >
         <div class="flex items-start justify-between mb-2">
           <div>
@@ -111,9 +129,7 @@ const addVessel = () => {
           <span class="text-parchment/70">{{ vessel.current }}</span>
         </div>
       </div>
-      <div v-if="vesselStore.vessels.length === 0" class="text-center py-6 text-parchment/50 text-sm">
-        No vessels found
-      </div>
+      <BaseEmptyState v-if="vesselStore.vessels.length === 0" icon="i-lucide-container" title="No vessels found" description="Add vessels to track your equipment" action-label="Add Vessel" @action="addVessel" />
     </div>
   </TableWrapper>
 </template>

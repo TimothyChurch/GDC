@@ -46,12 +46,12 @@ export const useCocktailStore = defineStore("cocktails", () => {
     try {
       await $fetch(`/api/cocktail/${id}`, {
         method: 'PUT',
-        body: JSON.stringify(target),
+        body: target,
       });
       toast.add({ title: `Cocktail ${target.visible ? 'shown' : 'hidden'}`, color: 'success', icon: 'i-lucide-check-circle' });
-    } catch (error: any) {
+    } catch (error: unknown) {
       target.visible = previousValue;
-      toast.add({ title: 'Failed to update visibility', description: error?.data?.message, color: 'error', icon: 'i-lucide-alert-circle' });
+      toast.add({ title: 'Failed to update visibility', description: getErrorMessage(error), color: 'error', icon: 'i-lucide-alert-circle' });
     }
   };
 

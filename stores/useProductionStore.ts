@@ -33,24 +33,22 @@ export const useProductionStore = defineStore('productions', () => {
 
 	// Domain-specific: fetch a single production by ID from the API
 	const getProductionById = async (id: string): Promise<void> => {
-		const response = await $fetch(`/api/production/${id}`);
-		crud.item.value = response as Production;
+		crud.item.value = await $fetch<Production>(`/api/production/${id}`);
 	};
 
 	/** Create a production and return the new _id (used by batch-to-production flow) */
 	const createAndReturnId = async (data: Partial<Production>): Promise<string | null> => {
 		crud.saving.value = true;
 		try {
-			const response = await $fetch('/api/production/create', {
+			const created = await $fetch<Production>('/api/production/create', {
 				method: 'POST',
 				body: data,
 			});
-			const created = response as Production;
 			crud.items.value.push(created);
 			toast.add({ title: 'Production created', color: 'success', icon: 'i-lucide-check-circle' });
 			return created._id;
-		} catch (error: any) {
-			toast.add({ title: 'Failed to create production', description: error?.data?.message, color: 'error', icon: 'i-lucide-alert-circle' });
+		} catch (error: unknown) {
+			toast.add({ title: 'Failed to create production', description: getErrorMessage(error), color: 'error', icon: 'i-lucide-alert-circle' });
 			return null;
 		} finally {
 			crud.saving.value = false;

@@ -23,6 +23,17 @@ export const latestPrice = (item: Item | string): number => {
 			);
 		}
 	}
+
+	// Fallback to manual base cost fields
+	if (selectedItem.baseCostPrice && selectedItem.baseCostSize && selectedItem.baseCostUnit) {
+		return computePricePerUnit(
+			selectedItem.baseCostPrice,
+			selectedItem.baseCostSize,
+			selectedItem.baseCostUnit,
+			selectedItem.inventoryUnit || selectedItem.baseCostUnit
+		);
+	}
+
 	return 0;
 };
 

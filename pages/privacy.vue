@@ -1,5 +1,5 @@
 <script setup lang="ts">
-useSeoMeta({
+useServerSeoMeta({
   title: 'Privacy Policy | Galveston Distilling Co',
   description: 'Privacy policy for Galveston Distilling Co website and services.',
   ogTitle: 'Privacy Policy | Galveston Distilling Co',
@@ -16,7 +16,7 @@ useSeoMeta({
       </h1>
       <div class="w-16 h-0.5 bg-gold mb-8"></div>
       <p class="text-sm text-brown/50 dark:text-parchment/50 mb-8">
-        Last updated: {{ new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' }) }}
+        Last updated: February 27, 2026
       </p>
 
       <div class="prose dark:prose-invert prose-headings:font-[Cormorant_Garamond] max-w-none space-y-6 text-brown/80 dark:text-parchment/80">

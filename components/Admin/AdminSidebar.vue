@@ -13,6 +13,7 @@ const {
   lowInventoryCount,
   pendingEvents,
   totalCustomers,
+  unreadMessages,
 } = useSidebarBadges();
 
 interface NavLink {
@@ -103,6 +104,12 @@ const reportLinks: NavLink[] = [
 ];
 
 const adminLinks: NavLink[] = [
+  {
+    label: "Inbox",
+    icon: "i-lucide-inbox",
+    to: "/admin/inbox",
+    badge: unreadMessages,
+  },
   {
     label: "Events",
     icon: "i-lucide-calendar",

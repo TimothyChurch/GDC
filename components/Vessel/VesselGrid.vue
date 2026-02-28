@@ -27,10 +27,7 @@ const typeGroups = computed(() => {
     <p class="text-sm text-parchment/50">Loading vessels...</p>
   </div>
 
-  <div v-else-if="vesselStore.vessels.length === 0" class="text-center py-12">
-    <UIcon name="i-lucide-container" class="text-2xl text-parchment/20 mx-auto mb-2" />
-    <p class="text-sm text-parchment/50">No vessels found</p>
-  </div>
+  <BaseEmptyState v-else-if="vesselStore.vessels.length === 0" icon="i-lucide-container" title="No vessels found" description="Add vessels to track your equipment" />
 
   <div v-else class="space-y-6">
     <div v-for="group in typeGroups" :key="group.type">

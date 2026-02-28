@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { Bar } from 'vue-chartjs'
+useChartRegistration()
 import { differenceInDays } from 'date-fns'
 
 const vesselStore = useVesselStore()

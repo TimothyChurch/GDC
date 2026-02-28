@@ -62,20 +62,15 @@ export const useProofingCalculator = () => {
 				const unit = initialVolume.value.unit;
 				return { volume, unit };
 			}
-			if (steps.value.length == 0) {
-				const volume = parseFloat(
-					(
-						(initialAbv.value * initialVolume.value.volume) /
-						targetAbv.value
-					).toFixed(2)
-				);
-				const unit = initialVolume.value.unit;
-				return { volume, unit };
-			}
-			if (steps.value.length == 1) {
-			}
-			if (steps.value[steps.value.length - 1].abv != 0) {
-			}
+			// No steps: use initial values directly
+			const volume = parseFloat(
+				(
+					(initialAbv.value * initialVolume.value.volume) /
+					targetAbv.value
+				).toFixed(2)
+			);
+			const unit = initialVolume.value.unit;
+			return { volume, unit };
 		});
 
 	const waterNeeded = computed(() => {

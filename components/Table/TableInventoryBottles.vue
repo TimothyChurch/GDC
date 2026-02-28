@@ -32,7 +32,7 @@ const columns = [
 		<UTable
 			:data="bottleStore.bottles"
 			:loading="bottleStore.loading"
-			:empty="'No bottles found'">
+		>
 			<!-- <template #stock-cell="{ row }">
 				<div
 					v-if="bottleStockCheck(row._id).lowStock"
@@ -45,6 +45,9 @@ const columns = [
 					<UButton>Open</UButton>
 				</NuxtLink>
 			</template> -->
+			<template #empty>
+				<BaseEmptyState icon="i-lucide-wine" title="No bottles found" />
+			</template>
 		</UTable>
 	</div>
 </template>

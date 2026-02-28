@@ -108,9 +108,14 @@ const barrelProgressColor = computed(() => {
   return 'bg-blue-500/60'
 })
 
-const handleEmpty = () => {
+const { confirm } = useDeleteConfirm()
+
+const handleEmpty = async () => {
   if (!vessel.value) return
-  vesselStore.emptyVessel(vessel.value._id)
+  const confirmed = await confirm('Vessel', vessel.value.name)
+  if (confirmed) {
+    vesselStore.emptyVessel(vessel.value._id)
+  }
 }
 </script>
 

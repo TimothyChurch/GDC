@@ -23,34 +23,31 @@ const columns: TableColumn<Production>[] = [
         day: "numeric",
       }),
   }),
-  {
-    accessorKey: "vessel",
-    header: "Vessel",
+  sortableColumn<Production>("vessel", "Vessel", {
+    id: "vessel",
+    accessorFn: (row) =>
+      vesselStore.vessels
+        .filter((vessel) => row.vessel.includes(vessel._id))
+        .map((vessel) => vessel.name)
+        .join(", ") || "N/A",
     cell: ({ row }) =>
       vesselStore.vessels
         .filter((vessel) => row.original.vessel.includes(vessel._id))
         .map((vessel) => vessel.name)
         .join(", ") || "N/A",
-  },
-  {
-    accessorKey: "bottle",
-    header: "Bottle",
+  }),
+  sortableColumn<Production>("bottle", "Bottle", {
+    id: "bottle",
+    accessorFn: (row) => bottlestore.getName(row.bottle) || "Unknown",
     cell: ({ row }) => bottlestore.getName(row.original.bottle) || "Unknown",
-  },
-  {
-    accessorKey: "quantity",
-    header: "Quantity",
-  },
-  {
-    accessorKey: "productionCost",
-    header: "Production Cost",
+  }),
+  sortableColumn<Production>("quantity", "Quantity"),
+  sortableColumn<Production>("productionCost", "Production Cost", {
     cell: ({ row }) => Dollar.format(row.original.productionCost),
-  },
-  {
-    accessorKey: "bottleCost",
-    header: "Bottle Cost",
+  }),
+  sortableColumn<Production>("bottleCost", "Bottle Cost", {
     cell: ({ row }) => Dollar.format(row.original.bottleCost),
-  },
+  }),
   actionsColumn<Production>((row) => [
     {
       label: "View Details",
@@ -61,7 +58,7 @@ const columns: TableColumn<Production>[] = [
     {
       label: "Edit production",
       onSelect() {
-        productionsStore.production = JSON.parse(JSON.stringify(row.original));
+        productionsStore.production = structuredClone(toRaw(row.original));
         openPanel();
       },
     },
@@ -99,7 +96,7 @@ const newItem = () => {
     search-placeholder="Search productions..."
   >
     <template #actions>
-      <UButton icon="i-heroicons-plus-circle" size="xl" @click="newItem" variant="ghost">Add Production</UButton>
+      <UButton icon="i-lucide-plus-circle" size="xl" @click="newItem" variant="ghost">Add Production</UButton>
     </template>
 
     <!-- Desktop table -->
@@ -113,16 +110,24 @@ const newItem = () => {
         :data="productionsStore.productions"
         :columns="columns"
         :loading="productionsStore.loading"
-        :empty="'No productions found'"
         @select="(_e: Event, row: any) => router.push(`/admin/production/${row.original._id}`)"
         :ui="{ tr: 'cursor-pointer' }"
-      />
+      >
+        <template #empty>
+          <BaseEmptyState icon="i-lucide-factory" title="No productions found" description="Record a bottling run to track production output" action-label="Add Production" @action="newItem" />
+        </template>
+      </UTable>
     </div>
 
     <!-- Mobile card view -->
     <div class="sm:hidden space-y-3">
       <div
-        v-for="prod in productionsStore.productions.slice().sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())"
+        v-for="prod in productionsStore.productions.slice().sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()).filter(p => {
+          if (!search) return true;
+          const term = search.toLowerCase();
+          const bottleName = bottlestore.getName(p.bottle) || '';
+          return bottleName.toLowerCase().includes(term);
+        })"
         :key="prod._id"
         class="bg-charcoal rounded-lg border border-brown/30 p-4 cursor-pointer"
         @click="router.push(`/admin/production/${prod._id}`)"
@@ -147,9 +152,7 @@ const newItem = () => {
           </div>
         </div>
       </div>
-      <div v-if="productionsStore.productions.length === 0" class="text-center py-6 text-parchment/50 text-sm">
-        No productions found
-      </div>
+      <BaseEmptyState v-if="productionsStore.productions.length === 0" icon="i-lucide-factory" title="No productions found" description="Record a bottling run to track production output" action-label="Add Production" @action="newItem" />
     </div>
   </TableWrapper>
 </template>

@@ -79,8 +79,8 @@ const doTransfer = async () => {
     sourceId.value = '';
     destId.value = '';
     transferVolume.value = 0;
-  } catch (error: any) {
-    toast.add({ title: 'Transfer failed', description: error?.data?.message, color: 'error', icon: 'i-lucide-alert-circle' });
+  } catch (error: unknown) {
+    toast.add({ title: 'Transfer failed', description: getErrorMessage(error), color: 'error', icon: 'i-lucide-alert-circle' });
   } finally {
     loading.value = false;
   }

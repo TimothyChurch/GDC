@@ -78,6 +78,13 @@
 - UPagination `total` should use `tableRef.tableApi.getFilteredRowModel().rows.length` for search-accurate page counts
 - **Fixed in**: All 14 table components (Batches, Items, Bottles, Productions, Cocktails, Contacts, Vessels, Recipes, PurchaseOrders, Events, Users, Customers, InventoryCategory, InventoryInputs)
 
+### UPagination Uses `:page` / `@update:page`, NOT `:model-value`
+- Nuxt UI v4 UPagination (built on Reka UI PaginationRoot) uses `page` prop and `update:page` event
+- Using `:model-value` / `@update:model-value` silently fails -- the component ignores unknown props
+- The pagination buttons render and show correct page count but clicking them does nothing
+- Fix: replace `:model-value` with `:page` and `@update:model-value` with `@update:page`
+- **Fixed in**: `components/Table/TableWrapper.vue` (centralized fix, affects all 14+ table components)
+
 ### UTabs Named Slots Require `slot` Property on Tab Items
 - Nuxt UI v4 UTabs resolves content slot names via `item.slot || 'content'` (see `Tabs.vue` line 99)
 - The `value` property controls the Reka UI tab trigger value; it does NOT map to Vue slot names

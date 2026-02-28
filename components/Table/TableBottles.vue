@@ -17,27 +17,22 @@ const { search, pagination, tableRef, filteredTotal } = useTableState(
 
 const columns: TableColumn<Bottle>[] = [
   sortableColumn<Bottle>("name", "Name"),
-  {
+  sortableColumn<Bottle>("classType", "Class / Type", {
     id: "classType",
-    header: "Class / Type",
     accessorFn: (row) => `${row.class || ""} ${row.type || ""}`.trim(),
     cell: ({ row }) => {
       const c = row.original.class || "";
       const t = row.original.type || "";
       return t ? `${c} - ${t}` : c || "N/A";
     },
-  },
-  {
-    accessorKey: "abv",
-    header: "ABV",
+  }),
+  sortableColumn<Bottle>("abv", "ABV", {
     cell: ({ row }) => row.original.abv ? `${row.original.abv}%` : "N/A",
-  },
+  }),
   sortableColumn<Bottle>("price", "Price", {
     cell: ({ row }) => Dollar.format(row.original.price || 0),
   }),
-  {
-    accessorKey: "inStock",
-    header: "Status",
+  sortableColumn<Bottle>("inStock", "Status", {
     cell: ({ row }) => {
       const badges = [];
       if (row.original.archived) {
@@ -69,7 +64,7 @@ const columns: TableColumn<Bottle>[] = [
       );
       return h("div", { class: "flex items-center gap-1.5" }, badges);
     },
-  },
+  }),
   actionsColumn<Bottle>((row) => [
     {
       label: "View Details",
@@ -80,7 +75,7 @@ const columns: TableColumn<Bottle>[] = [
     {
       label: "Edit bottle",
       onSelect() {
-        bottleStore.bottle = JSON.parse(JSON.stringify(row.original));
+        bottleStore.bottle = structuredClone(toRaw(row.original));
         openPanel();
       },
     },
@@ -118,7 +113,7 @@ const newBottle = () => {
     search-placeholder="Search bottles..."
   >
     <template #actions>
-      <UButton icon="i-heroicons-plus-circle" size="xl" @click="newBottle" variant="ghost">Add Bottle</UButton>
+      <UButton icon="i-lucide-plus-circle" size="xl" @click="newBottle" variant="ghost">Add Bottle</UButton>
     </template>
     <!-- Desktop table -->
     <div class="hidden sm:block">
@@ -130,16 +125,23 @@ const newBottle = () => {
         :data="props.bottles"
         :columns="columns"
         :loading="bottleStore.loading"
-        :empty="'No bottles match the current filters'"
         @select="(_e: Event, row: any) => router.push(`/admin/bottles/${row.original._id}`)"
         :ui="{ tr: 'cursor-pointer' }"
-      />
+      >
+        <template #empty>
+          <BaseEmptyState icon="i-lucide-wine" title="No bottles match the current filters" description="Try adjusting your search or filters" />
+        </template>
+      </UTable>
     </div>
 
     <!-- Mobile card view -->
     <div class="sm:hidden space-y-3">
       <div
-        v-for="bottle in props.bottles"
+        v-for="bottle in props.bottles.filter(b => {
+          if (!search) return true;
+          const term = search.toLowerCase();
+          return b.name.toLowerCase().includes(term) || (b.class || '').toLowerCase().includes(term) || (b.type || '').toLowerCase().includes(term);
+        })"
         :key="bottle._id"
         class="bg-charcoal rounded-lg border border-brown/30 p-4 cursor-pointer"
         @click="router.push(`/admin/bottles/${bottle._id}`)"
@@ -181,9 +183,7 @@ const newBottle = () => {
           </div>
         </div>
       </div>
-      <div v-if="props.bottles.length === 0" class="text-center py-6 text-parchment/50 text-sm">
-        No bottles match the current filters
-      </div>
+      <BaseEmptyState v-if="props.bottles.length === 0" icon="i-lucide-wine" title="No bottles match the current filters" description="Try adjusting your search or filters" />
     </div>
   </TableWrapper>
 </template>

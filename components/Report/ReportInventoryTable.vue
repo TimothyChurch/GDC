@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { Bar } from 'vue-chartjs'
+useChartRegistration()
 
 const itemStore = useItemStore()
 const bottleStore = useBottleStore()

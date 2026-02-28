@@ -32,6 +32,7 @@ watch(search, (val) => {
 
 <template>
   <div>
+    <slot name="header" />
     <div class="flex justify-between items-center gap-3 mb-3">
       <UInput
         v-model="searchInput"
@@ -55,8 +56,8 @@ watch(search, (val) => {
         />
       </UFormField>
       <UPagination
-        :model-value="pagination.pageIndex + 1"
-        @update:model-value="pagination = { ...pagination, pageIndex: $event - 1 }"
+        :page="pagination.pageIndex + 1"
+        @update:page="pagination = { ...pagination, pageIndex: $event - 1 }"
         :items-per-page="pagination.pageSize"
         :total="totalItems"
       />

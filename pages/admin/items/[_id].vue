@@ -36,7 +36,7 @@ const addInventoryRecord = () => {
 }
 
 const editInventoryRecord = (inv: any) => {
-  inventoryStore.inventory = JSON.parse(JSON.stringify(inv))
+  inventoryStore.inventory = structuredClone(toRaw(inv))
   inventoryPanel.open()
 }
 

@@ -1,10 +1,10 @@
 <script setup lang="ts">
-useSeoMeta({
+useServerSeoMeta({
   title: 'About Us | Galveston Distilling Co',
   description: 'Learn about Galveston Distilling Co — our story, our mission, and our commitment to crafting exceptional spirits on Galveston Island.',
   ogTitle: 'About Us | Galveston Distilling Co',
   ogDescription: 'Learn about Galveston Distilling Co — our story, our mission, and our commitment to crafting exceptional spirits on Galveston Island.',
-  ogImage: '/images/og-about.jpg',
+  ogImage: 'https://galvestondistilling.com/images/og-about.jpg',
   ogUrl: 'https://galvestondistilling.com/about',
 });
 </script>
@@ -48,10 +48,14 @@ useSeoMeta({
             </p>
           </div>
           <div class="aspect-[4/3] bg-charcoal/5 dark:bg-parchment/5 rounded-lg flex items-center justify-center">
-            <img
+            <NuxtImg
               src="/images/Logo.png"
               alt="Galveston Distilling Co"
               class="max-h-48 object-contain"
+              width="192"
+              height="192"
+              loading="lazy"
+              format="webp"
             />
           </div>
         </div>

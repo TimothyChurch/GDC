@@ -79,8 +79,8 @@ export function useCrudStore<T extends { _id: string }>(
         const qs = new URLSearchParams(params).toString();
         url = `${apiPath}?${qs}`;
       }
-      const response = await $fetch(url);
-      items.value = response as T[];
+      const response = await $fetch<T[]>(url);
+      items.value = response;
       if (sort) sort(items.value);
     } finally {
       loading.value = false;
@@ -100,7 +100,7 @@ export function useCrudStore<T extends { _id: string }>(
 
   const setItem = (id: string): void => {
     const found = items.value.find((i) => i._id === id);
-    if (found) item.value = JSON.parse(JSON.stringify(found));
+    if (found) item.value = structuredClone(toRaw(found));
   };
 
   const resetItem = (): void => {
@@ -116,17 +116,17 @@ export function useCrudStore<T extends { _id: string }>(
       if (isNew) {
         const { _id, ...rest } = item.value;
         const createData = beforeCreate ? beforeCreate(rest as Partial<T>) : rest;
-        response = await $fetch(`${apiPath}/create`, {
+        response = await $fetch<T>(`${apiPath}/create`, {
           method: "POST",
           body: createData,
-        }) as T;
+        });
         items.value.push(response);
       } else {
         const updateData = beforeUpdate ? beforeUpdate(item.value) : item.value;
-        response = await $fetch(`${apiPath}/${item.value._id}`, {
+        response = await $fetch<T>(`${apiPath}/${item.value._id}`, {
           method: "PUT",
           body: updateData,
-        }) as T;
+        });
         const index = items.value.findIndex((i) => i._id === item.value._id);
         if (index !== -1) {
           items.value[index] = response;
@@ -141,10 +141,10 @@ export function useCrudStore<T extends { _id: string }>(
       });
       if (resetOnSave) resetItem();
       return response;
-    } catch (error: any) {
+    } catch (error: unknown) {
       toast.add({
         title: `Failed to save ${name.toLowerCase()}`,
-        description: error?.data?.statusMessage || error?.data?.message,
+        description: getErrorMessage(error),
         color: "error",
         icon: "i-lucide-alert-circle",
       });
@@ -166,10 +166,10 @@ export function useCrudStore<T extends { _id: string }>(
         color: "success",
         icon: "i-lucide-check-circle",
       });
-    } catch (error: any) {
+    } catch (error: unknown) {
       toast.add({
         title: `Failed to delete ${name.toLowerCase()}`,
-        description: error?.data?.statusMessage || error?.data?.message,
+        description: getErrorMessage(error),
         color: "error",
         icon: "i-lucide-alert-circle",
       });

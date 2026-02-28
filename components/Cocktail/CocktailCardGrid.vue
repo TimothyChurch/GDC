@@ -16,10 +16,7 @@ const cocktails = computed(() => props.data ?? cocktailStore.cocktails)
     <p class="text-sm text-parchment/50">Loading cocktails...</p>
   </div>
 
-  <div v-else-if="cocktails.length === 0" class="text-center py-12">
-    <UIcon name="i-lucide-martini" class="text-2xl text-parchment/20 mx-auto mb-2" />
-    <p class="text-sm text-parchment/50">No cocktails found</p>
-  </div>
+  <BaseEmptyState v-else-if="cocktails.length === 0" icon="i-lucide-martini" title="No cocktails found" description="Add cocktails to build your menu" />
 
   <div v-else class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
     <CocktailCard

@@ -7,28 +7,52 @@ const router = useRouter();
 const itemStore = useItemStore();
 const { confirm } = useDeleteConfirm();
 
+// Category filtering
+const dynamicCategories = useItemCategories();
+const categories = computed(() => ["All", ...dynamicCategories.value]);
+const selectedCategory = ref<string>("All");
+
+const filteredItems = computed(() => {
+  if (selectedCategory.value === "All") return itemStore.items;
+  return itemStore.items.filter(
+    (i) => (i.category || "Other") === selectedCategory.value
+  );
+});
+
+const categoryCounts = computed(() => {
+  const counts: Record<string, number> = { All: itemStore.items.length };
+  for (const cat of dynamicCategories.value) {
+    counts[cat] = itemStore.items.filter(
+      (i) => (i.category || "Other") === cat
+    ).length;
+  }
+  return counts;
+});
+
 const { search, pagination, tableRef, filteredTotal } = useTableState(
-  computed(() => itemStore.items.length)
+  computed(() => filteredItems.value.length)
 );
+
+const selectCategory = (cat: string) => {
+  selectedCategory.value = cat;
+  pagination.value = { ...pagination.value, pageIndex: 0 };
+};
 
 const columns: TableColumn<Item>[] = [
   sortableColumn<Item>("name", "Name"),
   sortableColumn<Item>("type", "Type"),
   sortableColumn<Item>("category", "Category"),
-  {
+  sortableColumn<Item>("vendor", "Vendor", {
     id: "vendor",
-    header: "Vendor",
+    accessorFn: (row) => itemStore.getVendorName(row._id) || "",
     cell: ({ row }) => {
       return itemStore.getVendorName(row.original._id) || "\u2014";
     },
-  },
-  {
-    accessorKey: "inventoryUnit",
-    header: "Inventory Units",
-  },
-  {
+  }),
+  sortableColumn<Item>("inventoryUnit", "Inventory Units"),
+  sortableColumn<Item>("pricePerUnit", "Price per Unit", {
     id: "pricePerUnit",
-    header: "Price per Unit",
+    accessorFn: (row) => itemStore.latestPrice(row._id),
     cell: ({ row }) => {
       const price = itemStore.latestPrice(row.original._id);
       if (price > 0) {
@@ -38,7 +62,7 @@ const columns: TableColumn<Item>[] = [
       }
       return "Price not set";
     },
-  },
+  }),
   actionsColumn<Item>((row) => [
     {
       label: "Edit item",
@@ -79,9 +103,36 @@ const openModal = async () => await modal.open();
     :loading="itemStore.loading"
     search-placeholder="Search items..."
   >
+    <template #header>
+      <div class="flex gap-1.5 overflow-x-auto pb-1 mb-3 scrollbar-hide">
+        <button
+          v-for="cat in categories"
+          :key="cat"
+          class="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium border whitespace-nowrap transition-colors"
+          :class="
+            selectedCategory === cat
+              ? 'bg-gold/15 text-gold border-gold/20'
+              : 'text-parchment/50 border-brown/20 hover:text-parchment/70 hover:border-brown/30'
+          "
+          @click="selectCategory(cat)"
+        >
+          {{ cat }}
+          <span
+            class="px-1.5 py-0.5 rounded-full text-[10px] font-semibold"
+            :class="
+              selectedCategory === cat
+                ? 'bg-gold/20 text-gold'
+                : 'bg-brown/20 text-parchment/60'
+            "
+          >
+            {{ categoryCounts[cat] || 0 }}
+          </span>
+        </button>
+      </div>
+    </template>
     <template #actions>
       <UButton
-        icon="i-heroicons-plus-circle"
+        icon="i-lucide-plus-circle"
         size="xl"
         @click="newItem"
         variant="ghost"
@@ -95,22 +146,29 @@ const openModal = async () => await modal.open();
         v-model:global-filter="search"
         v-model:pagination="pagination"
         :pagination-options="{ getPaginationRowModel: getPaginationRowModel() }"
-        :data="itemStore.items"
+        :data="filteredItems"
         :columns="columns"
         :loading="itemStore.loading"
-        :empty="'No items found'"
         @select="
           (_e: Event, row: any) =>
             router.push(`/admin/items/${row.original._id}`)
         "
         :ui="{ tr: 'cursor-pointer' }"
-      />
+      >
+        <template #empty>
+          <BaseEmptyState icon="i-lucide-package" title="No items found" description="Add inventory items to track stock and costs" action-label="Add Item" @action="newItem" />
+        </template>
+      </UTable>
     </div>
 
     <!-- Mobile card view -->
     <div class="sm:hidden space-y-3">
       <div
-        v-for="item in itemStore.items"
+        v-for="item in filteredItems.filter(i => {
+          if (!search) return true;
+          const term = search.toLowerCase();
+          return i.name.toLowerCase().includes(term) || (i.type || '').toLowerCase().includes(term) || (i.category || '').toLowerCase().includes(term);
+        })"
         :key="item._id"
         class="bg-charcoal rounded-lg border border-brown/30 p-4 cursor-pointer"
         @click="router.push(`/admin/items/${item._id}`)"
@@ -149,12 +207,7 @@ const openModal = async () => await modal.open();
           </div>
         </div>
       </div>
-      <div
-        v-if="itemStore.items.length === 0"
-        class="text-center py-6 text-parchment/50 text-sm"
-      >
-        No items found
-      </div>
+      <BaseEmptyState v-if="filteredItems.length === 0" icon="i-lucide-package" title="No items found" description="Add inventory items to track stock and costs" action-label="Add Item" @action="newItem" />
     </div>
   </TableWrapper>
 </template>

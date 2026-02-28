@@ -1,7 +1,15 @@
 <script setup lang="ts">
+import * as yup from 'yup';
+
 const emit = defineEmits<{ close: [boolean] }>();
 
 const batchStore = useBatchStore();
+
+const schema = yup.object({
+  recipe: yup.string().required('Recipe is required'),
+  batchSize: yup.number().positive('Must be positive').required('Batch size is required'),
+  batchSizeUnit: yup.string().required('Unit is required'),
+});
 const recipeStore = useRecipeStore();
 
 const { localData, isDirty, saving, save, cancel } = useFormPanel({
@@ -84,61 +92,63 @@ const scaledPrice = computed(() => {
             @click="cancel"
           />
         </div>
-        <div class="flex flex-col overflow-y-auto p-4 space-y-4">
-          <UFormField label="Recipe" class="w-full">
-            <USelectMenu
-              v-model="localData.recipe"
-              :items="
-                recipeStore.recipes.map((r) => ({
-                  label: r.name,
-                  value: r._id,
-                }))
-              "
-              value-key="value"
-              class="w-full"
-            />
-          </UFormField>
-          <UFormField label="Recipe Cost">
-            <span class="text-sm">{{ price }}</span>
-          </UFormField>
-          <UFormField label="Batch Size">
-            <BaseQuantityInput
-              v-model:value="localData.batchSize"
-              v-model:unit="localData.batchSizeUnit"
-              :unit-options="volumeUnits"
-              placeholder="Volume"
-            />
-          </UFormField>
-          <UFormField label="Batch Cost">
-            <span class="text-sm">{{ Dollar.format(scaledPrice) }}</span>
-          </UFormField>
+        <UForm :schema="schema" :state="localData" @submit="save" class="flex flex-col flex-1 min-h-0">
+          <div class="flex flex-col overflow-y-auto p-4 space-y-4">
+            <UFormField label="Recipe" name="recipe" class="w-full">
+              <USelectMenu
+                v-model="localData.recipe"
+                :items="
+                  recipeStore.recipes.map((r) => ({
+                    label: r.name,
+                    value: r._id,
+                  }))
+                "
+                value-key="value"
+                class="w-full"
+              />
+            </UFormField>
+            <UFormField label="Recipe Cost">
+              <span class="text-sm">{{ price }}</span>
+            </UFormField>
+            <UFormField label="Batch Size" name="batchSize">
+              <BaseQuantityInput
+                v-model:value="localData.batchSize"
+                v-model:unit="localData.batchSizeUnit"
+                :unit-options="volumeUnits"
+                placeholder="Volume"
+              />
+            </UFormField>
+            <UFormField label="Batch Cost">
+              <span class="text-sm">{{ Dollar.format(scaledPrice) }}</span>
+            </UFormField>
 
-          <!-- Pipeline preview (inherited from recipe) -->
-          <div v-if="localData.pipeline?.length" class="space-y-1.5">
-            <div class="text-xs text-parchment/60 uppercase tracking-wider">
-              Pipeline
-            </div>
-            <div class="flex flex-wrap gap-1">
-              <span
-                v-for="stage in localData.pipeline"
-                :key="stage"
-                class="text-xs px-2 py-0.5 rounded border border-brown/30 text-parchment/60"
-              >
-                {{ stage }}
-              </span>
+            <!-- Pipeline preview (inherited from recipe) -->
+            <div v-if="localData.pipeline?.length" class="space-y-1.5">
+              <div class="text-xs text-parchment/60 uppercase tracking-wider">
+                Pipeline
+              </div>
+              <div class="flex flex-wrap gap-1">
+                <span
+                  v-for="stage in localData.pipeline"
+                  :key="stage"
+                  class="text-xs px-2 py-0.5 rounded border border-brown/30 text-parchment/60"
+                >
+                  {{ stage }}
+                </span>
+              </div>
             </div>
           </div>
-        </div>
-        <div
-          class="flex items-center justify-end gap-2 px-4 py-3 border-t border-white/10"
-        >
-          <UButton color="neutral" variant="outline" @click="cancel"
-            >Cancel</UButton
+          <div
+            class="flex items-center justify-end gap-2 px-4 py-3 border-t border-white/10"
           >
-          <UButton @click="save" :loading="saving" :disabled="!isDirty">
-            {{ isNew ? "Create" : "Save" }}
-          </UButton>
-        </div>
+            <UButton color="neutral" variant="outline" @click="cancel"
+              >Cancel</UButton
+            >
+            <UButton type="submit" :loading="saving" :disabled="!isDirty">
+              {{ isNew ? "Create" : "Save" }}
+            </UButton>
+          </div>
+        </UForm>
       </div>
     </template>
   </USlideover>

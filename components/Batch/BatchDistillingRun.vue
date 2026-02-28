@@ -20,11 +20,11 @@ const vesselStore = useVesselStore()
 const volumeUnits = ['gallon', 'L', 'mL', 'fl oz']
 
 // Build local editable copy
-const local = ref<DistillingRun>(JSON.parse(JSON.stringify(props.run)))
+const local = ref<DistillingRun>(structuredClone(toRaw(props.run)))
 
 // Re-sync local when prop changes (e.g. after save)
 watch(() => props.run, (newRun) => {
-  local.value = JSON.parse(JSON.stringify(newRun))
+  local.value = structuredClone(toRaw(newRun))
 }, { deep: true })
 
 // Date string for the date input (YYYY-MM-DD format)

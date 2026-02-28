@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { Line } from 'vue-chartjs';
+useChartRegistration();
 
 const route = useRoute();
 const inventoryStore = useInventoryStore();

@@ -1,0 +1,1 @@
+export default createDeleteHandler(Message);

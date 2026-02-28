@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import type { Batch, BarrelAgingStage } from '~/types'
-import { calculateProofGallons } from '~/utils/proofGallons'
 import { getBarrelAgeDefault } from '~/composables/definitions'
 
 const props = defineProps<{
@@ -10,7 +9,6 @@ const props = defineProps<{
 
 const batchStore = useBatchStore()
 const vesselStore = useVesselStore()
-const toast = useToast()
 
 const stage = computed(() => props.batch.stages?.barrelAging as BarrelAgingStage | undefined)
 
@@ -18,19 +16,6 @@ const vesselName = computed(() => {
   if (!stage.value?.vessel) return 'Not assigned'
   return vesselStore.getVesselById(stage.value.vessel)?.name || 'Unknown'
 })
-
-const formatDate = (d?: Date | string) => {
-  if (!d) return 'Not set'
-  return new Date(d).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })
-}
-
-/** Convert a Date or ISO string to YYYY-MM-DD for native date input */
-const toDateInputValue = (d?: Date | string): string => {
-  if (!d) return ''
-  const date = new Date(d)
-  if (isNaN(date.getTime())) return ''
-  return date.toISOString().slice(0, 10)
-}
 
 const daysAged = computed(() => {
   const entryDate = stage.value?.entry?.date
@@ -68,13 +53,6 @@ const agingProgressColor = computed(() => {
   return 'bg-blue-500/60'
 })
 
-const sortedSamplings = computed(() => {
-  const samplings = stage.value?.samplings || []
-  return [...samplings].sort(
-    (a, b) => new Date(a.date).getTime() - new Date(b.date).getTime()
-  )
-})
-
 // Editing state (full edit mode)
 const local = ref({
   vessel: stage.value?.vessel || '',
@@ -107,257 +85,30 @@ watch(() => local.value.vessel, (newVesselId) => {
   if (!newVesselId || !props.editing) return
   const barrel = vesselStore.getVesselById(newVesselId)
   if (!barrel) return
-  // Only auto-populate if targetAge is not already set by user
   if (!local.value.targetAge) {
     const barrelTarget = barrel.targetAge || getBarrelAgeDefault(barrel.barrel?.size)
-    if (barrelTarget) {
-      local.value.targetAge = barrelTarget
-    }
+    if (barrelTarget) local.value.targetAge = barrelTarget
   }
-  // Auto-populate barrel cost from vessel's barrel.cost (only if not already set)
   if (barrel.barrel?.cost != null && !props.batch.barrelCost) {
     local.value.barrelCost = barrel.barrel.cost
   }
 })
 
-// --- Inline editing for entry date & ABV (available even when not in full edit mode) ---
-const inlineEditingEntry = ref(false)
-const inlineEntry = ref({
-  date: '',
-  abv: undefined as number | undefined,
-})
-
-const startInlineEntryEdit = () => {
-  inlineEntry.value.date = toDateInputValue(stage.value?.entry?.date)
-  inlineEntry.value.abv = stage.value?.entry?.abv
-  inlineEditingEntry.value = true
-}
-
-const cancelInlineEntryEdit = () => {
-  inlineEditingEntry.value = false
-}
-
-const inlineEntryDateError = computed(() => {
-  if (!inlineEntry.value.date) return 'Date is required'
-  const d = new Date(inlineEntry.value.date)
-  if (isNaN(d.getTime())) return 'Invalid date'
-  return ''
-})
-
-const inlineEntryAbvError = computed(() => {
-  const abv = inlineEntry.value.abv
-  if (abv === undefined || abv === null) return ''
-  if (abv < 0) return 'ABV cannot be negative'
-  if (abv > 100) return 'ABV cannot exceed 100'
-  return ''
-})
-
-const inlineEntryValid = computed(() => {
-  return !inlineEntryDateError.value && !inlineEntryAbvError.value
-})
-
-const inlineEntryPG = computed(() => {
-  const volume = stage.value?.entry?.volume
-  const abv = inlineEntry.value.abv
-  const unit = stage.value?.entry?.volumeUnit || 'gallon'
-  if (volume && abv) return calculateProofGallons(volume, unit, abv)
-  return null
-})
-
-const savingInlineEntry = ref(false)
-const saveInlineEntry = async () => {
-  if (!inlineEntryValid.value) return
-  savingInlineEntry.value = true
-  try {
-    const updatedEntry = {
-      ...stage.value?.entry,
-      date: new Date(inlineEntry.value.date + 'T12:00:00'),
-      abv: inlineEntry.value.abv,
-      proofGallons: inlineEntryPG.value ?? stage.value?.entry?.proofGallons,
-    }
-    await batchStore.updateStageData(props.batch._id, 'Barrel Aging', {
-      entry: updatedEntry,
-    }, 'Updated barrel entry date/proof')
-    inlineEditingEntry.value = false
-    toast.add({ title: 'Barrel entry updated', color: 'success', icon: 'i-lucide-check-circle' })
-  } catch {
-    toast.add({ title: 'Failed to update barrel entry', color: 'error', icon: 'i-lucide-alert-circle' })
-  } finally {
-    savingInlineEntry.value = false
-  }
-}
-
-// --- Inline editing for exit date & ABV ---
-const inlineEditingExit = ref(false)
-const inlineExit = ref({
-  date: '',
-  abv: undefined as number | undefined,
-})
-
-const startInlineExitEdit = () => {
-  inlineExit.value.date = toDateInputValue(stage.value?.exit?.date)
-  inlineExit.value.abv = stage.value?.exit?.abv
-  inlineEditingExit.value = true
-}
-
-const cancelInlineExitEdit = () => {
-  inlineEditingExit.value = false
-}
-
-const inlineExitDateError = computed(() => {
-  if (!inlineExit.value.date) return ''
-  const d = new Date(inlineExit.value.date)
-  if (isNaN(d.getTime())) return 'Invalid date'
-  return ''
-})
-
-const inlineExitAbvError = computed(() => {
-  const abv = inlineExit.value.abv
-  if (abv === undefined || abv === null) return ''
-  if (abv < 0) return 'ABV cannot be negative'
-  if (abv > 100) return 'ABV cannot exceed 100'
-  return ''
-})
-
-const inlineExitValid = computed(() => {
-  return !inlineExitDateError.value && !inlineExitAbvError.value
-})
-
-const inlineExitPG = computed(() => {
-  const volume = stage.value?.exit?.volume
-  const abv = inlineExit.value.abv
-  const unit = stage.value?.exit?.volumeUnit || 'gallon'
-  if (volume && abv) return calculateProofGallons(volume, unit, abv)
-  return null
-})
-
-const savingInlineExit = ref(false)
-const saveInlineExit = async () => {
-  if (!inlineExitValid.value) return
-  savingInlineExit.value = true
-  try {
-    const updatedExit = {
-      ...stage.value?.exit,
-      date: inlineExit.value.date ? new Date(inlineExit.value.date + 'T12:00:00') : stage.value?.exit?.date,
-      abv: inlineExit.value.abv,
-      proofGallons: inlineExitPG.value ?? stage.value?.exit?.proofGallons,
-    }
-    await batchStore.updateStageData(props.batch._id, 'Barrel Aging', {
-      exit: updatedExit,
-    }, 'Updated barrel exit date/proof')
-    inlineEditingExit.value = false
-    toast.add({ title: 'Barrel exit updated', color: 'success', icon: 'i-lucide-check-circle' })
-  } catch {
-    toast.add({ title: 'Failed to update barrel exit', color: 'error', icon: 'i-lucide-alert-circle' })
-  } finally {
-    savingInlineExit.value = false
-  }
-}
-
-// Auto-calculate proof gallons for entry (full edit mode)
-const calculatedEntryPG = computed(() => {
-  const e = local.value.entry
-  if (e.volume && e.abv) return calculateProofGallons(e.volume, e.volumeUnit, e.abv)
-  return null
-})
-
-const displayEntryPG = computed(() => {
-  const e = stage.value?.entry
-  if (e?.proofGallons) return e.proofGallons
-  if (e?.volume && e?.abv) return calculateProofGallons(e.volume, e.volumeUnit || 'gallon', e.abv)
-  return null
-})
-
-watch([() => local.value.entry.volume, () => local.value.entry.abv, () => local.value.entry.volumeUnit], () => {
-  if (calculatedEntryPG.value !== null) local.value.entry.proofGallons = calculatedEntryPG.value
-})
-
-// Auto-calculate proof gallons for exit (full edit mode)
-const calculatedExitPG = computed(() => {
-  const x = local.value.exit
-  if (x.volume && x.abv) return calculateProofGallons(x.volume, x.volumeUnit, x.abv)
-  return null
-})
-
-const displayExitPG = computed(() => {
-  const x = stage.value?.exit
-  if (x?.proofGallons) return x.proofGallons
-  if (x?.volume && x?.abv) return calculateProofGallons(x.volume, x.volumeUnit || 'gallon', x.abv)
-  return null
-})
-
-watch([() => local.value.exit.volume, () => local.value.exit.abv, () => local.value.exit.volumeUnit], () => {
-  if (calculatedExitPG.value !== null) local.value.exit.proofGallons = calculatedExitPG.value
-})
-
 const barrelOptions = computed(() => {
   const currentBarrelId = stage.value?.vessel
-  // Show empty barrels + the barrel already assigned to this batch (so it stays visible when editing)
   return vesselStore.barrels
     .filter((v) => v._id === currentBarrelId || !v.contents || v.contents.length === 0 || (v.current?.volume ?? 0) === 0)
     .map((v) => ({ label: v.name, value: v._id }))
 })
 
 const charLevelOptions = ['#1', '#2', '#3', '#4', 'Alligator']
-const volumeUnits = ['gallon', 'L', 'mL']
-
-// Sampling records
-const showAddSampling = ref(false)
-const newSampling = ref({
-  date: new Date(),
-  abv: undefined as number | undefined,
-  volume: undefined as number | undefined,
-  volumeUnit: 'gallon',
-  notes: '',
-})
-
-const addSampling = async () => {
-  const samplings = [...(stage.value?.samplings || []), { ...newSampling.value }]
-  await batchStore.updateStageData(props.batch._id, 'Barrel Aging', { samplings })
-  showAddSampling.value = false
-  newSampling.value = { date: new Date(), abv: undefined, volume: undefined, volumeUnit: 'gallon', notes: '' }
-}
-
-// --- Tasting Notes (inline) ---
-const sortedTastingNotes = computed(() => {
-  if (!props.batch.tastingNotes?.length) return []
-  return props.batch.tastingNotes
-    .map((note, originalIndex) => ({ ...note, originalIndex }))
-    .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
-})
-
-const newTastingNote = ref({
-  date: new Date().toISOString().slice(0, 10),
-  abv: undefined as number | undefined,
-  notes: '',
-})
-const savingTastingNote = ref(false)
-
-const submitTastingNote = async () => {
-  if (!newTastingNote.value.notes.trim()) return
-  savingTastingNote.value = true
-  try {
-    await batchStore.addTastingNote(props.batch._id, {
-      date: newTastingNote.value.date,
-      abv: newTastingNote.value.abv || undefined,
-      notes: newTastingNote.value.notes.trim(),
-    })
-    newTastingNote.value = { date: new Date().toISOString().slice(0, 10), abv: undefined, notes: '' }
-  } finally {
-    savingTastingNote.value = false
-  }
-}
 
 const saving = ref(false)
 const save = async () => {
   saving.value = true
   try {
-    // Set barrelCost on the batch in the store before updateStageData, so the
-    // same PUT request persists both the stage data and the barrel cost.
     const target = batchStore.getBatchById(props.batch._id)
-    if (target) {
-      target.barrelCost = local.value.barrelCost
-    }
+    if (target) target.barrelCost = local.value.barrelCost
 
     await batchStore.updateStageData(props.batch._id, 'Barrel Aging', {
       vessel: local.value.vessel || undefined,
@@ -499,322 +250,25 @@ const save = async () => {
 
     <!-- Entry / Exit -->
     <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-5">
-      <!-- Entry -->
-      <div class="p-3 rounded-lg border border-brown/20 bg-brown/5">
-        <div class="flex items-center justify-between mb-3">
-          <div class="text-xs font-semibold text-parchment/60 uppercase">Entry</div>
-          <UButton
-            v-if="!editing && !inlineEditingEntry"
-            size="xs"
-            variant="ghost"
-            color="neutral"
-            icon="i-lucide-pencil"
-            @click="startInlineEntryEdit"
-          >
-            Edit
-          </UButton>
-        </div>
-        <!-- Full edit mode -->
-        <div v-if="editing" class="space-y-3">
-          <UFormField label="Date"><SiteDatePicker v-model="local.entry.date" /></UFormField>
-          <div class="grid grid-cols-2 gap-2">
-            <UFormField label="Volume"><UInput v-model.number="local.entry.volume" type="number" placeholder="0" /></UFormField>
-            <UFormField label="Unit"><USelect v-model="local.entry.volumeUnit" :items="volumeUnits" /></UFormField>
-          </div>
-          <div class="grid grid-cols-2 gap-2">
-            <UFormField label="ABV %"><UInput v-model.number="local.entry.abv" type="number" placeholder="0" min="0" max="100" /></UFormField>
-            <UFormField label="Proof Gallons"><UInput v-model.number="local.entry.proofGallons" type="number" step="0.01" :placeholder="calculatedEntryPG?.toString() || '0'" /></UFormField>
-          </div>
-        </div>
-        <!-- Inline edit mode (date + ABV only, available anytime) -->
-        <div v-else-if="inlineEditingEntry" class="space-y-3">
-          <UFormField label="Date" :error="inlineEntryDateError || undefined">
-            <UInput v-model="inlineEntry.date" type="date" />
-          </UFormField>
-          <div class="grid grid-cols-2 gap-2">
-            <UFormField label="ABV %" :error="inlineEntryAbvError || undefined">
-              <UInput v-model.number="inlineEntry.abv" type="number" min="0" max="100" step="0.1" placeholder="0" />
-            </UFormField>
-            <div>
-              <div class="text-xs text-parchment/60 mb-1">Proof Gallons</div>
-              <div class="text-sm text-amber-400 font-semibold pt-2">
-                {{ inlineEntryPG !== null ? `${inlineEntryPG} PG` : (displayEntryPG ? `${displayEntryPG} PG` : '--') }}
-              </div>
-            </div>
-          </div>
-          <div class="text-xs text-parchment/50">
-            Volume: {{ stage?.entry?.volume || 0 }} {{ stage?.entry?.volumeUnit || 'gallon' }} (not changed)
-          </div>
-          <div class="flex items-center gap-2 pt-1">
-            <UButton
-              size="xs"
-              :loading="savingInlineEntry"
-              :disabled="!inlineEntryValid"
-              @click="saveInlineEntry"
-            >
-              Save
-            </UButton>
-            <UButton
-              size="xs"
-              variant="ghost"
-              color="neutral"
-              @click="cancelInlineEntryEdit"
-            >
-              Cancel
-            </UButton>
-          </div>
-        </div>
-        <!-- Display mode -->
-        <div v-else class="space-y-1 text-sm">
-          <div class="flex justify-between">
-            <span class="text-parchment/60">Date</span>
-            <span class="text-parchment">{{ formatDate(stage?.entry?.date) }}</span>
-          </div>
-          <div class="flex justify-between">
-            <span class="text-parchment/60">Volume</span>
-            <span class="text-parchment">{{ stage?.entry?.volume || 0 }} {{ stage?.entry?.volumeUnit }}</span>
-          </div>
-          <div class="flex justify-between">
-            <span class="text-parchment/60">ABV</span>
-            <span class="text-parchment">{{ stage?.entry?.abv || 0 }}%</span>
-          </div>
-          <div v-if="displayEntryPG" class="flex justify-between">
-            <span class="text-parchment/60">Proof Gallons</span>
-            <span class="text-amber-400 font-semibold">{{ displayEntryPG }} PG</span>
-          </div>
-        </div>
-      </div>
-
-      <!-- Exit -->
-      <div class="p-3 rounded-lg border border-brown/20 bg-brown/5">
-        <div class="flex items-center justify-between mb-3">
-          <div class="text-xs font-semibold text-parchment/60 uppercase">Exit</div>
-          <UButton
-            v-if="!editing && !inlineEditingExit"
-            size="xs"
-            variant="ghost"
-            color="neutral"
-            icon="i-lucide-pencil"
-            @click="startInlineExitEdit"
-          >
-            Edit
-          </UButton>
-        </div>
-        <!-- Full edit mode -->
-        <div v-if="editing" class="space-y-3">
-          <UFormField label="Date"><SiteDatePicker v-model="local.exit.date" /></UFormField>
-          <div class="grid grid-cols-2 gap-2">
-            <UFormField label="Volume"><UInput v-model.number="local.exit.volume" type="number" placeholder="0" /></UFormField>
-            <UFormField label="Unit"><USelect v-model="local.exit.volumeUnit" :items="volumeUnits" /></UFormField>
-          </div>
-          <div class="grid grid-cols-2 gap-2">
-            <UFormField label="ABV %"><UInput v-model.number="local.exit.abv" type="number" placeholder="0" min="0" max="100" /></UFormField>
-            <UFormField label="Proof Gallons"><UInput v-model.number="local.exit.proofGallons" type="number" step="0.01" :placeholder="calculatedExitPG?.toString() || '0'" /></UFormField>
-          </div>
-        </div>
-        <!-- Inline edit mode (date + ABV only, available anytime) -->
-        <div v-else-if="inlineEditingExit" class="space-y-3">
-          <UFormField label="Date" :error="inlineExitDateError || undefined">
-            <UInput v-model="inlineExit.date" type="date" />
-          </UFormField>
-          <div class="grid grid-cols-2 gap-2">
-            <UFormField label="ABV %" :error="inlineExitAbvError || undefined">
-              <UInput v-model.number="inlineExit.abv" type="number" min="0" max="100" step="0.1" placeholder="0" />
-            </UFormField>
-            <div>
-              <div class="text-xs text-parchment/60 mb-1">Proof Gallons</div>
-              <div class="text-sm text-amber-400 font-semibold pt-2">
-                {{ inlineExitPG !== null ? `${inlineExitPG} PG` : (displayExitPG ? `${displayExitPG} PG` : '--') }}
-              </div>
-            </div>
-          </div>
-          <div class="text-xs text-parchment/50">
-            Volume: {{ stage?.exit?.volume || 0 }} {{ stage?.exit?.volumeUnit || 'gallon' }} (not changed)
-          </div>
-          <div class="flex items-center gap-2 pt-1">
-            <UButton
-              size="xs"
-              :loading="savingInlineExit"
-              :disabled="!inlineExitValid"
-              @click="saveInlineExit"
-            >
-              Save
-            </UButton>
-            <UButton
-              size="xs"
-              variant="ghost"
-              color="neutral"
-              @click="cancelInlineExitEdit"
-            >
-              Cancel
-            </UButton>
-          </div>
-        </div>
-        <!-- Display mode -->
-        <div v-else class="space-y-1 text-sm">
-          <div class="flex justify-between">
-            <span class="text-parchment/60">Date</span>
-            <span class="text-parchment">{{ formatDate(stage?.exit?.date) }}</span>
-          </div>
-          <div class="flex justify-between">
-            <span class="text-parchment/60">Volume</span>
-            <span class="text-parchment">{{ stage?.exit?.volume || 0 }} {{ stage?.exit?.volumeUnit }}</span>
-          </div>
-          <div class="flex justify-between">
-            <span class="text-parchment/60">ABV</span>
-            <span class="text-parchment">{{ stage?.exit?.abv || 0 }}%</span>
-          </div>
-          <div v-if="displayExitPG" class="flex justify-between">
-            <span class="text-parchment/60">Proof Gallons</span>
-            <span class="text-amber-400 font-semibold">{{ displayExitPG }} PG</span>
-          </div>
-        </div>
-      </div>
+      <BatchBarrelEntryExit
+        :batch="batch"
+        :editing="editing"
+        type="entry"
+        :local-entry-exit="local.entry"
+      />
+      <BatchBarrelEntryExit
+        :batch="batch"
+        :editing="editing"
+        type="exit"
+        :local-entry-exit="local.exit"
+      />
     </div>
 
     <!-- Sampling Records -->
-    <div class="mb-5">
-      <div class="flex items-center justify-between mb-2">
-        <div class="text-xs text-parchment/60 uppercase tracking-wider">Sampling Records</div>
-        <UButton
-          v-if="editing"
-          size="xs"
-          variant="outline"
-          icon="i-lucide-plus"
-          @click="showAddSampling = !showAddSampling"
-        >
-          Add Sample
-        </UButton>
-      </div>
+    <BatchBarrelSampling :batch="batch" :editing="editing" />
 
-      <!-- Add sampling form -->
-      <div v-if="showAddSampling" class="mb-3 p-3 rounded-lg border border-amber/20 bg-amber-500/5">
-        <div class="grid grid-cols-2 sm:grid-cols-5 gap-3">
-          <div>
-            <div class="text-xs text-parchment/60 mb-1">Date</div>
-            <SiteDatePicker v-model="newSampling.date" />
-          </div>
-          <div>
-            <div class="text-xs text-parchment/60 mb-1">ABV %</div>
-            <UInput v-model.number="newSampling.abv" type="number" placeholder="0" />
-          </div>
-          <div>
-            <div class="text-xs text-parchment/60 mb-1">Volume</div>
-            <UInput v-model.number="newSampling.volume" type="number" placeholder="0" />
-          </div>
-          <div>
-            <div class="text-xs text-parchment/60 mb-1">Unit</div>
-            <USelect v-model="newSampling.volumeUnit" :items="['gallon', 'L', 'mL', 'fl oz']" />
-          </div>
-          <div class="flex items-end">
-            <UButton size="sm" @click="addSampling">Add</UButton>
-          </div>
-        </div>
-        <div class="mt-2">
-          <div class="text-xs text-parchment/60 mb-1">Notes</div>
-          <UInput v-model="newSampling.notes" placeholder="Sampling notes..." />
-        </div>
-      </div>
-
-      <!-- Samplings list -->
-      <div v-if="sortedSamplings.length > 0" class="divide-y divide-brown/20">
-        <div
-          v-for="(sample, i) in sortedSamplings"
-          :key="i"
-          class="flex items-center justify-between py-2 text-sm gap-2"
-        >
-          <span class="text-parchment/60">
-            {{ new Date(sample.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) }}
-          </span>
-          <span v-if="sample.abv" class="text-parchment">{{ sample.abv }}% ABV</span>
-          <span v-if="sample.volume" class="text-parchment/60">{{ sample.volume }} {{ sample.volumeUnit }}</span>
-          <span v-if="sample.notes" class="text-parchment/50 truncate max-w-32">{{ sample.notes }}</span>
-        </div>
-      </div>
-      <div v-else class="text-center py-3">
-        <p class="text-sm text-parchment/50">No samplings recorded</p>
-      </div>
-    </div>
-
-    <!-- Tasting Notes (inline within barrel aging) -->
-    <div class="mb-5">
-      <div class="flex items-center justify-between mb-3">
-        <div class="flex items-center gap-2">
-          <UIcon name="i-lucide-wine" class="text-sm text-amber-400" />
-          <div class="text-xs text-parchment/60 uppercase tracking-wider">Tasting Notes</div>
-        </div>
-        <span v-if="sortedTastingNotes.length > 0" class="text-xs text-parchment/40">
-          {{ sortedTastingNotes.length }} {{ sortedTastingNotes.length === 1 ? 'note' : 'notes' }}
-        </span>
-      </div>
-
-      <!-- Inline add form -->
-      <div v-if="batch.status === 'active'" class="mb-3 p-3 rounded-lg border border-amber/20 bg-amber-500/5">
-        <div class="grid grid-cols-1 sm:grid-cols-[1fr_auto] gap-3 mb-2">
-          <div>
-            <div class="text-xs text-parchment/60 mb-1">Date</div>
-            <UInput v-model="newTastingNote.date" type="date" size="sm" />
-          </div>
-          <div>
-            <div class="text-xs text-parchment/60 mb-1">Sample ABV %</div>
-            <UInput v-model.number="newTastingNote.abv" type="number" placeholder="e.g. 62.5" step="0.1" size="sm" />
-          </div>
-        </div>
-        <div class="flex gap-2">
-          <UTextarea
-            v-model="newTastingNote.notes"
-            placeholder="Aroma, flavor, mouthfeel, finish..."
-            :rows="2"
-            autoresize
-            class="flex-1"
-          />
-          <UButton
-            size="sm"
-            icon="i-lucide-plus"
-            :loading="savingTastingNote"
-            :disabled="!newTastingNote.notes.trim()"
-            class="self-end"
-            @click="submitTastingNote"
-          >
-            Add
-          </UButton>
-        </div>
-      </div>
-
-      <!-- Notes list (newest first) -->
-      <div v-if="sortedTastingNotes.length > 0" class="space-y-2">
-        <div
-          v-for="note in sortedTastingNotes"
-          :key="note.originalIndex"
-          class="group relative rounded-lg border border-brown/15 bg-charcoal-light/20 p-3"
-        >
-          <div class="flex items-center gap-2 mb-1">
-            <span class="text-xs font-medium text-parchment/70">
-              {{ new Date(note.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) }}
-            </span>
-            <span
-              v-if="note.abv"
-              class="rounded-full bg-amber-500/15 px-2 py-0.5 text-[10px] font-semibold text-amber-400"
-            >
-              {{ note.abv }}% ABV
-            </span>
-            <UButton
-              v-if="batch.status === 'active'"
-              icon="i-lucide-trash-2"
-              size="xs"
-              variant="ghost"
-              color="error"
-              class="ml-auto opacity-0 group-hover:opacity-100 transition-opacity"
-              @click="batchStore.deleteTastingNote(batch._id, note.originalIndex)"
-            />
-          </div>
-          <p class="text-sm text-parchment/60 whitespace-pre-line">{{ note.notes }}</p>
-        </div>
-      </div>
-      <div v-else class="text-center py-3">
-        <p class="text-sm text-parchment/50">No tasting notes yet</p>
-      </div>
-    </div>
+    <!-- Tasting Notes -->
+    <BatchBarrelTastingNotes :batch="batch" />
 
     <!-- Notes -->
     <div>

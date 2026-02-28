@@ -1,7 +1,16 @@
 <script setup lang="ts">
+import * as yup from 'yup';
+
 const emit = defineEmits<{ close: [boolean] }>();
 
 const recipeStore = useRecipeStore();
+
+const schema = yup.object({
+  name: yup.string().required('Name is required'),
+  class: yup.string().required('Class is required'),
+  volume: yup.number().positive('Must be positive').required('Volume is required'),
+  volumeUnit: yup.string().required('Volume unit is required'),
+});
 const itemStore = useItemStore();
 
 const { localData, isDirty, saving, save, cancel } = useFormPanel({
@@ -59,135 +68,137 @@ const removeItem = (itemId: string) => {
             @click="cancel"
           />
         </div>
-        <div class="flex-1 overflow-y-auto p-4 space-y-4">
-          <UFormField label="Name">
-            <UInput
-              v-model="localData.name"
-              placeholder="Recipe name"
-              class="w-full"
-            />
-          </UFormField>
-          <div class="grid grid-cols-2 gap-4">
-            <UFormField label="Class">
-              <USelectMenu
-                v-model="localData.class"
-                :items="
-                  liquorClasses.map((c) => ({ label: c.class, value: c.class }))
-                "
-                value-key="value"
-                placeholder="Select Class"
-                searchable
+        <UForm :schema="schema" :state="localData" @submit="save" class="flex flex-col flex-1 min-h-0">
+          <div class="flex-1 overflow-y-auto p-4 space-y-4">
+            <UFormField label="Name" name="name">
+              <UInput
+                v-model="localData.name"
+                placeholder="Recipe name"
                 class="w-full"
               />
             </UFormField>
-            <UFormField label="Type">
-              <USelectMenu
-                v-model="localData.type"
-                :items="types.map((t) => ({ label: t.type, value: t.type }))"
-                value-key="value"
-                class="w-full"
-              />
-            </UFormField>
-          </div>
-          <UFormField label="Volume">
-            <BaseQuantityInput
-              v-model:value="localData.volume"
-              v-model:unit="localData.volumeUnit"
-              :unit-options="volumeUnits"
-              placeholder="Volume"
-            />
-          </UFormField>
-
-          <UFormField label="Ingredients">
-            <div class="space-y-2">
-              <!-- Inline-editable ingredient rows -->
-              <div
-                v-for="(item, idx) in localData.items"
-                :key="item._id + '-' + idx"
-                class="grid grid-cols-[1fr_60px_80px_28px] gap-1.5 items-center"
-              >
-                <span class="text-sm truncate text-parchment">{{
-                  itemStore.nameById(item._id)
-                }}</span>
-                <UInput
-                  v-model.number="localData.items[idx].amount"
-                  type="number"
-                  size="xs"
-                  step="any"
-                  min="0"
-                />
+            <div class="grid grid-cols-2 gap-4">
+              <UFormField label="Class" name="class">
                 <USelectMenu
-                  v-model="localData.items[idx].unit"
-                  :items="allUnits"
-                  size="xs"
-                />
-                <UButton
-                  icon="i-lucide-trash-2"
-                  color="error"
-                  variant="ghost"
-                  size="xs"
-                  @click="removeItem(item._id)"
-                />
-              </div>
-              <!-- Add new ingredient row -->
-              <div class="grid grid-cols-[1fr_60px_80px_28px] gap-1.5 items-center pt-2 border-t border-white/10">
-                <USelectMenu
-                  v-model="newItem._id"
+                  v-model="localData.class"
                   :items="
-                    itemStore.items.map((i) => ({
-                      label: i.name,
-                      value: i._id,
-                    }))
+                    liquorClasses.map((c) => ({ label: c.class, value: c.class }))
                   "
                   value-key="value"
-                  placeholder="Add item..."
+                  placeholder="Select Class"
                   searchable
-                  size="xs"
+                  class="w-full"
                 />
-                <UInput
-                  v-model.number="newItem.amount"
-                  type="number"
-                  placeholder="Amt"
-                  size="xs"
-                  step="any"
-                  min="0"
-                />
+              </UFormField>
+              <UFormField label="Type">
                 <USelectMenu
-                  v-model="newItem.unit"
-                  :items="allUnits"
-                  placeholder="Unit"
-                  size="xs"
+                  v-model="localData.type"
+                  :items="types.map((t) => ({ label: t.type, value: t.type }))"
+                  value-key="value"
+                  class="w-full"
                 />
-                <UButton
-                  icon="i-lucide-plus"
-                  size="xs"
-                  :disabled="!newItem._id || !newItem.amount || !newItem.unit"
-                  @click="addItem"
-                />
-              </div>
+              </UFormField>
             </div>
-          </UFormField>
+            <UFormField label="Volume" name="volume">
+              <BaseQuantityInput
+                v-model:value="localData.volume"
+                v-model:unit="localData.volumeUnit"
+                :unit-options="volumeUnits"
+                placeholder="Volume"
+              />
+            </UFormField>
 
-          <!-- Pipeline Builder -->
-          <RecipePipelineBuilder
-            v-model="localData.pipeline"
-            v-model:template="localData.pipelineTemplate"
-          />
+            <UFormField label="Ingredients">
+              <div class="space-y-2">
+                <!-- Inline-editable ingredient rows -->
+                <div
+                  v-for="(item, idx) in localData.items"
+                  :key="item._id + '-' + idx"
+                  class="grid grid-cols-[1fr_60px_80px_28px] gap-1.5 items-center"
+                >
+                  <span class="text-sm truncate text-parchment">{{
+                    itemStore.nameById(item._id)
+                  }}</span>
+                  <UInput
+                    v-model.number="localData.items[idx].amount"
+                    type="number"
+                    size="xs"
+                    step="any"
+                    min="0"
+                  />
+                  <USelectMenu
+                    v-model="localData.items[idx].unit"
+                    :items="allUnits"
+                    size="xs"
+                  />
+                  <UButton
+                    icon="i-lucide-trash-2"
+                    color="error"
+                    variant="ghost"
+                    size="xs"
+                    @click="removeItem(item._id)"
+                  />
+                </div>
+                <!-- Add new ingredient row -->
+                <div class="grid grid-cols-[1fr_60px_80px_28px] gap-1.5 items-center pt-2 border-t border-white/10">
+                  <USelectMenu
+                    v-model="newItem._id"
+                    :items="
+                      itemStore.items.map((i) => ({
+                        label: i.name,
+                        value: i._id,
+                      }))
+                    "
+                    value-key="value"
+                    placeholder="Add item..."
+                    searchable
+                    size="xs"
+                  />
+                  <UInput
+                    v-model.number="newItem.amount"
+                    type="number"
+                    placeholder="Amt"
+                    size="xs"
+                    step="any"
+                    min="0"
+                  />
+                  <USelectMenu
+                    v-model="newItem.unit"
+                    :items="allUnits"
+                    placeholder="Unit"
+                    size="xs"
+                  />
+                  <UButton
+                    icon="i-lucide-plus"
+                    size="xs"
+                    :disabled="!newItem._id || !newItem.amount || !newItem.unit"
+                    @click="addItem"
+                  />
+                </div>
+              </div>
+            </UFormField>
 
-          <UFormField label="Directions">
-            <UTextarea v-model="localData.directions" />
-          </UFormField>
-        </div>
-        <div
-          class="flex items-center justify-end gap-2 px-4 py-3 border-t border-white/10"
-        >
-          <UButton color="neutral" variant="outline" @click="cancel"
-            >Cancel</UButton
+            <!-- Pipeline Builder -->
+            <RecipePipelineBuilder
+              v-model="localData.pipeline"
+              v-model:template="localData.pipelineTemplate"
+            />
+
+            <UFormField label="Directions">
+              <UTextarea v-model="localData.directions" />
+            </UFormField>
+          </div>
+          <div
+            class="flex items-center justify-end gap-2 px-4 py-3 border-t border-white/10"
           >
-          <UButton @click="save" :loading="saving" :disabled="!isDirty">
-            {{ isNew ? "Create" : "Save" }}
-          </UButton>
-        </div>
+            <UButton color="neutral" variant="outline" @click="cancel"
+              >Cancel</UButton
+            >
+            <UButton type="submit" :loading="saving" :disabled="!isDirty">
+              {{ isNew ? "Create" : "Save" }}
+            </UButton>
+          </div>
+        </UForm>
       </div>
     </template>
   </USlideover>

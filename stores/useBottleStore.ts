@@ -46,10 +46,6 @@ export const useBottleStore = defineStore("bottles", () => {
     return activeBottles.value.map((b) => ({ id: b._id, label: b.name }));
   });
 
-  const selectBottle = (id: string) => {
-    crud.item.value = crud.items.value.find((b) => b._id === id) as Bottle;
-  };
-
   return {
     ...crud,
     // Domain aliases for backward compatibility
@@ -66,6 +62,5 @@ export const useBottleStore = defineStore("bottles", () => {
     activeBottles,
     getName,
     bottleNameId,
-    selectBottle,
   };
 });

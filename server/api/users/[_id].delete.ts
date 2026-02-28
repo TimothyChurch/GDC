@@ -11,8 +11,8 @@ export default defineEventHandler(async (event) => {
 			});
 		}
 		return { message: 'User deleted successfully' };
-	} catch (error: any) {
-		if (error.statusCode) throw error;
+	} catch (error: unknown) {
+		if (isH3Error(error)) throw error;
 		throw createError({
 			statusCode: 500,
 			statusMessage: 'Failed to delete user',

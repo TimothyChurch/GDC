@@ -1,7 +1,17 @@
 <script setup lang="ts">
+import * as yup from 'yup';
 import { getBarrelAgeDefault } from '~/composables/definitions'
 
 const emit = defineEmits<{ close: [boolean] }>();
+
+const schema = yup.object({
+  name: yup.string().required('Name is required'),
+  type: yup.string().required('Type is required'),
+  stats: yup.object({
+    volume: yup.number().positive('Must be positive').nullable(),
+    weight: yup.number().positive('Must be positive').nullable(),
+  }),
+});
 
 const vesselStore = useVesselStore();
 
@@ -49,96 +59,98 @@ const sizeDefault = computed(() => getBarrelAgeDefault(localData.value.barrel?.s
             @click="cancel"
           />
         </div>
-        <div class="flex-1 overflow-y-auto p-4 space-y-4">
-          <UFormField label="Name">
-            <UInput v-model="localData.name" placeholder="Vessel name" />
-          </UFormField>
-          <UFormField label="Type">
-            <USelectMenu
-              v-model="localData.type"
-              :items="vesselTypes"
-              placeholder="Type"
-              creatable
-              searchable
-              class="w-full"
-            />
-          </UFormField>
-          <UFormField label="Weight">
-            <BaseQuantityInput
-              v-model:value="localData.stats.weight"
-              v-model:unit="localData.stats.weightUnit"
-              :unit-options="weightUnits"
-            />
-          </UFormField>
-          <UFormField label="Capacity">
-            <BaseQuantityInput
-              v-model:value="localData.stats.volume"
-              v-model:unit="localData.stats.volumeUnit"
-              :unit-options="volumeUnits"
-            />
-          </UFormField>
-          <template v-if="localData.type === 'Barrel'">
-            <UFormField label="Barrel Size">
-              <USelect
-                v-model="localData.barrel.size"
-                :items="barrelSizes"
+        <UForm :schema="schema" :state="localData" @submit="save" class="flex flex-col flex-1 min-h-0">
+          <div class="flex-1 overflow-y-auto p-4 space-y-4">
+            <UFormField label="Name" name="name">
+              <UInput v-model="localData.name" placeholder="Vessel name" />
+            </UFormField>
+            <UFormField label="Type" name="type">
+              <USelectMenu
+                v-model="localData.type"
+                :items="vesselTypes"
+                placeholder="Type"
+                creatable
+                searchable
                 class="w-full"
               />
             </UFormField>
-            <UFormField label="Char Level">
-              <USelect
-                v-model="localData.barrel.char"
-                :items="charLevels"
-                class="w-full"
+            <UFormField label="Weight" name="stats.weight">
+              <BaseQuantityInput
+                v-model:value="localData.stats.weight"
+                v-model:unit="localData.stats.weightUnit"
+                :unit-options="weightUnits"
               />
             </UFormField>
-            <UFormField label="Cost">
-              <UInput
-                v-model="localData.barrel.cost"
-                type="number"
-                icon="i-lucide-dollar-sign"
+            <UFormField label="Capacity" name="stats.volume">
+              <BaseQuantityInput
+                v-model:value="localData.stats.volume"
+                v-model:unit="localData.stats.volumeUnit"
+                :unit-options="volumeUnits"
               />
             </UFormField>
-            <div class="flex items-center justify-between">
-              <UFormField label="Used Barrel">
+            <template v-if="localData.type === 'Barrel'">
+              <UFormField label="Barrel Size">
+                <USelect
+                  v-model="localData.barrel.size"
+                  :items="barrelSizes"
+                  class="w-full"
+                />
+              </UFormField>
+              <UFormField label="Char Level">
+                <USelect
+                  v-model="localData.barrel.char"
+                  :items="charLevels"
+                  class="w-full"
+                />
+              </UFormField>
+              <UFormField label="Cost">
+                <UInput
+                  v-model="localData.barrel.cost"
+                  type="number"
+                  icon="i-lucide-dollar-sign"
+                />
+              </UFormField>
+              <div class="flex items-center justify-between">
+                <UFormField label="Used Barrel">
+                  <template #description>
+                    <span class="text-xs text-parchment/50">Mark as previously used (auto-set when emptied)</span>
+                  </template>
+                </UFormField>
+                <USwitch v-model="localData.isUsed" />
+              </div>
+              <UFormField v-if="localData.isUsed" label="Previous Contents">
+                <UInput
+                  v-model="localData.previousContents"
+                  placeholder="e.g. Bourbon, Rum, Wine"
+                />
+              </UFormField>
+              <UFormField label="Target Age (months)">
+                <UInput
+                  v-model.number="localData.targetAge"
+                  type="number"
+                  :placeholder="sizeDefault ? `Default: ${sizeDefault}` : 'e.g. 24'"
+                />
                 <template #description>
-                  <span class="text-xs text-parchment/50">Mark as previously used (auto-set when emptied)</span>
+                  <span class="text-xs text-parchment/50">
+                    <template v-if="localData.targetAge">Custom override</template>
+                    <template v-else-if="sizeDefault">Will use size default ({{ sizeDefault }} mo)</template>
+                    <template v-else>No default for this barrel size</template>
+                  </span>
                 </template>
               </UFormField>
-              <USwitch v-model="localData.isUsed" />
-            </div>
-            <UFormField v-if="localData.isUsed" label="Previous Contents">
-              <UInput
-                v-model="localData.previousContents"
-                placeholder="e.g. Bourbon, Rum, Wine"
-              />
-            </UFormField>
-            <UFormField label="Target Age (months)">
-              <UInput
-                v-model.number="localData.targetAge"
-                type="number"
-                :placeholder="sizeDefault ? `Default: ${sizeDefault}` : 'e.g. 24'"
-              />
-              <template #description>
-                <span class="text-xs text-parchment/50">
-                  <template v-if="localData.targetAge">Custom override</template>
-                  <template v-else-if="sizeDefault">Will use size default ({{ sizeDefault }} mo)</template>
-                  <template v-else>No default for this barrel size</template>
-                </span>
-              </template>
-            </UFormField>
-          </template>
-        </div>
-        <div
-          class="flex items-center justify-end gap-2 px-4 py-3 border-t border-white/10"
-        >
-          <UButton color="neutral" variant="outline" @click="cancel"
-            >Cancel</UButton
+            </template>
+          </div>
+          <div
+            class="flex items-center justify-end gap-2 px-4 py-3 border-t border-white/10"
           >
-          <UButton @click="save" :loading="saving" :disabled="!isDirty">
-            {{ isNew ? "Create" : "Save" }}
-          </UButton>
-        </div>
+            <UButton color="neutral" variant="outline" @click="cancel"
+              >Cancel</UButton
+            >
+            <UButton type="submit" :loading="saving" :disabled="!isDirty">
+              {{ isNew ? "Create" : "Save" }}
+            </UButton>
+          </div>
+        </UForm>
       </div>
     </template>
   </USlideover>

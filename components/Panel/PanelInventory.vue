@@ -1,5 +1,13 @@
 <script setup lang="ts">
+import * as yup from 'yup';
+
 const emit = defineEmits<{ close: [boolean] }>();
+
+const schema = yup.object({
+  date: yup.string().required('Date is required'),
+  item: yup.string().required('Item is required'),
+  quantity: yup.number().min(0, 'Quantity cannot be negative').required('Quantity is required'),
+});
 
 const inventoryStore = useInventoryStore();
 const itemStore = useItemStore();
@@ -38,40 +46,42 @@ const vesselOptions = computed(() =>
           </h2>
           <UButton icon="i-lucide-x" color="neutral" variant="ghost" @click="cancel" />
         </div>
-        <div class="flex-1 overflow-y-auto p-4 space-y-4">
-          <UFormField label="Date">
-            <SiteDatePicker v-model="localData.date" />
-          </UFormField>
-          <UFormField label="Item">
-            <USelectMenu
-              v-model="localData.item"
-              :items="itemOptions"
-              value-key="value"
-              label-key="label"
-              placeholder="Select an item"
-              searchable
-            />
-          </UFormField>
-          <UFormField label="Quantity">
-            <UInput v-model.number="localData.quantity" type="number" placeholder="Quantity" />
-          </UFormField>
-          <UFormField label="Location">
-            <USelectMenu
-              v-model="localData.location"
-              :items="vesselOptions"
-              value-key="value"
-              label-key="label"
-              placeholder="Select a vessel (optional)"
-              searchable
-            />
-          </UFormField>
-        </div>
-        <div class="flex items-center justify-end gap-2 px-4 py-3 border-t border-white/10">
-          <UButton color="neutral" variant="outline" @click="cancel">Cancel</UButton>
-          <UButton @click="save" :loading="saving" :disabled="!isDirty">
-            {{ isNew ? 'Create' : 'Save' }}
-          </UButton>
-        </div>
+        <UForm :schema="schema" :state="localData" @submit="save" class="flex flex-col flex-1 min-h-0">
+          <div class="flex-1 overflow-y-auto p-4 space-y-4">
+            <UFormField label="Date" name="date">
+              <SiteDatePicker v-model="localData.date" />
+            </UFormField>
+            <UFormField label="Item" name="item">
+              <USelectMenu
+                v-model="localData.item"
+                :items="itemOptions"
+                value-key="value"
+                label-key="label"
+                placeholder="Select an item"
+                searchable
+              />
+            </UFormField>
+            <UFormField label="Quantity" name="quantity">
+              <UInput v-model.number="localData.quantity" type="number" placeholder="Quantity" />
+            </UFormField>
+            <UFormField label="Location">
+              <USelectMenu
+                v-model="localData.location"
+                :items="vesselOptions"
+                value-key="value"
+                label-key="label"
+                placeholder="Select a vessel (optional)"
+                searchable
+              />
+            </UFormField>
+          </div>
+          <div class="flex items-center justify-end gap-2 px-4 py-3 border-t border-white/10">
+            <UButton color="neutral" variant="outline" @click="cancel">Cancel</UButton>
+            <UButton type="submit" :loading="saving" :disabled="!isDirty">
+              {{ isNew ? 'Create' : 'Save' }}
+            </UButton>
+          </div>
+        </UForm>
       </div>
     </template>
   </USlideover>

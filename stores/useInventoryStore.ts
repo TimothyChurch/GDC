@@ -39,8 +39,8 @@ export const useInventoryStore = defineStore("inventories", () => {
 
       const qs = query.toString();
       const url = qs ? `/api/inventory?${qs}` : "/api/inventory";
-      const response = await $fetch(url);
-      crud.items.value = response as Inventory[];
+      const response = await $fetch<Inventory[]>(url);
+      crud.items.value = response;
     } finally {
       crud.loading.value = false;
     }
@@ -67,8 +67,7 @@ export const useInventoryStore = defineStore("inventories", () => {
   const loadItemHistory = async (itemId: string): Promise<Inventory[]> => {
     crud.loading.value = true;
     try {
-      const response = await $fetch(`/api/inventory?item=${itemId}&all=true`);
-      const records = response as Inventory[];
+      const records = await $fetch<Inventory[]>(`/api/inventory?item=${itemId}&all=true`);
       const otherItems = crud.items.value.filter((inv) => inv.item !== itemId);
       crud.items.value = [...otherItems, ...records];
       return records;
@@ -107,17 +106,16 @@ export const useInventoryStore = defineStore("inventories", () => {
         date: r.date || new Date(),
         ...(r.location ? { location: r.location } : {}),
       }));
-      const response = await $fetch("/api/inventory/bulk", {
+      const created = await $fetch<Inventory[]>("/api/inventory/bulk", {
         method: "POST",
         body: payload,
       });
-      const created = response as Inventory[];
       crud.items.value.push(...created);
       return created;
-    } catch (error: any) {
+    } catch (error: unknown) {
       toast.add({
         title: "Failed to create inventory records",
-        description: error?.data?.statusMessage || error?.data?.message,
+        description: getErrorMessage(error),
         color: "error",
         icon: "i-lucide-alert-circle",
       });

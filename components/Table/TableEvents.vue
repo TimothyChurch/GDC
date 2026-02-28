@@ -4,6 +4,7 @@ import type { GDCEvent } from "~/types";
 import { getPaginationRowModel } from "@tanstack/vue-table";
 
 const eventStore = useEventStore();
+const router = useRouter();
 const { confirm } = useDeleteConfirm();
 
 const UBadge = resolveComponent("UBadge");
@@ -60,19 +61,12 @@ const columns: TableColumn<GDCEvent>[] = [
     accessorFn: (row) => row.date,
     cell: ({ getValue }) => formatDate(getValue() as string),
   }),
-  {
+  sortableColumn<GDCEvent>("contact", "Contact", {
     id: "contact",
-    header: "Contact",
     accessorFn: (row) => getContactName(row),
-  },
-  {
-    accessorKey: "type",
-    header: "Type",
-  },
-  {
-    id: "status",
-    header: "Status",
-    accessorKey: "status",
+  }),
+  sortableColumn<GDCEvent>("type", "Type"),
+  sortableColumn<GDCEvent>("status", "Status", {
     cell: ({ getValue }) => {
       const status = getValue() as string;
       return h(UBadge, {
@@ -81,12 +75,18 @@ const columns: TableColumn<GDCEvent>[] = [
         size: "sm",
       }, () => status);
     },
-  },
+  }),
   actionsColumn<GDCEvent>((row) => [
+    {
+      label: "View details",
+      onSelect() {
+        router.push(`/admin/events/${row.original._id}`);
+      },
+    },
     {
       label: "Edit event",
       onSelect() {
-        const clone = JSON.parse(JSON.stringify(row.original));
+        const clone = structuredClone(toRaw(row.original));
         eventStore.event = { ...clone, contact: typeof row.original.contact === 'object' ? (row.original.contact as any)._id : clone.contact };
         openPanel();
       },
@@ -137,7 +137,7 @@ const addItem = () => {
         >
           {{ status }}
         </UButton>
-        <UButton icon="i-heroicons-plus-circle" size="xl" @click="addItem" variant="ghost">Add Event</UButton>
+        <UButton icon="i-lucide-plus-circle" size="xl" @click="addItem" variant="ghost">Add Event</UButton>
       </div>
     </template>
 
@@ -151,8 +151,12 @@ const addItem = () => {
         :data="filteredEvents"
         :columns="columns"
         :loading="eventStore.loading"
-        :empty="'No events found'"
+        @select="(_e: Event, row: any) => { eventStore.event = { ...structuredClone(toRaw(row.original)), contact: typeof row.original.contact === 'object' ? (row.original.contact as any)._id : row.original.contact }; openPanel() }"
+        :ui="{ tr: 'cursor-pointer' }"
       >
+        <template #empty>
+          <BaseEmptyState icon="i-lucide-calendar" title="No events found" description="Schedule tastings, tours, and private events" action-label="Add Event" @action="addItem" />
+        </template>
         <template #expanded="{ row }">
           <div class="flex gap-6 flex-wrap py-2 px-4">
             <UFormField label="Group Size">
@@ -207,9 +211,7 @@ const addItem = () => {
           </div>
         </div>
       </div>
-      <div v-if="filteredEvents.length === 0" class="text-center py-6 text-parchment/50 text-sm">
-        No events found
-      </div>
+      <BaseEmptyState v-if="filteredEvents.length === 0" icon="i-lucide-calendar" title="No events found" description="Schedule tastings, tours, and private events" action-label="Add Event" @action="addItem" />
     </div>
   </TableWrapper>
 </template>

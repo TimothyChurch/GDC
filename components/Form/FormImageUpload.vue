@@ -78,10 +78,12 @@ const removeImage = async () => {
 
     <!-- Current image preview -->
     <div v-if="hasImage && !uploading" class="relative group mb-2">
-      <img
+      <NuxtImg
         :src="modelValue"
         :alt="label"
         class="w-full max-w-xs h-40 object-cover rounded-lg border border-brown/30"
+        width="320"
+        height="160"
       />
       <div class="absolute inset-0 max-w-xs h-40 bg-black/50 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
         <UButton

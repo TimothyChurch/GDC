@@ -72,8 +72,8 @@ const submitInventory = async () => {
       await inventoryStore.updateInventory()
     }
     toast.add({ title: 'Inventory submitted', color: 'success', icon: 'i-lucide-check-circle' })
-  } catch (error: any) {
-    toast.add({ title: 'Failed to submit inventory', description: error?.data?.message, color: 'error', icon: 'i-lucide-alert-circle' })
+  } catch (error: unknown) {
+    toast.add({ title: 'Failed to submit inventory', description: getErrorMessage(error), color: 'error', icon: 'i-lucide-alert-circle' })
   } finally {
     saving.value = false
   }

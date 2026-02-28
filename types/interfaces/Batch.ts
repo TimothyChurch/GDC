@@ -209,6 +209,8 @@ export interface BatchStages {
 	blending?: BlendingStage;
 	proofing?: ProofingStage;
 	bottled?: BottledStage;
+	/** Index signature for dynamic stage key access via STAGE_KEY_MAP */
+	[key: string]: BatchStageBase | MashingStage | FermentingStage | DistillingStage | MacerationStage | FilteringStage | BarrelAgingStage | StorageStage | BlendingStage | ProofingStage | BottledStage | undefined;
 }
 
 // --- Tasting note entry ---

@@ -42,28 +42,54 @@ export const useItemStore = defineStore("items", () => {
     );
   };
 
-  const latestPrice = (item: Item | string): number => {
+  // Pre-indexed map: itemId -> most recent PO line item data (built once, cached via computed)
+  const _latestPOLineItems = computed(() => {
     const purchaseOrderStore = usePurchaseOrderStore();
+    const sorted = [...purchaseOrderStore.purchaseOrders].sort(
+      (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime(),
+    );
+
+    const map = new Map<string, { price: number; size: number; sizeUnit: string }>();
+    for (const po of sorted) {
+      for (const lineItem of po.items) {
+        if (!map.has(lineItem.item)) {
+          map.set(lineItem.item, {
+            price: lineItem.price,
+            size: lineItem.size,
+            sizeUnit: lineItem.sizeUnit,
+          });
+        }
+      }
+    }
+    return map;
+  });
+
+  const latestPrice = (item: Item | string): number => {
     const { computePricePerUnit } = useUnitConversion();
 
     const selectedItem = typeof item === "string" ? crud.getById(item) : item;
     if (!selectedItem) return 0;
 
-    const sortedPurchaseOrders = [...purchaseOrderStore.purchaseOrders].sort(
-      (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime(),
-    );
-
-    for (const po of sortedPurchaseOrders) {
-      const lineItem = po.items.find((i) => i.item === selectedItem._id);
-      if (lineItem) {
-        return computePricePerUnit(
-          lineItem.price,
-          lineItem.size,
-          lineItem.sizeUnit,
-          selectedItem.inventoryUnit || lineItem.sizeUnit,
-        );
-      }
+    const lineData = _latestPOLineItems.value.get(selectedItem._id);
+    if (lineData) {
+      return computePricePerUnit(
+        lineData.price,
+        lineData.size,
+        lineData.sizeUnit,
+        selectedItem.inventoryUnit || lineData.sizeUnit,
+      );
     }
+
+    // Fallback to manual base cost fields
+    if (selectedItem.baseCostPrice && selectedItem.baseCostSize && selectedItem.baseCostUnit) {
+      return computePricePerUnit(
+        selectedItem.baseCostPrice,
+        selectedItem.baseCostSize,
+        selectedItem.baseCostUnit,
+        selectedItem.inventoryUnit || selectedItem.baseCostUnit,
+      );
+    }
+
     return 0;
   };
 

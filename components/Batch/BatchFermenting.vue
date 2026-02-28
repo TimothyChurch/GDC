@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { Line } from 'vue-chartjs'
+useChartRegistration()
 import type { Batch, FermentingStage } from '~/types'
 
 const props = defineProps<{

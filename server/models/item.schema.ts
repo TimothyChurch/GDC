@@ -57,6 +57,15 @@ export const Item = defineMongooseModel({
       type: Number,
       default: 0,
     },
+    baseCostPrice: {
+      type: Number,
+    },
+    baseCostSize: {
+      type: Number,
+    },
+    baseCostUnit: {
+      type: String,
+    },
     notes: {
       type: String,
       trim: true,

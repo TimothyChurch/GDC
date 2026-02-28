@@ -11,7 +11,7 @@ useSeoMeta({
   description: () => cocktail.value?.description || 'A handcrafted cocktail from Galveston Distilling Co.',
   ogTitle: () => cocktail.value ? `${cocktail.value.name} | Galveston Distilling Co` : 'Cocktail',
   ogDescription: () => cocktail.value?.description || 'A handcrafted cocktail from Galveston Distilling Co.',
-  ogImage: () => cocktail.value?.img || '/images/cocktail.jpg',
+  ogImage: () => cocktail.value?.img || 'https://galvestondistilling.com/images/cocktail.jpg',
 });
 
 const formattedAmount = (amount: number): string => {

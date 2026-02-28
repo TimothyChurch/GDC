@@ -53,7 +53,7 @@ const columns: TableColumn<Contact>[] = [
     {
       label: "Edit contact",
       onSelect() {
-        contactStore.contact = JSON.parse(JSON.stringify(row.original));
+        contactStore.contact = structuredClone(toRaw(row.original));
         openPanel();
       },
     },
@@ -101,7 +101,7 @@ const addItem = () => {
         >
           Newsletter
         </UButton>
-        <UButton icon="i-heroicons-plus-circle" size="xl" @click="addItem" variant="ghost">Add Contact</UButton>
+        <UButton icon="i-lucide-plus-circle" size="xl" @click="addItem" variant="ghost">Add Contact</UButton>
       </div>
     </template>
 
@@ -115,10 +115,18 @@ const addItem = () => {
         :data="filteredContacts"
         :columns="columns"
         :loading="contactStore.loading"
-        :empty="newsletterOnly ? 'No newsletter subscribers' : 'No contacts found'"
         @select="(_e: Event, row: any) => router.push(`/admin/contacts/${row.original._id}`)"
         :ui="{ tr: 'cursor-pointer' }"
       >
+        <template #empty>
+          <BaseEmptyState
+            icon="i-lucide-users"
+            :title="newsletterOnly ? 'No newsletter subscribers' : 'No contacts found'"
+            :description="newsletterOnly ? 'No contacts have subscribed to the newsletter' : 'Add contacts to manage vendors and customers'"
+            action-label="Add Contact"
+            @action="addItem"
+          />
+        </template>
         <template #expanded="{ row }">
           <div class="flex gap-6 flex-wrap py-2 px-4">
             <UFormField label="Website">
@@ -179,9 +187,14 @@ const addItem = () => {
           </div>
         </div>
       </div>
-      <div v-if="filteredContacts.length === 0" class="text-center py-6 text-parchment/50 text-sm">
-        {{ newsletterOnly ? 'No newsletter subscribers' : 'No contacts found' }}
-      </div>
+      <BaseEmptyState
+        v-if="filteredContacts.length === 0"
+        icon="i-lucide-users"
+        :title="newsletterOnly ? 'No newsletter subscribers' : 'No contacts found'"
+        :description="newsletterOnly ? 'No contacts have subscribed to the newsletter' : 'Add contacts to manage vendors and customers'"
+        action-label="Add Contact"
+        @action="addItem"
+      />
     </div>
   </TableWrapper>
 </template>

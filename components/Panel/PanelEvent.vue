@@ -1,5 +1,14 @@
 <script setup lang="ts">
+import * as yup from 'yup';
+
 const emit = defineEmits<{ close: [boolean] }>();
+
+const schema = yup.object({
+  date: yup.string().required('Date is required'),
+  type: yup.string().required('Type is required'),
+  groupSize: yup.number().positive('Must be positive').required('Group size is required'),
+  status: yup.string().required('Status is required'),
+});
 
 const eventStore = useEventStore();
 
@@ -48,39 +57,41 @@ const contactEmail = computed(() => {
           </h2>
           <UButton icon="i-lucide-x" color="neutral" variant="ghost" @click="cancel" />
         </div>
-        <div class="flex-1 overflow-y-auto p-4 space-y-4">
-          <!-- Contact display (read-only for existing events) -->
-          <div v-if="contactDisplay" class="bg-brown/10 rounded-lg p-3 border border-brown/20">
-            <span class="text-xs text-parchment/50 uppercase tracking-wider block mb-1">Contact</span>
-            <div class="text-sm font-medium text-parchment">{{ contactDisplay }}</div>
-            <div v-if="contactEmail" class="text-xs text-parchment/60">{{ contactEmail }}</div>
-          </div>
+        <UForm :schema="schema" :state="localData" @submit="save" class="flex flex-col flex-1 min-h-0">
+          <div class="flex-1 overflow-y-auto p-4 space-y-4">
+            <!-- Contact display (read-only for existing events) -->
+            <div v-if="contactDisplay" class="bg-brown/10 rounded-lg p-3 border border-brown/20">
+              <span class="text-xs text-parchment/50 uppercase tracking-wider block mb-1">Contact</span>
+              <div class="text-sm font-medium text-parchment">{{ contactDisplay }}</div>
+              <div v-if="contactEmail" class="text-xs text-parchment/60">{{ contactEmail }}</div>
+            </div>
 
-          <UFormField label="Date">
-            <UInput v-model="localData.date" type="date" />
-          </UFormField>
-          <UFormField label="Group Size">
-            <UInput v-model.number="localData.groupSize" type="number" min="1" />
-          </UFormField>
-          <UFormField label="Type">
-            <USelect v-model="localData.type" :items="typeOptions" />
-          </UFormField>
-          <UFormField label="Status">
-            <USelect v-model="localData.status" :items="statusOptions" />
-          </UFormField>
-          <UFormField label="Capacity">
-            <UInput v-model.number="localData.capacity" type="number" min="1" placeholder="Max seats (for public classes)" />
-          </UFormField>
-          <UFormField label="Notes">
-            <UTextarea v-model="localData.notes" rows="3" placeholder="Additional notes..." />
-          </UFormField>
-        </div>
-        <div class="flex items-center justify-end gap-2 px-4 py-3 border-t border-white/10">
-          <UButton color="neutral" variant="outline" @click="cancel">Cancel</UButton>
-          <UButton @click="save" :loading="saving" :disabled="!isDirty">
-            {{ isNew ? 'Create' : 'Save' }}
-          </UButton>
-        </div>
+            <UFormField label="Date" name="date">
+              <UInput v-model="localData.date" type="date" />
+            </UFormField>
+            <UFormField label="Group Size" name="groupSize">
+              <UInput v-model.number="localData.groupSize" type="number" min="1" />
+            </UFormField>
+            <UFormField label="Type" name="type">
+              <USelect v-model="localData.type" :items="typeOptions" />
+            </UFormField>
+            <UFormField label="Status" name="status">
+              <USelect v-model="localData.status" :items="statusOptions" />
+            </UFormField>
+            <UFormField label="Capacity">
+              <UInput v-model.number="localData.capacity" type="number" min="1" placeholder="Max seats (for public classes)" />
+            </UFormField>
+            <UFormField label="Notes">
+              <UTextarea v-model="localData.notes" rows="3" placeholder="Additional notes..." />
+            </UFormField>
+          </div>
+          <div class="flex items-center justify-end gap-2 px-4 py-3 border-t border-white/10">
+            <UButton color="neutral" variant="outline" @click="cancel">Cancel</UButton>
+            <UButton type="submit" :loading="saving" :disabled="!isDirty">
+              {{ isNew ? 'Create' : 'Save' }}
+            </UButton>
+          </div>
+        </UForm>
       </div>
     </template>
   </USlideover>

@@ -2,6 +2,8 @@
 const emit = defineEmits<{ toggleSidebar: [] }>();
 const { user, logout } = useAuth();
 const { open } = useCommandPalette();
+const messageStore = useMessageStore();
+const unreadCount = computed(() => messageStore.unreadCount);
 
 const isMac = computed(() =>
   import.meta.client ? navigator?.userAgent?.includes('Mac') : false
@@ -20,10 +22,13 @@ const isMac = computed(() =>
         @click="emit('toggleSidebar')"
       />
       <NuxtLink to="/admin/dashboard" class="flex items-center gap-2">
-        <img
+        <NuxtImg
           src="/images/Logo.png"
           alt="GDC"
           class="h-8 w-8 rounded"
+          width="32"
+          height="32"
+          format="webp"
         />
         <span class="hidden md:inline text-sm font-semibold text-parchment tracking-wide">
           GDC Operations
@@ -54,6 +59,17 @@ const isMac = computed(() =>
 
     <div class="flex items-center gap-2">
       <ModalCalculators />
+      <NuxtLink to="/admin/inbox">
+        <UChip :show="unreadCount > 0" :text="unreadCount" color="error" size="lg">
+          <UButton
+            color="neutral"
+            variant="ghost"
+            size="sm"
+            icon="i-lucide-bell"
+            class="text-parchment/60 hover:text-parchment"
+          />
+        </UChip>
+      </NuxtLink>
       <div class="hidden sm:flex items-center gap-2 text-sm text-parchment/70">
         <UIcon name="i-lucide-user" class="text-copper" />
         <span>{{ user?.email }}</span>

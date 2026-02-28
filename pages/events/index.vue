@@ -1,10 +1,10 @@
 <script setup lang="ts">
-useSeoMeta({
+useServerSeoMeta({
   title: 'Events | Galveston Distilling Co',
   description: 'Book cocktail classes, distillery tours, and spirit tastings at Galveston Distilling Co.',
   ogTitle: 'Events | Galveston Distilling Co',
   ogDescription: 'Book cocktail classes, distillery tours, and spirit tastings at Galveston Distilling Co.',
-  ogImage: '/images/og-events.jpg',
+  ogImage: 'https://galvestondistilling.com/images/og-events.jpg',
   ogUrl: 'https://galvestondistilling.com/events',
 });
 </script>
@@ -33,11 +33,14 @@ useSeoMeta({
           class="group bg-cream dark:bg-charcoal rounded-xl overflow-hidden border border-gold/10 hover:border-gold/30 hover:shadow-lg transition-all duration-300"
         >
           <div class="aspect-[4/3] overflow-hidden">
-            <img
+            <NuxtImg
               src="/images/class.jpg"
               alt="Cocktail Class"
               class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+              width="400"
+              height="300"
               loading="lazy"
+              format="webp"
             />
           </div>
           <div class="p-6">
@@ -56,11 +59,14 @@ useSeoMeta({
         <!-- Distillery Tours -->
         <div class="bg-cream dark:bg-charcoal rounded-xl overflow-hidden border border-gold/10">
           <div class="aspect-[4/3] overflow-hidden">
-            <img
+            <NuxtImg
               src="/images/20231017_104945.jpg"
               alt="Distillery Tour"
               class="w-full h-full object-cover"
+              width="400"
+              height="300"
               loading="lazy"
+              format="webp"
             />
           </div>
           <div class="p-6">
@@ -79,11 +85,14 @@ useSeoMeta({
         <!-- Tastings -->
         <div class="bg-cream dark:bg-charcoal rounded-xl overflow-hidden border border-gold/10">
           <div class="aspect-[4/3] overflow-hidden bg-charcoal/5 dark:bg-parchment/5 flex items-center justify-center">
-            <img
+            <NuxtImg
               src="/images/cocktail.jpg"
               alt="Spirit Tastings"
               class="w-full h-full object-cover"
+              width="400"
+              height="300"
               loading="lazy"
+              format="webp"
             />
           </div>
           <div class="p-6">
@@ -102,11 +111,14 @@ useSeoMeta({
 
       <!-- Private Events CTA -->
       <div class="relative rounded-xl overflow-hidden">
-        <img
+        <NuxtImg
           src="/images/20231205_174024 (3).jpg"
           alt="Private events at Galveston Distilling"
           class="absolute inset-0 w-full h-full object-cover"
+          width="1200"
+          height="600"
           loading="lazy"
+          format="webp"
         />
         <div class="absolute inset-0 bg-espresso/70"></div>
         <div class="relative z-10 text-center px-6 py-16 sm:py-20">

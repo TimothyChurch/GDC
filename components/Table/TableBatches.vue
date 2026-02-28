@@ -10,7 +10,10 @@ const batchStore = useBatchStore();
 const recipeStore = useRecipeStore();
 const { confirm } = useDeleteConfirm();
 
-const tableData = computed(() => props.data ?? batchStore.batches);
+const tableData = computed(() => {
+  const data = props.data ?? batchStore.batches;
+  return props.data ? data : data.filter(b => b.currentStage !== 'Barreled');
+});
 
 const { search, pagination, tableRef, filteredTotal } = useTableState(
   computed(() => tableData.value.length)
@@ -40,12 +43,9 @@ const columns: TableColumn<Batch>[] = [
   sortableColumn<Batch>("batchCost", "Batch Cost", {
     cell: ({ row }) => Dollar.format(row.original.batchCost || 0),
   }),
-  {
-    id: "batchSize",
-    accessorKey: "batchSize",
-    header: "Size",
+  sortableColumn<Batch>("batchSize", "Size", {
     cell: ({ row }) => `${row.original.batchSize || 0} ${row.original.batchSizeUnit || ''}`.trim(),
-  },
+  }),
   sortableColumn<Batch>("currentStage", "Stage", {
     cell: ({ row }) => {
       const batch = row.original;
@@ -90,7 +90,7 @@ const columns: TableColumn<Batch>[] = [
     {
       label: "Edit batch",
       onSelect() {
-        batchStore.batch = JSON.parse(JSON.stringify(row.original));
+        batchStore.batch = structuredClone(toRaw(row.original));
         openPanel();
       },
     },
@@ -128,7 +128,7 @@ const addItem = () => {
     search-placeholder="Search batches..."
   >
     <template #actions>
-      <UButton icon="i-heroicons-plus-circle" size="xl" @click="addItem" variant="ghost">Add Batch</UButton>
+      <UButton icon="i-lucide-plus-circle" size="xl" @click="addItem" variant="ghost">Add Batch</UButton>
     </template>
     <!-- Desktop table -->
     <div class="hidden sm:block">
@@ -140,16 +140,24 @@ const addItem = () => {
         :data="tableData"
         :columns="columns"
         :loading="batchStore.loading"
-        :empty="'No batches found'"
         @select="(_e: Event, row: any) => router.push(`/admin/batch/${row.original._id}`)"
         :ui="{ tr: 'cursor-pointer' }"
-      />
+      >
+        <template #empty>
+          <BaseEmptyState icon="i-lucide-beer" title="No batches found" description="Create your first batch to get started" action-label="Add Batch" @action="addItem" />
+        </template>
+      </UTable>
     </div>
 
     <!-- Mobile card view -->
     <div class="sm:hidden space-y-3">
       <div
-        v-for="batch in tableData"
+        v-for="batch in tableData.filter(b => {
+          if (!search) return true;
+          const term = search.toLowerCase();
+          const recipeName = recipeStore.getRecipeById(b.recipe)?.name || '';
+          return recipeName.toLowerCase().includes(term) || (b.currentStage || '').toLowerCase().includes(term);
+        })"
         :key="batch._id"
         class="bg-charcoal rounded-lg border border-brown/30 p-4 cursor-pointer"
         @click="router.push(`/admin/batch/${batch._id}`)"
@@ -190,9 +198,7 @@ const addItem = () => {
           </div>
         </div>
       </div>
-      <div v-if="tableData.length === 0" class="text-center py-6 text-parchment/50 text-sm">
-        No batches found
-      </div>
+      <BaseEmptyState v-if="tableData.length === 0" icon="i-lucide-beer" title="No batches found" description="Create your first batch to get started" action-label="Add Batch" @action="addItem" />
     </div>
   </TableWrapper>
 </template>

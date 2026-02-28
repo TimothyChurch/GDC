@@ -1,7 +1,14 @@
 <script setup lang="ts">
+import * as yup from 'yup';
 import type { PurchaseOrderItem } from "~/types";
 
 const emit = defineEmits<{ close: [boolean] }>();
+
+const schema = yup.object({
+  date: yup.string().required('Date is required'),
+  vendor: yup.string().required('Vendor is required'),
+  status: yup.string().required('Status is required'),
+});
 
 const purchaseOrderStore = usePurchaseOrderStore();
 const contactStore = useContactStore();
@@ -89,19 +96,20 @@ const removeItem = (index: number) => {
             @click="cancel"
           />
         </div>
+        <UForm :schema="schema" :state="localData" @submit="save" class="flex flex-col flex-1 min-h-0">
         <div class="flex-1 overflow-y-auto p-4 space-y-4">
-          <UFormField label="Date">
+          <UFormField label="Date" name="date">
             <SiteDatePicker v-model="localData.date" />
           </UFormField>
           <div class="grid grid-cols-2 gap-4">
-            <UFormField label="Status">
+            <UFormField label="Status" name="status">
               <USelect
                 v-model="localData.status"
                 :items="statusOptions"
                 class="w-full"
               />
             </UFormField>
-            <UFormField label="Vendor">
+            <UFormField label="Vendor" name="vendor">
               <USelect
                 v-model="localData.vendor"
                 :items="
@@ -208,10 +216,11 @@ const removeItem = (index: number) => {
           <UButton color="neutral" variant="outline" @click="cancel"
             >Cancel</UButton
           >
-          <UButton @click="save" :loading="saving" :disabled="!isDirty">
+          <UButton type="submit" :loading="saving" :disabled="!isDirty">
             {{ isNew ? "Create" : isMarkingDelivered ? "Save & Update Inventory" : "Save" }}
           </UButton>
         </div>
+        </UForm>
       </div>
     </template>
   </USlideover>

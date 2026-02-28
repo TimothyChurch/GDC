@@ -1,10 +1,25 @@
 <script setup lang="ts">
+import { LazyPanelBatch, LazyPanelProduction } from '#components'
+
 const batchStore = useBatchStore();
 const bottleStore = useBottleStore();
 const productionStore = useProductionStore();
 const purchaseOrderStore = usePurchaseOrderStore();
 const inventoryStore = useInventoryStore();
 const itemStore = useItemStore();
+const overlay = useOverlay();
+
+async function openQuickAdd(type: 'batch' | 'production') {
+  if (type === 'batch') {
+    batchStore.resetItem();
+    const panel = overlay.create(LazyPanelBatch);
+    await panel.open();
+  } else {
+    productionStore.resetItem();
+    const panel = overlay.create(LazyPanelProduction);
+    await panel.open();
+  }
+}
 
 const now = ref(new Date());
 onMounted(() => {
@@ -45,16 +60,13 @@ const pendingPOTotal = computed(() =>
   Dollar.format(pendingPOs.value.reduce((sum, po) => sum + (po.total || 0), 0))
 );
 
-// KPI: Low Inventory
+// KPI: Low Inventory — use each item's reorderPoint (default 0 = no alert)
 const lowInventoryAlerts = computed(() => {
   let count = 0;
   for (const item of itemStore.items) {
-    const records = inventoryStore.getInventoriesByItem(item._id);
-    if (records.length === 0) continue;
-    const sorted = [...records].sort((a, b) =>
-      new Date(b.date).getTime() - new Date(a.date).getTime()
-    );
-    if (sorted[0].quantity <= 10) count++;
+    if (!item.reorderPoint || item.reorderPoint <= 0) continue;
+    const stock = inventoryStore.getCurrentStock(item._id);
+    if (stock <= item.reorderPoint) count++;
   }
   return count;
 });
@@ -92,18 +104,14 @@ const isLoading = computed(() =>
         </p>
       </div>
       <div class="flex gap-2">
-        <NuxtLink to="/admin/batch">
-          <UButton size="sm" variant="soft" class="bg-gold/10 text-gold border border-gold/20 hover:bg-gold/20">
-            <UIcon name="i-lucide-plus" class="mr-1" />
-            New Batch
-          </UButton>
-        </NuxtLink>
-        <NuxtLink to="/admin/production">
-          <UButton size="sm" variant="soft" class="bg-copper/10 text-copper border border-copper/20 hover:bg-copper/20">
-            <UIcon name="i-lucide-factory" class="mr-1" />
-            Record Production
-          </UButton>
-        </NuxtLink>
+        <UButton size="sm" variant="soft" class="bg-gold/10 text-gold border border-gold/20 hover:bg-gold/20" @click="openQuickAdd('batch')">
+          <UIcon name="i-lucide-plus" class="mr-1" />
+          New Batch
+        </UButton>
+        <UButton size="sm" variant="soft" class="bg-copper/10 text-copper border border-copper/20 hover:bg-copper/20" @click="openQuickAdd('production')">
+          <UIcon name="i-lucide-factory" class="mr-1" />
+          Record Production
+        </UButton>
       </div>
     </div>
 

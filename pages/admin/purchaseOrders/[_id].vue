@@ -45,7 +45,7 @@ const panel = overlay.create(LazyPanelPurchaseOrder)
 
 const editPO = () => {
   if (!po.value) return
-  purchaseOrderStore.purchaseOrder = JSON.parse(JSON.stringify(po.value))
+  purchaseOrderStore.purchaseOrder = structuredClone(toRaw(po.value))
   panel.open()
 }
 
@@ -63,7 +63,7 @@ const markAsReceived = async () => {
   receiving.value = true
   try {
     // Update PO status to Delivered
-    purchaseOrderStore.purchaseOrder = JSON.parse(JSON.stringify(po.value))
+    purchaseOrderStore.purchaseOrder = structuredClone(toRaw(po.value))
     purchaseOrderStore.purchaseOrder.status = 'Delivered'
     const result = await purchaseOrderStore.updatePurchaseOrder()
 
@@ -98,7 +98,11 @@ function statusColor(status: string) {
 </script>
 
 <template>
-  <div v-if="po" class="space-y-6">
+  <div v-if="!purchaseOrderStore.loaded" class="flex items-center justify-center py-12">
+    <UIcon name="i-lucide-loader-2" class="animate-spin text-3xl text-parchment/30" />
+  </div>
+
+  <div v-else-if="po" class="space-y-6">
     <AdminPageHeader
       :title="vendorName"
       :subtitle="formattedDate"

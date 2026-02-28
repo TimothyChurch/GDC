@@ -117,12 +117,12 @@ export const useBatchStore = defineStore('batches', () => {
 			target.currentStage = firstStage;
 		}
 
-		const stageKey = STAGE_KEY_MAP[firstStage] as keyof BatchStages;
+		const stageKey = STAGE_KEY_MAP[firstStage];
 		if (stageKey) {
 			if (!target.stages[stageKey]) {
-				(target.stages as any)[stageKey] = {};
+				target.stages[stageKey] = {};
 			}
-			const stage = target.stages[stageKey] as any;
+			const stage = target.stages[stageKey]!;
 			if (!stage.startedAt) {
 				stage.startedAt = new Date();
 			}
@@ -189,9 +189,9 @@ export const useBatchStore = defineStore('batches', () => {
 			target.stageVolumes![fromStage] = remainingSource;
 		} else {
 			delete target.stageVolumes![fromStage];
-			const sourceKey = STAGE_KEY_MAP[fromStage] as keyof BatchStages;
+			const sourceKey = STAGE_KEY_MAP[fromStage];
 			if (sourceKey && target.stages[sourceKey]) {
-				(target.stages[sourceKey] as any).completedAt = new Date();
+				target.stages[sourceKey]!.completedAt = new Date();
 			}
 		}
 
@@ -203,12 +203,12 @@ export const useBatchStore = defineStore('batches', () => {
 			target.currentStage = targetStage;
 		}
 
-		const newStageKey = STAGE_KEY_MAP[targetStage] as keyof BatchStages;
+		const newStageKey = STAGE_KEY_MAP[targetStage];
 		if (newStageKey) {
 			if (!target.stages[newStageKey]) {
-				(target.stages as any)[newStageKey] = {};
+				target.stages[newStageKey] = {};
 			}
-			const stage = target.stages[newStageKey] as any;
+			const stage = target.stages[newStageKey]!;
 			if (!stage.startedAt) {
 				stage.startedAt = new Date();
 			}
@@ -247,13 +247,13 @@ export const useBatchStore = defineStore('batches', () => {
 		const target = crud.items.value.find((b) => b._id === batchId);
 		if (!target) return;
 
-		const stageKey = STAGE_KEY_MAP[stageName] as keyof BatchStages;
+		const stageKey = STAGE_KEY_MAP[stageName];
 		if (!stageKey) return;
 
 		if (!target.stages[stageKey]) {
-			(target.stages as any)[stageKey] = {};
+			target.stages[stageKey] = {};
 		}
-		Object.assign(target.stages[stageKey] as any, data);
+		Object.assign(target.stages[stageKey]!, data);
 
 		addLogEntry(target, logMessage || `Updated ${stageName} data`);
 
@@ -268,13 +268,12 @@ export const useBatchStore = defineStore('batches', () => {
 		if (!target) return;
 
 		if (!target.stages.distilling) {
-			(target.stages as any).distilling = {};
+			target.stages.distilling = {};
 		}
-		const distilling = target.stages.distilling as any;
-		if (!distilling.runs) distilling.runs = [];
+		if (!target.stages.distilling.runs) target.stages.distilling.runs = [];
 
-		run.runNumber = distilling.runs.length + 1;
-		distilling.runs.push(run);
+		run.runNumber = target.stages.distilling.runs.length + 1;
+		target.stages.distilling.runs.push(run);
 
 		addLogEntry(target, `Added distilling run #${run.runNumber}`, `${run.runType} run`);
 
@@ -284,14 +283,11 @@ export const useBatchStore = defineStore('batches', () => {
 
 	const updateDistillingRun = async (batchId: string, runIndex: number, data: Partial<DistillingRun>): Promise<void> => {
 		const target = crud.items.value.find((b) => b._id === batchId);
-		if (!target?.stages?.distilling) return;
+		if (!target?.stages?.distilling?.runs?.[runIndex]) return;
 
-		const distilling = target.stages.distilling as any;
-		if (!distilling.runs?.[runIndex]) return;
+		Object.assign(target.stages.distilling.runs[runIndex], data);
 
-		Object.assign(distilling.runs[runIndex], data);
-
-		addLogEntry(target, `Updated distilling run #${distilling.runs[runIndex].runNumber}`);
+		addLogEntry(target, `Updated distilling run #${target.stages.distilling.runs[runIndex].runNumber}`);
 
 		crud.item.value = target;
 		await updateBatch();
@@ -299,15 +295,12 @@ export const useBatchStore = defineStore('batches', () => {
 
 	const deleteDistillingRun = async (batchId: string, runIndex: number): Promise<void> => {
 		const target = crud.items.value.find((b) => b._id === batchId);
-		if (!target?.stages?.distilling) return;
+		if (!target?.stages?.distilling?.runs?.[runIndex]) return;
 
-		const distilling = target.stages.distilling as any;
-		if (!distilling.runs?.[runIndex]) return;
+		const removedNumber = target.stages.distilling.runs[runIndex].runNumber;
+		target.stages.distilling.runs.splice(runIndex, 1);
 
-		const removedNumber = distilling.runs[runIndex].runNumber;
-		distilling.runs.splice(runIndex, 1);
-
-		distilling.runs.forEach((r: DistillingRun, i: number) => {
+		target.stages.distilling.runs.forEach((r: DistillingRun, i: number) => {
 			r.runNumber = i + 1;
 		});
 

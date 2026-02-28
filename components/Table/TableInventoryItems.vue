@@ -66,10 +66,8 @@ const columns = [
 				:loading="itemStore.loading"
 				@select="(_e: Event, row: any) => router.push(`/admin/items/${row.original._id}`)"
 				:ui="{ tr: 'cursor-pointer' }">
-				<template #empty-state>
-					<div class="flex flex-col items-center justify-center py-6 gap-3">
-						<span class="text-sm text-gray-500">No inventory items found</span>
-					</div>
+				<template #empty>
+					<BaseEmptyState icon="i-lucide-package" title="No inventory items found" />
 				</template>
 			</UTable>
 		</div>

@@ -1,7 +1,12 @@
 <script setup lang="ts">
+import * as yup from 'yup';
 import type { IngredientSourceType } from '~/types';
 
 const emit = defineEmits<{ close: [boolean] }>();
+
+const schema = yup.object({
+  name: yup.string().required('Name is required'),
+});
 
 const cocktailStore = useCocktailStore();
 const itemStore = useItemStore();
@@ -102,8 +107,9 @@ const onDragEnd = () => {
           </h2>
           <UButton icon="i-lucide-x" color="neutral" variant="ghost" @click="cancel" />
         </div>
+        <UForm :schema="schema" :state="localData" @submit="save" class="flex flex-col flex-1 min-h-0">
         <div class="flex-1 overflow-y-auto p-4 space-y-4">
-          <UFormField label="Name">
+          <UFormField label="Name" name="name">
             <UInput v-model="localData.name" placeholder="Cocktail name" />
           </UFormField>
           <div class="grid grid-cols-3 gap-4">
@@ -217,10 +223,11 @@ const onDragEnd = () => {
         </div>
         <div class="flex items-center justify-end gap-2 px-4 py-3 border-t border-white/10">
           <UButton color="neutral" variant="outline" @click="cancel">Cancel</UButton>
-          <UButton @click="save" :loading="saving" :disabled="!isDirty">
+          <UButton type="submit" :loading="saving" :disabled="!isDirty">
             {{ isNew ? 'Create' : 'Save' }}
           </UButton>
         </div>
+        </UForm>
       </div>
     </template>
   </USlideover>

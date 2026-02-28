@@ -4,7 +4,7 @@ definePageMeta({
   middleware: "auth",
 });
 
-useSeoMeta({
+useServerSeoMeta({
   robots: 'noindex, nofollow',
 });
 </script>

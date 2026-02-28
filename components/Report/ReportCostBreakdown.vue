@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { Bar, Doughnut } from 'vue-chartjs'
+useChartRegistration()
 
 const batchStore = useBatchStore()
 const recipeStore = useRecipeStore()

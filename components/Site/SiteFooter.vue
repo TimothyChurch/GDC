@@ -4,10 +4,14 @@
   <footer class="bg-charcoal text-parchment/90">
     <div class="mx-auto max-w-7xl px-6 py-12 lg:px-8">
       <div class="flex justify-center mb-8">
-        <img
+        <NuxtImg
           src="/images/Logo.png"
           alt="Galveston Distilling Company"
           class="h-24"
+          width="96"
+          height="96"
+          loading="lazy"
+          format="webp"
         />
       </div>
 

@@ -6,6 +6,7 @@ import type { Contents } from './interfaces/Contents';
 import type { GDCEvent } from './interfaces/Event';
 import type { Inventory } from './interfaces/Inventory';
 import type { Item, ItemCategory } from './interfaces/Item';
+import type { Message } from './interfaces/Message';
 import { ITEM_CATEGORIES } from './interfaces/Item';
 import type { Production, ProductionCosts } from './interfaces/Production';
 import type { PurchaseOrder } from './interfaces/PurchaseOrder';
@@ -47,6 +48,7 @@ export type {
 	Inventory,
 	Item,
 	ItemCategory,
+	Message,
 	Production,
 	ProductionCosts,
 	PurchaseOrder,

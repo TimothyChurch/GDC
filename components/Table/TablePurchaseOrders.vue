@@ -46,7 +46,7 @@ const columns: TableColumn<PurchaseOrder>[] = [
       {
         label: "Edit order",
         onSelect() {
-          purchaseOrderStore.purchaseOrder = JSON.parse(JSON.stringify(row.original));
+          purchaseOrderStore.purchaseOrder = structuredClone(toRaw(row.original));
           openPanel();
         },
       },
@@ -57,7 +57,7 @@ const columns: TableColumn<PurchaseOrder>[] = [
       items.push({
         label: "Mark as Received",
         async onSelect() {
-          purchaseOrderStore.purchaseOrder = JSON.parse(JSON.stringify(row.original));
+          purchaseOrderStore.purchaseOrder = structuredClone(toRaw(row.original));
           purchaseOrderStore.purchaseOrder.status = "Delivered";
           const result = await purchaseOrderStore.updatePurchaseOrder();
           // Update item purchase histories
@@ -112,7 +112,7 @@ const addPurchaseOrder = () => {
     search-placeholder="Search purchase orders..."
   >
     <template #actions>
-      <UButton icon="i-heroicons-plus-circle" size="xl" @click="addPurchaseOrder" variant="ghost">Add Order</UButton>
+      <UButton icon="i-lucide-plus-circle" size="xl" @click="addPurchaseOrder" variant="ghost">Add Order</UButton>
     </template>
     <!-- Desktop table -->
     <div class="hidden sm:block">
@@ -124,10 +124,12 @@ const addPurchaseOrder = () => {
         :data="tableData"
         :columns="columns"
         :loading="purchaseOrderStore.loading"
-        :empty="'No purchase orders found'"
         @select="(_e: Event, row: any) => router.push(`/admin/purchaseOrders/${row.original._id}`)"
         :ui="{ tr: 'cursor-pointer' }"
       >
+        <template #empty>
+          <BaseEmptyState icon="i-lucide-clipboard-list" title="No purchase orders found" description="Create purchase orders to track supplier orders" action-label="Add Order" @action="addPurchaseOrder" />
+        </template>
         <template #expanded="{ row }">
           <div class="py-2 px-4">
             <table class="w-full text-sm">
@@ -158,7 +160,13 @@ const addPurchaseOrder = () => {
     <!-- Mobile card view -->
     <div class="sm:hidden space-y-3">
       <div
-        v-for="po in tableData.slice().sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())"
+        v-for="po in tableData.slice().sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()).filter(p => {
+          if (!search) return true;
+          const term = search.toLowerCase();
+          const vendor = contactStore.getContactById(p.vendor);
+          const vendorName = vendor?.businessName || `${vendor?.firstName || ''} ${vendor?.lastName || ''}`.trim();
+          return vendorName.toLowerCase().includes(term) || p.status.toLowerCase().includes(term);
+        })"
         :key="po._id"
         class="bg-charcoal rounded-lg border border-brown/30 p-4 cursor-pointer"
         @click="router.push(`/admin/purchaseOrders/${po._id}`)"
@@ -192,9 +200,7 @@ const addPurchaseOrder = () => {
           </div>
         </div>
       </div>
-      <div v-if="tableData.length === 0" class="text-center py-6 text-parchment/50 text-sm">
-        No purchase orders found
-      </div>
+      <BaseEmptyState v-if="tableData.length === 0" icon="i-lucide-clipboard-list" title="No purchase orders found" description="Create purchase orders to track supplier orders" action-label="Add Order" @action="addPurchaseOrder" />
     </div>
   </TableWrapper>
 </template>

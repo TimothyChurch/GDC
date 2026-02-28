@@ -21,6 +21,9 @@ export interface Item {
   minStock?: number;
   reorderPoint?: number;
   usePerMonth?: number;
+  baseCostPrice?: number;
+  baseCostSize?: number;
+  baseCostUnit?: string;
   notes?: string;
   createdAt?: string;
   updatedAt?: string;

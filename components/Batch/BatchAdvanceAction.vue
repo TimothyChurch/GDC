@@ -220,10 +220,10 @@ const advanceToDistilling = async () => {
     await batchStore.addDistillingRun(props.batch._id, firstRun)
 
     emit('advanced')
-  } catch (error: any) {
+  } catch (error: unknown) {
     toast.add({
       title: 'Failed to advance to Distilling',
-      description: error?.data?.statusMessage || error?.data?.message || error?.message,
+      description: getErrorMessage(error),
       color: 'error',
       icon: 'i-lucide-alert-circle',
     })

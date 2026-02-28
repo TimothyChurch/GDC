@@ -18,7 +18,7 @@ const columns: TableColumn<Inventory>[] = [
     {
       label: "Edit record",
       onSelect() {
-        inventoryStore.inventory = JSON.parse(JSON.stringify(row.original));
+        inventoryStore.inventory = structuredClone(toRaw(row.original));
         openPanel();
       },
     },
@@ -56,7 +56,7 @@ const addItem = () => {
     search-placeholder="Search by date..."
   >
     <template #actions>
-      <UButton icon="i-heroicons-plus-circle" size="xl" @click="addItem" variant="ghost">Add Record</UButton>
+      <UButton icon="i-lucide-plus-circle" size="xl" @click="addItem" variant="ghost">Add Record</UButton>
     </template>
     <UTable
       ref="tableRef"
@@ -66,7 +66,10 @@ const addItem = () => {
       :data="inventoryStore.inventories"
       :columns="columns"
       :loading="inventoryStore.loading"
-      :empty="'No inventory records found'"
-    />
+    >
+      <template #empty>
+        <BaseEmptyState icon="i-lucide-archive" title="No inventory records found" description="Add inventory records to track stock levels" action-label="Add Record" @action="addItem" />
+      </template>
+    </UTable>
   </TableWrapper>
 </template>

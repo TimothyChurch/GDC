@@ -21,10 +21,13 @@ const under21 = () => {
       class="fixed inset-0 z-[100] flex items-center justify-center bg-espresso/95 backdrop-blur-sm"
     >
       <div class="bg-charcoal rounded-xl shadow-2xl border border-gold/20 max-w-md w-full mx-4 p-8 text-center">
-        <img
+        <NuxtImg
           src="/images/Logo.png"
           alt="Galveston Distilling Company"
           class="h-24 mx-auto mb-6"
+          width="96"
+          height="96"
+          format="webp"
         />
 
         <template v-if="!denied">

@@ -20,10 +20,10 @@ const buttonLabel = () => {
 	<UPopover v-model:open="open">
 		<UFieldGroup>
 			<UButton
-				icon="i-heroicons-calendar-days-20-solid"
+				icon="i-lucide-calendar-days"
 				:label="buttonLabel()" />
 			<UButton
-				icon="i-heroicons-x-mark"
+				icon="i-lucide-x"
 				@click="model = null" />
 		</UFieldGroup>
 

@@ -33,6 +33,23 @@ export default defineEventHandler(async (event) => {
       notes: sanitized.notes || undefined,
     });
 
+    // Create inbox notification for admin
+    const formattedDate = new Date(sanitized.date).toLocaleDateString("en-US", {
+      weekday: "long",
+      year: "numeric",
+      month: "long",
+      day: "numeric",
+    });
+    await Message.create({
+      contact: contact._id,
+      firstName: sanitized.firstName,
+      lastName: sanitized.lastName,
+      email: sanitized.email,
+      phone: sanitized.phone || undefined,
+      topic: "Private Class Request",
+      message: `Private class requested for ${formattedDate} with ${sanitized.groupSize} guests.${sanitized.notes ? `\nNotes: ${sanitized.notes}` : ""}`,
+    });
+
     return {
       success: true,
       message: "Your request has been submitted! We'll be in touch soon.",

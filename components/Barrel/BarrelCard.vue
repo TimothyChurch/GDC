@@ -7,8 +7,17 @@ const props = defineProps<{
   targetAgeDays?: number
 }>()
 
+const router = useRouter()
 const batchStore = useBatchStore()
 const recipeStore = useRecipeStore()
+
+const batchId = computed(() => props.vessel.contents?.[0]?.batch)
+
+function handleClick() {
+  if (batchId.value) {
+    router.push(`/admin/batch/${batchId.value}`)
+  }
+}
 
 const contentsName = computed(() => {
   if (!props.vessel.contents?.length) return 'Empty'
@@ -67,7 +76,8 @@ const ageBgGradient = computed(() => {
 <template>
   <div
     class="rounded-xl border p-4 transition-all"
-    :class="[borderColor, ageBgGradient]"
+    :class="[borderColor, ageBgGradient, batchId ? 'cursor-pointer hover:brightness-110' : '']"
+    @click="handleClick"
   >
     <div class="flex items-start justify-between mb-2">
       <div>

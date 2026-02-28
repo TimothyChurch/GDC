@@ -181,10 +181,10 @@ async function confirmAdvance() {
       color: 'success',
       icon: 'i-lucide-check-circle',
     })
-  } catch (error: any) {
+  } catch (error: unknown) {
     toast.add({
       title: 'Failed to advance batch',
-      description: error?.message,
+      description: getErrorMessage(error),
       color: 'error',
       icon: 'i-lucide-alert-circle',
     })
