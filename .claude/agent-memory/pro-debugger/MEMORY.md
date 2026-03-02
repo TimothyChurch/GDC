@@ -92,6 +92,16 @@
 - Fix: add `slot: "name"` to each tab item matching the template slot name
 - **Fixed in**: `pages/admin/settings.vue` (all 4 tabs: categories, barrels, theme, distillery)
 
+### onMounted vs callOnce for SSR Data Loading
+- `onMounted` is CLIENT-ONLY -- never runs during SSR or prerendering
+- Layouts/pages using `onMounted` to load Pinia stores will render empty HTML server-side
+- SSR payload serializes empty store state, client hydrates with empty data, then loads after mount
+- If the client-side fetch fails (Netlify cold start, env var missing, network), error is silently swallowed and page stays empty
+- Fix: use `await callOnce('key', async () => { ... })` in layout/page `<script setup>` instead of `onMounted`
+- `callOnce` runs during SSR, serializes result in Nuxt payload, skips on client hydration
+- Admin layout is safe with `onMounted` because admin routes use `ssr: false` (SPA mode)
+- **Fixed in**: `layouts/default.vue` (public-facing layout)
+
 ## Stores Fixed (error propagation + toast format)
 - `useBottleStore` -- throw error, statusMessage || message
 - `useInventoryStore` -- throw error, statusMessage || message, strip empty ObjectId fields
