@@ -7,10 +7,13 @@
 - Chart.js registered in `plugins/chartjs.ts`
 - Images via Cloudinary and `public/images/`
 
-## Key Patterns
-- SEO meta already added to public pages (Phase 3 of improvements)
-- No hybrid rendering configured yet (all routes use default SSR)
-- No @nuxt/image module installed yet
+## Implemented Optimizations
+- SEO meta added to all public pages (Phase 3 of improvements)
+- `@nuxt/image` module installed and configured
+- Hybrid rendering via `routeRules` in nuxt.config.ts:
+  - Static pages prerendered (`/`, `/about`, `/privacy`, `/contact`)
+  - SWR caching on API routes and admin pages
+- Route rules configured for SSR/SSG/SWR as appropriate
 
 ## Notes
 - Record performance findings, bundle analysis results, and SEO audit results here

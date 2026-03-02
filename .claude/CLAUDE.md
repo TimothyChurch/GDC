@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-Galveston Distilling Co (GDC) — a full-stack Nuxt 3 + TypeScript distillery management application. Manages batch tracking (brewing through bottling), inventory, production records, cocktail menus, vessels, and recipes. Uses MongoDB (Mongoose) for data, Pinia for state management, and Nuxt UI v3 for the component library.
+Galveston Distilling Co (GDC) — a full-stack Nuxt 3 + TypeScript distillery management application. Manages batch tracking (brewing through bottling), inventory, production records, cocktail menus, vessels, and recipes. Uses MongoDB (Mongoose) for data, Pinia for state management, and Nuxt UI v4 for the component library.
 
 ## Commands
 
@@ -76,46 +76,10 @@ Batches progress through stages: **Upcoming → Brewing → Fermenting → Disti
 - Tailwind CSS v4 for styling; custom fonts Merriweather and Cormorant Garamond
 - camelCase for functions/variables, PascalCase for components and types
 
-## Nuxt UI v4 Quick Reference
+## Nuxt UI v4
 
-Full reference at `.claude/NUXT_UI_REFERENCE.md`. Key points:
+Full reference at `.claude/NUXT_UI_REFERENCE.md`. Component-specific rules load automatically via `.claude/rules/nuxt-ui-components.md` when editing `.vue` files.
 
-### Component Library (v4.4.0+)
-- **67+ core components** across 6 categories: Layout, Element, Form, Data, Navigation, Overlay
-- Built on **Reka UI** primitives (not Headless UI), **Tailwind CSS v4**, **Iconify** icons
-- Every component accepts a `ui` prop for per-instance style overrides (slot-based Tailwind classes)
+## Context Optimization
 
-### v2 to v3/v4 Breaking Changes
-- `UDropdown` -> `UDropdownMenu` (different item structure)
-- `UFormGroup` -> `UFormField`
-- `UButtonGroup` -> `UFieldGroup` (v3->v4)
-- `UDivider` -> `USeparator` (v3->v4)
-- `color="gray"` -> `color="neutral"`
-- UTable: `rows` -> `data`, columns use TanStack `accessorKey`/`cell`/`header`
-- UTable `@select`: signature is `(event, row)` not `(row)`
-- Underlying primitives: Headless UI -> Reka UI
-- Built-in `useFileUpload` composable (project's custom one renamed to `useCloudinaryUpload`)
-
-### Forms (Yup Integration)
-- `UForm` wraps fields, accepts `:schema` (Yup), `:state` (reactive), `@submit`
-- `UFormField` (not UFormGroup) wraps inputs, `name` prop must match schema key
-- `USelect` v-model binds to **value**; `USelectMenu` v-model binds to **whole object** (use `value-key` for property binding)
-
-### Tables (TanStack)
-- `import type { TableColumn } from '@nuxt/ui'`
-- Columns use `accessorKey`, `header` (string or render fn), `cell` (render fn)
-- State via v-model: `global-filter`, `pagination` (`{pageIndex, pageSize}`), `sorting`, `row-selection`, `expanded`
-- Pagination needs `getPaginationRowModel()` from `@tanstack/vue-table`
-- Row click: `@select="(e, row) => router.push(...)"` with `:ui="{ tr: 'cursor-pointer' }"`
-
-### Overlays & Composables
-- **useOverlay()**: `overlay.create(Component)` -> `await panel.open(props)` -> resolves on `emit('close', value)`
-- **useToast()**: `toast.add({ title, color, icon, description?, actions?, duration? })`
-- **defineShortcuts()**: `{ 'meta_k': handler, 'g-d': handler }` (combos with `_`, sequences with `-`)
-- **UModal/USlideover/UDrawer**: All share slots `content`, `header`, `body`, `footer({ close })`
-
-### Theming
-- Semantic colors: primary, secondary, success, info, warning, error, neutral
-- Configure in `app.config.ts`: `ui.colors.primary = 'amber'`
-- Design tokens as CSS vars: `--ui-bg`, `--ui-text`, `--ui-border` (+ muted/elevated/accented/inverted variants)
-- Icons: `i-{collection}-{name}` format (e.g., `i-lucide-home`)
+When compacting, preserve: list of modified files, test commands used, current task state, batch lifecycle stage context, and any API/component patterns discussed.

@@ -15,12 +15,14 @@
 5. Yup validation on all POST/PUT endpoints
 6. Password field excluded from API responses
 7. File upload size/type limits
+8. Login rate limiting (5 attempts/IP/15min)
+9. HSTS headers configured
+10. Failed auth logging (IP + email)
 
-## Known Issues
-- No nuxt-security module installed (no CSP, rate limiting, etc.)
-- No CSRF protection module
-- No rate limiting on login endpoint
-- Legacy plaintext passwords may still exist in DB
+## Remaining Gaps
+- No dedicated nuxt-security module (CSP headers are manual)
+- No CSRF token protection module
+- Legacy plaintext passwords may still exist in DB (auto-migrated on login)
 
 ## Notes
 - Record vulnerability findings, hardening measures, and security audit results here
