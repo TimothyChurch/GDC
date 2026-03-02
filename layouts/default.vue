@@ -1,6 +1,9 @@
 <script setup>
-// Load lightweight public stores for visitor-facing pages
-onMounted(async () => {
+// Load lightweight public stores for visitor-facing pages.
+// Using callOnce ensures data is fetched during SSR/prerendering
+// (not just onMounted which is client-only), so HTML includes real content
+// for SEO and avoids empty-page flash.
+await callOnce('public-stores', async () => {
   await Promise.all([
     usePublicBottleStore().ensureLoaded(),
     usePublicCocktailStore().ensureLoaded(),
