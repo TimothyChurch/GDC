@@ -4,4 +4,6 @@ export interface PurchaseOrderItem {
 	size: number;
 	sizeUnit: string;
 	price: number;
+	taxable: boolean;
+	brand: string;
 }

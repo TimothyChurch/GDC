@@ -121,6 +121,8 @@ export const inventoryCreateSchema = yup.object({
     .transform((value, original) => (original === "" ? null : value))
     .required("Quantity is required"),
   location: yup.string().nullable(),
+  unitSize: yup.number().min(0, "Unit size cannot be negative").nullable(),
+  unitSizeUnit: yup.string().nullable(),
 });
 
 export const itemCreateSchema = yup.object({
@@ -158,6 +160,8 @@ export const productionCreateSchema = yup.object({
 export const purchaseOrderCreateSchema = yup.object({
   vendor: yup.string().required("Vendor is required"),
   date: yup.date().required("Date is required"),
+  taxRate: yup.number().min(0, "Tax rate cannot be negative").max(1, "Tax rate must be a decimal (e.g. 0.0825)"),
+  shipping: yup.number().min(0, "Shipping cannot be negative"),
 });
 
 export const recipeCreateSchema = yup.object({
@@ -297,6 +301,8 @@ export const inventoryUpdateSchema = yup.object({
     .nullable()
     .transform((value, original) => (original === "" ? null : value)),
   location: yup.string().nullable(),
+  unitSize: yup.number().min(0, "Unit size cannot be negative").nullable(),
+  unitSizeUnit: yup.string().nullable(),
 });
 
 export const itemUpdateSchema = yup.object({
@@ -322,6 +328,8 @@ export const purchaseOrderUpdateSchema = yup.object({
   vendor: yup.string(),
   date: yup.date(),
   status: yup.string(),
+  taxRate: yup.number().min(0, "Tax rate cannot be negative").max(1, "Tax rate must be a decimal (e.g. 0.0825)"),
+  shipping: yup.number().min(0, "Shipping cannot be negative"),
 });
 
 export const recipeUpdateSchema = yup.object({

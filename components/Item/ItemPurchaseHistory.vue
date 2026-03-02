@@ -14,6 +14,7 @@ const columns = [
 	{ accessorKey: 'date', header: 'Date' },
 	{ accessorKey: 'status', header: 'Status' },
 	{ accessorKey: 'vendor', header: 'Vendor' },
+	{ accessorKey: 'brand', header: 'Brand' },
 	{ accessorKey: 'quantity', header: 'Quantity' },
 	{ accessorKey: 'size', header: 'Size' },
 	{ accessorKey: 'price', header: 'Price' },
@@ -52,6 +53,9 @@ const newPurchaseOrder = () => {
 			</template>
 			<template #vendor-cell="{ row }">
 				{{ contactStore.getContactById(row.original.vendor)?.businessName }}
+			</template>
+			<template #brand-cell="{ row }">
+				{{ selectedItem(row.original)?.brand || '-' }}
 			</template>
 			<template #quantity-cell="{ row }">
 				{{ selectedItem(row.original)?.quantity }}

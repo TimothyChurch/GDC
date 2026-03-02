@@ -17,6 +17,30 @@ const emit = defineEmits<{
 const batchStore = useBatchStore()
 const vesselStore = useVesselStore()
 
+// Collapse/expand logic
+const globalExpanded = inject<Ref<boolean | null>>('distillingRunsGlobalExpanded', ref(null))
+const localCollapsed = ref(!props.editing)
+
+// When editing prop changes, force expand
+watch(() => props.editing, (isEditing) => {
+  if (isEditing) localCollapsed.value = false
+  else localCollapsed.value = true
+})
+
+// When global expanded changes (from parent toggle), sync local state
+watch(globalExpanded, (val) => {
+  if (val === null) return
+  localCollapsed.value = !val
+}, { immediate: false })
+
+// Effective collapsed state: never collapse while editing
+const collapsed = computed(() => props.editing ? false : localCollapsed.value)
+
+const toggleCollapsed = () => {
+  if (props.editing) return
+  localCollapsed.value = !localCollapsed.value
+}
+
 const volumeUnits = ['gallon', 'L', 'mL', 'fl oz']
 
 // Build local editable copy
@@ -192,25 +216,59 @@ const formatDate = (d?: Date | string) => {
   if (!d) return 'Not set'
   return new Date(d).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
 }
+
+// Summary line for collapsed view
+const summaryCharge = computed(() => {
+  const r = props.run
+  if (!r.chargeVolume) return ''
+  return `${r.chargeVolume} ${r.chargeVolumeUnit || 'gal'} @ ${r.chargeAbv || 0}% ABV`
+})
+
+const summaryProofGallons = computed(() => {
+  const total = displayTotal.value
+  if (!total?.proofGallons) return ''
+  return `${total.proofGallons.toFixed(2)} PG`
+})
 </script>
 
 <template>
-  <div class="bg-brown/5 rounded-lg border border-brown/20 p-4">
-    <!-- Header -->
-    <div class="flex items-center justify-between mb-4">
-      <div class="flex items-center gap-2">
-        <span class="text-sm font-bold text-parchment font-[Cormorant_Garamond]">
-          Run #{{ local.runNumber }}
-        </span>
-        <UBadge
-          :color="local.runType === 'spirit' ? 'primary' : 'neutral'"
-          variant="subtle"
-          size="xs"
-        >
-          {{ local.runType || 'unset' }}
-        </UBadge>
-      </div>
-      <div class="flex items-center gap-2">
+  <div class="bg-brown/5 rounded-lg border border-brown/20 overflow-hidden">
+    <!-- Collapsed summary row / Header -->
+    <div
+      class="flex items-center gap-2 px-4 py-3 cursor-pointer select-none transition-colors hover:bg-brown/10"
+      :class="{ 'cursor-default': editing }"
+      @click="toggleCollapsed"
+    >
+      <!-- Chevron indicator (hidden when editing) -->
+      <UIcon
+        v-if="!editing"
+        :name="collapsed ? 'i-lucide-chevron-right' : 'i-lucide-chevron-down'"
+        class="text-parchment/40 shrink-0 transition-transform duration-200"
+      />
+
+      <span class="text-sm font-bold text-parchment font-[Cormorant_Garamond] shrink-0">
+        Run #{{ local.runNumber }}
+      </span>
+      <UBadge
+        :color="local.runType === 'spirit' ? 'primary' : 'neutral'"
+        variant="subtle"
+        size="xs"
+        class="shrink-0"
+      >
+        {{ local.runType || 'unset' }}
+      </UBadge>
+
+      <!-- Collapsed summary details -->
+      <template v-if="collapsed">
+        <span class="text-xs text-parchment/50 shrink-0">{{ formatDate(local.date) }}</span>
+        <span v-if="summaryCharge" class="text-xs text-parchment/60 truncate hidden sm:inline">{{ summaryCharge }}</span>
+        <span class="ml-auto" />
+        <span v-if="summaryProofGallons" class="text-xs font-semibold text-copper shrink-0">{{ summaryProofGallons }}</span>
+      </template>
+
+      <!-- Expanded header details -->
+      <template v-else>
+        <span class="ml-auto" />
         <span class="text-xs text-parchment/50">{{ formatDate(local.date) }}</span>
         <UButton
           v-if="editing"
@@ -218,10 +276,18 @@ const formatDate = (d?: Date | string) => {
           color="error"
           variant="ghost"
           size="xs"
-          @click="emit('delete', runIndex)"
+          @click.stop="emit('delete', runIndex)"
         />
-      </div>
+      </template>
     </div>
+
+    <!-- Expanded content -->
+    <div
+      class="grid transition-[grid-template-rows] duration-200 ease-in-out"
+      :class="collapsed ? 'grid-rows-[0fr]' : 'grid-rows-[1fr]'"
+    >
+      <div class="overflow-hidden">
+        <div class="px-4 pb-4">
 
     <template v-if="editing">
       <!-- Editing: Run Type & Date -->
@@ -444,5 +510,9 @@ const formatDate = (d?: Date | string) => {
       <!-- Notes -->
       <div v-if="run.notes" class="text-sm text-parchment/50 italic">{{ run.notes }}</div>
     </template>
-  </div>
+
+        </div><!-- /px-4 pb-4 -->
+      </div><!-- /overflow-hidden -->
+    </div><!-- /grid transition -->
+  </div><!-- /outer container -->
 </template>

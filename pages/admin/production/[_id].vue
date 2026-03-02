@@ -8,6 +8,8 @@ const productionStore = useProductionStore()
 const bottleStore = useBottleStore()
 const vesselStore = useVesselStore()
 const itemStore = useItemStore()
+const { confirm } = useDeleteConfirm()
+const toast = useToast()
 
 const production = computed(() =>
   productionStore.productions.find(p => p._id === route.params._id)
@@ -71,6 +73,15 @@ const editProduction = () => {
   productionStore.production = structuredClone(toRaw(production.value))
   panel.open()
 }
+
+const deleteProduction = async () => {
+  if (!production.value) return
+  const confirmed = await confirm('Production', `${bottleName.value} - ${formattedDate.value}`)
+  if (!confirmed) return
+  await productionStore.deleteProduction(production.value._id)
+  toast.add({ title: 'Production deleted', color: 'success', icon: 'i-lucide-trash-2' })
+  router.push('/admin/production')
+}
 </script>
 
 <template>
@@ -100,6 +111,15 @@ const editProduction = () => {
           @click="editProduction"
         >
           Edit
+        </UButton>
+        <UButton
+          icon="i-lucide-trash-2"
+          color="error"
+          variant="soft"
+          size="sm"
+          @click="deleteProduction"
+        >
+          Delete
         </UButton>
       </template>
     </AdminPageHeader>

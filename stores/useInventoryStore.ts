@@ -12,15 +12,19 @@ export const useInventoryStore = defineStore("inventories", () => {
       item: "",
       location: "",
       quantity: 0,
+      unitSize: undefined as number | undefined,
+      unitSizeUnit: undefined as string | undefined,
     }),
     beforeCreate: (data) => {
       const cleaned = { ...data };
       if (!cleaned.location) delete cleaned.location;
+      if (!cleaned.unitSize) { delete cleaned.unitSize; delete cleaned.unitSizeUnit; }
       return cleaned;
     },
     beforeUpdate: (data) => {
       const cleaned = { ...data };
       if (!cleaned.location) cleaned.location = undefined;
+      if (!cleaned.unitSize) { cleaned.unitSize = undefined; cleaned.unitSizeUnit = undefined; }
       return cleaned;
     },
   });
@@ -80,14 +84,24 @@ export const useInventoryStore = defineStore("inventories", () => {
     return crud.items.value.filter((inv) => inv.item === itemId);
   };
 
-  /** Get the current stock level for an item (most recent inventory record's quantity) */
+  /** Get the effective total quantity for a single inventory record.
+   *  When unitSize is present, quantity = packages, total = quantity × unitSize.
+   *  When unitSize is absent, quantity is the total directly. */
+  const getTotalQuantity = (record: Inventory): number => {
+    if (record.unitSize && record.unitSize > 0) {
+      return record.quantity * record.unitSize;
+    }
+    return record.quantity;
+  };
+
+  /** Get the current stock level for an item (total from most recent inventory record) */
   const getCurrentStock = (itemId: string): number => {
     const itemRecords = getInventoriesByItem(itemId);
     if (itemRecords.length === 0) return 0;
     const sorted = [...itemRecords].sort(
       (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime(),
     );
-    return sorted[0].quantity;
+    return sorted[0] ? getTotalQuantity(sorted[0]) : 0;
   };
 
   /**
@@ -140,6 +154,7 @@ export const useInventoryStore = defineStore("inventories", () => {
     loadAllHistory,
     loadItemHistory,
     getInventoriesByItem,
+    getTotalQuantity,
     getCurrentStock,
     createBulk,
   };

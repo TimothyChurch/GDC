@@ -25,7 +25,7 @@ function getLatestQuantity(itemId: string): number {
   const sorted = [...records].sort((a, b) =>
     new Date(b.date).getTime() - new Date(a.date).getTime()
   )
-  return sorted[0]?.quantity ?? 0
+  return inventoryStore.getTotalQuantity(sorted[0])
 }
 
 const outOfStockCount = computed(() =>

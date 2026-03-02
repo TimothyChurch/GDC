@@ -6,8 +6,13 @@ import { getPaginationRowModel } from "@tanstack/vue-table";
 const vesselStore = useVesselStore();
 const { confirm } = useDeleteConfirm();
 
+// Filter out barrels — they have their own dedicated page at /admin/barrels
+const nonBarrelVessels = computed(() =>
+  vesselStore.vessels.filter(v => v.type !== 'Barrel')
+);
+
 const { search, pagination, tableRef, filteredTotal } = useTableState(
-  computed(() => vesselStore.vessels.length)
+  computed(() => nonBarrelVessels.value.length)
 );
 
 const columns: TableColumn<Vessel>[] = [
@@ -88,7 +93,7 @@ const addVessel = () => {
         v-model:global-filter="search"
         v-model:pagination="pagination"
         :pagination-options="{ getPaginationRowModel: getPaginationRowModel() }"
-        :data="vesselStore.vessels"
+        :data="nonBarrelVessels"
         :columns="columns"
         :loading="vesselStore.loading"
         @select="(_e: Event, row: any) => navigateTo(`/admin/vessels/${row.original._id}`)"
@@ -103,7 +108,7 @@ const addVessel = () => {
     <!-- Mobile card view -->
     <div class="sm:hidden space-y-3">
       <div
-        v-for="vessel in vesselStore.vessels.filter(v => {
+        v-for="vessel in nonBarrelVessels.filter(v => {
           if (!search) return true;
           const term = search.toLowerCase();
           return v.name.toLowerCase().includes(term) || (v.type || '').toLowerCase().includes(term);
@@ -129,7 +134,7 @@ const addVessel = () => {
           <span class="text-parchment/70">{{ vessel.current }}</span>
         </div>
       </div>
-      <BaseEmptyState v-if="vesselStore.vessels.length === 0" icon="i-lucide-container" title="No vessels found" description="Add vessels to track your equipment" action-label="Add Vessel" @action="addVessel" />
+      <BaseEmptyState v-if="nonBarrelVessels.length === 0" icon="i-lucide-container" title="No vessels found" description="Add vessels to track your equipment" action-label="Add Vessel" @action="addVessel" />
     </div>
   </TableWrapper>
 </template>

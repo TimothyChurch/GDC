@@ -7,17 +7,19 @@ const props = defineProps<{
   targetAgeDays?: number
 }>()
 
+const emit = defineEmits<{
+  dispose: [vesselId: string]
+}>()
+
 const router = useRouter()
 const batchStore = useBatchStore()
 const recipeStore = useRecipeStore()
 
-const batchId = computed(() => props.vessel.contents?.[0]?.batch)
-
 function handleClick() {
-  if (batchId.value) {
-    router.push(`/admin/batch/${batchId.value}`)
-  }
+  router.push(`/admin/vessels/${props.vessel._id}`)
 }
+
+const isDisposed = computed(() => props.vessel.status === 'Disposed')
 
 const contentsName = computed(() => {
   if (!props.vessel.contents?.length) return 'Empty'
@@ -75,17 +77,39 @@ const ageBgGradient = computed(() => {
 
 <template>
   <div
-    class="rounded-xl border p-4 transition-all"
-    :class="[borderColor, ageBgGradient, batchId ? 'cursor-pointer hover:brightness-110' : '']"
+    class="rounded-xl border p-4 transition-all cursor-pointer hover:brightness-110 relative group"
+    :class="[borderColor, ageBgGradient, isDisposed ? 'opacity-60' : '']"
     @click="handleClick"
   >
+    <!-- Dispose button -->
+    <UButton
+      v-if="!isDisposed"
+      icon="i-lucide-trash-2"
+      variant="ghost"
+      color="error"
+      size="xs"
+      class="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity z-10"
+      @click.stop="emit('dispose', vessel._id)"
+    />
+
+    <!-- Disposed badge -->
+    <UBadge
+      v-if="isDisposed"
+      color="error"
+      variant="subtle"
+      size="sm"
+      class="absolute top-2 right-2"
+    >
+      Disposed
+    </UBadge>
+
     <div class="flex items-start justify-between mb-2">
       <div>
         <div class="text-sm font-medium text-parchment">{{ vessel.name }}</div>
         <div class="text-xs text-parchment/60">{{ contentsName }}</div>
       </div>
       <span
-        v-if="vessel.current?.abv"
+        v-if="vessel.current?.abv && !isDisposed"
         class="px-2 py-0.5 rounded-full text-[10px] font-semibold border bg-blue-500/15 text-blue-400 border-blue-500/25"
       >
         {{ vessel.current.abv }}% ABV
@@ -115,7 +139,7 @@ const ageBgGradient = computed(() => {
       </div>
     </div>
 
-    <div v-if="atTarget" class="mt-2 text-center">
+    <div v-if="atTarget && !isDisposed" class="mt-2 text-center">
       <span class="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-gold/20 text-gold border border-gold/30">
         At Target
       </span>

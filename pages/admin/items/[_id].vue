@@ -12,6 +12,7 @@ const purchaseOrderStore = usePurchaseOrderStore()
 const inventoryStore = useInventoryStore()
 const vesselStore = useVesselStore()
 const { confirm } = useDeleteConfirm()
+const toast = useToast()
 
 const item = computed(() => itemStore.getItemById(route.params._id as string))
 
@@ -24,6 +25,15 @@ const editItem = () => {
   if (!item.value) return
   itemStore.setItem(item.value._id)
   panel.open()
+}
+
+const deleteItem = async () => {
+  if (!item.value) return
+  const confirmed = await confirm('Item', item.value.name)
+  if (!confirmed) return
+  await itemStore.deleteItem(item.value._id)
+  toast.add({ title: 'Item deleted', color: 'success', icon: 'i-lucide-trash-2' })
+  router.push('/admin/items')
 }
 
 // Inventory panel
@@ -85,7 +95,7 @@ const currentStock = computed(() => {
   const sorted = [...inventoryRecords.value].sort((a, b) =>
     new Date(b.date).getTime() - new Date(a.date).getTime()
   )
-  return sorted[0].quantity
+  return inventoryStore.getTotalQuantity(sorted[0])
 })
 
 const stockStatus = computed(() =>
@@ -123,6 +133,15 @@ const stockStatusColor = computed(() =>
           @click="editItem"
         >
           Edit
+        </UButton>
+        <UButton
+          icon="i-lucide-trash-2"
+          color="error"
+          variant="soft"
+          size="sm"
+          @click="deleteItem"
+        >
+          Delete
         </UButton>
       </template>
     </AdminPageHeader>
@@ -256,7 +275,7 @@ const stockStatusColor = computed(() =>
           class="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-4 py-2 text-sm group"
         >
           <span class="text-parchment">{{ new Date(inv.date).toLocaleDateString() }}</span>
-          <span class="text-parchment">{{ formatWithUnits(inv.quantity, item) }}</span>
+          <span class="text-parchment">{{ formatInventoryQuantity(inv, item) }}</span>
           <span class="text-parchment/60 hidden sm:block">{{ vesselName(inv.location || '') || '—' }}</span>
           <div class="flex items-center justify-end gap-1">
             <UButton

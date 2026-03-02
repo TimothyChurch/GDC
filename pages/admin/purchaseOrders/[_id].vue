@@ -7,6 +7,8 @@ const router = useRouter()
 const purchaseOrderStore = usePurchaseOrderStore()
 const contactStore = useContactStore()
 const itemStore = useItemStore()
+const { confirm } = useDeleteConfirm()
+const toast = useToast()
 
 const po = computed(() => purchaseOrderStore.getPurchaseOrderById(route.params._id as string))
 
@@ -21,22 +23,37 @@ const formattedDate = computed(() => {
   return new Date(po.value.date).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })
 })
 
+const taxRate = computed(() => po.value?.taxRate || 0)
+const shipping = computed(() => po.value?.shipping || 0)
+
 const resolvedItems = computed(() => {
   if (!po.value?.items) return []
   return po.value.items.map(entry => {
     const item = itemStore.getItemById(entry.item)
+    const lineSubtotal = entry.price * entry.quantity
     return {
       ...entry,
       name: item?.name || 'Unknown',
       itemId: entry.item,
-      lineTotal: entry.price * entry.quantity,
+      lineTotal: lineSubtotal,
+      brand: entry.brand || '',
+      taxable: entry.taxable || false,
     }
   })
 })
 
-const grandTotal = computed(() =>
+const subtotal = computed(() =>
   resolvedItems.value.reduce((sum, i) => sum + i.lineTotal, 0)
 )
+
+const totalTax = computed(() =>
+  resolvedItems.value.reduce((sum, i) => {
+    if (!i.taxable) return sum
+    return sum + i.lineTotal * taxRate.value
+  }, 0)
+)
+
+const grandTotal = computed(() => subtotal.value + totalTax.value + shipping.value)
 
 // Panel slide-over for editing
 import { LazyPanelPurchaseOrder } from '#components'
@@ -47,6 +64,15 @@ const editPO = () => {
   if (!po.value) return
   purchaseOrderStore.purchaseOrder = structuredClone(toRaw(po.value))
   panel.open()
+}
+
+const deletePO = async () => {
+  if (!po.value) return
+  const confirmed = await confirm('Purchase Order', `${vendorName.value} - ${formattedDate.value}`)
+  if (!confirmed) return
+  await purchaseOrderStore.deletePurchaseOrder(po.value._id)
+  toast.add({ title: 'Purchase order deleted', color: 'success', icon: 'i-lucide-trash-2' })
+  router.push('/admin/purchaseOrders')
 }
 
 /** Whether this PO can be marked as received (not already Delivered or Cancelled) */
@@ -135,6 +161,15 @@ function statusColor(status: string) {
         >
           Edit
         </UButton>
+        <UButton
+          icon="i-lucide-trash-2"
+          color="error"
+          variant="soft"
+          size="sm"
+          @click="deletePO"
+        >
+          Delete
+        </UButton>
       </template>
     </AdminPageHeader>
 
@@ -163,7 +198,7 @@ function statusColor(status: string) {
         </div>
         <div>
           <div class="text-xs text-parchment/60 uppercase tracking-wider mb-1">Total</div>
-          <div class="text-sm text-parchment font-semibold">{{ Dollar.format(po.total) }}</div>
+          <div class="text-sm text-parchment font-semibold">{{ Dollar.format(grandTotal) }}</div>
         </div>
       </div>
     </div>
@@ -173,17 +208,19 @@ function statusColor(status: string) {
       <h3 class="text-lg font-bold text-parchment font-[Cormorant_Garamond] mb-4">Order Items</h3>
       <div v-if="resolvedItems.length > 0">
         <div class="divide-y divide-brown/20">
-          <div class="grid grid-cols-5 gap-4 pb-2 text-xs text-parchment/60 uppercase tracking-wider hidden sm:grid">
+          <div class="grid grid-cols-7 gap-4 pb-2 text-xs text-parchment/60 uppercase tracking-wider hidden sm:grid">
             <span>Item</span>
+            <span>Brand</span>
             <span>Quantity</span>
             <span>Size</span>
             <span>Price</span>
+            <span class="text-center">Tax</span>
             <span class="text-right">Line Total</span>
           </div>
           <div
             v-for="(item, i) in resolvedItems"
             :key="i"
-            class="grid grid-cols-2 sm:grid-cols-5 gap-2 sm:gap-4 py-2 text-sm"
+            class="grid grid-cols-2 sm:grid-cols-7 gap-2 sm:gap-4 py-2 text-sm"
           >
             <NuxtLink
               :to="`/admin/items/${item.itemId}`"
@@ -191,15 +228,34 @@ function statusColor(status: string) {
             >
               {{ item.name }}
             </NuxtLink>
+            <span class="text-parchment/50 hidden sm:block text-xs">{{ item.brand || '-' }}</span>
             <span class="text-parchment/60">{{ item.quantity }}</span>
             <span class="text-parchment/60 hidden sm:block">{{ item.size }} {{ item.sizeUnit }}</span>
             <span class="text-parchment/60 hidden sm:block">{{ Dollar.format(item.price) }}</span>
+            <span class="text-center hidden sm:block">
+              <span v-if="item.taxable" class="text-[10px] font-semibold text-amber bg-amber/15 border border-amber/25 px-1.5 py-0.5 rounded-full">TAX</span>
+              <span v-else class="text-parchment/30">-</span>
+            </span>
             <span class="text-parchment text-right font-medium">{{ Dollar.format(item.lineTotal) }}</span>
           </div>
-          <!-- Grand total footer -->
-          <div class="grid grid-cols-2 sm:grid-cols-5 gap-4 py-3 text-sm font-semibold border-t border-brown/30">
-            <span class="text-parchment sm:col-span-4">Grand Total</span>
-            <span class="text-parchment text-right">{{ Dollar.format(grandTotal) }}</span>
+          <!-- Cost breakdown footer -->
+          <div class="border-t border-brown/30 pt-3 space-y-1 text-sm">
+            <div class="flex justify-between text-parchment/60">
+              <span>Subtotal</span>
+              <span>{{ Dollar.format(subtotal) }}</span>
+            </div>
+            <div v-if="totalTax > 0" class="flex justify-between text-parchment/60">
+              <span>Tax ({{ (taxRate * 100).toFixed(2) }}%)</span>
+              <span>{{ Dollar.format(totalTax) }}</span>
+            </div>
+            <div v-if="shipping > 0" class="flex justify-between text-parchment/60">
+              <span>Shipping</span>
+              <span>{{ Dollar.format(shipping) }}</span>
+            </div>
+            <div class="flex justify-between text-sm font-semibold text-parchment pt-1 border-t border-brown/20">
+              <span>Grand Total</span>
+              <span>{{ Dollar.format(grandTotal) }}</span>
+            </div>
           </div>
         </div>
       </div>

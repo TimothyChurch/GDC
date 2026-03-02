@@ -7,6 +7,8 @@ const router = useRouter()
 const contactStore = useContactStore()
 const purchaseOrderStore = usePurchaseOrderStore()
 const itemStore = useItemStore()
+const { confirm } = useDeleteConfirm()
+const toast = useToast()
 
 const contact = computed(() => contactStore.getContactById(route.params._id as string))
 
@@ -41,6 +43,15 @@ const editContact = () => {
   if (!contact.value) return
   contactStore.contact = structuredClone(toRaw(contact.value))
   panel.open()
+}
+
+const deleteContact = async () => {
+  if (!contact.value) return
+  const confirmed = await confirm('Contact', displayName.value)
+  if (!confirmed) return
+  await contactStore.deleteContact(contact.value._id)
+  toast.add({ title: 'Contact deleted', color: 'success', icon: 'i-lucide-trash-2' })
+  router.push('/admin/contacts')
 }
 
 function poStatusColor(status: string) {
@@ -82,6 +93,15 @@ function poStatusColor(status: string) {
           @click="editContact"
         >
           Edit
+        </UButton>
+        <UButton
+          icon="i-lucide-trash-2"
+          color="error"
+          variant="soft"
+          size="sm"
+          @click="deleteContact"
+        >
+          Delete
         </UButton>
       </template>
     </AdminPageHeader>

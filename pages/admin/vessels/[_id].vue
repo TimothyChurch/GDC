@@ -9,6 +9,7 @@ const router = useRouter()
 const vesselStore = useVesselStore()
 const batchStore = useBatchStore()
 const recipeStore = useRecipeStore()
+const toast = useToast()
 
 const vessel = computed(() => vesselStore.getVesselById(route.params._id as string))
 
@@ -117,6 +118,15 @@ const handleEmpty = async () => {
     vesselStore.emptyVessel(vessel.value._id)
   }
 }
+
+const deleteVessel = async () => {
+  if (!vessel.value) return
+  const confirmed = await confirm('Vessel', vessel.value.name)
+  if (!confirmed) return
+  await vesselStore.deleteVessel(vessel.value._id)
+  toast.add({ title: 'Vessel deleted', color: 'success', icon: 'i-lucide-trash-2' })
+  router.push('/admin/vessels')
+}
 </script>
 
 <template>
@@ -131,6 +141,9 @@ const handleEmpty = async () => {
       :icon="typeIcon"
     >
       <template #actions>
+        <UBadge v-if="vessel.status === 'Disposed'" color="error" variant="subtle" size="lg">
+          Disposed
+        </UBadge>
         <UButton
           icon="i-lucide-arrow-left"
           variant="outline"
@@ -146,6 +159,15 @@ const handleEmpty = async () => {
           @click="editVessel"
         >
           Edit
+        </UButton>
+        <UButton
+          icon="i-lucide-trash-2"
+          color="error"
+          variant="soft"
+          size="sm"
+          @click="deleteVessel"
+        >
+          Delete
         </UButton>
       </template>
     </AdminPageHeader>

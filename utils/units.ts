@@ -42,6 +42,29 @@ export function formatWithUnits(
   return base
 }
 
+/**
+ * Format an inventory record's quantity with package info when present.
+ * Shows "10 × 50 lb bags = 500 lb" when unitSize is set, or falls back to formatWithUnits.
+ */
+export function formatInventoryQuantity(
+  record: { quantity: number; unitSize?: number; unitSizeUnit?: string },
+  item: { unitSize?: number; unitLabel?: string; inventoryUnit?: string },
+): string {
+  const recUnitSize = record.unitSize
+  const unit = record.unitSizeUnit || item.inventoryUnit || ''
+  if (recUnitSize && recUnitSize > 0) {
+    const total = record.quantity * recUnitSize
+    const label = item.unitLabel
+      ? (record.quantity === 1 ? item.unitLabel : `${item.unitLabel}s`)
+      : ''
+    const parts = [`${record.quantity}`, '×', `${recUnitSize} ${unit}`.trim()]
+    if (label) parts.push(label)
+    parts.push('=', `${total.toLocaleString()} ${unit}`.trim())
+    return parts.join(' ')
+  }
+  return formatWithUnits(record.quantity, item)
+}
+
 export const itemInventoryTypes = computed(() => {
   const itemStore = useItemStore();
   const filteredItems = itemStore.items.filter((item) => item.type);

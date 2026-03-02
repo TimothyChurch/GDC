@@ -12,6 +12,8 @@ export const usePurchaseOrderStore = defineStore('purchaseOrders', () => {
 			status: '',
 			items: [],
 			total: 0,
+			taxRate: DEFAULT_TAX_RATE,
+			shipping: 0,
 			date: new Date(),
 		}),
 	});

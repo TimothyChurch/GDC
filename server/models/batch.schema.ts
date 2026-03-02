@@ -78,6 +78,7 @@ export const Batch = defineMongooseModel({
 				pH: Number,
 				preBoilGravity: Number,
 				postBoilGravity: Number,
+				ingredientsWithdrawn: Boolean,
 			},
 			fermenting: {
 				...stageBase,

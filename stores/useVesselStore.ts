@@ -46,7 +46,7 @@ export const useVesselStore = defineStore('vessels', () => {
 	const barrels = computed(() => crud.items.value.filter((v) => v.type === 'Barrel'));
 	const emptyBarrels = computed(() =>
 		barrels.value.filter(
-			(v) => !v.contents || v.contents.length === 0 || (v.current?.volume ?? 0) === 0,
+			(v) => v.status !== 'Disposed' && (!v.contents || v.contents.length === 0 || (v.current?.volume ?? 0) === 0),
 		),
 	);
 
@@ -237,10 +237,58 @@ export const useVesselStore = defineStore('vessels', () => {
 			dest.contents = destContents;
 		}
 
+		// Auto-mark barrel as used if source is now empty after transfer
+		const sourceIsBarrel = source.type === 'Barrel';
+		const sourceNowEmpty = !source.contents || source.contents.length === 0
+			|| source.contents.every((c) => c.volume < 0.001);
+		if (sourceIsBarrel && sourceNowEmpty) {
+			source.isUsed = true;
+			// Record previous contents from the batch's recipe name
+			const batchStore = useBatchStore();
+			const recipeStore = useRecipeStore();
+			const batch = batchStore.getBatchById(batchId);
+			if (batch?.recipe) {
+				const recipe = recipeStore.getRecipeById(batch.recipe);
+				if (recipe) {
+					source.previousContents = recipe.type || recipe.name;
+				}
+			}
+		}
+
 		crud.item.value = source;
 		await updateVessel();
 		crud.item.value = dest;
 		await updateVessel();
+	};
+
+	const disposeBarrel = async (id: string): Promise<void> => {
+		setVessel(id);
+
+		// Record previous contents from the batch's recipe (same logic as emptyVessel)
+		if (crud.item.value.contents?.length) {
+			crud.item.value.isUsed = true;
+			const batchStore = useBatchStore();
+			const recipeStore = useRecipeStore();
+			const firstBatchId = crud.item.value.contents[0]?.batch;
+			if (firstBatchId) {
+				const batch = batchStore.getBatchById(firstBatchId);
+				if (batch?.recipe) {
+					const recipe = recipeStore.getRecipeById(batch.recipe);
+					if (recipe) {
+						crud.item.value.previousContents = recipe.type || recipe.name;
+					}
+				}
+			}
+		}
+
+		// Empty contents, mark as used and disposed in a single save
+		const barrelName = crud.item.value.name;
+		crud.item.value.contents = [];
+		crud.item.value.current = { volume: 0, volumeUnit: '', abv: 0, value: 0 };
+		crud.item.value.isUsed = true;
+		crud.item.value.status = 'Disposed';
+		await updateVessel();
+		toast.add({ title: 'Barrel disposed', description: barrelName, color: 'warning', icon: 'i-lucide-trash-2' });
 	};
 
 	const addContents = async (vesselId: string, contents: Contents): Promise<void> => {
@@ -279,6 +327,7 @@ export const useVesselStore = defineStore('vessels', () => {
 		emptyBarrels,
 		// Domain-specific
 		emptyVessel,
+		disposeBarrel,
 		getVesselByType,
 		fullTransfer,
 		transferBatch,

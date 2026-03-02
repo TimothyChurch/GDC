@@ -6,6 +6,8 @@ export interface PurchaseOrder {
 	vendor: string;
 	items: PurchaseOrderItem[];
 	total: number;
+	taxRate: number;
+	shipping: number;
 	date: Date;
 	createdAt?: string;
 	updatedAt?: string;

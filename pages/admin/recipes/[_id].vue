@@ -14,6 +14,7 @@ const toast = useToast();
 const recipeStore = useRecipeStore();
 const itemStore = useItemStore();
 const batchStore = useBatchStore();
+const { confirm } = useDeleteConfirm();
 
 const stageDisplay = (name: string) =>
   STAGE_DISPLAY[name] || { icon: "i-lucide-circle", color: "neutral" };
@@ -31,6 +32,15 @@ const editRecipe = () => {
   if (!recipe.value) return;
   recipeStore.setRecipe(recipe.value._id);
   panel.open();
+};
+
+const deleteRecipe = async () => {
+  if (!recipe.value) return;
+  const confirmed = await confirm('Recipe', recipe.value.name);
+  if (!confirmed) return;
+  await recipeStore.deleteRecipe(recipe.value._id);
+  toast.add({ title: 'Recipe deleted', color: 'success', icon: 'i-lucide-trash-2' });
+  router.push('/admin/recipes');
 };
 
 const totalCost = computed(() => {
@@ -166,6 +176,15 @@ const relatedBatches = computed(() =>
         </UButton>
         <UButton icon="i-lucide-pencil" size="sm" @click="editRecipe">
           Edit
+        </UButton>
+        <UButton
+          icon="i-lucide-trash-2"
+          color="error"
+          variant="soft"
+          size="sm"
+          @click="deleteRecipe"
+        >
+          Delete
         </UButton>
       </template>
     </AdminPageHeader>
@@ -350,19 +369,7 @@ const relatedBatches = computed(() =>
         <div
           class="grid grid-cols-[1fr_100px_100px_90px_70px_36px] sm:grid-cols-[1fr_100px_120px_90px_80px_36px] gap-2 pt-3 mt-2 border-t border-brown/30 items-center"
         >
-          <USelectMenu
-            v-model="newIngredient._id"
-            :items="
-              itemStore.items.map((i) => ({
-                label: i.name,
-                value: i._id,
-              }))
-            "
-            value-key="value"
-            placeholder="Add item..."
-            searchable
-            size="sm"
-          />
+          <BaseItemSelect v-model="newIngredient._id" placeholder="Add item..." size="sm" />
           <UInput
             v-model.number="newIngredient.amount"
             type="number"
@@ -401,19 +408,7 @@ const relatedBatches = computed(() =>
         <div
           class="grid grid-cols-[1fr_100px_100px_36px] gap-2 items-center"
         >
-          <USelectMenu
-            v-model="newIngredient._id"
-            :items="
-              itemStore.items.map((i) => ({
-                label: i.name,
-                value: i._id,
-              }))
-            "
-            value-key="value"
-            placeholder="Add item..."
-            searchable
-            size="sm"
-          />
+          <BaseItemSelect v-model="newIngredient._id" placeholder="Add item..." size="sm" />
           <UInput
             v-model.number="newIngredient.amount"
             type="number"

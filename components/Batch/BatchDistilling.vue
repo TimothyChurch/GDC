@@ -14,6 +14,18 @@ const batchStore = useBatchStore()
 const vesselStore = useVesselStore()
 const overlay = useOverlay()
 
+// Global expand/collapse state for distilling runs
+// null = no global override (children use their local state)
+// true = all expanded, false = all collapsed
+const globalExpanded = ref<boolean | null>(null)
+provide('distillingRunsGlobalExpanded', globalExpanded)
+
+const allExpanded = ref(false)
+const toggleAllRuns = () => {
+  allExpanded.value = !allExpanded.value
+  globalExpanded.value = allExpanded.value
+}
+
 const stage = computed(() => props.batch.stages?.distilling as DistillingStage | undefined)
 
 // Normalize runs for backwards compatibility
@@ -211,6 +223,19 @@ const saveStageFields = async () => {
         <div class="text-xl font-bold text-copper">{{ totalProofGallons.toFixed(2) }}</div>
         <div class="text-xs text-parchment/50">Total PG</div>
       </div>
+    </div>
+
+    <!-- Expand/Collapse All toggle -->
+    <div v-if="runs.length >= 2 && !editing" class="flex justify-end mb-2">
+      <UButton
+        :icon="allExpanded ? 'i-lucide-chevrons-down-up' : 'i-lucide-chevrons-up-down'"
+        variant="ghost"
+        size="xs"
+        color="neutral"
+        @click="toggleAllRuns"
+      >
+        {{ allExpanded ? 'Collapse All' : 'Expand All' }}
+      </UButton>
     </div>
 
     <!-- Run list -->

@@ -25,6 +25,14 @@ export const Inventory = defineMongooseModel({
       type: Number,
       required: true,
     },
+    unitSize: {
+      type: Number,
+      required: false,
+    },
+    unitSizeUnit: {
+      type: String,
+      required: false,
+    },
   },
   options: {
     timestamps: true,

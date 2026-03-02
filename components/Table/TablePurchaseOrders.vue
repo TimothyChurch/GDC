@@ -136,21 +136,34 @@ const addPurchaseOrder = () => {
               <thead>
                 <tr class="text-left text-parchment/60">
                   <th class="pb-1">Item</th>
+                  <th class="pb-1">Brand</th>
                   <th class="pb-1">Quantity</th>
                   <th class="pb-1">Size</th>
                   <th class="pb-1">Price</th>
+                  <th class="pb-1">Tax</th>
                   <th class="pb-1">Total</th>
                 </tr>
               </thead>
               <tbody>
                 <tr v-for="(item, idx) in row.original.items" :key="idx">
                   <td>{{ itemStore.getItemById(item.item)?.name || 'Unknown' }}</td>
+                  <td class="text-parchment/50">{{ item.brand || '-' }}</td>
                   <td>{{ item.quantity }}</td>
                   <td>{{ item.size }} {{ item.sizeUnit }}</td>
                   <td>{{ Dollar.format(item.price) }}</td>
+                  <td>
+                    <span v-if="item.taxable" class="text-[10px] font-semibold text-amber bg-amber/15 border border-amber/25 px-1.5 py-0.5 rounded-full">TAX</span>
+                    <span v-else class="text-parchment/30">-</span>
+                  </td>
                   <td>{{ Dollar.format(item.price * item.quantity) }}</td>
                 </tr>
               </tbody>
+              <tfoot v-if="(row.original.shipping || 0) > 0">
+                <tr class="border-t border-brown/20 text-parchment/60">
+                  <td colspan="6" class="pt-1">Shipping</td>
+                  <td class="pt-1">{{ Dollar.format(row.original.shipping) }}</td>
+                </tr>
+              </tfoot>
             </table>
           </div>
         </template>

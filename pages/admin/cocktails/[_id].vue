@@ -6,6 +6,8 @@ const router = useRouter()
 
 const cocktailStore = useCocktailStore()
 const { resolveAllIngredients } = useIngredientResolver()
+const { confirm } = useDeleteConfirm()
+const toast = useToast()
 
 const cocktail = computed(() => cocktailStore.getCocktailById(route.params._id as string))
 
@@ -18,6 +20,15 @@ const editCocktail = () => {
   if (!cocktail.value) return
   cocktailStore.setCocktail(cocktail.value._id)
   panel.open()
+}
+
+const deleteCocktail = async () => {
+  if (!cocktail.value) return
+  const confirmed = await confirm('Cocktail', cocktail.value.name)
+  if (!confirmed) return
+  await cocktailStore.deleteCocktail(cocktail.value._id)
+  toast.add({ title: 'Cocktail deleted', color: 'success', icon: 'i-lucide-trash-2' })
+  router.push('/admin/cocktails')
 }
 
 const cost = computed(() => {
@@ -76,6 +87,15 @@ const menuLabel = computed(() => {
           @click="editCocktail"
         >
           Edit
+        </UButton>
+        <UButton
+          icon="i-lucide-trash-2"
+          color="error"
+          variant="soft"
+          size="sm"
+          @click="deleteCocktail"
+        >
+          Delete
         </UButton>
       </template>
     </AdminPageHeader>

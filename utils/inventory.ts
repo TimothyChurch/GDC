@@ -36,8 +36,8 @@ export const currentStock = (item: Item) => {
 		(a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()
 	);
 
-	for (let i in sortedInventory) {
-		if (sortedInventory[i].item === item._id)
-			return sortedInventory[i].quantity;
+	for (const record of sortedInventory) {
+		if (record.item === item._id)
+			return inventoryStore.getTotalQuantity(record);
 	}
 };

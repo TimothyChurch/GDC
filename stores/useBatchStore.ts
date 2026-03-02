@@ -1,4 +1,4 @@
-import type { Batch, BatchStages, DistillingRun, Recipe, TastingNote, TransferLogEntry } from '~/types';
+import type { Batch, BatchStages, DistillingRun, MashingStage, Recipe, TastingNote, TransferLogEntry } from '~/types';
 import { STAGE_KEY_MAP, isStageActive, getActiveStages, hasStageVolumes, getStageIndex } from '~/composables/batchPipeline';
 
 const emptyStages = (): BatchStages => ({});
@@ -152,6 +152,11 @@ export const useBatchStore = defineStore('batches', () => {
 				value: (target.batchCost || 0) * (actualVolume / (target.batchSize || actualVolume)),
 			});
 		}
+
+		// Withdraw ingredients from inventory when entering Mashing
+		if (firstStage === 'Mashing') {
+			await withdrawMashIngredients(batchId);
+		}
 	};
 
 	/** Advance a batch from sourceStage to targetStage with optional partial volume. */
@@ -240,6 +245,11 @@ export const useBatchStore = defineStore('batches', () => {
 
 		crud.item.value = target;
 		await updateBatch();
+
+		// Withdraw ingredients from inventory when entering Mashing
+		if (targetStage === 'Mashing') {
+			await withdrawMashIngredients(batchId);
+		}
 	};
 
 	/** Update data for a specific stage */
@@ -402,6 +412,101 @@ export const useBatchStore = defineStore('batches', () => {
 		}
 	};
 
+	// --- Mash ingredient withdrawal ---
+
+	/**
+	 * Withdraw recipe ingredients from inventory when a batch enters the Mashing stage.
+	 * Scales ingredient amounts based on batch size vs recipe volume.
+	 * Sets `ingredientsWithdrawn` flag on the mashing stage to prevent duplicate withdrawals.
+	 */
+	const withdrawMashIngredients = async (batchId: string): Promise<void> => {
+		const recipeStore = useRecipeStore();
+		const itemStore = useItemStore();
+		const inventoryStore = useInventoryStore();
+		const { convertQuantity } = useUnitConversion();
+
+		const batch = crud.items.value.find((b) => b._id === batchId);
+		if (!batch) return;
+
+		// Guard: don't withdraw if already done for this batch
+		const mashStage = batch.stages?.mashing as MashingStage | undefined;
+		if (mashStage?.ingredientsWithdrawn) return;
+
+		const recipe = recipeStore.getRecipeById(batch.recipe);
+		if (!recipe || !recipe.items || recipe.items.length === 0) return;
+
+		// Calculate scale factor: batch size / recipe volume (with unit conversion)
+		let scaleFactor = 1;
+		if (recipe.volume) {
+			const batchInRecipeUnits = convertQuantity(
+				batch.batchSize,
+				batch.batchSizeUnit,
+				recipe.volumeUnit,
+			);
+			scaleFactor = batchInRecipeUnits / recipe.volume;
+		}
+
+		const inventoryRecords: Array<{ item: string; quantity: number; date: Date }> = [];
+		const summary: Array<{ name: string; amount: number; unit: string }> = [];
+
+		for (const recipeItem of recipe.items) {
+			const item = itemStore.getItemById(recipeItem._id);
+			if (!item) continue;
+			if (item.trackInventory === false) continue;
+
+			const scaledAmount = recipeItem.amount * scaleFactor;
+
+			// Convert recipe ingredient units to the item's inventory unit if they differ
+			const inventoryUnit = item.inventoryUnit || recipeItem.unit;
+			const deductionInInventoryUnits = recipeItem.unit !== inventoryUnit
+				? convertQuantity(scaledAmount, recipeItem.unit, inventoryUnit)
+				: scaledAmount;
+
+			const currentStock = inventoryStore.getCurrentStock(recipeItem._id);
+			const newStock = Math.max(0, currentStock - deductionInInventoryUnits);
+
+			inventoryRecords.push({
+				item: recipeItem._id,
+				quantity: Math.round(newStock * 100) / 100,
+				date: new Date(),
+			});
+			summary.push({
+				name: item.name,
+				amount: Math.round(deductionInInventoryUnits * 100) / 100,
+				unit: inventoryUnit,
+			});
+		}
+
+		if (inventoryRecords.length === 0) return;
+
+		try {
+			await inventoryStore.createBulk(inventoryRecords);
+		} catch {
+			// Error toast already shown by createBulk
+			return;
+		}
+
+		// Mark ingredients as withdrawn to prevent duplicate deductions
+		if (!batch.stages.mashing) {
+			batch.stages.mashing = {};
+		}
+		(batch.stages.mashing as MashingStage).ingredientsWithdrawn = true;
+		addLogEntry(batch, 'Mash ingredients withdrawn from inventory', summary.map((s) => `-${s.amount} ${s.unit} ${s.name}`).join(', '));
+		crud.item.value = batch;
+		await updateBatch();
+
+		// Show confirmation toast
+		const recipeName = recipe.name || 'recipe';
+		const lines = summary.map((s) => `-${s.amount} ${s.unit} ${s.name}`);
+		toast.add({
+			title: `Ingredients withdrawn for ${recipeName}`,
+			description: lines.join(', '),
+			color: 'success',
+			icon: 'i-lucide-archive',
+			duration: 8000,
+		});
+	};
+
 	return {
 		...crud,
 		// Domain aliases for backward compatibility
@@ -438,6 +543,8 @@ export const useBatchStore = defineStore('batches', () => {
 		// Tasting notes
 		addTastingNote,
 		deleteTastingNote,
+		// Inventory
+		withdrawMashIngredients,
 		// Getters
 		getBatchesInStage,
 		getBatchesByCurrentStage,

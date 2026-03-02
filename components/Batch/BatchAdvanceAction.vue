@@ -53,12 +53,24 @@ const stageColorClasses = computed(() => {
 
 const showModal = ref(false)
 const selectedVessel = ref('')
+const selectedSourceBarrel = ref('')
 const advancing = ref(false)
 const outputAbv = ref(0)
 const transferUnit = ref(props.batch.batchSizeUnit || 'gallon')
 
 // Detect when advancing FROM distilling (output volume differs from input)
 const isFromDistilling = computed(() => effectiveSource.value === 'Distilling')
+
+// Detect when advancing FROM barrel aging (need source barrel selector)
+const isFromBarrelAging = computed(() => effectiveSource.value === 'Barrel Aging')
+
+// Barrels that contain this batch — for source barrel selection when transferring out of barrel aging
+const sourceBarrelOptions = computed(() => {
+  if (!isFromBarrelAging.value) return []
+  return vesselStore.barrels
+    .filter(b => b.contents?.some(c => c.batch === props.batch._id))
+    .map(v => ({ label: v.name, value: v._id }))
+})
 
 // Volume tracking — sourceVolume is in batch's native unit, convert to transferUnit for display
 const sourceVolumeRaw = computed(() => getStageVolume(props.batch, effectiveSource.value))
@@ -85,15 +97,20 @@ const maxTransfer = computed(() => {
 
 const transferVolume = ref(0)
 
-// Reset transfer volume when modal opens
+// Reset transfer volume and source barrel when modal opens
 watch(showModal, (open) => {
   if (open) {
+    selectedSourceBarrel.value = ''
     if (isFromDistilling.value) {
       // Don't pre-fill — user specifies actual distillate output
       transferVolume.value = 0
       outputAbv.value = 0
     } else {
       transferVolume.value = maxTransfer.value
+    }
+    // Auto-select source barrel if only one option
+    if (isFromBarrelAging.value && sourceBarrelOptions.value.length === 1) {
+      selectedSourceBarrel.value = sourceBarrelOptions.value[0].value
     }
   }
 })
@@ -321,8 +338,11 @@ const advance = async () => {
         volInBatchUnit,          // Only add distillate output to destination (in batch units)
       )
     } else {
-      // Standard transfer
-      const currentVessel = getCurrentVesselId()
+      // Standard transfer — use selectedSourceBarrel if transferring from barrel aging,
+      // otherwise fall back to the stage's recorded vessel
+      const currentVessel = isFromBarrelAging.value && selectedSourceBarrel.value
+        ? selectedSourceBarrel.value
+        : getCurrentVesselId()
       if (currentVessel && selectedVessel.value && currentVessel !== selectedVessel.value) {
         // Partial vessel transfer based on volume ratio
         await vesselStore.transferBatchContents(
@@ -342,6 +362,7 @@ const advance = async () => {
 
     showModal.value = false
     selectedVessel.value = ''
+    selectedSourceBarrel.value = ''
 
     // If advancing to Bottled, automatically open the production panel
     if (stageName === 'Bottled') {
@@ -486,8 +507,26 @@ const getCurrentVesselId = (): string | undefined => {
             </div>
           </template>
 
+          <!-- Source barrel selection when transferring FROM barrel aging -->
+          <div v-if="isFromBarrelAging && sourceBarrelOptions.length > 0" class="mb-4">
+            <div class="text-xs text-parchment/60 uppercase tracking-wider mb-2">Source Barrel</div>
+            <USelect
+              v-model="selectedSourceBarrel"
+              :items="sourceBarrelOptions"
+              value-key="value"
+              label-key="label"
+              placeholder="Choose source barrel..."
+            />
+            <div v-if="sourceBarrelOptions.length > 1" class="text-xs text-parchment/50 mt-1">
+              {{ sourceBarrelOptions.length }} barrels contain this batch
+            </div>
+          </div>
+
+          <!-- Destination vessel selection -->
           <div v-if="needsVessel" class="mb-4">
-            <div class="text-xs text-parchment/60 uppercase tracking-wider mb-2">Select Vessel</div>
+            <div class="text-xs text-parchment/60 uppercase tracking-wider mb-2">
+              {{ isFromBarrelAging ? 'Destination Vessel' : 'Select Vessel' }}
+            </div>
             <USelect
               v-model="selectedVessel"
               :items="vesselOptions"
@@ -502,7 +541,7 @@ const getCurrentVesselId = (): string | undefined => {
             <UButton
               @click="advance"
               :loading="advancing"
-              :disabled="(needsVessel && !selectedVessel) || transferVolume <= 0"
+              :disabled="(needsVessel && !selectedVessel) || (isFromBarrelAging && !selectedSourceBarrel) || transferVolume <= 0"
             >
               <template v-if="isBottledAdvance">
                 Transfer {{ transferVolume }} {{ volumeUnit }} &amp; Record Bottling

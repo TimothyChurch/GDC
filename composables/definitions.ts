@@ -23,6 +23,9 @@ export const CHAR_LEVELS: string[] = [
   'Char 5',
 ];
 
+/** Default sales tax rate (8.25% for Texas) */
+export const DEFAULT_TAX_RATE = 0.0825;
+
 /** Purchase order status options */
 export const PO_STATUS_OPTIONS: string[] = [
   'Pending',

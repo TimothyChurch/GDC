@@ -12,4 +12,18 @@ Various bugs that have been found while using the app.
     - [x] I do not see where the "Send us a message" on our contact page sends the info. This should show up on as a message. We might need an inbox for these to land for them to be seen.
     - [x] The items page need filtering options to filter by the category of the items.
 
+# COMPLETED (2026-03-02)
+
+    - [x] On the Distilling card for the batch page, the individual runs should be able to collapse down to a overview so you can see all the runs easier.
+    - [x] For recipes, vessels, items, & others there is no way to delete them on their page. This makes it hard to fix entry errors. Make sure there is an "Are you sure?" pop up prior to deleting.
+    - [x] There is not a button to add a vessel on the vessel page.
+    - [x] Since barrels have their own page, they do not need to be displayed on the vessel page
+    - [x] Clicking on the barrel on the barrel page should first take you to the barrels individual page. From there you can click to the batch.
+    - [x] When transferring the batch from the barrel to proofing, the vessel options should be the barrels that batch is filling.
+    - [x] Upon transferring a batch out of the barrel, the barrel should be marked as used.
+    - [x] There should be a button to dispose of a barrel on the barrel page.
+    - [x] Starting a mash for a batch should withdraw the ingredients from inventory.
+
 # TODOS
+
+    (none)

@@ -1,21 +1,25 @@
 <script setup lang="ts">
 const vesselStore = useVesselStore()
 
+// Filter out barrels — they have their own dedicated page at /admin/barrels
+const nonBarrelVessels = computed(() =>
+  vesselStore.vessels.filter(v => v.type !== 'Barrel')
+)
+
 const typeGroups = computed(() => {
-  const types = ['Mash Tun', 'Fermenter', 'Still', 'Tank', 'Barrel'] as const
+  const types = ['Mash Tun', 'Fermenter', 'Still', 'Tank'] as const
   const typeIcons: Record<string, string> = {
     'Mash Tun': 'i-lucide-flame',
     'Fermenter': 'i-lucide-beaker',
     'Still': 'i-lucide-flask-conical',
     'Tank': 'i-lucide-cylinder',
-    'Barrel': 'i-lucide-cylinder',
   }
 
   return types
     .map(type => ({
       type,
       icon: typeIcons[type],
-      vessels: vesselStore.vessels.filter(v => v.type === type),
+      vessels: nonBarrelVessels.value.filter(v => v.type === type),
     }))
     .filter(g => g.vessels.length > 0)
 })
@@ -27,7 +31,7 @@ const typeGroups = computed(() => {
     <p class="text-sm text-parchment/50">Loading vessels...</p>
   </div>
 
-  <BaseEmptyState v-else-if="vesselStore.vessels.length === 0" icon="i-lucide-container" title="No vessels found" description="Add vessels to track your equipment" />
+  <BaseEmptyState v-else-if="nonBarrelVessels.length === 0" icon="i-lucide-container" title="No vessels found" description="Add vessels to track your equipment" />
 
   <div v-else class="space-y-6">
     <div v-for="group in typeGroups" :key="group.type">

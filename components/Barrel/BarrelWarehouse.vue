@@ -3,11 +3,13 @@ import { differenceInDays } from 'date-fns'
 
 const vesselStore = useVesselStore()
 const batchStore = useBatchStore()
+const { confirm } = useDeleteConfirm()
 
 const targetMonths = ref(24)
 const targetAgeDays = computed(() => targetMonths.value * 30)
 
 const sortBy = ref<'name' | 'age-asc' | 'age-desc'>('name')
+const showDisposed = ref(false)
 
 const getBarrelAge = (vessel: any): number => {
   if (!vessel.contents?.length) return 0
@@ -17,8 +19,20 @@ const getBarrelAge = (vessel: any): number => {
   return differenceInDays(new Date(), fillDate)
 }
 
+// Active barrels (excludes disposed)
+const activeBarrels = computed(() =>
+  vesselStore.barrels.filter(b => b.status !== 'Disposed')
+)
+
+// Disposed barrels
+const disposedBarrels = computed(() =>
+  vesselStore.barrels.filter(b => b.status === 'Disposed')
+)
+
 const sortedBarrels = computed(() => {
-  const barrels = [...vesselStore.barrels]
+  const barrels = showDisposed.value
+    ? [...vesselStore.barrels]
+    : [...activeBarrels.value]
   switch (sortBy.value) {
     case 'age-asc':
       return barrels.sort((a, b) => getBarrelAge(a) - getBarrelAge(b))
@@ -30,12 +44,22 @@ const sortedBarrels = computed(() => {
 })
 
 const stats = computed(() => {
-  const total = vesselStore.barrels.length
-  const filled = vesselStore.barrels.filter(b => b.contents && b.contents.length > 0).length
+  const all = activeBarrels.value
+  const total = all.length
+  const filled = all.filter(b => b.contents && b.contents.length > 0).length
   const empty = total - filled
-  const atTarget = vesselStore.barrels.filter(b => getBarrelAge(b) >= targetAgeDays.value).length
-  return { total, filled, empty, atTarget }
+  const atTarget = all.filter(b => getBarrelAge(b) >= targetAgeDays.value).length
+  const disposed = disposedBarrels.value.length
+  return { total, filled, empty, atTarget, disposed }
 })
+
+const handleDispose = async (vesselId: string) => {
+  const barrel = vesselStore.barrels.find(b => b._id === vesselId)
+  if (!barrel) return
+  const confirmed = await confirm('Barrel', barrel.name)
+  if (!confirmed) return
+  await vesselStore.disposeBarrel(vesselId)
+}
 </script>
 
 <template>
@@ -52,13 +76,23 @@ const stats = computed(() => {
           { label: 'Age (oldest)', value: 'age-desc' },
         ]" value-key="value" />
       </UFormField>
+      <UButton
+        v-if="stats.disposed > 0"
+        :icon="showDisposed ? 'i-lucide-eye-off' : 'i-lucide-eye'"
+        variant="outline"
+        color="neutral"
+        size="sm"
+        @click="showDisposed = !showDisposed"
+      >
+        {{ showDisposed ? 'Hide' : 'Show' }} Disposed ({{ stats.disposed }})
+      </UButton>
     </div>
 
     <!-- Summary Stats -->
     <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6">
       <div class="bg-charcoal rounded-lg border border-brown/30 p-3 text-center">
         <div class="text-2xl font-bold text-parchment">{{ stats.total }}</div>
-        <div class="text-xs text-parchment/60">Total</div>
+        <div class="text-xs text-parchment/60">Active</div>
       </div>
       <div class="bg-charcoal rounded-lg border border-brown/30 p-3 text-center">
         <div class="text-2xl font-bold text-copper">{{ stats.filled }}</div>
@@ -81,7 +115,7 @@ const stats = computed(() => {
     </div>
 
     <!-- Empty -->
-    <BaseEmptyState v-else-if="vesselStore.barrels.length === 0" icon="i-lucide-cylinder" title="No barrels found" description="Add barrel vessels to track your aging inventory" />
+    <BaseEmptyState v-else-if="activeBarrels.length === 0 && !showDisposed" icon="i-lucide-cylinder" title="No barrels found" description="Add barrel vessels to track your aging inventory" />
 
     <!-- Grid -->
     <div v-else class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
@@ -90,6 +124,7 @@ const stats = computed(() => {
         :key="barrel._id"
         :vessel="barrel"
         :target-age-days="targetAgeDays"
+        @dispose="handleDispose"
       />
     </div>
   </div>

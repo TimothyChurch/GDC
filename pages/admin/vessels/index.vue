@@ -1,19 +1,28 @@
 <script setup lang="ts">
 definePageMeta({ layout: 'admin' })
 
+const vesselStore = useVesselStore()
 const viewMode = ref<'grid' | 'table'>('grid')
 
 // Transfer panel
-import { LazyPanelVesselTransfer } from '#components'
+import { LazyPanelVesselTransfer, LazyPanelVessel } from '#components'
 const overlay = useOverlay()
 const transferPanel = overlay.create(LazyPanelVesselTransfer)
 const openTransfer = async () => await transferPanel.open()
+
+// Add vessel panel
+const vesselPanel = overlay.create(LazyPanelVessel)
+const addVessel = () => {
+  vesselStore.resetVessel()
+  vesselPanel.open()
+}
 </script>
 
 <template>
   <div>
-    <AdminPageHeader title="Vessels" subtitle="Fermenters, stills, tanks, and barrels" icon="i-lucide-container">
+    <AdminPageHeader title="Vessels" subtitle="Fermenters, stills, and tanks" icon="i-lucide-container">
       <template #actions>
+        <UButton icon="i-lucide-plus" @click="addVessel">Add Vessel</UButton>
         <UButton variant="outline" icon="i-lucide-arrow-right-left" @click="openTransfer">Transfer</UButton>
         <div class="flex items-center gap-1 bg-brown/15 rounded-lg p-0.5 border border-brown/20">
           <UButton

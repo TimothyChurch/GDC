@@ -56,20 +56,30 @@ const isMarkingDelivered = computed(
 
 const statusOptions = PO_STATUS_OPTIONS;
 
-const total = computed(() => {
-  return localData.value.items.reduce(
+const subtotal = computed(() =>
+  localData.value.items.reduce(
     (sum: number, item: PurchaseOrderItem) => sum + item.price * item.quantity,
     0,
-  );
+  ),
+);
+
+const totalTax = computed(() => {
+  const rate = localData.value.taxRate || 0;
+  return localData.value.items.reduce((sum: number, item: PurchaseOrderItem) => {
+    if (!item.taxable) return sum;
+    return sum + item.price * item.quantity * rate;
+  }, 0);
 });
 
-const newItem = ref({ item: "", quantity: 0, size: 0, sizeUnit: "", price: 0 });
+const total = computed(() => subtotal.value + totalTax.value + (localData.value.shipping || 0));
+
+const newItem = ref({ item: "", quantity: 0, size: 0, sizeUnit: "", price: 0, taxable: false, brand: "" });
 
 const addItem = () => {
   localData.value.items.push({
     ...newItem.value,
   } as unknown as PurchaseOrderItem);
-  newItem.value = { item: "", quantity: 0, size: 0, sizeUnit: "", price: 0 };
+  newItem.value = { item: "", quantity: 0, size: 0, sizeUnit: "", price: 0, taxable: false, brand: "" };
 };
 
 const removeItem = (index: number) => {
@@ -123,6 +133,25 @@ const removeItem = (index: number) => {
               />
             </UFormField>
           </div>
+          <div class="grid grid-cols-2 gap-4">
+            <UFormField label="Tax Rate (%)" name="taxRate">
+              <UInput
+                :model-value="((localData.taxRate || 0) * 100).toFixed(2)"
+                @update:model-value="(v: string) => localData.taxRate = parseFloat(v) / 100 || 0"
+                type="number"
+                step="0.01"
+                class="w-full"
+              />
+            </UFormField>
+            <UFormField label="Shipping ($)" name="shipping">
+              <UInput
+                v-model.number="localData.shipping"
+                type="number"
+                step="0.01"
+                class="w-full"
+              />
+            </UFormField>
+          </div>
 
           <!-- Inventory update notice when marking as Delivered -->
           <div
@@ -145,10 +174,14 @@ const removeItem = (index: number) => {
                 :key="index"
                 class="flex items-center justify-between gap-2 text-sm"
               >
-                <span class="flex-1 truncate">{{
-                  itemStore.items.find((i) => i._id === item.item)?.name
-                }}</span>
-                <span class="text-parchment/60"
+                <div class="flex-1 min-w-0">
+                  <span class="truncate block">{{
+                    itemStore.items.find((i) => i._id === item.item)?.name
+                  }}</span>
+                  <span v-if="item.brand" class="text-xs text-parchment/40">{{ item.brand }}</span>
+                </div>
+                <span v-if="item.taxable" class="text-[10px] font-semibold text-amber bg-amber/15 border border-amber/25 px-1.5 py-0.5 rounded-full shrink-0">TAX</span>
+                <span class="text-parchment/60 shrink-0"
                   >{{ item.quantity }} x {{ Dollar.format(item.price) }}</span
                 >
                 <UButton
@@ -160,17 +193,11 @@ const removeItem = (index: number) => {
                 />
               </div>
               <div class="space-y-2 border border-white/10 rounded p-2">
-                <USelectMenu
-                  v-model="newItem.item"
-                  :items="
-                    itemStore.items.map((i) => ({
-                      label: i.name,
-                      value: i._id,
-                    }))
-                  "
-                  value-key="value"
-                  placeholder="Select item"
-                  searchable
+                <BaseItemSelect v-model="newItem.item" placeholder="Select item" />
+                <UInput
+                  v-model="newItem.brand"
+                  placeholder="Brand (optional)"
+                  class="w-full"
                 />
                 <div class="grid grid-cols-4 gap-2">
                   <UInput
@@ -194,6 +221,10 @@ const removeItem = (index: number) => {
                     placeholder="Price"
                   />
                 </div>
+                <label class="flex items-center gap-2 text-sm text-parchment/70 cursor-pointer">
+                  <USwitch v-model="newItem.taxable" size="sm" />
+                  <span>Taxable</span>
+                </label>
                 <UButton
                   @click="addItem"
                   icon="i-lucide-plus"
@@ -206,9 +237,24 @@ const removeItem = (index: number) => {
             </div>
           </UFormField>
 
-          <UFormField label="Total">
-            <span class="text-lg font-bold">{{ Dollar.format(total) }}</span>
-          </UFormField>
+          <div class="space-y-1 text-sm">
+            <div class="flex justify-between text-parchment/60">
+              <span>Subtotal</span>
+              <span>{{ Dollar.format(subtotal) }}</span>
+            </div>
+            <div v-if="totalTax > 0" class="flex justify-between text-parchment/60">
+              <span>Tax ({{ ((localData.taxRate || 0) * 100).toFixed(2) }}%)</span>
+              <span>{{ Dollar.format(totalTax) }}</span>
+            </div>
+            <div v-if="(localData.shipping || 0) > 0" class="flex justify-between text-parchment/60">
+              <span>Shipping</span>
+              <span>{{ Dollar.format(localData.shipping) }}</span>
+            </div>
+            <div class="flex justify-between text-lg font-bold text-parchment pt-1 border-t border-white/10">
+              <span>Total</span>
+              <span>{{ Dollar.format(total) }}</span>
+            </div>
+          </div>
         </div>
         <div
           class="flex items-center justify-end gap-2 px-4 py-3 border-t border-white/10"

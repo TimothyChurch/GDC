@@ -40,11 +40,27 @@ export const PurchaseOrder = defineMongooseModel({
           type: Number,
           required: true,
         },
+        taxable: {
+          type: Boolean,
+          default: false,
+        },
+        brand: {
+          type: String,
+          default: "",
+        },
       },
     ],
     total: {
       type: Number,
       required: true,
+    },
+    taxRate: {
+      type: Number,
+      default: 0.0825,
+    },
+    shipping: {
+      type: Number,
+      default: 0,
     },
     date: {
       type: Date,

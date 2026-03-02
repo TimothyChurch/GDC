@@ -4,6 +4,8 @@ export interface Inventory {
 	item: string;
 	location?: string;
 	quantity: number;
+	unitSize?: number;
+	unitSizeUnit?: string;
 	createdAt?: string;
 	updatedAt?: string;
 }

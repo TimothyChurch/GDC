@@ -18,6 +18,8 @@ export interface MashingStage extends BatchStageBase {
 	pH?: number;
 	preBoilGravity?: number;
 	postBoilGravity?: number;
+	/** Flag to prevent duplicate ingredient withdrawal from inventory */
+	ingredientsWithdrawn?: boolean;
 }
 
 export interface FermentingStage extends BatchStageBase {
