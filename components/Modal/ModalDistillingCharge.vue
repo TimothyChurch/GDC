@@ -8,6 +8,7 @@ interface ChargeResult {
   chargeVolumeUnit: string
   chargeAbv: number
   chargeSourceVessel: string
+  chargeSourceVessels: string[]
   runType: 'stripping' | 'spirit'
   additions: DistillingAddition[]
 }
@@ -25,8 +26,8 @@ const emit = defineEmits<{
 
 const vesselStore = useVesselStore()
 
-// Form state
-const sourceVessel = ref(props.sourceVesselId || '')
+// Form state — multi-select source vessels
+const sourceVessels = ref<string[]>(props.sourceVesselId ? [props.sourceVesselId] : [])
 const stillId = ref('')
 const chargeVolume = ref<number | undefined>(undefined)
 const chargeVolumeUnit = ref('gallon')
@@ -66,22 +67,45 @@ const stillOptions = computed(() => {
   })
 })
 
-// Remaining volume from selected source vessel for this batch, converted to chargeVolumeUnit
-const remainingVolume = computed(() => {
-  if (!sourceVessel.value) return 0
-  const v = vesselStore.getVesselById(sourceVessel.value)
-  if (!v?.contents) return 0
-  const entry = v.contents.find((c) => c.batch === props.batchId)
-  if (!entry) return 0
-  return entry.volume * convertUnitRatio(entry.volumeUnit, chargeVolumeUnit.value)
+// Per-vessel volume and ABV info for selected vessels
+interface VesselChargeInfo {
+  id: string
+  volume: number
+  volumeUnit: string
+  abv: number
+}
+
+const selectedVesselInfo = computed<VesselChargeInfo[]>(() => {
+  return sourceVessels.value.map((id) => {
+    const v = vesselStore.getVesselById(id)
+    const entry = v?.contents?.find((c) => c.batch === props.batchId)
+    return {
+      id,
+      volume: entry?.volume || 0,
+      volumeUnit: entry?.volumeUnit || 'gallon',
+      abv: entry?.abv || 0,
+    }
+  }).filter((info) => info.volume > 0)
 })
 
+// Total remaining volume across all selected vessels, converted to chargeVolumeUnit
+const remainingVolume = computed(() => {
+  return selectedVesselInfo.value.reduce((sum, info) => {
+    return sum + info.volume * convertUnitRatio(info.volumeUnit, chargeVolumeUnit.value)
+  }, 0)
+})
+
+// Weighted-average ABV across selected vessels
 const remainingAbv = computed(() => {
-  if (!sourceVessel.value) return 0
-  const v = vesselStore.getVesselById(sourceVessel.value)
-  if (!v?.contents) return 0
-  const entry = v.contents.find((c) => c.batch === props.batchId)
-  return entry?.abv || 0
+  const infos = selectedVesselInfo.value
+  if (infos.length === 0) return 0
+  const totalVol = infos.reduce((s, i) => s + i.volume * convertUnitRatio(i.volumeUnit, 'gallon'), 0)
+  if (totalVol === 0) return 0
+  const weightedAbv = infos.reduce((s, i) => {
+    const vol = i.volume * convertUnitRatio(i.volumeUnit, 'gallon')
+    return s + i.abv * vol
+  }, 0)
+  return weightedAbv / totalVol
 })
 
 // Charge progress as percentage of remaining
@@ -112,6 +136,33 @@ const removeAddition = (index: number) => {
   additions.value.splice(index, 1)
 }
 
+// Select / deselect all source vessels
+const allSelected = computed(() =>
+  sourceVesselOptions.value.length > 0 && sourceVessels.value.length === sourceVesselOptions.value.length
+)
+
+const toggleSelectAll = () => {
+  if (allSelected.value) {
+    sourceVessels.value = []
+  } else {
+    sourceVessels.value = sourceVesselOptions.value.map((o) => o.value)
+  }
+}
+
+const toggleVessel = (id: string) => {
+  const idx = sourceVessels.value.indexOf(id)
+  if (idx >= 0) {
+    sourceVessels.value.splice(idx, 1)
+  } else {
+    sourceVessels.value.push(id)
+  }
+}
+
+// Auto-select all when only one vessel available
+if (sourceVesselOptions.value.length === 1 && sourceVessels.value.length === 0) {
+  sourceVessels.value = [sourceVesselOptions.value[0].value]
+}
+
 // Validation: submit enabled when still selected AND (chargeVolume > 0 OR any addition has volume > 0)
 const canSubmit = computed(() => {
   if (!stillId.value) return false
@@ -126,7 +177,8 @@ const submit = () => {
     chargeVolume: chargeVolume.value || 0,
     chargeVolumeUnit: chargeVolumeUnit.value,
     chargeAbv: remainingAbv.value,
-    chargeSourceVessel: sourceVessel.value,
+    chargeSourceVessel: sourceVessels.value[0] || '',
+    chargeSourceVessels: [...sourceVessels.value],
     runType: runType.value,
     additions: additions.value.filter((a) => (a.volume || 0) > 0),
   }
@@ -150,18 +202,45 @@ const fillMax = () => {
 
     <template #body>
       <div class="space-y-5">
-        <!-- Source Vessel -->
+        <!-- Source Vessels (multi-select) -->
         <div>
-          <div class="text-xs text-parchment/60 uppercase tracking-wider mb-2">Source Vessel</div>
-          <USelect
-            v-model="sourceVessel"
-            :items="sourceVesselOptions"
-            value-key="value"
-            label-key="label"
-            placeholder="Select source vessel..."
-          />
-          <div v-if="sourceVessel && remainingVolume > 0" class="mt-1 text-xs text-parchment/50">
-            {{ remainingVolume.toFixed(1) }} {{ chargeVolumeUnit }} remaining @ {{ remainingAbv.toFixed(1) }}% ABV
+          <div class="flex items-center justify-between mb-2">
+            <div class="text-xs text-parchment/60 uppercase tracking-wider">Source Vessels</div>
+            <button
+              v-if="sourceVesselOptions.length > 1"
+              class="text-xs text-copper hover:text-gold transition-colors"
+              @click="toggleSelectAll"
+            >
+              {{ allSelected ? 'Deselect All' : 'Select All' }}
+            </button>
+          </div>
+          <div v-if="sourceVesselOptions.length === 0" class="text-xs text-parchment/40 italic">
+            No vessels contain this batch
+          </div>
+          <div v-else class="space-y-1.5">
+            <button
+              v-for="option in sourceVesselOptions"
+              :key="option.value"
+              :class="[
+                'w-full flex items-center gap-2 px-3 py-2 rounded-lg border text-left text-sm transition-all',
+                sourceVessels.includes(option.value)
+                  ? 'border-copper/40 bg-copper/10 text-parchment'
+                  : 'border-brown/20 bg-brown/5 text-parchment/50 hover:border-brown/40',
+              ]"
+              @click="toggleVessel(option.value)"
+            >
+              <UIcon
+                :name="sourceVessels.includes(option.value) ? 'i-lucide-check-square' : 'i-lucide-square'"
+                :class="sourceVessels.includes(option.value) ? 'text-copper' : 'text-parchment/30'"
+              />
+              <span class="flex-1 truncate">{{ option.label }}</span>
+            </button>
+          </div>
+          <div v-if="sourceVessels.length > 0 && remainingVolume > 0" class="mt-1.5 text-xs text-parchment/50">
+            Total: {{ remainingVolume.toFixed(1) }} {{ chargeVolumeUnit }} @ {{ remainingAbv.toFixed(1) }}% ABV
+            <span v-if="sourceVessels.length > 1" class="text-parchment/30">
+              ({{ sourceVessels.length }} vessels)
+            </span>
           </div>
         </div>
 
@@ -199,7 +278,7 @@ const fillMax = () => {
                 variant="ghost"
                 class="text-parchment/50"
                 @click="fillMax"
-                :disabled="!sourceVessel || remainingVolume <= 0"
+                :disabled="sourceVessels.length === 0 || remainingVolume <= 0"
               >
                 Fill Max
               </UButton>

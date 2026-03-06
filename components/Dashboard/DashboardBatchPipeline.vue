@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ALL_STAGES, STAGE_DISPLAY, STAGE_KEY_MAP, stageTextColor, stageBgColor, getNextStage, getStageVolume, hasStageVolumes } from '~/composables/batchPipeline'
+import { ALL_STAGES, STAGE_DISPLAY, STAGE_KEY_MAP, stageTextColor, stageBgColor, getNextStageForActive, getStageVolume, hasStageVolumes } from '~/composables/batchPipeline'
 import { getBatchBorderClass } from '~/composables/useRecipeColors'
 
 const batchStore = useBatchStore();
@@ -107,7 +107,7 @@ function onDragOver(e: DragEvent, stageName: string) {
   if (dragSourceStage.value === 'Upcoming') {
     expectedNext = batch.pipeline[0] || null
   } else {
-    expectedNext = getNextStage(batch.pipeline, dragSourceStage.value)
+    expectedNext = getNextStageForActive(batch.pipeline, dragSourceStage.value, batch.currentStage).nextStage
   }
 
   if (expectedNext === stageName) {
@@ -133,7 +133,7 @@ function onDrop(e: DragEvent, stageName: string) {
   if (dragSourceStage.value === 'Upcoming') {
     expectedNext = batch.pipeline[0] || null
   } else {
-    expectedNext = getNextStage(batch.pipeline, dragSourceStage.value)
+    expectedNext = getNextStageForActive(batch.pipeline, dragSourceStage.value, batch.currentStage).nextStage
   }
 
   if (expectedNext === stageName) {

@@ -85,15 +85,21 @@ const addRun = async (defaultRunType: 'stripping' | 'spirit') => {
 
   addingRun.value = true
   try {
-    // Transfer charge from source to still
-    if (result.chargeVolume > 0 && result.chargeSourceVessel) {
-      await vesselStore.transferBatchContents(
-        result.chargeSourceVessel,
-        result.stillId,
-        props.batch._id,
-        result.chargeVolume,
-        result.chargeVolumeUnit,
-      )
+    // Transfer charge from all selected source vessels to still
+    const sourceVessels = result.chargeSourceVessels || (result.chargeSourceVessel ? [result.chargeSourceVessel] : [])
+    if (result.chargeVolume > 0 && sourceVessels.length > 0) {
+      for (const vesselId of sourceVessels) {
+        const vessel = vesselStore.getVesselById(vesselId)
+        const entry = vessel?.contents?.find(c => c.batch === props.batch._id)
+        if (!entry || entry.volume <= 0) continue
+        await vesselStore.transferBatchContents(
+          vesselId,
+          result.stillId,
+          props.batch._id,
+          entry.volume,
+          entry.volumeUnit,
+        )
+      }
     }
 
     // Transfer additions (proportional — communal vessels)
@@ -122,7 +128,8 @@ const addRun = async (defaultRunType: 'stripping' | 'spirit') => {
       chargeVolume: result.chargeVolume,
       chargeVolumeUnit: result.chargeVolumeUnit,
       chargeAbv: result.chargeAbv,
-      chargeSourceVessel: result.chargeSourceVessel,
+      chargeSourceVessel: sourceVessels[0] || '',
+      chargeSourceVessels: sourceVessels,
       additions: result.additions.length > 0 ? result.additions : undefined,
     }
     if (result.runType === 'stripping') {

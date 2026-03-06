@@ -48,6 +48,25 @@ const selectedIngredient = ref('');
 const newIngredientAmount = ref(0);
 const newIngredientUnit = ref('');
 
+const creatingItem = ref(false);
+const handleCreateItem = async (name: string) => {
+  if (creatingItem.value) return;
+  creatingItem.value = true;
+  try {
+    const newItem = await $fetch<import('~/types').Item>('/api/item/create', {
+      method: 'POST',
+      body: { name, category: 'Other' },
+    });
+    itemStore.items.push(newItem);
+    selectedIngredient.value = `item:${newItem._id}`;
+    useToast().add({ title: `Created "${newItem.name}"`, color: 'success', icon: 'i-lucide-check-circle' });
+  } catch (error: unknown) {
+    useToast().add({ title: 'Failed to create item', description: getErrorMessage(error), color: 'error', icon: 'i-lucide-alert-circle' });
+  } finally {
+    creatingItem.value = false;
+  }
+};
+
 const addIngredient = () => {
   if (!selectedIngredient.value) return;
   const [sourceType, ...idParts] = selectedIngredient.value.split(':');
@@ -189,6 +208,10 @@ const onDragEnd = () => {
                   :items="ingredientOptions"
                   class="flex-1"
                   placeholder="Select ingredient"
+                  searchable
+                  :loading="creatingItem"
+                  :create-item="{ position: 'bottom' }"
+                  @create="handleCreateItem"
                 />
                 <UInput v-model.number="newIngredientAmount" type="number" placeholder="Amt" class="w-16" />
                 <USelect v-model="newIngredientUnit" :items="unitOptions" class="w-20" />

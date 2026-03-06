@@ -9,6 +9,7 @@ const props = defineProps<{
 
 const vesselStore = useVesselStore()
 const batchStore = useBatchStore()
+const toast = useToast()
 
 const stage = computed(() => props.batch.stages?.storage as StorageStage | undefined)
 
@@ -85,6 +86,7 @@ const save = async () => {
     saving.value = false
   }
 }
+
 </script>
 
 <template>
@@ -192,5 +194,6 @@ const save = async () => {
     <div v-if="editing" class="mt-4 flex justify-end">
       <UButton @click="save" :loading="saving" size="sm">Save Storage</UButton>
     </div>
+
   </div>
 </template>

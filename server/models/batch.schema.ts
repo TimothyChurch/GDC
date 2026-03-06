@@ -109,6 +109,7 @@ export const Batch = defineMongooseModel({
 					chargeVolumeUnit: String,
 					chargeAbv: Number,
 					chargeSourceVessel: String,
+					chargeSourceVessels: [String],
 					additions: [{
 						label: String,
 						sourceVessel: String,

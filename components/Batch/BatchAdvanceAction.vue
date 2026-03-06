@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import type { Batch, DistillingRun } from '~/types'
-import { getNextStage, STAGE_DISPLAY, STAGE_VESSEL_TYPE, STAGE_KEY_MAP, stageTextColor, stageBgColor, getStageVolume, getVesselRemainingCapacity } from '~/composables/batchPipeline'
+import { getNextStage, getNextStageByIndex, STAGE_DISPLAY, STAGE_VESSEL_TYPE, STAGE_KEY_MAP, stageTextColor, stageBgColor, getStageVolume, getVesselRemainingCapacity } from '~/composables/batchPipeline'
 import { LazyModalDistillingCharge, LazyPanelProduction } from '#components'
 import { volumeUnits } from '~/utils/units'
 import { convertUnitRatio } from '~/utils/conversions'
@@ -8,6 +8,7 @@ import { convertUnitRatio } from '~/utils/conversions'
 const props = defineProps<{
   batch: Batch
   sourceStage?: string
+  pipelineIndex?: number
 }>()
 
 const emit = defineEmits<{ advanced: [] }>()
@@ -24,6 +25,10 @@ const effectiveSource = computed(() => props.sourceStage || props.batch.currentS
 const nextStage = computed(() => {
   if (effectiveSource.value === 'Upcoming') {
     return props.batch.pipeline[0] || null
+  }
+  // Use position-exact lookup when pipelineIndex is provided (handles duplicate stages)
+  if (props.pipelineIndex !== undefined) {
+    return getNextStageByIndex(props.batch.pipeline, props.pipelineIndex)
   }
   return getNextStage(props.batch.pipeline, effectiveSource.value)
 })
@@ -181,15 +186,22 @@ const advanceToDistilling = async () => {
 
   advancing.value = true
   try {
-    // Transfer charge from source to still
-    if (result.chargeVolume > 0 && result.chargeSourceVessel) {
-      await vesselStore.transferBatchContents(
-        result.chargeSourceVessel,
-        result.stillId,
-        props.batch._id,
-        result.chargeVolume,
-        result.chargeVolumeUnit,
-      )
+    // Transfer charge from all selected source vessels to still
+    const sourceVessels = result.chargeSourceVessels || (result.chargeSourceVessel ? [result.chargeSourceVessel] : [])
+    if (result.chargeVolume > 0 && sourceVessels.length > 0) {
+      for (const vesselId of sourceVessels) {
+        const vessel = vesselStore.getVesselById(vesselId)
+        const entry = vessel?.contents?.find(c => c.batch === props.batch._id)
+        if (!entry || entry.volume <= 0) continue
+        // Transfer this vessel's full batch contents
+        await vesselStore.transferBatchContents(
+          vesselId,
+          result.stillId,
+          props.batch._id,
+          entry.volume,
+          entry.volumeUnit,
+        )
+      }
     }
 
     // Transfer additions (proportional — communal vessels)
@@ -221,7 +233,8 @@ const advanceToDistilling = async () => {
       chargeVolume: result.chargeVolume,
       chargeVolumeUnit: result.chargeVolumeUnit,
       chargeAbv: result.chargeAbv,
-      chargeSourceVessel: result.chargeSourceVessel,
+      chargeSourceVessel: sourceVessels[0] || '',
+      chargeSourceVessels: sourceVessels,
       additions: result.additions.length > 0 ? result.additions : undefined,
     }
     if (result.runType === 'stripping') {

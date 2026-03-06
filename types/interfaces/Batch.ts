@@ -65,6 +65,7 @@ export interface DistillingRun {
 	chargeVolumeUnit?: string;
 	chargeAbv?: number;
 	chargeSourceVessel?: string;
+	chargeSourceVessels?: string[];
 	additions?: DistillingAddition[];
 	output?: { vessel?: string; volume?: number; volumeUnit?: string; abv?: number; proofGallons?: number };
 	collected?: { foreshots?: DistillingCut; heads?: DistillingCut; lateHeads?: DistillingCut; hearts?: DistillingCut; tails?: DistillingCut };

@@ -41,21 +41,14 @@ const selectedItem = computed(() => {
   return itemStore.items.find((i) => i._id === localData.value.item) || null;
 });
 
-const hasPackaging = computed(() => {
-  return selectedItem.value?.unitSize && selectedItem.value.unitSize > 0 && selectedItem.value.unitLabel;
-});
-
 // Auto-populate unitSize/unitSizeUnit from Item defaults when item changes
 watch(() => localData.value.item, (newItemId, oldItemId) => {
   if (!newItemId || newItemId === oldItemId) return;
   const item = itemStore.items.find((i) => i._id === newItemId);
   if (item?.unitSize && item.unitSize > 0) {
     localData.value.unitSize = item.unitSize;
-    localData.value.unitSizeUnit = item.inventoryUnit || '';
-  } else {
-    localData.value.unitSize = undefined;
-    localData.value.unitSizeUnit = undefined;
   }
+  localData.value.unitSizeUnit = item?.inventoryUnit || '';
 });
 
 // Computed total for package mode display
@@ -91,36 +84,25 @@ const packageTotal = computed(() => {
               />
             </UFormField>
 
-            <!-- Package mode: item has packaging info -->
-            <template v-if="hasPackaging">
-              <UFormField label="Packages" name="quantity">
-                <UInput v-model.number="localData.quantity" type="number" placeholder="Number of packages" />
-              </UFormField>
-              <div class="grid grid-cols-2 gap-4">
-                <UFormField label="Per Package">
-                  <UInput
-                    :model-value="localData.unitSize"
-                    @update:model-value="localData.unitSize = Number($event)"
-                    type="number"
-                    placeholder="Size per package"
-                  />
-                  <template #hint>
-                    {{ localData.unitSizeUnit || selectedItem?.inventoryUnit || '' }} / {{ selectedItem?.unitLabel || 'pkg' }}
-                  </template>
-                </UFormField>
-                <div>
-                  <div class="text-sm font-medium text-parchment/80 mb-1.5">Total</div>
-                  <div class="text-lg font-bold text-gold">
-                    {{ packageTotal.toLocaleString() }} {{ localData.unitSizeUnit || selectedItem?.inventoryUnit || '' }}
-                  </div>
-                </div>
-              </div>
-            </template>
-
-            <!-- Simple mode: no packaging -->
-            <UFormField v-else label="Quantity" name="quantity">
+            <UFormField label="Quantity" name="quantity">
               <UInput v-model.number="localData.quantity" type="number" placeholder="Quantity" />
             </UFormField>
+            <div class="grid grid-cols-2 gap-4">
+              <UFormField label="Per-Unit Size">
+                <UInput
+                  :model-value="localData.unitSize"
+                  @update:model-value="localData.unitSize = Number($event)"
+                  type="number"
+                  placeholder="e.g. 50"
+                />
+              </UFormField>
+              <UFormField label="Unit">
+                <USelect v-model="localData.unitSizeUnit" :items="allUnits" placeholder="Select unit" />
+              </UFormField>
+            </div>
+            <div v-if="localData.unitSize && localData.unitSize > 0" class="text-sm text-parchment/70">
+              Total: <span class="text-lg font-bold text-gold">{{ packageTotal.toLocaleString() }} {{ localData.unitSizeUnit || '' }}</span>
+            </div>
 
             <UFormField label="Location">
               <USelectMenu

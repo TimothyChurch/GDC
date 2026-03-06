@@ -445,7 +445,10 @@ const summaryProofGallons = computed(() => {
         <div class="text-sm text-parchment">
           <template v-if="run.chargeVolume">
             {{ run.chargeVolume }} {{ run.chargeVolumeUnit || 'gallon' }} @ {{ run.chargeAbv || 0 }}% ABV
-            <span v-if="run.chargeSourceVessel" class="text-parchment/50">
+            <span v-if="run.chargeSourceVessels?.length" class="text-parchment/50">
+              (from {{ run.chargeSourceVessels.map(id => getVesselName(id)).join(', ') }})
+            </span>
+            <span v-else-if="run.chargeSourceVessel" class="text-parchment/50">
               (from {{ getVesselName(run.chargeSourceVessel) }})
             </span>
           </template>

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { STAGE_KEY_MAP, hasReachedStage as _hasReached, isCurrentStage as _isCurrent, isStageActive, hasStageVolumes, getNextStage, getActiveStages } from '~/composables/batchPipeline'
+import { STAGE_KEY_MAP, hasReachedStage as _hasReached, isCurrentStage as _isCurrent, isStageActive, hasStageVolumes, getNextStageForActive, getActiveStages } from '~/composables/batchPipeline'
 
 definePageMeta({ layout: 'admin' })
 
@@ -51,28 +51,28 @@ const isEditable = (stageName: string) => {
   return _isCurrent(batch.value.currentStage, stageName)
 }
 
-// Stages that have volume and a valid next stage — show advance button for each
+// Stages that have volume and a valid next stage — returns { stage, pipelineIndex } for each
 const advancableStages = computed(() => {
-  if (!batch.value || batch.value.status !== 'active') return []
-  const stages: string[] = []
+  if (!batch.value || batch.value.status !== 'active') return [] as { stage: string; pipelineIndex: number }[]
+  const result: { stage: string; pipelineIndex: number }[] = []
 
   if (hasStageVolumes(batch.value)) {
     const active = getActiveStages(batch.value)
     for (const stage of active) {
-      // Check if this stage has a next stage in pipeline
       if (stage === 'Upcoming') {
-        if (batch.value.pipeline.length > 0) stages.push(stage)
+        if (batch.value.pipeline.length > 0) result.push({ stage, pipelineIndex: -1 })
       } else {
-        const next = getNextStage(batch.value.pipeline, stage)
-        if (next) stages.push(stage)
+        const { nextStage, activePipelineIndex } = getNextStageForActive(batch.value.pipeline, stage, batch.value.currentStage)
+        if (nextStage) result.push({ stage, pipelineIndex: activePipelineIndex })
       }
     }
   } else {
     // Legacy: single advance button
-    stages.push(batch.value.currentStage)
+    const { activePipelineIndex } = getNextStageForActive(batch.value.pipeline, batch.value.currentStage, batch.value.currentStage)
+    result.push({ stage: batch.value.currentStage, pipelineIndex: activePipelineIndex })
   }
 
-  return stages
+  return result
 })
 
 // Dynamic component map — use resolveComponent for runtime resolution of auto-imported components
@@ -89,13 +89,22 @@ const STAGE_COMPONENTS: Record<string, ReturnType<typeof resolveComponent>> = {
   'Bottled': resolveComponent('BatchBottled'),
 }
 
-// Stages rendered in reverse order (newest first), with overview staying on top
+// Stages rendered in reverse order (newest first), deduplicated by name
+// (duplicate pipeline entries share stage data, so one card per unique stage)
 const reversedReachedStages = computed(() => {
   if (!batch.value) return []
+  const seen = new Set<string>()
   return [...batch.value.pipeline]
-    .filter(s => hasReached(s) && STAGE_COMPONENTS[s])
+    .filter(s => {
+      if (seen.has(s)) return false
+      seen.add(s)
+      return hasReached(s) && STAGE_COMPONENTS[s]
+    })
     .reverse()
 })
+
+// Pipeline editor modal state
+const pipelineEditorOpen = ref(false)
 
 </script>
 
@@ -130,17 +139,39 @@ const reversedReachedStages = computed(() => {
       </template>
     </AdminPageHeader>
 
-    <BatchStepper
-      :pipeline="batch.pipeline"
-      :current-stage="batch.currentStage"
-      :stage-volumes="batch.stageVolumes"
-      :batch-size-unit="batch.batchSizeUnit"
-    />
+    <div class="flex items-center gap-3">
+      <BatchStepper
+        :pipeline="batch.pipeline"
+        :current-stage="batch.currentStage"
+        :stage-volumes="batch.stageVolumes"
+        :batch-size-unit="batch.batchSizeUnit"
+        class="flex-1"
+      />
+      <UButton
+        v-if="batch.status === 'active'"
+        icon="i-lucide-pencil-ruler"
+        variant="outline"
+        color="neutral"
+        size="xs"
+        @click="pipelineEditorOpen = true"
+      >
+        Edit Pipeline
+      </UButton>
+    </div>
+
+    <UModal v-model:open="pipelineEditorOpen">
+      <template #content>
+        <BatchPipelineEditor
+          :batch="batch"
+          @saved="pipelineEditorOpen = false"
+        />
+      </template>
+    </UModal>
 
     <BatchHeader :batch="batch" :recipe="recipe" />
 
     <!-- Upcoming advance action (no stage card for Upcoming) -->
-    <div v-if="batch.status === 'active' && advancableStages.includes('Upcoming')" class="flex justify-center">
+    <div v-if="batch.status === 'active' && advancableStages.some(a => a.stage === 'Upcoming')" class="flex justify-center">
       <BatchAdvanceAction
         :batch="batch"
         source-stage="Upcoming"
@@ -176,13 +207,16 @@ const reversedReachedStages = computed(() => {
         :editing="isEditable(stage)"
       />
       <!-- Per-stage advance action directly below the card -->
-      <div v-if="batch.status === 'active' && advancableStages.includes(stage)" class="flex justify-center">
-        <BatchAdvanceAction
-          :batch="batch"
-          :source-stage="stage"
-          @advanced="() => {}"
-        />
-      </div>
+      <template v-for="adv in advancableStages.filter(a => a.stage === stage)" :key="`adv-${adv.stage}-${adv.pipelineIndex}`">
+        <div class="flex justify-center">
+          <BatchAdvanceAction
+            :batch="batch"
+            :source-stage="adv.stage"
+            :pipeline-index="adv.pipelineIndex"
+            @advanced="() => {}"
+          />
+        </div>
+      </template>
     </template>
 
     <!-- Tasting Notes (visible on all stages) -->

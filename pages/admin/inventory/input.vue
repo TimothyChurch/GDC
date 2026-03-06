@@ -16,6 +16,7 @@ interface CountEntry {
   unit: string
   quantity: number
   unitSize: number
+  unitSizeUnit: string
   unitLabel: string
   unitInput: number
 }
@@ -34,6 +35,7 @@ watch(
         unit: item.inventoryUnit || '',
         quantity: 0,
         unitSize: item.unitSize || 0,
+        unitSizeUnit: item.inventoryUnit || '',
         unitLabel: item.unitLabel || '',
         unitInput: 0,
       }))
@@ -42,24 +44,24 @@ watch(
   { immediate: true }
 )
 
-function hasPackaging(entry: CountEntry) {
-  return entry.unitSize > 0 && entry.unitLabel
+function onUnitInputChange(entry: CountEntry) {
+  if (entry.unitSize > 0) {
+    entry.quantity = entry.unitInput * entry.unitSize
+  } else {
+    entry.quantity = entry.unitInput
+  }
 }
 
-function onUnitInputChange(entry: CountEntry) {
-  if (hasPackaging(entry)) {
-    entry.quantity = entry.unitInput * entry.unitSize
+function getTotal(entry: CountEntry) {
+  if (entry.unitSize > 0) {
+    return entry.unitInput * entry.unitSize
   }
+  return entry.unitInput
 }
 
 function formatLastCount(entry: CountEntry, qty: number) {
-  const base = `${qty} ${entry.unit}`
-  if (hasPackaging(entry)) {
-    const count = Math.round((qty / entry.unitSize) * 100) / 100
-    const label = count === 1 ? entry.unitLabel : `${entry.unitLabel}s`
-    return `${base} (${count} ${label})`
-  }
-  return base
+  const unit = entry.unitSizeUnit || entry.unit
+  return `${qty} ${unit}`
 }
 
 function getLastCount(itemId: string) {
@@ -101,6 +103,7 @@ const submitInventory = async () => {
           date,
           item: entry._id,
           quantity: Number(entry.quantity),
+          ...(entry.unitSize > 0 && { unitSize: entry.unitSize, unitSizeUnit: entry.unitSizeUnit }),
         }
         await inventoryStore.updateInventory()
       }
@@ -149,9 +152,11 @@ const printSheet = () => {
               <thead>
                 <tr class="border-b border-brown/30">
                   <th class="text-left px-4 py-3 text-xs font-semibold text-parchment/60 uppercase tracking-wider">Item</th>
-                  <th class="text-center px-4 py-3 text-xs font-semibold text-parchment/60 uppercase tracking-wider w-28">Quantity</th>
-                  <th class="text-center px-4 py-3 text-xs font-semibold text-parchment/60 uppercase tracking-wider w-20">Unit</th>
-                  <th class="text-center px-4 py-3 text-xs font-semibold text-parchment/60 uppercase tracking-wider w-32">Last Count</th>
+                  <th class="text-center px-4 py-3 text-xs font-semibold text-parchment/60 uppercase tracking-wider w-24"># Units</th>
+                  <th class="text-center px-4 py-3 text-xs font-semibold text-parchment/60 uppercase tracking-wider w-24">Per Unit</th>
+                  <th class="text-center px-4 py-3 text-xs font-semibold text-parchment/60 uppercase tracking-wider w-28">Unit</th>
+                  <th class="text-center px-4 py-3 text-xs font-semibold text-parchment/60 uppercase tracking-wider w-24">Total</th>
+                  <th class="text-center px-4 py-3 text-xs font-semibold text-parchment/60 uppercase tracking-wider w-28">Last Count</th>
                   <th class="text-center px-4 py-3 text-xs font-semibold text-parchment/60 uppercase tracking-wider w-20">Delta</th>
                 </tr>
               </thead>
@@ -163,30 +168,33 @@ const printSheet = () => {
                 >
                   <td class="px-4 py-2 text-sm font-medium text-parchment">{{ entry.name }}</td>
                   <td class="px-4 py-2">
-                    <template v-if="hasPackaging(entry)">
-                      <UInput
-                        v-model="entry.unitInput"
-                        type="number"
-                        min="0"
-                        class="text-center"
-                        @update:model-value="onUnitInputChange(entry)"
-                      />
-                      <div class="text-xs text-parchment/50 text-center mt-1">
-                        = {{ entry.quantity }} {{ entry.unit }}
-                      </div>
-                    </template>
-                    <UInput v-else v-model="entry.quantity" type="number" min="0" class="text-center" />
+                    <UInput
+                      v-model="entry.unitInput"
+                      type="number"
+                      min="0"
+                      class="text-center"
+                      @update:model-value="onUnitInputChange(entry)"
+                    />
                   </td>
-                  <td class="px-4 py-2 text-center text-sm text-parchment/60">
-                    <template v-if="hasPackaging(entry)">
-                      # of {{ entry.unitLabel }}s
-                    </template>
-                    <template v-else>{{ entry.unit }}</template>
+                  <td class="px-4 py-2">
+                    <UInput
+                      v-model.number="entry.unitSize"
+                      type="number"
+                      min="0"
+                      class="text-center"
+                      @update:model-value="onUnitInputChange(entry)"
+                    />
+                  </td>
+                  <td class="px-4 py-2">
+                    <USelect v-model="entry.unitSizeUnit" :items="allUnits" placeholder="unit" />
+                  </td>
+                  <td class="px-4 py-2 text-center text-sm font-semibold text-gold">
+                    {{ getTotal(entry).toLocaleString() }} {{ entry.unitSizeUnit }}
                   </td>
                   <td class="px-4 py-2 text-center text-xs text-parchment/50">
                     <template v-if="getLastCount(entry._id)">
                       {{ formatLastCount(entry, getLastCount(entry._id)!.quantity) }}
-                      <span class="text-parchment/50">({{ new Date(getLastCount(entry._id)!.date).toLocaleDateString() }})</span>
+                      <div class="text-parchment/40">{{ new Date(getLastCount(entry._id)!.date).toLocaleDateString() }}</div>
                     </template>
                     <span v-else class="text-parchment/20">--</span>
                   </td>
@@ -200,7 +208,7 @@ const printSheet = () => {
                   </td>
                 </tr>
                 <tr v-if="getFilteredEntries(item.value).length === 0">
-                  <td colspan="5" class="text-center py-6 text-parchment/50 text-sm">
+                  <td colspan="7" class="text-center py-6 text-parchment/50 text-sm">
                     No items in this category
                   </td>
                 </tr>
@@ -217,19 +225,19 @@ const printSheet = () => {
             class="bg-charcoal rounded-xl border border-brown/30 p-4"
           >
             <div class="text-sm font-medium text-parchment mb-3">{{ entry.name }}</div>
-            <div class="grid grid-cols-2 gap-2 mb-3">
-              <template v-if="hasPackaging(entry)">
-                <UFormField :label="`# of ${entry.unitLabel}s`">
-                  <UInput v-model="entry.unitInput" type="number" min="0" @update:model-value="onUnitInputChange(entry)" />
-                </UFormField>
-                <div class="text-xs text-parchment/60 flex items-end pb-2">= {{ entry.quantity }} {{ entry.unit }}</div>
-              </template>
-              <template v-else>
-                <UFormField label="Quantity">
-                  <UInput v-model="entry.quantity" type="number" min="0" />
-                </UFormField>
-                <div class="text-xs text-parchment/60 flex items-end pb-2">{{ entry.unit }}</div>
-              </template>
+            <div class="grid grid-cols-3 gap-2 mb-2">
+              <UFormField label="# Units">
+                <UInput v-model="entry.unitInput" type="number" min="0" @update:model-value="onUnitInputChange(entry)" />
+              </UFormField>
+              <UFormField label="Per Unit">
+                <UInput v-model.number="entry.unitSize" type="number" min="0" @update:model-value="onUnitInputChange(entry)" />
+              </UFormField>
+              <UFormField label="Unit">
+                <USelect v-model="entry.unitSizeUnit" :items="allUnits" placeholder="unit" />
+              </UFormField>
+            </div>
+            <div class="text-xs text-parchment/60 mb-3">
+              Total: <span class="font-semibold text-gold">{{ getTotal(entry).toLocaleString() }} {{ entry.unitSizeUnit }}</span>
             </div>
             <div class="flex justify-between items-center text-xs">
               <template v-if="getLastCount(entry._id)">
