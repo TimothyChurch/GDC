@@ -116,6 +116,38 @@ const deleteEvent = async () => {
       </template>
     </AdminPageHeader>
 
+    <!-- Booking Summary (for classes with capacity) -->
+    <div v-if="event.capacity" class="bg-charcoal rounded-xl border border-brown/30 p-5">
+      <h3 class="text-lg font-bold text-parchment font-[Cormorant_Garamond] mb-4">Booking Summary</h3>
+      <div class="grid grid-cols-3 gap-6 text-center">
+        <div>
+          <div class="text-3xl font-bold text-gold">{{ event.groupSize || 0 }}</div>
+          <div class="text-xs text-parchment/60 uppercase tracking-wider mt-1">Booked (Paid)</div>
+        </div>
+        <div>
+          <div class="text-3xl font-bold text-parchment">{{ event.capacity }}</div>
+          <div class="text-xs text-parchment/60 uppercase tracking-wider mt-1">Total Capacity</div>
+        </div>
+        <div>
+          <div :class="['text-3xl font-bold', (event.capacity - (event.groupSize || 0)) > 0 ? 'text-green-400' : 'text-red-400']">
+            {{ event.capacity - (event.groupSize || 0) }}
+          </div>
+          <div class="text-xs text-parchment/60 uppercase tracking-wider mt-1">Remaining</div>
+        </div>
+      </div>
+      <div class="mt-4">
+        <div class="h-2 bg-brown/20 rounded-full overflow-hidden">
+          <div
+            class="h-full bg-gold rounded-full transition-all duration-500"
+            :style="{ width: `${Math.min(100, ((event.groupSize || 0) / event.capacity) * 100)}%` }"
+          />
+        </div>
+        <div class="text-xs text-parchment/50 mt-1 text-right">
+          {{ Math.round(((event.groupSize || 0) / event.capacity) * 100) }}% filled
+        </div>
+      </div>
+    </div>
+
     <!-- Event Info -->
     <div class="bg-charcoal rounded-xl border border-brown/30 p-5">
       <h3 class="text-lg font-bold text-parchment font-[Cormorant_Garamond] mb-4">Event Details</h3>
@@ -135,12 +167,16 @@ const deleteEvent = async () => {
           </span>
         </div>
         <div>
-          <div class="text-xs text-parchment/60 uppercase tracking-wider mb-1">Group Size</div>
-          <div class="text-sm text-parchment">{{ event.groupSize }}</div>
+          <div class="text-xs text-parchment/60 uppercase tracking-wider mb-1">Visibility</div>
+          <span :class="['px-2 py-0.5 rounded-full text-[10px] font-semibold border', event.isPublic ? 'bg-green-500/15 text-green-400 border-green-500/25' : 'bg-brown/15 text-parchment/50 border-brown/25']">
+            {{ event.isPublic ? 'Public' : 'Private' }}
+          </span>
         </div>
-        <div v-if="event.capacity">
-          <div class="text-xs text-parchment/60 uppercase tracking-wider mb-1">Capacity</div>
-          <div class="text-sm text-parchment">{{ event.capacity }}</div>
+        <div>
+          <div class="text-xs text-parchment/60 uppercase tracking-wider mb-1">Booked</div>
+          <div class="text-sm text-parchment">
+            {{ event.groupSize }}{{ event.capacity ? ` / ${event.capacity}` : '' }}
+          </div>
         </div>
         <div v-if="event.createdAt">
           <div class="text-xs text-parchment/60 uppercase tracking-wider mb-1">Created</div>
