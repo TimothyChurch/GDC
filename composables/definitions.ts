@@ -47,6 +47,7 @@ export const CONTACT_TYPES: string[] = [
 
 /** Event type options */
 export const EVENT_TYPES: string[] = [
+  'Cocktail Class',
   'Private Class',
   'Private Event',
   'Tasting',

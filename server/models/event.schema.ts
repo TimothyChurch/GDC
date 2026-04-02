@@ -22,7 +22,7 @@ export const Event = defineMongooseModel({
     type: {
       type: String,
       required: true,
-      enum: ["Private Class", "Private Event", "Tasting"],
+      enum: ["Cocktail Class", "Private Class", "Private Event", "Tasting"],
       index: true,
     },
     status: {
