@@ -2,19 +2,21 @@ import { defineEventHandler } from "h3";
 import { useServerStripe } from "#stripe/server";
 
 export default defineEventHandler(async (event) => {
-  // Create a PaymentIntent with the amount, currency, and a payment method type.
-  //
-  // See the documentation [0] for the full list of supported parameters.
-  //
-  // [0] https://stripe.com/docs/api/payment_intents/create
   const stripe = await useServerStripe(event);
-  const orderAmount = 1400;
-  let paymentIntent;
+  const query = getQuery(event);
+  const amount = Number(query.amount);
+
+  if (!amount || !Number.isInteger(amount) || amount < 50) {
+    throw createError({
+      status: 400,
+      statusText: 'Invalid amount: must be an integer >= 50 (cents)',
+    });
+  }
 
   try {
-    paymentIntent = await stripe.paymentIntents.create({
+    const paymentIntent = await stripe.paymentIntents.create({
       currency: "usd",
-      amount: orderAmount,
+      amount,
       automatic_payment_methods: { enabled: true },
     });
     return {

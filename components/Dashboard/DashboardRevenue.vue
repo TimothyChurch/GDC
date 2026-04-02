@@ -21,12 +21,7 @@ const totalBottlesProduced = computed(() => {
   return productionStore.productions.reduce((sum, p) => sum + (p.quantity || 0), 0);
 });
 
-// PLACEHOLDER: Replace with real monthly data when available
-const monthlyMetrics = [
-  { label: 'This Month', revenue: '$12,450', orders: '34' },
-  { label: 'Last Month', revenue: '$10,890', orders: '29' },
-  { label: 'Avg Monthly', revenue: '$11,200', orders: '31' },
-];
+const totalProductions = computed(() => productionStore.productions.length);
 </script>
 
 <template>
@@ -61,24 +56,18 @@ const monthlyMetrics = [
       </div>
     </div>
 
-    <!-- PLACEHOLDER: Monthly breakdown - replace with real data -->
+    <!-- Production summary -->
     <div class="border-t border-brown/20 pt-3">
       <div class="text-[10px] uppercase tracking-wider text-parchment/50 mb-2">
-        Monthly Summary
-        <span class="text-amber/50 ml-1">(placeholder)</span>
+        Production Summary
       </div>
-      <div class="flex flex-col divide-y divide-brown/15">
-        <div
-          v-for="metric in monthlyMetrics"
-          :key="metric.label"
-          class="flex items-center justify-between py-2 first:pt-0 last:pb-0"
-        >
-          <span class="text-xs text-parchment/50">{{ metric.label }}</span>
-          <div class="flex items-center gap-4">
-            <span class="text-sm font-medium text-parchment">{{ metric.revenue }}</span>
-            <span class="text-xs text-parchment/50">{{ metric.orders }} orders</span>
-          </div>
-        </div>
+      <div class="flex items-center justify-between py-2">
+        <span class="text-xs text-parchment/50">Total Productions</span>
+        <span class="text-sm font-medium text-parchment">{{ totalProductions }}</span>
+      </div>
+      <div class="flex items-center justify-between py-2">
+        <span class="text-xs text-parchment/50">Total Bottles</span>
+        <span class="text-sm font-medium text-parchment">{{ totalBottlesProduced }}</span>
       </div>
     </div>
   </div>
