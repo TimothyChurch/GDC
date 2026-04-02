@@ -9,7 +9,8 @@ export default defineEventHandler(async (event) => {
     throw createError({ status: 500, statusText: 'Stripe price ID not configured' });
   }
 
-  const domain = config.domain as string;
+  const domain = (config.domain as string)
+    || `${getRequestProtocol(event)}://${getRequestHost(event)}`;
   if (!domain) {
     throw createError({ status: 500, statusText: 'Domain not configured' });
   }
