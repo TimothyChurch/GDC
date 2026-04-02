@@ -4,8 +4,10 @@ import type { TableColumn } from '@nuxt/ui'
 
 definePageMeta({ layout: 'admin' })
 
+const router = useRouter()
 const bulkSpiritStore = useBulkSpiritStore()
 const vesselStore = useVesselStore()
+const { confirm } = useDeleteConfirm()
 
 function vesselName(id?: string) {
   if (!id) return '-'
@@ -60,6 +62,16 @@ const columns: TableColumn<BulkSpirit>[] = [
       label: 'Edit',
       icon: 'i-lucide-pencil',
       onSelect() { editBulkSpirit(row.original._id) },
+    },
+    {
+      label: 'Delete',
+      variant: 'danger',
+      async onClick() {
+        const confirmed = await confirm('Bulk Spirit', row.original.name)
+        if (confirmed) {
+          await bulkSpiritStore.deleteBulkSpirit(row.original._id)
+        }
+      },
     },
   ]),
 ]

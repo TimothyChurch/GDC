@@ -37,6 +37,12 @@ const columns: TableColumn<Recipe>[] = [
   }),
   actionsColumn<Recipe>((row) => [
     {
+      label: "View Details",
+      onSelect() {
+        router.push(`/admin/recipes/${row.original._id}`);
+      },
+    },
+    {
       label: "Edit recipe",
       onSelect() {
         recipeStore.setRecipe(row.original._id.toString());
@@ -65,6 +71,8 @@ const newRecipe = () => {
   openModal();
 };
 const openModal = async () => await modal.open();
+
+defineExpose({ newRecipe });
 </script>
 
 <template>
@@ -77,9 +85,6 @@ const openModal = async () => await modal.open();
   >
     <template #filters>
       <USelect v-model="filterClass" :items="classOptions" class="min-w-48" />
-    </template>
-    <template #actions>
-      <UButton icon="i-lucide-plus-circle" size="xl" @click="newRecipe" variant="ghost">Add Recipe</UButton>
     </template>
     <!-- Desktop table -->
     <div class="hidden sm:block">

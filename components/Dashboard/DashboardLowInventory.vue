@@ -3,9 +3,9 @@ const itemStore = useItemStore();
 const inventoryStore = useInventoryStore();
 const bottleStore = useBottleStore();
 
-// PLACEHOLDER: These thresholds should be configurable per-item in the future
-const LOW_INVENTORY_THRESHOLD = 10;
-const CRITICAL_INVENTORY_THRESHOLD = 3;
+// Fallback thresholds for items without a configured reorderPoint
+const DEFAULT_REORDER_POINT = 10;
+const CRITICAL_RATIO = 0.3; // ≤30% of reorderPoint = critical
 
 interface InventoryAlert {
   id: string;
@@ -35,18 +35,23 @@ const lowInventoryItems = computed<InventoryAlert[]>(() => {
   const alerts: InventoryAlert[] = [];
 
   for (const [itemId, quantity] of latestInventoryByItem.value) {
-    if (quantity <= LOW_INVENTORY_THRESHOLD) {
-      const item = itemStore.getItemById(itemId);
-      if (item && item.trackInventory !== false) {
-        alerts.push({
-          id: itemId,
-          name: item.name,
-          type: 'item',
-          quantity,
-          unit: item.inventoryUnit || 'units',
-          status: quantity <= CRITICAL_INVENTORY_THRESHOLD ? 'critical' : 'low',
-        });
-      }
+    const item = itemStore.getItemById(itemId);
+    if (!item || item.trackInventory === false) continue;
+
+    const reorderPoint = item.reorderPoint && item.reorderPoint > 0
+      ? item.reorderPoint
+      : DEFAULT_REORDER_POINT;
+    const criticalThreshold = Math.floor(reorderPoint * CRITICAL_RATIO);
+
+    if (quantity <= reorderPoint) {
+      alerts.push({
+        id: itemId,
+        name: item.name,
+        type: 'item',
+        quantity,
+        unit: item.inventoryUnit || 'units',
+        status: quantity <= criticalThreshold ? 'critical' : 'low',
+      });
     }
   }
 
@@ -188,10 +193,8 @@ const statusText = (status: string) => {
       </div>
     </div>
 
-    <!-- PLACEHOLDER: Threshold info -->
     <div class="mt-3 pt-3 border-t border-brown/15 text-[10px] text-parchment/20">
-      <!-- PLACEHOLDER: Replace thresholds with per-item configurable values -->
-      Critical: &le;{{ CRITICAL_INVENTORY_THRESHOLD }} | Low: &le;{{ LOW_INVENTORY_THRESHOLD }} units
+      Thresholds based on each item's reorder point
     </div>
   </div>
 </template>

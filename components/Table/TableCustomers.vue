@@ -123,6 +123,8 @@ const addCustomer = () => {
   };
   openPanel();
 };
+
+defineExpose({ addCustomer });
 </script>
 
 <template>
@@ -133,11 +135,6 @@ const addCustomer = () => {
     :loading="contactStore.loading"
     search-placeholder="Search customers..."
   >
-    <template #actions>
-      <UButton icon="i-lucide-plus-circle" size="xl" @click="addCustomer" variant="ghost">
-        Add Customer
-      </UButton>
-    </template>
 
     <!-- Desktop table -->
     <div class="hidden sm:block">

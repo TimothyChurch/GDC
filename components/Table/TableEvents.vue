@@ -115,6 +115,8 @@ const addItem = () => {
   eventStore.resetEvent();
   openPanel();
 };
+
+defineExpose({ addItem });
 </script>
 
 <template>
@@ -137,7 +139,6 @@ const addItem = () => {
         >
           {{ status }}
         </UButton>
-        <UButton icon="i-lucide-plus-circle" size="xl" @click="addItem" variant="ghost">Add Event</UButton>
       </div>
     </template>
 

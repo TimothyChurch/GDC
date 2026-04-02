@@ -85,6 +85,8 @@ const newItem = () => {
   productionsStore.resetProduction();
   openPanel();
 };
+
+defineExpose({ newItem });
 </script>
 
 <template>
@@ -95,9 +97,6 @@ const newItem = () => {
     :loading="productionsStore.loading"
     search-placeholder="Search productions..."
   >
-    <template #actions>
-      <UButton icon="i-lucide-plus-circle" size="xl" @click="newItem" variant="ghost">Add Production</UButton>
-    </template>
 
     <!-- Desktop table -->
     <div class="hidden sm:block">

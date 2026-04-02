@@ -65,6 +65,12 @@ const columns: TableColumn<Item>[] = [
   }),
   actionsColumn<Item>((row) => [
     {
+      label: "View Details",
+      onSelect() {
+        router.push(`/admin/items/${row.original._id}`);
+      },
+    },
+    {
       label: "Edit item",
       onSelect() {
         itemStore.setItem(row.original._id.toString());
@@ -93,6 +99,8 @@ const newItem = () => {
   openModal();
 };
 const openModal = async () => await modal.open();
+
+defineExpose({ newItem });
 </script>
 
 <template>
@@ -131,15 +139,6 @@ const openModal = async () => await modal.open();
           </span>
         </UButton>
       </div>
-    </template>
-    <template #actions>
-      <UButton
-        icon="i-lucide-plus-circle"
-        size="xl"
-        @click="newItem"
-        variant="ghost"
-        >Add Item</UButton
-      >
     </template>
     <!-- Desktop table -->
     <div class="hidden sm:block">

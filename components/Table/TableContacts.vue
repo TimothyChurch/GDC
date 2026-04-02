@@ -80,6 +80,8 @@ const openPanel = async () => await panel.open();
 const addItem = () => {
   openPanel();
 };
+
+defineExpose({ addItem });
 </script>
 
 <template>
@@ -91,18 +93,15 @@ const addItem = () => {
     search-placeholder="Search contacts..."
   >
     <template #actions>
-      <div class="flex items-center gap-2">
-        <UButton
-          :icon="newsletterOnly ? 'i-lucide-mail-check' : 'i-lucide-mail'"
-          :variant="newsletterOnly ? 'solid' : 'outline'"
-          :color="newsletterOnly ? 'success' : 'neutral'"
-          size="sm"
-          @click="newsletterOnly = !newsletterOnly; pagination.pageIndex = 0"
-        >
-          Newsletter
-        </UButton>
-        <UButton icon="i-lucide-plus-circle" size="xl" @click="addItem" variant="ghost">Add Contact</UButton>
-      </div>
+      <UButton
+        :icon="newsletterOnly ? 'i-lucide-mail-check' : 'i-lucide-mail'"
+        :variant="newsletterOnly ? 'solid' : 'outline'"
+        :color="newsletterOnly ? 'success' : 'neutral'"
+        size="sm"
+        @click="newsletterOnly = !newsletterOnly; pagination.pageIndex = 0"
+      >
+        Newsletter
+      </UButton>
     </template>
 
     <!-- Desktop table -->

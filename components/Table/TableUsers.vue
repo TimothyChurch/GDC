@@ -53,6 +53,8 @@ const addUser = () => {
   userStore.resetUser()
   openPanel()
 }
+
+defineExpose({ addUser })
 </script>
 
 <template>
@@ -63,9 +65,6 @@ const addUser = () => {
     :loading="userStore.loading"
     search-placeholder="Search users..."
   >
-    <template #actions>
-      <UButton icon="i-lucide-plus" size="xl" @click="addUser" variant="ghost">Add User</UButton>
-    </template>
     <!-- Desktop table -->
     <div class="hidden sm:block">
       <UTable
