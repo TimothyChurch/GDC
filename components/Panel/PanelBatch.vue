@@ -29,6 +29,31 @@ const { localData, isDirty, saving, save, cancel } = useFormPanel({
       data.batchCost =
         (recipePrice(recipe) * (data.batchSize / recipe.volume)) / scaling || 0;
     }
+
+    // Rescale stageVolumes proportionally when batchSize changes
+    const oldSize = batchStore.batch.batchSize;
+    const newSize = data.batchSize;
+    if (oldSize && newSize && oldSize !== newSize && batchStore.batch.stageVolumes) {
+      const ratio = newSize / oldSize;
+      const oldVolumes = { ...batchStore.batch.stageVolumes };
+      const rescaled: Record<string, number> = {};
+      for (const [stage, vol] of Object.entries(oldVolumes)) {
+        if (vol > 0) {
+          rescaled[stage] = Math.round(vol * ratio * 1000) / 1000;
+        }
+      }
+      data.stageVolumes = rescaled;
+
+      // Log the resize
+      if (!batchStore.batch.log) batchStore.batch.log = [];
+      const unit = data.batchSizeUnit || batchStore.batch.batchSizeUnit || 'gal';
+      batchStore.batch.log.push({
+        date: new Date(),
+        action: `Batch resized from ${oldSize} to ${newSize} ${unit}`,
+        details: 'Stage volumes rescaled proportionally',
+      });
+    }
+
     Object.assign(batchStore.batch, data);
     await batchStore.updateBatch();
   },
