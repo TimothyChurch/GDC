@@ -123,7 +123,7 @@ if (import.meta.server) {
           width="1200"
           height="600"
           loading="lazy"
-          sizes="100vw"
+          densities="x1 x2"
           format="webp"
         />
         <div class="absolute inset-0 bg-espresso/70"></div>

@@ -17,7 +17,7 @@ defineProps<{
       fetchpriority="high"
       width="1920"
       height="1080"
-      sizes="100vw"
+      densities="x1 x2"
       format="webp"
       quality="80"
     />
