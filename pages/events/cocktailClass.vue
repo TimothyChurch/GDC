@@ -13,21 +13,59 @@ if (import.meta.server) {
 const { loadStripe } = useClientStripe();
 const config = useRuntimeConfig();
 const stripePromise = loadStripe(config.public.stripe.key);
-const checkoutLoading = ref(true);
 
-const fetchClientSecret = async () => {
-  const clientSecret = await $fetch("/api/stripe/create-checkout-session");
-  return clientSecret;
-};
+// Checkout state for per-class booking
+const selectedEventId = ref<string | null>(null);
+const checkoutLoading = ref(false);
+const checkoutError = ref('');
+let currentCheckout: any = null;
 
-onMounted(async () => {
-  const stripe = await stripePromise;
-  const checkout = await stripe.initEmbeddedCheckout({
-    fetchClientSecret,
-  });
-  checkout.mount("#checkout-element");
-  checkoutLoading.value = false;
-});
+async function bookClass(eventId: string) {
+  // If already showing checkout for this class, close it
+  if (selectedEventId.value === eventId) {
+    closeCheckout();
+    return;
+  }
+
+  closeCheckout();
+  selectedEventId.value = eventId;
+  checkoutLoading.value = true;
+  checkoutError.value = '';
+
+  await nextTick();
+
+  try {
+    const stripe = await stripePromise;
+    currentCheckout = await stripe.initEmbeddedCheckout({
+      fetchClientSecret: async () => {
+        const { clientSecret } = await $fetch<{ clientSecret: string }>('/api/stripe/create-checkout-session', {
+          method: 'POST',
+          body: { eventId, quantity: 1 },
+        });
+        return clientSecret;
+      },
+    });
+
+    const el = document.getElementById(`checkout-${eventId}`);
+    if (el) {
+      currentCheckout.mount(el);
+    }
+  } catch (e: any) {
+    checkoutError.value = e?.data?.statusText || e?.message || 'Unable to load checkout. Please try again.';
+    selectedEventId.value = null;
+  } finally {
+    checkoutLoading.value = false;
+  }
+}
+
+function closeCheckout() {
+  if (currentCheckout) {
+    currentCheckout.destroy();
+    currentCheckout = null;
+  }
+  selectedEventId.value = null;
+  checkoutError.value = '';
+}
 
 // Upcoming public classes
 const { data: upcomingClasses, status: classesStatus } = useFetch('/api/event/upcoming');
@@ -51,6 +89,11 @@ function formatClassTime(dateStr: string) {
 function availableSeats(event: any) {
   if (!event.capacity) return null;
   return event.capacity - (event.groupSize || 0);
+}
+
+function isSoldOut(event: any) {
+  const seats = availableSeats(event);
+  return seats !== null && seats <= 0;
 }
 
 // Private class request form
@@ -165,81 +208,79 @@ const submitRequest = async () => {
           </NuxtLink>
         </div>
 
-        <!-- Booking section -->
+        <!-- Upcoming Classes Section (moved to right column) -->
         <div>
           <h2 class="font-[Cormorant_Garamond] text-3xl font-bold mb-6">
             Book Your Class
           </h2>
           <div class="w-12 h-0.5 bg-gold/40 mb-6"></div>
 
-          <div class="bg-cream dark:bg-charcoal rounded-xl border border-gold/10 p-6">
-            <div v-if="checkoutLoading" class="flex justify-center py-12">
-              <span class="text-brown/50 dark:text-parchment/50">Loading checkout...</span>
-            </div>
-            <div id="checkout-element" ref="checkoutElementRef"></div>
+          <div v-if="classesStatus === 'pending'" class="flex justify-center py-8">
+            <span class="text-brown/50 dark:text-parchment/50">Loading classes...</span>
           </div>
-        </div>
-      </div>
 
-      <!-- Upcoming Classes Section -->
-      <div class="mt-12 pt-12 border-t border-gold/10">
-        <div class="text-center mb-8">
-          <h2 class="font-[Cormorant_Garamond] text-3xl font-bold mb-4">
-            Upcoming Classes
-          </h2>
-          <div class="w-12 h-0.5 bg-gold/40 mx-auto mb-4"></div>
-          <p class="text-brown/80 dark:text-parchment/80">
-            Browse our scheduled classes and reserve your spot.
-          </p>
-        </div>
+          <div v-else-if="upcomingClasses?.length" class="space-y-6">
+            <div
+              v-for="cls in upcomingClasses"
+              :key="cls._id"
+              class="bg-cream dark:bg-charcoal rounded-xl border border-gold/10 p-6"
+            >
+              <div class="flex items-center gap-2 text-gold mb-3">
+                <Icon name="carbon:calendar" class="text-lg" />
+                <span class="text-sm font-semibold uppercase tracking-wider">{{ cls.type }}</span>
+              </div>
 
-        <div v-if="classesStatus === 'pending'" class="flex justify-center py-8">
-          <span class="text-brown/50 dark:text-parchment/50">Loading classes...</span>
-        </div>
+              <h3 class="font-[Cormorant_Garamond] text-xl font-bold mb-1">
+                {{ formatClassDate(cls.date) }}
+              </h3>
+              <p class="text-sm text-brown/60 dark:text-parchment/60 mb-4">
+                {{ formatClassTime(cls.date) }}
+              </p>
 
-        <div v-else-if="upcomingClasses?.length" class="grid sm:grid-cols-2 lg:grid-cols-3 gap-6 max-w-5xl mx-auto">
-          <div
-            v-for="cls in upcomingClasses"
-            :key="cls._id"
-            class="bg-cream dark:bg-charcoal rounded-xl border border-gold/10 p-6 flex flex-col"
-          >
-            <div class="flex items-center gap-2 text-gold mb-3">
-              <Icon name="carbon:calendar" class="text-lg" />
-              <span class="text-sm font-semibold uppercase tracking-wider">{{ cls.type }}</span>
-            </div>
+              <div class="flex items-center gap-2 text-sm text-brown/70 dark:text-parchment/70 mb-4">
+                <Icon name="carbon:group" class="text-base" />
+                <span v-if="isSoldOut(cls)" class="text-red-500 font-semibold">Sold Out</span>
+                <span v-else-if="availableSeats(cls) !== null">
+                  <strong class="text-brown dark:text-parchment">{{ availableSeats(cls) }}</strong> seats available
+                </span>
+                <span v-else>Open enrollment</span>
+              </div>
 
-            <h3 class="font-[Cormorant_Garamond] text-xl font-bold mb-1">
-              {{ formatClassDate(cls.date) }}
-            </h3>
-            <p class="text-sm text-brown/60 dark:text-parchment/60 mb-4">
-              {{ formatClassTime(cls.date) }}
-            </p>
-
-            <div class="flex items-center gap-2 text-sm text-brown/70 dark:text-parchment/70 mb-6">
-              <Icon name="carbon:group" class="text-base" />
-              <span v-if="availableSeats(cls) !== null">
-                <strong class="text-brown dark:text-parchment">{{ availableSeats(cls) }}</strong> seats available
-              </span>
-              <span v-else>Open enrollment</span>
-            </div>
-
-            <div class="mt-auto">
               <UButton
+                v-if="!isSoldOut(cls)"
+                block
+                :label="selectedEventId === cls._id ? 'Cancel' : 'Book Now'"
+                :loading="selectedEventId === cls._id && checkoutLoading"
+                class="bg-gold text-espresso hover:bg-copper"
+                @click="bookClass(cls._id)"
+              />
+              <UButton
+                v-else
                 disabled
                 block
-                label="Book Now — Coming Soon"
+                label="Sold Out"
                 class="bg-gold/30 text-espresso/50 cursor-not-allowed"
-                title="Online booking coming soon"
               />
+
+              <!-- Inline checkout for this class -->
+              <div v-if="selectedEventId === cls._id" class="mt-4">
+                <div v-if="checkoutLoading" class="flex justify-center py-8">
+                  <span class="text-brown/50 dark:text-parchment/50">Loading checkout...</span>
+                </div>
+                <div v-if="checkoutError" class="text-center text-sm text-red-500 py-4">
+                  {{ checkoutError }}
+                </div>
+                <div :id="`checkout-${cls._id}`"></div>
+              </div>
             </div>
           </div>
-        </div>
 
-        <div v-else class="text-center py-8">
-          <Icon name="carbon:calendar" class="text-3xl text-brown/20 dark:text-parchment/20 mb-3" />
-          <p class="text-brown/60 dark:text-parchment/60">
-            No upcoming classes scheduled right now. Check back soon or request a private class below!
-          </p>
+          <div v-else class="bg-cream dark:bg-charcoal rounded-xl border border-gold/10 p-8 text-center">
+            <Icon name="carbon:calendar" class="text-3xl text-brown/20 dark:text-parchment/20 mb-3" />
+            <p class="text-brown/60 dark:text-parchment/60">
+              No upcoming classes scheduled right now. Check back soon or request a private class below!
+            </p>
+          </div>
         </div>
       </div>
 

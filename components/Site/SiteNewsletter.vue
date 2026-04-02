@@ -33,7 +33,7 @@ const subscribe = async () => {
 </script>
 
 <template>
-  <div class="py-16 sm:py-24 lg:py-32">
+  <div class="py-16 sm:py-24">
     <div
       class="mx-auto grid max-w-7xl grid-cols-1 gap-10 px-6 lg:grid-cols-12 lg:gap-8 lg:px-8"
     >
@@ -44,14 +44,14 @@ const subscribe = async () => {
       </h2>
       <form class="w-full max-w-md lg:col-span-5 lg:pt-2" @submit.prevent="subscribe">
         <div class="space-y-3">
-          <div class="flex gap-3">
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <input
               v-model="firstName"
               name="firstName"
               type="text"
               autocomplete="given-name"
               :disabled="status === 'loading'"
-              class="min-w-0 flex-1 rounded-md bg-cream dark:bg-charcoal px-3.5 py-2 text-base text-brown dark:text-parchment outline-1 -outline-offset-1 outline-copper/30 placeholder:text-brown/60 dark:placeholder:text-parchment/60 focus:outline-2 focus:-outline-offset-2 focus:outline-gold sm:text-sm/6"
+              class="min-w-0 w-full rounded-md bg-cream dark:bg-charcoal px-3.5 py-2 text-base text-brown dark:text-parchment outline-1 -outline-offset-1 outline-copper/30 placeholder:text-brown/60 dark:placeholder:text-parchment/60 focus:outline-2 focus:-outline-offset-2 focus:outline-gold sm:text-sm/6"
               placeholder="First name"
             />
             <input
@@ -60,7 +60,7 @@ const subscribe = async () => {
               type="text"
               autocomplete="family-name"
               :disabled="status === 'loading'"
-              class="min-w-0 flex-1 rounded-md bg-cream dark:bg-charcoal px-3.5 py-2 text-base text-brown dark:text-parchment outline-1 -outline-offset-1 outline-copper/30 placeholder:text-brown/60 dark:placeholder:text-parchment/60 focus:outline-2 focus:-outline-offset-2 focus:outline-gold sm:text-sm/6"
+              class="min-w-0 w-full rounded-md bg-cream dark:bg-charcoal px-3.5 py-2 text-base text-brown dark:text-parchment outline-1 -outline-offset-1 outline-copper/30 placeholder:text-brown/60 dark:placeholder:text-parchment/60 focus:outline-2 focus:-outline-offset-2 focus:outline-gold sm:text-sm/6"
               placeholder="Last name"
             />
           </div>
@@ -73,7 +73,7 @@ const subscribe = async () => {
             class="w-full rounded-md bg-cream dark:bg-charcoal px-3.5 py-2 text-base text-brown dark:text-parchment outline-1 -outline-offset-1 outline-copper/30 placeholder:text-brown/60 dark:placeholder:text-parchment/60 focus:outline-2 focus:-outline-offset-2 focus:outline-gold sm:text-sm/6"
             placeholder="Phone number"
           />
-          <div class="flex gap-x-4">
+          <div class="flex flex-col sm:flex-row gap-3 sm:gap-4">
             <label for="email-address" class="sr-only">Email address</label>
             <input
               id="email-address"

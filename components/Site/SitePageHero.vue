@@ -7,7 +7,7 @@ defineProps<{
 </script>
 
 <template>
-  <div class="relative flex items-center justify-center overflow-hidden" style="min-height: 40vh">
+  <div class="relative min-h-[40vh] flex items-center justify-center overflow-hidden">
     <NuxtImg
       v-if="backgroundImage"
       :src="backgroundImage"
@@ -17,6 +17,7 @@ defineProps<{
       fetchpriority="high"
       width="1920"
       height="1080"
+      sizes="100vw"
       format="webp"
       quality="80"
     />
@@ -27,6 +28,7 @@ defineProps<{
       <h1 class="font-[Cormorant_Garamond] text-4xl sm:text-5xl md:text-6xl font-bold text-parchment drop-shadow-lg">
         {{ title }}
       </h1>
+      <div class="mt-4 w-16 h-0.5 bg-gold mx-auto"></div>
       <p v-if="subtitle" class="mt-4 text-lg text-parchment/80 max-w-2xl mx-auto">
         {{ subtitle }}
       </p>

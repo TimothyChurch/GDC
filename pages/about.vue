@@ -34,10 +34,10 @@ if (import.meta.server) {
       <div class="mx-auto max-w-7xl px-6 lg:px-8">
         <div class="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
           <div>
-            <h2 class="font-[Cormorant_Garamond] text-3xl font-bold text-brown dark:text-parchment">
+            <h2 class="font-[Cormorant_Garamond] text-3xl sm:text-4xl font-bold text-brown dark:text-parchment">
               Crafted with Island Character
             </h2>
-            <div class="mt-3 w-12 h-0.5 bg-gold"></div>
+            <div class="mt-3 w-16 h-0.5 bg-gold"></div>
             <p class="mt-6 text-brown/80 dark:text-parchment/80 leading-relaxed">
               Every bottle we produce reflects the unique spirit of Galveston Island.
               From grain to glass, we oversee every step of the process to ensure the
@@ -68,7 +68,7 @@ if (import.meta.server) {
     <section class="py-16 sm:py-24 bg-charcoal/5 dark:bg-parchment/5">
       <div class="mx-auto max-w-7xl px-6 lg:px-8">
         <div class="text-center mb-12">
-          <h2 class="font-[Cormorant_Garamond] text-3xl font-bold text-brown dark:text-parchment">
+          <h2 class="font-[Cormorant_Garamond] text-3xl sm:text-4xl font-bold text-brown dark:text-parchment">
             What We Stand For
           </h2>
           <div class="mt-3 w-16 h-0.5 bg-gold mx-auto"></div>
@@ -108,9 +108,10 @@ if (import.meta.server) {
     <!-- CTA -->
     <section class="py-16 sm:py-24">
       <div class="mx-auto max-w-7xl px-6 lg:px-8 text-center">
-        <h2 class="font-[Cormorant_Garamond] text-3xl font-bold text-brown dark:text-parchment">
+        <h2 class="font-[Cormorant_Garamond] text-3xl sm:text-4xl font-bold text-brown dark:text-parchment">
           Visit Our Tasting Room
         </h2>
+        <div class="mt-3 w-16 h-0.5 bg-gold mx-auto"></div>
         <p class="mt-4 text-brown/70 dark:text-parchment/70 max-w-xl mx-auto">
           Come experience our spirits in person. Tour the distillery, sample our latest releases,
           and discover your new favorite spirit.

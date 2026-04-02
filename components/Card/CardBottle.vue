@@ -17,6 +17,8 @@ defineProps<{
         :src="bottle.img"
         :alt="bottle.name"
         class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+        width="400"
+        height="533"
         loading="lazy"
         sizes="sm:50vw lg:25vw"
         format="webp"

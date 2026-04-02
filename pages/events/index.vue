@@ -42,6 +42,7 @@ if (import.meta.server) {
               width="400"
               height="300"
               loading="lazy"
+              sizes="sm:100vw md:33vw"
               format="webp"
             />
           </div>
@@ -68,6 +69,7 @@ if (import.meta.server) {
               width="400"
               height="300"
               loading="lazy"
+              sizes="sm:100vw md:33vw"
               format="webp"
             />
           </div>
@@ -94,6 +96,7 @@ if (import.meta.server) {
               width="400"
               height="300"
               loading="lazy"
+              sizes="sm:100vw md:33vw"
               format="webp"
             />
           </div>
@@ -120,6 +123,7 @@ if (import.meta.server) {
           width="1200"
           height="600"
           loading="lazy"
+          sizes="100vw"
           format="webp"
         />
         <div class="absolute inset-0 bg-espresso/70"></div>

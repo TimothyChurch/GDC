@@ -28,14 +28,17 @@ const categories = [
 </script>
 
 <template>
-  <div
+  <section
     class="mx-auto max-w-xl px-4 py-16 sm:px-6 sm:py-24 lg:max-w-7xl lg:px-8"
   >
-    <h2 class="font-[Cormorant_Garamond] text-3xl sm:text-4xl font-bold text-center mb-12">
-      Discover Galveston Distilling
-    </h2>
+    <div class="text-center mb-12">
+      <h2 class="font-[Cormorant_Garamond] text-3xl sm:text-4xl font-bold">
+        Discover Galveston Distilling
+      </h2>
+      <div class="mt-3 w-16 h-0.5 bg-gold mx-auto"></div>
+    </div>
     <div
-      class="mt-10 space-y-12 lg:grid lg:grid-cols-3 lg:space-y-0 lg:gap-x-8"
+      class="space-y-12 lg:grid lg:grid-cols-3 lg:space-y-0 lg:gap-x-8"
     >
       <NuxtLink
         v-for="category in categories"
@@ -63,5 +66,5 @@ const categories = [
         </p>
       </NuxtLink>
     </div>
-  </div>
+  </section>
 </template>

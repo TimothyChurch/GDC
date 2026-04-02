@@ -75,6 +75,7 @@ export default defineNuxtConfig({
     sessionSecret: '',
     domain: '',
     stripePriceId: '',
+    stripeWebhookSecret: '',
     cloudinaryCloudName: '',
     cloudinaryApiKey: '',
     cloudinaryApiSecret: '',

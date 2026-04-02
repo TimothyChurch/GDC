@@ -10,5 +10,9 @@ export default defineEventHandler(async (event) => {
   }
 
   const session = await stripe.checkout.sessions.retrieve(session_id);
-  return { status: session.status };
+
+  return {
+    status: session.status,
+    eventId: session.metadata?.eventId || null,
+  };
 });

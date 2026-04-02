@@ -9,6 +9,7 @@
       loading="lazy"
       width="1920"
       height="1080"
+      sizes="100vw"
       format="webp"
       quality="80"
     />
