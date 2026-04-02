@@ -21,7 +21,7 @@ defineProps<{
         sizes="sm:50vw lg:25vw"
         format="webp"
       />
-      <Icon v-else name="carbon:wine-bottle" class="text-6xl text-brown/15 dark:text-parchment/15" />
+      <Icon v-else name="lucide:wine" class="text-6xl text-brown/15 dark:text-parchment/15" />
     </div>
 
     <div class="p-4">

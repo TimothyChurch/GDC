@@ -40,7 +40,7 @@ const featuredBottles = computed(() => {
               sizes="sm:50vw lg:25vw"
               format="webp"
             />
-            <Icon v-else name="carbon:wine-bottle" class="text-5xl text-brown/20 dark:text-parchment/20" />
+            <Icon v-else name="lucide:wine" class="text-5xl text-brown/20 dark:text-parchment/20" />
           </div>
           <h3 class="font-[Cormorant_Garamond] text-lg font-semibold group-hover:text-gold transition-colors">
             {{ bottle.name }}

@@ -5,7 +5,7 @@ const mobileOpen = ref(false);
 const navList = [
   { label: "Home", link: "/", icon: "carbon:home" },
   { label: "Menu", link: "/menu", icon: "carbon:restaurant" },
-  { label: "Bottles", link: "/bottles", icon: "carbon:wine-bottle" },
+  { label: "Bottles", link: "/bottles", icon: "lucide:wine" },
   { label: "Events", link: "/events", icon: "carbon:calendar" },
   { label: "Contact", link: "/contact", icon: "carbon:email" },
 ];

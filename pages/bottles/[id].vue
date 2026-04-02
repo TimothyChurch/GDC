@@ -55,7 +55,7 @@ useSeoMeta({
 <template>
   <div>
     <div v-if="!bottle" class="flex flex-col items-center justify-center py-24">
-      <Icon name="carbon:wine-bottle" class="text-5xl text-brown/20 dark:text-parchment/20 mb-4" />
+      <Icon name="lucide:wine" class="text-5xl text-brown/20 dark:text-parchment/20 mb-4" />
       <p class="text-brown/50 dark:text-parchment/50 text-lg">Bottle not found</p>
       <NuxtLink
         to="/bottles"
@@ -89,7 +89,7 @@ useSeoMeta({
                 height="800"
                 format="webp"
               />
-              <Icon v-else name="carbon:wine-bottle" class="text-8xl text-brown/10 dark:text-parchment/10" />
+              <Icon v-else name="lucide:wine" class="text-8xl text-brown/10 dark:text-parchment/10" />
             </div>
 
             <!-- Bottle details -->

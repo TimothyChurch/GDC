@@ -61,7 +61,7 @@ const filteredBottles = computed(() => {
         <span class="text-brown/50 dark:text-parchment/50">Loading spirits...</span>
       </div>
       <div v-else-if="filteredBottles.length === 0" class="text-center py-12">
-        <Icon name="carbon:wine-bottle" class="text-4xl text-brown/20 dark:text-parchment/20 mb-3" />
+        <Icon name="lucide:wine" class="text-4xl text-brown/20 dark:text-parchment/20 mb-3" />
         <p class="text-brown/50 dark:text-parchment/50">No spirits found</p>
         <UButton
           v-if="activeClass !== 'All'"
