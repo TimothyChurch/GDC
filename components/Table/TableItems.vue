@@ -105,10 +105,12 @@ const openModal = async () => await modal.open();
   >
     <template #header>
       <div class="flex gap-1.5 overflow-x-auto pb-1 mb-3 scrollbar-hide">
-        <button
+        <UButton
           v-for="cat in categories"
           :key="cat"
-          class="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium border whitespace-nowrap transition-colors"
+          variant="ghost"
+          size="xs"
+          class="rounded-full border whitespace-nowrap"
           :class="
             selectedCategory === cat
               ? 'bg-gold/15 text-gold border-gold/20'
@@ -127,7 +129,7 @@ const openModal = async () => await modal.open();
           >
             {{ categoryCounts[cat] || 0 }}
           </span>
-        </button>
+        </UButton>
       </div>
     </template>
     <template #actions>

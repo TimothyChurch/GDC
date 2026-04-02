@@ -11,9 +11,9 @@ const data = computed(() => {
 		return {
 			label: bottle.name,
 			data: inventoryStore
-				.getInventoriesByItemId(bottle._id.toString())
+				.getInventoriesByItem(bottle._id.toString())
 				.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
-				.map((i) => i.items[bottle._id.toString()]),
+				.map((i) => i.quantity),
 		};
 	});
 });

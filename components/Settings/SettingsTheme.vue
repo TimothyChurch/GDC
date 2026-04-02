@@ -33,11 +33,12 @@ async function saveTheme() {
     <div class="mb-2">
       <label class="text-sm font-medium text-parchment/70 mb-3 block">Primary Color</label>
       <div class="flex flex-wrap gap-2">
-        <button
+        <UButton
           v-for="color in NUXT_UI_COLORS"
           :key="color"
+          variant="ghost"
           :class="[
-            'w-10 h-10 rounded-lg border-2 transition-all duration-200 cursor-pointer flex items-center justify-center',
+            'w-10 h-10 rounded-lg border-2 transition-all duration-200 cursor-pointer flex items-center justify-center !p-0',
             localPrimaryColor === color
               ? 'border-parchment scale-110 ring-2 ring-parchment/30'
               : 'border-transparent hover:scale-105',
@@ -51,7 +52,7 @@ async function saveTheme() {
             name="i-lucide-check"
             class="text-white text-lg drop-shadow-md"
           />
-        </button>
+        </UButton>
       </div>
       <p class="text-xs text-parchment/50 mt-2">
         Selected: <span class="font-semibold text-parchment/70 capitalize">{{ localPrimaryColor }}</span>

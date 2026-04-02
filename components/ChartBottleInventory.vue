@@ -6,7 +6,7 @@ const route = useRoute();
 const inventoryStore = useInventoryStore();
 
 const sortedInventory = computed(() => {
-	const inventory = inventoryStore.getInventoriesByItemId(
+	const inventory = inventoryStore.getInventoriesByItem(
 		route.params._id as string
 	);
 	return inventory?.sort(
@@ -26,7 +26,7 @@ const chartData = computed(() => {
 			{
 				label: 'Inventory',
 				data: sortedInventory.value?.map(
-					(i) => i.items[route.params._id as string]
+					(i) => i.quantity
 				),
 			},
 		],

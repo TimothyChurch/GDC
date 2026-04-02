@@ -1,14 +1,14 @@
 <script setup lang="ts">
 import type { Batch, DistillingRun } from '~/types'
-import { getNextStage, getNextStageByIndex, STAGE_DISPLAY, STAGE_VESSEL_TYPE, STAGE_KEY_MAP, stageTextColor, stageBgColor, getStageVolume, getVesselRemainingCapacity } from '~/composables/batchPipeline'
-import { LazyModalDistillingCharge, LazyPanelProduction } from '#components'
+import { getNextStage, STAGE_DISPLAY, STAGE_VESSEL_TYPE, STAGE_KEY_MAP, stageTextColor, stageBgColor, getStageVolume, getVesselRemainingCapacity } from '~/composables/batchPipeline'
+import { LazyModalDistillingCharge, LazyModalBarrelFill, LazyPanelProduction } from '#components'
 import { volumeUnits } from '~/utils/units'
 import { convertUnitRatio } from '~/utils/conversions'
+import { calculateProofGallons } from '~/utils/proofGallons'
 
 const props = defineProps<{
   batch: Batch
   sourceStage?: string
-  pipelineIndex?: number
 }>()
 
 const emit = defineEmits<{ advanced: [] }>()
@@ -16,6 +16,7 @@ const emit = defineEmits<{ advanced: [] }>()
 const batchStore = useBatchStore()
 const vesselStore = useVesselStore()
 const productionStore = useProductionStore()
+const bulkSpiritStore = useBulkSpiritStore()
 const overlay = useOverlay()
 const toast = useToast()
 
@@ -25,10 +26,6 @@ const effectiveSource = computed(() => props.sourceStage || props.batch.currentS
 const nextStage = computed(() => {
   if (effectiveSource.value === 'Upcoming') {
     return props.batch.pipeline[0] || null
-  }
-  // Use position-exact lookup when pipelineIndex is provided (handles duplicate stages)
-  if (props.pipelineIndex !== undefined) {
-    return getNextStageByIndex(props.batch.pipeline, props.pipelineIndex)
   }
   return getNextStage(props.batch.pipeline, effectiveSource.value)
 })
@@ -115,7 +112,7 @@ watch(showModal, (open) => {
     }
     // Auto-select source barrel if only one option
     if (isFromBarrelAging.value && sourceBarrelOptions.value.length === 1) {
-      selectedSourceBarrel.value = sourceBarrelOptions.value[0].value
+      selectedSourceBarrel.value = sourceBarrelOptions.value[0]!.value
     }
   }
 })
@@ -151,6 +148,8 @@ const needsVessel = computed(() => {
   if (!nextStage.value) return false
   // Distilling uses charge modal instead of simple vessel select
   if (nextStage.value === 'Distilling') return false
+  // Barrel Aging uses barrel fill modal with multi-barrel support
+  if (nextStage.value === 'Barrel Aging') return false
   // Bottled stage doesn't need a vessel — it needs a production record
   if (nextStage.value === 'Bottled') return false
   return !!STAGE_VESSEL_TYPE[nextStage.value]
@@ -164,9 +163,15 @@ const isDistillingAdvance = computed(() =>
   nextStage.value === 'Distilling'
 )
 
+const isBarrelAgingAdvance = computed(() =>
+  nextStage.value === 'Barrel Aging'
+)
+
 const handleClick = async () => {
   if (isDistillingAdvance.value) {
     await advanceToDistilling()
+  } else if (isBarrelAgingAdvance.value) {
+    await advanceToBarrelAging()
   } else {
     showModal.value = true
   }
@@ -262,6 +267,109 @@ const advanceToDistilling = async () => {
   }
 }
 
+const advanceToBarrelAging = async () => {
+  // Get source ABV from storage stage data or vessel contents
+  let sourceAbv = 0
+  const storageStage = (props.batch.stages as any)?.storage
+  if (storageStage?.abv) {
+    sourceAbv = storageStage.abv
+  } else {
+    // Fall back to vessel contents ABV
+    const sourceVesselId = getCurrentVesselId()
+    if (sourceVesselId) {
+      const vessel = vesselStore.getVesselById(sourceVesselId)
+      const entry = vessel?.contents?.find(c => c.batch === props.batch._id)
+      if (entry?.abv) sourceAbv = entry.abv
+    }
+  }
+
+  const barrelFillModal = overlay.create(LazyModalBarrelFill)
+  const result = await barrelFillModal.open({
+    batchId: props.batch._id,
+    sourceVolume: sourceVolumeRaw.value,
+    sourceVolumeUnit: batchUnit.value,
+    sourceAbv,
+  })
+
+  if (!result) return
+
+  advancing.value = true
+  try {
+    // Fill cost = batch's ingredient cost, split proportionally by barrel volume
+    const totalFillCost = props.batch.recipeCost || 0
+
+    // Clear batch contents from source vessel(s)
+    const sourceVessels = vesselStore.vessels.filter(v =>
+      v.contents?.some(c => c.batch === props.batch._id)
+    )
+    for (const vessel of sourceVessels) {
+      vessel.contents = (vessel.contents || []).filter(c => c.batch !== props.batch._id)
+      vesselStore.vessel = vessel
+      await vesselStore.updateVessel()
+    }
+
+    // Total volume going into barrels (in batch units) — needed for proportional cost split
+    const totalBarrelVolume = result.barrels.reduce((sum, b) => {
+      return sum + b.volume * convertUnitRatio(b.volumeUnit, batchUnit.value)
+    }, 0)
+
+    // Add contents to each barrel with proportional fill cost from recipe
+    for (const barrel of result.barrels) {
+      const barrelVolInBatchUnit = barrel.volume * convertUnitRatio(barrel.volumeUnit, batchUnit.value)
+      const proportion = totalBarrelVolume > 0 ? barrelVolInBatchUnit / totalBarrelVolume : 0
+      await vesselStore.addContents(barrel.barrelId, {
+        batch: props.batch._id,
+        volume: barrel.volume,
+        volumeUnit: barrel.volumeUnit,
+        abv: result.entryAbv,
+        value: totalFillCost * proportion,
+      })
+    }
+
+    // Advance the batch stage — deduct from source, add barrel total to Barrel Aging
+    // Use first barrel as the stage vessel reference
+    await batchStore.advanceToStage(
+      props.batch._id,
+      'Barrel Aging',
+      { vessel: result.barrels[0]?.barrelId },
+      sourceVolumeRaw.value,           // Deduct full source volume
+      effectiveSource.value,
+      totalBarrelVolume,                // Add actual barrel volume (may differ if proofed)
+    )
+
+    // Update barrel aging stage data with entry info
+    await batchStore.updateStageData(props.batch._id, 'Barrel Aging', {
+      entry: {
+        date: new Date(),
+        volume: totalBarrelVolume,
+        volumeUnit: batchUnit.value,
+        abv: result.entryAbv,
+        proofGallons: totalBarrelVolume && result.entryAbv
+          ? calculateProofGallons(totalBarrelVolume, batchUnit.value, result.entryAbv)
+          : undefined,
+      },
+    }, `Filled ${result.barrels.length} barrel${result.barrels.length > 1 ? 's' : ''} at ${result.entryAbv}% ABV${result.waterAdded > 0 ? `, proofed with ${result.waterAdded.toFixed(1)} ${result.waterAddedUnit} water` : ''}`)
+
+    toast.add({
+      title: `Filled ${result.barrels.length} barrel${result.barrels.length > 1 ? 's' : ''}`,
+      description: `${totalBarrelVolume.toFixed(1)} ${batchUnit.value} at ${result.entryAbv}% ABV`,
+      color: 'success',
+      icon: 'i-lucide-cylinder',
+    })
+
+    emit('advanced')
+  } catch (error: unknown) {
+    toast.add({
+      title: 'Failed to fill barrels',
+      description: getErrorMessage(error),
+      color: 'error',
+      icon: 'i-lucide-alert-circle',
+    })
+  } finally {
+    advancing.value = false
+  }
+}
+
 /** Open the production panel pre-filled with batch data for the bottling run */
 const openProductionPanel = async () => {
   // Gather vessel IDs that contain this batch
@@ -316,24 +424,28 @@ const advance = async () => {
       // Distilling output: empty the still, add distillate to destination
       const currentVessel = getCurrentVesselId()
 
-      // Clear this batch's contents from the still (still is emptied)
+      // Capture the batch's value from the still before emptying
+      let chargeValue = 0
       if (currentVessel) {
         const still = vesselStore.getVesselById(currentVessel)
         if (still) {
+          const stillEntry = still.contents?.find(c => c.batch === props.batch._id)
+          chargeValue = stillEntry?.value || 0
+          // Clear this batch's contents from the still (still is emptied)
           still.contents = (still.contents || []).filter(c => c.batch !== props.batch._id)
           vesselStore.vessel = still
           await vesselStore.updateVessel()
         }
       }
 
-      // Add distillate to destination vessel with user-specified volume and ABV
+      // Add distillate to destination vessel, carrying forward the value
       if (selectedVessel.value) {
         await vesselStore.addContents(selectedVessel.value, {
           batch: props.batch._id,
           volume: vol,
           volumeUnit: transferUnit.value,
           abv: outputAbv.value,
-          value: 0,
+          value: chargeValue,
         })
       }
 
@@ -353,18 +465,36 @@ const advance = async () => {
     } else {
       // Standard transfer — use selectedSourceBarrel if transferring from barrel aging,
       // otherwise fall back to the stage's recorded vessel
-      const currentVessel = isFromBarrelAging.value && selectedSourceBarrel.value
+      const currentVesselId = isFromBarrelAging.value && selectedSourceBarrel.value
         ? selectedSourceBarrel.value
         : getCurrentVesselId()
-      if (currentVessel && selectedVessel.value && currentVessel !== selectedVessel.value) {
-        // Partial vessel transfer based on volume ratio
+
+      // Check if the source vessel actually has this batch's contents
+      const sourceVessel = currentVesselId ? vesselStore.getVesselById(currentVesselId) : null
+      const sourceHasContents = sourceVessel?.contents?.some(c => c.batch === props.batch._id) ?? false
+
+      if (sourceHasContents && selectedVessel.value && currentVesselId !== selectedVessel.value) {
+        // Transfer from source vessel to destination vessel
         await vesselStore.transferBatchContents(
-          currentVessel,
+          currentVesselId!,
           selectedVessel.value,
           props.batch._id,
           vol,
           transferUnit.value,
         )
+      } else if (!sourceHasContents && selectedVessel.value) {
+        // No source contents (e.g. barrel aging with no linked barrels) — add contents directly
+        const sourceKey = STAGE_KEY_MAP[effectiveSource.value]
+        const sourceStageData = sourceKey ? (props.batch.stages as any)?.[sourceKey] : null
+        const abv = sourceStageData?.exit?.abv || sourceStageData?.entry?.abv || sourceStageData?.abv || 0
+        const batchCostValue = (props.batch.recipeCost || 0) + (props.batch.barrelCost || 0)
+        await vesselStore.addContents(selectedVessel.value, {
+          batch: props.batch._id,
+          volume: vol,
+          volumeUnit: transferUnit.value,
+          abv,
+          value: batchCostValue,
+        })
       }
 
       const stageData: { vessel?: string } = {}
@@ -396,16 +526,181 @@ const getCurrentVesselId = (): string | undefined => {
   const stageData = (props.batch.stages as any)?.[stageKey]
   return stageData?.vessel
 }
+
+// --- Complete to Bulk Storage ---
+// Show when batch is at a terminal Storage stage (no next stage)
+const isTerminalStorage = computed(() =>
+  !nextStage.value && effectiveSource.value === 'Storage' && props.batch.status === 'active'
+)
+
+const showBulkStorageModal = ref(false)
+const selectedBulkSpirit = ref('')
+const completingToBulk = ref(false)
+
+const bulkSpiritOptions = computed(() =>
+  bulkSpiritStore.activeBulkSpirits.map((bs) => ({ label: `${bs.name} (${bs.volume.toFixed(1)} ${bs.volumeUnit})`, value: bs._id }))
+)
+
+// Get storage stage data for volume/ABV
+const storageStageData = computed(() => {
+  const stageData = (props.batch.stages as any)?.storage
+  return stageData || {}
+})
+
+const completeToBulkStorage = async () => {
+  if (!selectedBulkSpirit.value) return
+  completingToBulk.value = true
+  try {
+    const stageData = storageStageData.value
+    const volume = stageData.volume || getStageVolume(props.batch, 'Storage')
+    const volumeUnit = stageData.volumeUnit || props.batch.batchSizeUnit || 'gallon'
+    const abv = stageData.abv || 0
+
+    // Calculate the value from vessel contents or batch cost
+    const currentVesselId = getCurrentVesselId()
+    let value = 0
+    if (currentVesselId) {
+      const vessel = vesselStore.getVesselById(currentVesselId)
+      const entry = vessel?.contents?.find(c => c.batch === props.batch._id)
+      value = entry?.value || 0
+    }
+    if (!value) {
+      value = props.batch.batchCost || props.batch.recipeCost || 0
+    }
+
+    // Deposit into bulk spirit
+    await bulkSpiritStore.deposit(selectedBulkSpirit.value, {
+      batchId: props.batch._id,
+      volume,
+      volumeUnit,
+      abv,
+      value,
+    })
+
+    // Clear vessel contents for this batch
+    if (currentVesselId) {
+      const vessel = vesselStore.getVesselById(currentVesselId)
+      if (vessel) {
+        vessel.contents = (vessel.contents || []).filter(c => c.batch !== props.batch._id)
+        vesselStore.vessel = vessel
+        await vesselStore.updateVessel()
+      }
+    }
+
+    // Mark batch as completed
+    const target = batchStore.getBatchById(props.batch._id)
+    if (target) {
+      target.status = 'completed'
+      if (target.stageVolumes) {
+        delete target.stageVolumes['Storage']
+      }
+      if (target.stages?.storage) {
+        target.stages.storage.completedAt = new Date()
+      }
+      batchStore.batch = target
+      await batchStore.updateBatch()
+    }
+
+    showBulkStorageModal.value = false
+    selectedBulkSpirit.value = ''
+    toast.add({
+      title: 'Batch completed to bulk storage',
+      description: `${volume.toFixed(1)} ${volumeUnit} deposited`,
+      color: 'success',
+      icon: 'i-lucide-archive',
+    })
+    emit('advanced')
+  } catch (error: unknown) {
+    toast.add({
+      title: 'Failed to complete to bulk storage',
+      description: getErrorMessage(error),
+      color: 'error',
+      icon: 'i-lucide-alert-circle',
+    })
+  } finally {
+    completingToBulk.value = false
+  }
+}
 </script>
 
 <template>
+  <!-- Complete to Bulk Storage (terminal Storage stage) -->
+  <div v-if="isTerminalStorage">
+    <UButton
+      icon="i-lucide-archive"
+      class="border font-semibold bg-purple-500/15 text-purple-400 border-purple-500/25 hover:bg-purple-500/25"
+      size="lg"
+      variant="ghost"
+      @click="showBulkStorageModal = true"
+    >
+      Complete to Bulk Storage
+    </UButton>
+
+    <UModal v-model:open="showBulkStorageModal">
+      <template #content>
+        <div class="p-5">
+          <h3 class="text-lg font-bold text-parchment font-[Cormorant_Garamond] mb-4">
+            Complete to Bulk Storage
+          </h3>
+
+          <div class="flex items-center gap-2 rounded-lg border border-purple-500/20 bg-purple-500/5 px-3 py-2 mb-4">
+            <UIcon name="i-lucide-info" class="text-purple-400 shrink-0" />
+            <span class="text-xs text-parchment/70">
+              This will mark the batch as completed and deposit its contents into a bulk spirit entry for use in future batches.
+            </span>
+          </div>
+
+          <!-- Storage summary -->
+          <div class="grid grid-cols-2 gap-3 text-sm mb-4 rounded-lg border border-brown/30 p-3">
+            <div>
+              <span class="text-parchment/50">Volume:</span>
+              <span class="text-parchment ml-1">
+                {{ (storageStageData.volume || getStageVolume(batch, 'Storage')).toFixed(1) }}
+                {{ storageStageData.volumeUnit || batch.batchSizeUnit }}
+              </span>
+            </div>
+            <div>
+              <span class="text-parchment/50">ABV:</span>
+              <span class="text-parchment ml-1">{{ (storageStageData.abv || 0).toFixed(1) }}%</span>
+            </div>
+          </div>
+
+          <div class="mb-4">
+            <div class="text-xs text-parchment/60 uppercase tracking-wider mb-2">Select Bulk Spirit</div>
+            <USelectMenu
+              v-model="selectedBulkSpirit"
+              :items="bulkSpiritOptions"
+              value-key="value"
+              placeholder="Choose bulk spirit entry..."
+            />
+            <div class="text-xs text-parchment/50 mt-1">
+              Create a new entry on the <NuxtLink to="/admin/bulk-spirits" class="text-gold hover:text-copper">Bulk Spirits</NuxtLink> page first if needed.
+            </div>
+          </div>
+
+          <div class="flex justify-end gap-2 mt-6">
+            <UButton variant="outline" color="neutral" @click="showBulkStorageModal = false">Cancel</UButton>
+            <UButton
+              @click="completeToBulkStorage"
+              :loading="completingToBulk"
+              :disabled="!selectedBulkSpirit"
+              icon="i-lucide-archive"
+            >
+              Complete &amp; Deposit
+            </UButton>
+          </div>
+        </div>
+      </template>
+    </UModal>
+  </div>
+
   <div v-if="nextStage && nextDisplay">
     <UButton
       :icon="nextDisplay.icon"
       :class="['border font-semibold', stageColorClasses]"
       size="lg"
       variant="ghost"
-      :loading="advancing && isDistillingAdvance"
+      :loading="advancing && (isDistillingAdvance || isBarrelAgingAdvance)"
       @click="handleClick"
     >
       Transfer to {{ nextStage }}
@@ -554,7 +849,7 @@ const getCurrentVesselId = (): string | undefined => {
             <UButton
               @click="advance"
               :loading="advancing"
-              :disabled="(needsVessel && !selectedVessel) || (isFromBarrelAging && !selectedSourceBarrel) || transferVolume <= 0"
+              :disabled="(needsVessel && !selectedVessel) || (isFromBarrelAging && sourceBarrelOptions.length > 0 && !selectedSourceBarrel) || transferVolume <= 0"
             >
               <template v-if="isBottledAdvance">
                 Transfer {{ transferVolume }} {{ volumeUnit }} &amp; Record Bottling

@@ -23,7 +23,7 @@ const emit = defineEmits<{
         <strong v-if="props.entityLabel">{{ props.entityLabel }}</strong>
         <span v-else>this {{ props.entityName.toLowerCase() }}</span>?
       </p>
-      <p class="text-sm text-gray-500 mt-2">This action cannot be undone.</p>
+      <p class="text-sm text-neutral-500 mt-2">This action cannot be undone.</p>
     </template>
     <template #footer>
       <div class="flex justify-end gap-2">

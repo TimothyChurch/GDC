@@ -33,13 +33,16 @@ watch(search, (val) => {
 <template>
   <div>
     <slot name="header" />
-    <div class="flex justify-between items-center gap-3 mb-3">
-      <UInput
-        v-model="searchInput"
-        :placeholder="searchPlaceholder"
-        icon="i-lucide-search"
-        class="max-w-xs"
-      />
+    <div class="flex flex-wrap justify-between items-center gap-3 mb-3">
+      <div class="flex items-center gap-3">
+        <UInput
+          v-model="searchInput"
+          :placeholder="searchPlaceholder"
+          icon="i-lucide-search"
+          class="max-w-xs"
+        />
+        <slot name="filters" />
+      </div>
       <div v-if="$slots.actions" class="flex items-center gap-2">
         <slot name="actions" />
       </div>

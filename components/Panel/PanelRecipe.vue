@@ -31,11 +31,34 @@ const types = computed(() => {
   );
 });
 
+const bulkSpiritStore = useBulkSpiritStore();
+
 const newItem = ref({
   _id: null as unknown as string,
   amount: null as unknown as number,
   unit: null as unknown as string,
 });
+
+// Bulk spirit ingredients
+const newBulkSpirit = ref({
+  bulkSpirit: '' as string,
+  volume: null as unknown as number,
+  volumeUnit: 'gallon' as string,
+});
+
+const addBulkSpirit = () => {
+  if (!localData.value.bulkSpirits) localData.value.bulkSpirits = [];
+  localData.value.bulkSpirits.push({ ...newBulkSpirit.value });
+  newBulkSpirit.value = { bulkSpirit: '', volume: 0, volumeUnit: 'gallon' };
+};
+
+const removeBulkSpirit = (idx: number) => {
+  localData.value.bulkSpirits?.splice(idx, 1);
+};
+
+const bulkSpiritOptions = computed(() =>
+  bulkSpiritStore.activeBulkSpirits.map((bs) => ({ label: bs.name, value: bs._id }))
+);
 
 const addItem = () => {
   localData.value.items.push({ ...newItem.value });
@@ -173,6 +196,69 @@ const removeItem = (itemId: string) => {
                     size="xs"
                     :disabled="!newItem._id || !newItem.amount || !newItem.unit"
                     @click="addItem"
+                  />
+                </div>
+              </div>
+            </UFormField>
+
+            <!-- Bulk Spirit Ingredients -->
+            <UFormField label="Bulk Spirits" v-if="bulkSpiritOptions.length > 0 || (localData.bulkSpirits && localData.bulkSpirits.length > 0)">
+              <div class="space-y-2">
+                <div
+                  v-for="(bs, idx) in localData.bulkSpirits || []"
+                  :key="bs.bulkSpirit + '-' + idx"
+                  class="grid grid-cols-[1fr_60px_80px_28px] gap-1.5 items-center"
+                >
+                  <span class="text-sm truncate text-parchment">
+                    {{ bulkSpiritStore.getBulkSpiritById(bs.bulkSpirit)?.name || 'Unknown' }}
+                  </span>
+                  <UInput
+                    v-model.number="localData.bulkSpirits![idx].volume"
+                    type="number"
+                    size="xs"
+                    step="any"
+                    min="0"
+                  />
+                  <USelectMenu
+                    v-model="localData.bulkSpirits![idx].volumeUnit"
+                    :items="volumeUnits"
+                    size="xs"
+                  />
+                  <UButton
+                    icon="i-lucide-trash-2"
+                    color="error"
+                    variant="ghost"
+                    size="xs"
+                    @click="removeBulkSpirit(idx)"
+                  />
+                </div>
+                <div class="grid grid-cols-[1fr_60px_80px_28px] gap-1.5 items-center pt-2 border-t border-white/10">
+                  <USelectMenu
+                    v-model="newBulkSpirit.bulkSpirit"
+                    :items="bulkSpiritOptions"
+                    value-key="value"
+                    placeholder="Add bulk spirit..."
+                    searchable
+                    size="xs"
+                  />
+                  <UInput
+                    v-model.number="newBulkSpirit.volume"
+                    type="number"
+                    placeholder="Vol"
+                    size="xs"
+                    step="any"
+                    min="0"
+                  />
+                  <USelectMenu
+                    v-model="newBulkSpirit.volumeUnit"
+                    :items="volumeUnits"
+                    size="xs"
+                  />
+                  <UButton
+                    icon="i-lucide-plus"
+                    size="xs"
+                    :disabled="!newBulkSpirit.bulkSpirit || !newBulkSpirit.volume"
+                    @click="addBulkSpirit"
                   />
                 </div>
               </div>

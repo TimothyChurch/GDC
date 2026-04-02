@@ -41,18 +41,20 @@ const under21 = () => {
             Are you 21 or older?
           </p>
           <div class="flex justify-center gap-4">
-            <button
+            <UButton
+              label="Yes, I'm 21+"
+              size="xl"
+              class="px-8 bg-gold text-espresso font-semibold hover:bg-copper transition-colors duration-300"
               @click="over21"
-              class="px-8 py-3 bg-gold text-espresso font-semibold rounded-md hover:bg-copper transition-colors duration-300"
-            >
-              Yes, I'm 21+
-            </button>
-            <button
+            />
+            <UButton
+              label="No, I'm not"
+              variant="outline"
+              color="neutral"
+              size="xl"
+              class="px-8 border-parchment/30 text-parchment/70 font-semibold hover:border-parchment/50 transition-colors duration-300"
               @click="under21"
-              class="px-8 py-3 border border-parchment/30 text-parchment/70 font-semibold rounded-md hover:border-parchment/50 transition-colors duration-300"
-            >
-              No, I'm not
-            </button>
+            />
           </div>
         </template>
 

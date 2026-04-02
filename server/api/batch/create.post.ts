@@ -17,8 +17,8 @@ export default defineEventHandler(async (event) => {
     return newBatch;
   } catch (error) {
     throw createError({
-      statusCode: 500,
-      statusMessage: "Failed to create batch",
+      status: 500,
+      statusText: "Failed to create batch",
     });
   }
 });

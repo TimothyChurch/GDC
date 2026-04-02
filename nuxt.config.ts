@@ -1,7 +1,7 @@
 import tailwindcss from "@tailwindcss/vite";
 
 export default defineNuxtConfig({
-  compatibilityDate: "2024-04-03",
+  compatibilityDate: "2025-01-31",
   devtools: { enabled: process.env.NODE_ENV !== 'production' },
   modules: [
     "@nuxt/ui",
@@ -33,7 +33,10 @@ export default defineNuxtConfig({
   },
   mongoose: {
     uri: process.env.NUXT_ENV_MONGODB_URI || '',
-    options: {},
+    options: {
+      maxPoolSize: 10,
+      serverSelectionTimeoutMS: 5000,
+    },
     modelsDir: "models",
     devtools: process.env.NODE_ENV !== 'production',
   },
@@ -52,12 +55,16 @@ export default defineNuxtConfig({
         'X-XSS-Protection': '1; mode=block',
         'Referrer-Policy': 'strict-origin-when-cross-origin',
         'Strict-Transport-Security': 'max-age=31536000; includeSubDomains',
+        'Content-Security-Policy': "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://js.stripe.com https://connect.facebook.net; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: blob: https://*.stripe.com https://www.facebook.com; frame-src https://js.stripe.com https://www.facebook.com; connect-src 'self' https://api.stripe.com https://*.facebook.com https://*.facebook.net",
       },
     },
     '/': { prerender: true },
     '/about': { prerender: true },
     '/privacy': { prerender: true },
     '/contact': { prerender: true },
+    '/api/**': {
+      headers: { 'Cache-Control': 'private, no-store' },
+    },
     '/admin/**': { ssr: false },
     '/api/bottle/public': { swr: 300 },
     '/api/cocktail/public': { swr: 300 },

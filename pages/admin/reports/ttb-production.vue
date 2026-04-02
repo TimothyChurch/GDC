@@ -39,17 +39,15 @@ const months = computed(() => {
 
     <!-- Month selector -->
     <div class="flex flex-wrap items-center gap-1.5 mb-6 bg-brown/15 rounded-lg p-1 border border-brown/20 w-fit print:hidden">
-      <button
+      <UButton
         v-for="m in months"
         :key="m.value"
-        class="px-3 py-1.5 rounded-md text-xs font-medium transition-all"
-        :class="selectedMonth === m.value
-          ? 'bg-gold/15 text-gold border border-gold/20'
-          : 'text-parchment/50 hover:text-parchment/70 border border-transparent'"
+        size="xs"
+        :variant="selectedMonth === m.value ? 'soft' : 'ghost'"
+        :color="selectedMonth === m.value ? 'primary' : 'neutral'"
+        :label="m.label"
         @click="selectedMonth = m.value"
-      >
-        {{ m.label }}
-      </button>
+      />
     </div>
 
     <ReportTTBProduction :month="selectedMonth" />

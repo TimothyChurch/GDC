@@ -295,7 +295,22 @@ export const useVesselStore = defineStore('vessels', () => {
 		const target = crud.items.value.find((v) => v._id === vesselId);
 		if (!target) return;
 
-		target.contents = [...(target.contents || []), contents];
+		const destUnit = target.stats?.volumeUnit || contents.volumeUnit;
+		const existing = (target.contents || []).find((c) => c.batch === contents.batch);
+		if (existing) {
+			// Merge: volume-weighted ABV, sum volumes
+			const existingVol = existing.volume * convertUnitRatio(existing.volumeUnit, destUnit);
+			const newVol = contents.volume * convertUnitRatio(contents.volumeUnit, destUnit);
+			const totalVol = existingVol + newVol;
+			existing.abv = totalVol > 0
+				? (existing.abv * existingVol + contents.abv * newVol) / totalVol
+				: 0;
+			existing.volume = totalVol;
+			existing.volumeUnit = destUnit;
+			existing.value += contents.value;
+		} else {
+			target.contents = [...(target.contents || []), contents];
+		}
 
 		crud.item.value = target;
 		await updateVessel();

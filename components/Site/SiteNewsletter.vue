@@ -86,13 +86,13 @@ const subscribe = async () => {
               class="min-w-0 flex-auto rounded-md bg-cream dark:bg-charcoal px-3.5 py-2 text-base text-brown dark:text-parchment outline-1 -outline-offset-1 outline-copper/30 placeholder:text-brown/60 dark:placeholder:text-parchment/60 focus:outline-2 focus:-outline-offset-2 focus:outline-gold sm:text-sm/6"
               placeholder="Enter your email"
             />
-            <button
+            <UButton
               type="submit"
               :disabled="status === 'loading'"
-              class="flex-none rounded-md bg-gold px-3.5 py-2.5 text-sm font-semibold text-espresso shadow-xs hover:bg-copper transition-colors duration-300 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gold disabled:opacity-50"
-            >
-              {{ status === 'loading' ? 'Subscribing...' : 'Subscribe' }}
-            </button>
+              :loading="status === 'loading'"
+              :label="status === 'loading' ? 'Subscribing...' : 'Subscribe'"
+              class="flex-none bg-gold text-espresso hover:bg-copper"
+            />
           </div>
         </div>
         <p v-if="status === 'success'" class="mt-4 text-sm text-green-500">

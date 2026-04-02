@@ -222,13 +222,13 @@ const submitRequest = async () => {
             </div>
 
             <div class="mt-auto">
-              <button
+              <UButton
                 disabled
-                class="w-full rounded-md bg-gold/30 px-4 py-2.5 text-sm font-semibold text-espresso/50 cursor-not-allowed"
+                block
+                label="Book Now — Coming Soon"
+                class="bg-gold/30 text-espresso/50 cursor-not-allowed"
                 title="Online booking coming soon"
-              >
-                Book Now &mdash; Coming Soon
-              </button>
+              />
             </div>
           </div>
         </div>
@@ -347,13 +347,13 @@ const submitRequest = async () => {
           </div>
 
           <div class="flex justify-center pt-2">
-            <button
+            <UButton
               type="submit"
               :disabled="requestStatus === 'loading'"
-              class="rounded-md bg-gold px-8 py-3 text-sm font-semibold text-espresso shadow-xs hover:bg-copper transition-colors duration-300 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gold disabled:opacity-50"
-            >
-              {{ requestStatus === 'loading' ? 'Submitting...' : 'Submit Request' }}
-            </button>
+              :loading="requestStatus === 'loading'"
+              :label="requestStatus === 'loading' ? 'Submitting...' : 'Submit Request'"
+              class="bg-gold text-espresso hover:bg-copper"
+            />
           </div>
 
           <p v-if="requestStatus === 'error'" class="text-center text-sm text-red-500">

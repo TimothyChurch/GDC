@@ -29,10 +29,12 @@ const filteredPOs = computed(() => {
     <AdminPageHeader title="Purchase Orders" subtitle="Track vendor orders and deliveries" icon="i-lucide-clipboard-list" />
 
     <div class="flex gap-1.5 overflow-x-auto pb-3 mb-1 scrollbar-hide">
-      <button
+      <UButton
         v-for="tab in statusTabs"
         :key="tab.name"
-        class="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium border whitespace-nowrap transition-colors"
+        variant="ghost"
+        size="xs"
+        class="rounded-full border whitespace-nowrap"
         :class="selectedStatus === tab.name
           ? 'bg-gold/15 text-gold border-gold/20'
           : 'text-parchment/50 border-brown/20 hover:text-parchment/70 hover:border-brown/30'"
@@ -45,7 +47,7 @@ const filteredPOs = computed(() => {
         >
           {{ tab.count }}
         </span>
-      </button>
+      </UButton>
     </div>
 
     <TablePurchaseOrders :data="filteredPOs" />

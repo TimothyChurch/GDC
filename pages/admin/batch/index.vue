@@ -43,34 +43,41 @@ const filteredBatches = computed(() => {
     <AdminPageHeader title="Batches" subtitle="Manage batch lifecycle from mashing to bottling" icon="i-lucide-flask-conical">
       <template #actions>
         <div class="flex items-center gap-1 rounded-lg border border-brown/20 p-0.5">
-          <button
-            class="p-1.5 rounded-md transition-colors"
+          <UButton
+            icon="i-lucide-table-2"
+            size="xs"
+            square
+            :variant="viewMode === 'table' ? 'soft' : 'ghost'"
+            :color="viewMode === 'table' ? 'primary' : 'neutral'"
             :class="viewMode === 'table' ? 'bg-brown/30 text-gold' : 'text-parchment/40 hover:text-parchment/70'"
             title="Table view"
             @click="viewMode = 'table'"
-          >
-            <UIcon name="i-lucide-table-2" class="text-base" />
-          </button>
-          <button
-            class="p-1.5 rounded-md transition-colors"
+          />
+          <UButton
+            icon="i-lucide-kanban"
+            size="xs"
+            square
+            :variant="viewMode === 'board' ? 'soft' : 'ghost'"
+            :color="viewMode === 'board' ? 'primary' : 'neutral'"
             :class="viewMode === 'board' ? 'bg-brown/30 text-gold' : 'text-parchment/40 hover:text-parchment/70'"
             title="Board view"
             @click="viewMode = 'board'"
-          >
-            <UIcon name="i-lucide-kanban" class="text-base" />
-          </button>
+          />
         </div>
       </template>
     </AdminPageHeader>
 
     <div class="flex gap-1.5 overflow-x-auto pb-3 mb-1 scrollbar-hide">
-      <button
+      <UButton
         v-for="tab in filterTabs"
         :key="tab.name"
-        class="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium border whitespace-nowrap transition-colors"
+        size="xs"
+        :variant="selectedFilter === tab.name ? 'soft' : 'ghost'"
+        :color="selectedFilter === tab.name ? 'primary' : 'neutral'"
+        class="rounded-full whitespace-nowrap"
         :class="selectedFilter === tab.name
-          ? 'bg-gold/15 text-gold border-gold/20'
-          : 'text-parchment/50 border-brown/20 hover:text-parchment/70 hover:border-brown/30'"
+          ? 'bg-gold/15 text-gold border border-gold/20'
+          : 'text-parchment/50 border border-brown/20 hover:text-parchment/70 hover:border-brown/30'"
         @click="selectedFilter = tab.name"
       >
         {{ tab.name }}
@@ -80,7 +87,7 @@ const filteredBatches = computed(() => {
         >
           {{ tab.count }}
         </span>
-      </button>
+      </UButton>
     </div>
 
     <TableBatches v-if="viewMode === 'table'" :data="filteredBatches" />

@@ -11,24 +11,24 @@ export async function requireRole(event: H3Event, ...allowedRoles: string[]) {
   const session = await getAuthSession(event);
   if (!session.data.userId) {
     throw createError({
-      statusCode: 401,
-      statusMessage: 'Unauthorized',
+      status: 401,
+      statusText: 'Unauthorized',
     });
   }
 
   const user = await User.findById(session.data.userId).select('role');
   if (!user) {
     throw createError({
-      statusCode: 401,
-      statusMessage: 'User not found',
+      status: 401,
+      statusText: 'User not found',
     });
   }
 
   const userRole = user.role || 'Staff';
   if (!allowedRoles.includes(userRole)) {
     throw createError({
-      statusCode: 403,
-      statusMessage: `Forbidden: requires ${allowedRoles.join(' or ')} role`,
+      status: 403,
+      statusText: `Forbidden: requires ${allowedRoles.join(' or ')} role`,
     });
   }
 

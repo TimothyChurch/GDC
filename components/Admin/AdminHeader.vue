@@ -37,17 +37,20 @@ const isMac = computed(() =>
     </div>
 
     <!-- Search trigger -->
-    <button
-      class="hidden md:flex items-center gap-2 px-3 py-1.5 rounded-lg border border-brown/30 bg-espresso/50 hover:bg-brown/20 hover:border-brown/50 transition-all duration-200 text-parchment/60 hover:text-parchment/60 cursor-pointer"
+    <UButton
+      variant="outline"
+      color="neutral"
+      size="sm"
+      icon="i-lucide-search"
+      class="hidden md:flex border-brown/30 bg-espresso/50 hover:bg-brown/20 hover:border-brown/50 transition-all duration-200 text-parchment/60 hover:text-parchment/60"
       @click="open()"
     >
-      <UIcon name="i-lucide-search" class="text-sm" />
       <span class="text-xs">Search...</span>
       <div class="flex items-center gap-0.5 ml-4">
         <UKbd :value="isMac ? 'meta' : 'ctrl'" size="sm" />
         <UKbd value="K" size="sm" />
       </div>
-    </button>
+    </UButton>
     <UButton
       class="md:hidden"
       color="neutral"

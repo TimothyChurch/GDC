@@ -20,6 +20,7 @@ onMounted(async () => {
     useEventStore().ensureLoaded(),
     useMessageStore().ensureLoaded(),
     useSettingsStore().ensureLoaded(),
+    useBulkSpiritStore().ensureLoaded(),
   ]);
 
   // Sync bottle inStock flags based on actual inventory data

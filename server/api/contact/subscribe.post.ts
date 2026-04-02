@@ -20,6 +20,6 @@ export default defineEventHandler(async (event) => {
 		});
 		return { success: true, message: 'Thanks for subscribing!' };
 	} catch (error) {
-		throw createError({ statusCode: 500, statusMessage: 'Failed to subscribe' });
+		throw createError({ status: 500, statusText: 'Failed to subscribe' });
 	}
 });

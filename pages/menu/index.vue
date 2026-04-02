@@ -118,21 +118,22 @@ const clearFilters = () => {
       <div v-if="categories.length > 2" class="mb-4">
         <p class="text-xs uppercase tracking-wider text-brown/60 dark:text-parchment/60 text-center mb-2">Menu</p>
         <div role="tablist" aria-label="Menu categories" class="flex flex-wrap gap-2 justify-center">
-          <button
+          <UButton
             v-for="cat in categories"
             :key="cat"
             role="tab"
             :aria-selected="activeCategory === cat"
-            @click="activeCategory = cat"
-            class="px-4 py-1.5 rounded-full text-sm font-semibold transition-colors duration-200"
+            :label="cat"
+            size="sm"
+            :variant="activeCategory === cat ? 'solid' : 'soft'"
             :class="
               activeCategory === cat
                 ? 'bg-gold text-espresso'
                 : 'bg-charcoal/5 dark:bg-parchment/10 text-brown/70 dark:text-parchment/70 hover:bg-gold/20'
             "
-          >
-            {{ cat }}
-          </button>
+            class="rounded-full"
+            @click="activeCategory = cat"
+          />
         </div>
       </div>
 
@@ -140,21 +141,22 @@ const clearFilters = () => {
       <div v-if="spiritTypes.length > 2" class="mb-6">
         <p class="text-xs uppercase tracking-wider text-brown/60 dark:text-parchment/60 text-center mb-2">Base Spirit</p>
         <div role="tablist" aria-label="Base spirit filter" class="flex flex-wrap gap-2 justify-center">
-          <button
+          <UButton
             v-for="spirit in spiritTypes"
             :key="spirit"
             role="tab"
             :aria-selected="activeSpirit === spirit"
-            @click="activeSpirit = spirit"
-            class="px-4 py-1.5 rounded-full text-sm font-semibold transition-colors duration-200"
+            :label="spirit"
+            size="sm"
+            :variant="activeSpirit === spirit ? 'solid' : 'soft'"
             :class="
               activeSpirit === spirit
                 ? 'bg-copper text-parchment'
                 : 'bg-charcoal/5 dark:bg-parchment/10 text-brown/70 dark:text-parchment/70 hover:bg-copper/20'
             "
-          >
-            {{ spirit }}
-          </button>
+            class="rounded-full"
+            @click="activeSpirit = spirit"
+          />
         </div>
       </div>
 
@@ -185,13 +187,13 @@ const clearFilters = () => {
       <div v-else-if="filteredCocktails.length === 0" class="text-center py-12">
         <Icon name="carbon:drink-02" class="text-4xl text-brown/20 dark:text-parchment/20 mb-3" />
         <p class="text-brown/50 dark:text-parchment/50">No cocktails found</p>
-        <button
+        <UButton
           v-if="hasActiveFilters"
+          variant="link"
+          label="Clear filters"
+          class="mt-3 text-gold hover:text-copper"
           @click="clearFilters"
-          class="mt-3 text-sm text-gold hover:text-copper transition-colors bg-transparent"
-        >
-          Clear filters
-        </button>
+        />
       </div>
       <div v-else class="grid md:grid-cols-2 gap-6">
         <CardCocktail

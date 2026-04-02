@@ -80,8 +80,8 @@ export default defineCachedEventHandler(
       }));
     } catch {
       throw createError({
-        statusCode: 500,
-        statusMessage: 'Failed to fetch public cocktails',
+        status: 500,
+        statusText: 'Failed to fetch public cocktails',
       });
     }
   },

@@ -26,4 +26,4 @@ Various bugs that have been found while using the app.
 
 # TODOS
 
-    (none)
+    - The In Stock, Low, & Out of Stock status is not updating when inventory is updated.

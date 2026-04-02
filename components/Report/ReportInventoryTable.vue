@@ -160,20 +160,24 @@ const activeTab = ref<'items' | 'bottles'>('items')
     <div class="flex flex-wrap items-center justify-between gap-3">
       <!-- Tab toggle -->
       <div class="flex items-center gap-1.5 bg-brown/15 rounded-lg p-1 border border-brown/20 w-fit">
-        <button
-          class="px-3 py-1.5 rounded-md text-xs font-medium transition-all"
-          :class="activeTab === 'items' ? 'bg-gold/15 text-gold border border-gold/20' : 'text-parchment/50 hover:text-parchment/70 border border-transparent'"
+        <UButton
+          variant="ghost"
+          size="xs"
+          class="rounded-md border"
+          :class="activeTab === 'items' ? 'bg-gold/15 text-gold border-gold/20' : 'text-parchment/50 hover:text-parchment/70 border-transparent'"
           @click="activeTab = 'items'"
         >
           Raw Materials ({{ itemInventory.length }})
-        </button>
-        <button
-          class="px-3 py-1.5 rounded-md text-xs font-medium transition-all"
-          :class="activeTab === 'bottles' ? 'bg-gold/15 text-gold border border-gold/20' : 'text-parchment/50 hover:text-parchment/70 border border-transparent'"
+        </UButton>
+        <UButton
+          variant="ghost"
+          size="xs"
+          class="rounded-md border"
+          :class="activeTab === 'bottles' ? 'bg-gold/15 text-gold border-gold/20' : 'text-parchment/50 hover:text-parchment/70 border-transparent'"
           @click="activeTab = 'bottles'"
         >
           Finished Goods ({{ bottleInventory.length }})
-        </button>
+        </UButton>
       </div>
 
       <!-- Show out-of-stock toggle -->

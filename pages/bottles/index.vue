@@ -36,21 +36,22 @@ const filteredBottles = computed(() => {
     <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-10">
       <!-- Spirit class filter tabs -->
       <div v-if="spiritClasses.length > 2" role="tablist" aria-label="Spirit categories" class="flex flex-wrap gap-2 mb-8 justify-center">
-        <button
+        <UButton
           v-for="cls in spiritClasses"
           :key="cls"
           role="tab"
           :aria-selected="activeClass === cls"
-          @click="activeClass = cls"
-          class="px-4 py-1.5 rounded-full text-sm font-semibold transition-colors duration-200"
+          :label="cls"
+          size="sm"
+          :variant="activeClass === cls ? 'solid' : 'soft'"
           :class="
             activeClass === cls
               ? 'bg-gold text-espresso'
               : 'bg-charcoal/5 dark:bg-parchment/10 text-brown/70 dark:text-parchment/70 hover:bg-gold/20'
           "
-        >
-          {{ cls }}
-        </button>
+          class="rounded-full"
+          @click="activeClass = cls"
+        />
       </div>
 
       <!-- Bottle grid -->
@@ -60,13 +61,13 @@ const filteredBottles = computed(() => {
       <div v-else-if="filteredBottles.length === 0" class="text-center py-12">
         <Icon name="carbon:wine-bottle" class="text-4xl text-brown/20 dark:text-parchment/20 mb-3" />
         <p class="text-brown/50 dark:text-parchment/50">No spirits found</p>
-        <button
+        <UButton
           v-if="activeClass !== 'All'"
+          variant="link"
+          label="Show all spirits"
+          class="mt-3 text-gold hover:text-copper"
           @click="activeClass = 'All'"
-          class="mt-3 text-sm text-gold hover:text-copper transition-colors bg-transparent"
-        >
-          Show all spirits
-        </button>
+        />
       </div>
       <div v-else class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
         <CardBottle

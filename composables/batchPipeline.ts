@@ -56,6 +56,12 @@ export const PIPELINE_TEMPLATES: Record<string, StageName[]> = {
     "Proofing",
     "Bottled",
   ],
+  "Neutral Spirit": [
+    "Mashing",
+    "Fermenting",
+    "Distilling",
+    "Storage",
+  ],
   Custom: [],
 };
 
@@ -151,67 +157,8 @@ export function isCurrentStage(
 /** Get available stages that can be added to a pipeline (not already in it) */
 export function getAvailableStages(pipeline: string[]): StageName[] {
   return ALL_STAGES.filter(
-    (s) => s !== "Upcoming" && s !== "Bottled" && !pipeline?.includes(s),
+    (s) => s !== "Upcoming" && !pipeline?.includes(s),
   ) as StageName[];
-}
-
-/** Get all stages that can be inserted into a pipeline (allows duplicates) */
-export function getInsertableStages(): StageName[] {
-  return ALL_STAGES.filter(
-    (s) => s !== "Upcoming" && s !== "Bottled",
-  ) as StageName[];
-}
-
-/**
- * Find the "active" occurrence of a duplicated stage in a pipeline.
- * Collects all indices of stageName, then returns the first one AT or AFTER
- * the currentStage high-water mark. Falls back to the last occurrence before it.
- */
-export function findActivePipelineIndex(
-  pipeline: string[],
-  stageName: string,
-  currentStage: string,
-): number {
-  const indices: number[] = [];
-  for (let i = 0; i < pipeline.length; i++) {
-    if (pipeline[i] === stageName) indices.push(i);
-  }
-  if (indices.length === 0) return -1;
-  if (indices.length === 1) return indices[0]!;
-
-  const currentIdx = pipeline.indexOf(currentStage);
-  // Find first occurrence at or after high-water mark
-  const atOrAfter = indices.find((i) => i >= currentIdx);
-  if (atOrAfter !== undefined) return atOrAfter;
-  // Fallback: last occurrence before high-water mark
-  return indices[indices.length - 1]!;
-}
-
-/** Position-exact next stage: returns pipeline[index + 1] or null */
-export function getNextStageByIndex(
-  pipeline: string[],
-  index: number,
-): string | null {
-  if (index < 0 || index >= pipeline.length - 1) return null;
-  return pipeline[index + 1] ?? null;
-}
-
-/**
- * Combines findActivePipelineIndex + getNextStageByIndex.
- * Returns the next stage for the active occurrence of a stage name.
- */
-export function getNextStageForActive(
-  pipeline: string[],
-  stageName: string,
-  currentStage: string,
-): { nextStage: string | null; activePipelineIndex: number } {
-  const activePipelineIndex = findActivePipelineIndex(
-    pipeline,
-    stageName,
-    currentStage,
-  );
-  const nextStage = getNextStageByIndex(pipeline, activePipelineIndex);
-  return { nextStage, activePipelineIndex };
 }
 
 /** Validate that a pipeline contains only valid stage names */

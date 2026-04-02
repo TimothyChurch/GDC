@@ -158,15 +158,13 @@ watch(
 							<p class="text-xs text-parchment/60">Heating and agitation control</p>
 						</div>
 					</div>
-					<button
-						class="px-4 py-2 rounded-lg text-sm font-semibold transition-all duration-200 cursor-pointer"
-						:class="inputData.mashTun.status
-							? 'bg-green-500/15 text-green-400 border border-green-500/25 hover:bg-green-500/25'
-							: 'bg-red-500/15 text-red-400 border border-red-500/25 hover:bg-red-500/25'"
+					<UButton
+						size="sm"
+						:color="inputData.mashTun.status ? 'success' : 'error'"
+						variant="soft"
+						:label="inputData.mashTun.status ? 'ON' : 'OFF'"
 						@click="inputData.mashTun.status = !inputData.mashTun.status"
-					>
-						{{ inputData.mashTun.status ? 'ON' : 'OFF' }}
-					</button>
+					/>
 				</div>
 
 				<div class="p-5 space-y-5">
@@ -202,16 +200,14 @@ watch(
 							<label class="text-sm font-medium text-parchment/70">Agitator</label>
 							<p class="text-xs text-parchment/50">Mixing paddle motor</p>
 						</div>
-						<button
-							class="px-3 py-1.5 rounded-lg text-xs font-semibold transition-all duration-200 cursor-pointer"
-							:class="inputData.mashTun.agitator
-								? 'bg-green-500/15 text-green-400 border border-green-500/25'
-								: 'bg-brown/20 text-parchment/60 border border-brown/30'"
+						<UButton
+							size="xs"
+							:color="inputData.mashTun.agitator ? 'success' : 'neutral'"
+							variant="soft"
+							:label="inputData.mashTun.agitator ? 'Running' : 'Stopped'"
 							:disabled="!inputData.mashTun.status"
 							@click="inputData.mashTun.agitator = !inputData.mashTun.agitator"
-						>
-							{{ inputData.mashTun.agitator ? 'Running' : 'Stopped' }}
-						</button>
+						/>
 					</div>
 				</div>
 			</div>
@@ -228,15 +224,13 @@ watch(
 							<p class="text-xs text-parchment/60">Distillation heating and reflux</p>
 						</div>
 					</div>
-					<button
-						class="px-4 py-2 rounded-lg text-sm font-semibold transition-all duration-200 cursor-pointer"
-						:class="inputData.kettle.status
-							? 'bg-green-500/15 text-green-400 border border-green-500/25 hover:bg-green-500/25'
-							: 'bg-red-500/15 text-red-400 border border-red-500/25 hover:bg-red-500/25'"
+					<UButton
+						size="sm"
+						:color="inputData.kettle.status ? 'success' : 'error'"
+						variant="soft"
+						:label="inputData.kettle.status ? 'ON' : 'OFF'"
 						@click="inputData.kettle.status = !inputData.kettle.status"
-					>
-						{{ inputData.kettle.status ? 'ON' : 'OFF' }}
-					</button>
+					/>
 				</div>
 
 				<div class="p-5 space-y-5">
@@ -298,16 +292,14 @@ watch(
 							<label class="text-sm font-medium text-parchment/70">Agitator</label>
 							<p class="text-xs text-parchment/50">Mixing paddle motor</p>
 						</div>
-						<button
-							class="px-3 py-1.5 rounded-lg text-xs font-semibold transition-all duration-200 cursor-pointer"
-							:class="inputData.kettle.agitator
-								? 'bg-green-500/15 text-green-400 border border-green-500/25'
-								: 'bg-brown/20 text-parchment/60 border border-brown/30'"
+						<UButton
+							size="xs"
+							:color="inputData.kettle.agitator ? 'success' : 'neutral'"
+							variant="soft"
+							:label="inputData.kettle.agitator ? 'Running' : 'Stopped'"
 							:disabled="!inputData.kettle.status"
 							@click="inputData.kettle.agitator = !inputData.kettle.agitator"
-						>
-							{{ inputData.kettle.agitator ? 'Running' : 'Stopped' }}
-						</button>
+						/>
 					</div>
 				</div>
 			</div>

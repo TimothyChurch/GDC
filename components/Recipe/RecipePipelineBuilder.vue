@@ -27,9 +27,9 @@ const availableStages = computed(() => getAvailableStages(pipeline.value));
 
 const addStage = (stage: StageName) => {
   const current = [...pipeline.value];
-  // Insert before Bottled if present, else at end
+  // Insert before Bottled if present (keep Bottled last), else at end
   const bottledIdx = current.indexOf("Bottled");
-  if (bottledIdx >= 0) {
+  if (stage !== "Bottled" && bottledIdx >= 0) {
     current.splice(bottledIdx, 0, stage);
   } else {
     current.push(stage);
@@ -39,10 +39,9 @@ const addStage = (stage: StageName) => {
 };
 
 const removeStage = (index: number) => {
-  const stage = pipeline.value[index];
-  // Don't allow removing Bottled (terminal stage)
-  if (stage === "Bottled") return;
   const current = [...pipeline.value];
+  // Must keep at least 1 stage
+  if (current.length <= 1) return;
   current.splice(index, 1);
   pipeline.value = current;
   pipelineTemplate.value = "Custom";
@@ -52,10 +51,6 @@ const moveStage = (index: number, direction: -1 | 1) => {
   const current = [...pipeline.value];
   const targetIdx = index + direction;
   if (targetIdx < 0 || targetIdx >= current.length) return;
-  // Don't move past Bottled (must stay last)
-  if (current[targetIdx] === "Bottled" && direction === 1) return;
-  // Don't move Bottled up
-  if (current[index] === "Bottled") return;
   [current[index], current[targetIdx]] = [current[targetIdx], current[index]];
   pipeline.value = current;
   pipelineTemplate.value = "Custom";
@@ -65,21 +60,15 @@ const moveStage = (index: number, direction: -1 | 1) => {
 const dragIndex = ref<number | null>(null);
 
 const onDragStart = (index: number) => {
-  if (pipeline.value[index] === "Bottled") return;
   dragIndex.value = index;
 };
 
-const onDragOver = (e: DragEvent, index: number) => {
+const onDragOver = (e: DragEvent, _index: number) => {
   e.preventDefault();
-  if (pipeline.value[index] === "Bottled") return;
 };
 
 const onDrop = (targetIndex: number) => {
   if (dragIndex.value === null || dragIndex.value === targetIndex) {
-    dragIndex.value = null;
-    return;
-  }
-  if (pipeline.value[targetIndex] === "Bottled") {
     dragIndex.value = null;
     return;
   }
@@ -116,12 +105,11 @@ const display = (name: string) =>
         <div
           v-for="(stage, index) in pipeline"
           :key="`${stage}-${index}`"
-          :draggable="stage !== 'Bottled'"
-          class="flex items-center gap-2 px-3 py-2 rounded-lg border transition-all"
+          draggable="true"
+          class="flex items-center gap-2 px-3 py-2 rounded-lg border transition-all cursor-grab active:cursor-grabbing"
           :class="[
             stageBgColor(display(stage).color),
             dragIndex === index ? 'opacity-50' : '',
-            stage !== 'Bottled' ? 'cursor-grab active:cursor-grabbing' : '',
           ]"
           @dragstart="onDragStart(index)"
           @dragover="onDragOver($event, index)"
@@ -131,7 +119,6 @@ const display = (name: string) =>
           <UIcon
             name="i-lucide-grip-vertical"
             class="text-parchment/30 shrink-0"
-            :class="stage === 'Bottled' ? 'invisible' : ''"
           />
           <UIcon
             :name="display(stage).icon"
@@ -144,7 +131,6 @@ const display = (name: string) =>
           }}</span>
           <div class="flex items-center gap-0.5">
             <UButton
-              v-if="stage !== 'Bottled'"
               icon="i-lucide-chevron-up"
               color="neutral"
               variant="ghost"
@@ -153,23 +139,19 @@ const display = (name: string) =>
               @click="moveStage(index, -1)"
             />
             <UButton
-              v-if="stage !== 'Bottled'"
               icon="i-lucide-chevron-down"
               color="neutral"
               variant="ghost"
               size="2xs"
-              :disabled="
-                index >= pipeline.length - 2 ||
-                pipeline[index + 1] === 'Bottled'
-              "
+              :disabled="index >= pipeline.length - 1"
               @click="moveStage(index, 1)"
             />
             <UButton
-              v-if="stage !== 'Bottled'"
               icon="i-lucide-x"
               color="error"
               variant="ghost"
               size="sm"
+              :disabled="pipeline.length <= 1"
               @click="removeStage(index)"
             />
           </div>

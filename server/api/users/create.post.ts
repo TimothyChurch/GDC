@@ -13,8 +13,8 @@ export default defineEventHandler(async (event) => {
 		return userWithoutPassword;
 	} catch (error) {
 		throw createError({
-			statusCode: 500,
-			statusMessage: "Failed to create user",
+			status: 500,
+			statusText: "Failed to create user",
 		});
 	}
 });

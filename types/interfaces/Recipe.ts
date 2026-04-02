@@ -1,3 +1,9 @@
+export interface RecipeBulkSpirit {
+  bulkSpirit: string;
+  volume: number;
+  volumeUnit: string;
+}
+
 export interface Recipe {
   _id: string;
   name: string;
@@ -6,6 +12,7 @@ export interface Recipe {
   volume: number;
   volumeUnit: string;
   items: { _id: string; amount: number; unit: string }[];
+  bulkSpirits?: RecipeBulkSpirit[];
   directions?: string;
   notes?: string;
   targetAbv?: number;

@@ -1,5 +1,5 @@
 import type { Batch, BatchStages, DistillingRun, MashingStage, Recipe, TastingNote, TransferLogEntry } from '~/types';
-import { STAGE_KEY_MAP, isStageActive, getActiveStages, hasStageVolumes, getStageIndex } from '~/composables/batchPipeline';
+import { STAGE_KEY_MAP, isStageActive, getActiveStages, hasStageVolumes, getStageIndex, getPreviousStage } from '~/composables/batchPipeline';
 
 const emptyStages = (): BatchStages => ({});
 
@@ -157,6 +157,9 @@ export const useBatchStore = defineStore('batches', () => {
 		if (firstStage === 'Mashing') {
 			await withdrawMashIngredients(batchId);
 		}
+
+		// Withdraw bulk spirits when starting first stage
+		await withdrawBulkSpirits(batchId);
 	};
 
 	/** Advance a batch from sourceStage to targetStage with optional partial volume. */
@@ -266,6 +269,58 @@ export const useBatchStore = defineStore('batches', () => {
 		Object.assign(target.stages[stageKey]!, data);
 
 		addLogEntry(target, logMessage || `Updated ${stageName} data`);
+
+		crud.item.value = target;
+		await updateBatch();
+	};
+
+	/** Revert volume from a stage back to the previous stage in the pipeline */
+	const revertToPreviousStage = async (batchId: string, fromStage: string): Promise<void> => {
+		const target = crud.items.value.find((b) => b._id === batchId);
+		if (!target) return;
+
+		ensureStageVolumes(target);
+
+		const prevStage = getPreviousStage(target.pipeline, fromStage);
+		if (!prevStage) return;
+
+		const volumeToRevert = target.stageVolumes![fromStage] || 0;
+		if (volumeToRevert <= 0) return;
+
+		// Move volume back to previous stage
+		delete target.stageVolumes![fromStage];
+		target.stageVolumes![prevStage] = (target.stageVolumes![prevStage] || 0) + volumeToRevert;
+
+		// Clear completedAt on the previous stage since it's active again
+		const prevKey = STAGE_KEY_MAP[prevStage];
+		if (prevKey && target.stages[prevKey]) {
+			delete target.stages[prevKey]!.completedAt;
+		}
+
+		// If batch was marked completed (all volume in Bottled), revert to active
+		if (target.status === 'completed') {
+			target.status = 'active';
+		}
+
+		// Recalculate currentStage as the furthest stage with volume
+		const activeStages = Object.entries(target.stageVolumes!)
+			.filter(([, vol]) => vol > 0)
+			.map(([stage]) => stage);
+		let furthestIdx = -1;
+		for (const stage of activeStages) {
+			if (stage === 'Upcoming') continue;
+			const idx = getStageIndex(target.pipeline, stage);
+			if (idx > furthestIdx) furthestIdx = idx;
+		}
+		target.currentStage = furthestIdx >= 0 ? target.pipeline[furthestIdx]! : (activeStages.includes('Upcoming') ? 'Upcoming' : target.pipeline[0]!);
+
+		addTransferLogEntry(target, {
+			from: fromStage,
+			to: prevStage,
+			volume: volumeToRevert,
+			volumeUnit: target.batchSizeUnit || 'gallon',
+		});
+		addLogEntry(target, `Reverted ${volumeToRevert} ${target.batchSizeUnit || 'gal'} from ${fromStage} back to ${prevStage}`);
 
 		crud.item.value = target;
 		await updateBatch();
@@ -412,6 +467,65 @@ export const useBatchStore = defineStore('batches', () => {
 		}
 	};
 
+	// --- Bulk spirit withdrawal ---
+
+	/**
+	 * Withdraw bulk spirits from storage when a batch enters its first stage.
+	 * Scales volumes based on batch size vs recipe volume.
+	 */
+	const withdrawBulkSpirits = async (batchId: string): Promise<void> => {
+		const recipeStore = useRecipeStore();
+		const bulkSpiritStore = useBulkSpiritStore();
+
+		const batch = crud.items.value.find((b) => b._id === batchId);
+		if (!batch) return;
+
+		const recipe = recipeStore.getRecipeById(batch.recipe);
+		if (!recipe?.bulkSpirits?.length) return;
+
+		// Calculate scale factor: batch size / recipe volume
+		let scaleFactor = 1;
+		if (recipe.volume) {
+			const { convertQuantity } = useUnitConversion();
+			const batchInRecipeUnits = convertQuantity(
+				batch.batchSize,
+				batch.batchSizeUnit,
+				recipe.volumeUnit,
+			);
+			scaleFactor = batchInRecipeUnits / recipe.volume;
+		}
+
+		let totalWithdrawnValue = 0;
+		const summary: string[] = [];
+
+		for (const bsIngredient of recipe.bulkSpirits) {
+			const spirit = bulkSpiritStore.getBulkSpiritById(bsIngredient.bulkSpirit);
+			if (!spirit) continue;
+
+			const scaledVolume = bsIngredient.volume * scaleFactor;
+
+			try {
+				const result = await bulkSpiritStore.withdraw(bsIngredient.bulkSpirit, {
+					batchId,
+					volume: scaledVolume,
+					volumeUnit: bsIngredient.volumeUnit,
+				});
+				totalWithdrawnValue += result.value;
+				summary.push(`${scaledVolume.toFixed(1)} ${bsIngredient.volumeUnit} ${spirit.name}`);
+			} catch {
+				// Error toast shown by withdraw
+			}
+		}
+
+		// Add the withdrawn bulk spirit cost to the batch cost
+		if (totalWithdrawnValue > 0) {
+			batch.batchCost = (batch.batchCost || 0) + totalWithdrawnValue;
+			addLogEntry(batch, 'Bulk spirits withdrawn', summary.join(', '));
+			crud.item.value = batch;
+			await updateBatch();
+		}
+	};
+
 	// --- Mash ingredient withdrawal ---
 
 	/**
@@ -534,6 +648,7 @@ export const useBatchStore = defineStore('batches', () => {
 		advanceToStage,
 		startFirstStage,
 		updateStageData,
+		revertToPreviousStage,
 		// Distilling run management
 		addDistillingRun,
 		updateDistillingRun,
@@ -545,6 +660,7 @@ export const useBatchStore = defineStore('batches', () => {
 		deleteTastingNote,
 		// Inventory
 		withdrawMashIngredients,
+		withdrawBulkSpirits,
 		// Getters
 		getBatchesInStage,
 		getBatchesByCurrentStage,

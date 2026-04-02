@@ -11,12 +11,13 @@ import { ITEM_CATEGORIES } from './interfaces/Item';
 import type { Production, ProductionCosts } from './interfaces/Production';
 import type { PurchaseOrder } from './interfaces/PurchaseOrder';
 import type { PurchaseOrderItem } from './interfaces/PurchaseOrderItem';
-import type { Recipe } from './interfaces/Recipe';
+import type { Recipe, RecipeBulkSpirit } from './interfaces/Recipe';
 import type { Settings, SettingsTheme, SettingsDistillery, InventoryCategoryDef } from './interfaces/Settings';
 import type { User } from './interfaces/User';
 import type { PublicBottle } from './interfaces/PublicBottle';
 import type { PublicCocktail, PublicCocktailIngredient } from './interfaces/PublicCocktail';
 import type { Vessel } from './interfaces/Vessel';
+import type { BulkSpirit, BulkSpiritDeposit, BulkSpiritWithdrawal } from './interfaces/BulkSpirit';
 
 export type {
 	Batch,
@@ -54,6 +55,7 @@ export type {
 	PurchaseOrder,
 	PurchaseOrderItem,
 	Recipe,
+	RecipeBulkSpirit,
 	Settings,
 	SettingsTheme,
 	SettingsDistillery,
@@ -63,6 +65,9 @@ export type {
 	PublicCocktailIngredient,
 	User,
 	Vessel,
+	BulkSpirit,
+	BulkSpiritDeposit,
+	BulkSpiritWithdrawal,
 };
 
 export { ITEM_CATEGORIES };

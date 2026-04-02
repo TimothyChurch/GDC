@@ -23,8 +23,8 @@ export default defineEventHandler(async (event) => {
     };
   } catch (e) {
     throw createError({
-      statusCode: 500,
-      statusMessage: 'Failed to create payment intent',
+      status: 500,
+      statusText: 'Failed to create payment intent',
     });
   }
 });

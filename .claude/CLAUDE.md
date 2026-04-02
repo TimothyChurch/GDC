@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-Galveston Distilling Co (GDC) — a full-stack Nuxt 3 + TypeScript distillery management application. Manages batch tracking (brewing through bottling), inventory, production records, cocktail menus, vessels, and recipes. Uses MongoDB (Mongoose) for data, Pinia for state management, and Nuxt UI v4 for the component library.
+Galveston Distilling Co (GDC) — a full-stack Nuxt 4 + TypeScript distillery management application. Manages batch tracking (brewing through bottling), inventory, production records, cocktail menus, vessels, and recipes. Uses MongoDB (Mongoose) for data, Pinia for state management, and Nuxt UI v4 for the component library.
 
 ## Commands
 

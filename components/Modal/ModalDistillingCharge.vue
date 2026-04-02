@@ -36,10 +36,10 @@ const additions = ref<DistillingAddition[]>([])
 
 const volumeUnits = ['gallon', 'L', 'mL', 'fl oz']
 
-// Vessels containing this batch
+// Vessels containing this batch (exclude stills — they are the destination, not the source)
 const sourceVesselOptions = computed(() => {
   return vesselStore.vessels
-    .filter((v) => v.contents?.some((c) => c.batch === props.batchId && c.volume > 0.001))
+    .filter((v) => v.type !== 'Still' && v.contents?.some((c) => c.batch === props.batchId && c.volume > 0.001))
     .map((v) => {
       const entry = v.contents!.find((c) => c.batch === props.batchId)!
       return {
@@ -206,21 +206,23 @@ const fillMax = () => {
         <div>
           <div class="flex items-center justify-between mb-2">
             <div class="text-xs text-parchment/60 uppercase tracking-wider">Source Vessels</div>
-            <button
+            <UButton
               v-if="sourceVesselOptions.length > 1"
-              class="text-xs text-copper hover:text-gold transition-colors"
+              variant="link"
+              size="xs"
+              class="text-copper hover:text-gold"
+              :label="allSelected ? 'Deselect All' : 'Select All'"
               @click="toggleSelectAll"
-            >
-              {{ allSelected ? 'Deselect All' : 'Select All' }}
-            </button>
+            />
           </div>
           <div v-if="sourceVesselOptions.length === 0" class="text-xs text-parchment/40 italic">
             No vessels contain this batch
           </div>
           <div v-else class="space-y-1.5">
-            <button
+            <UButton
               v-for="option in sourceVesselOptions"
               :key="option.value"
+              variant="ghost"
               :class="[
                 'w-full flex items-center gap-2 px-3 py-2 rounded-lg border text-left text-sm transition-all',
                 sourceVessels.includes(option.value)
@@ -234,7 +236,7 @@ const fillMax = () => {
                 :class="sourceVessels.includes(option.value) ? 'text-copper' : 'text-parchment/30'"
               />
               <span class="flex-1 truncate">{{ option.label }}</span>
-            </button>
+            </UButton>
           </div>
           <div v-if="sourceVessels.length > 0 && remainingVolume > 0" class="mt-1.5 text-xs text-parchment/50">
             Total: {{ remainingVolume.toFixed(1) }} {{ chargeVolumeUnit }} @ {{ remainingAbv.toFixed(1) }}% ABV

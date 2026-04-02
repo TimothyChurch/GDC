@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import type { TableColumn } from "@nuxt/ui";
 import type { Recipe } from "~/types";
-import { getPaginationRowModel } from "@tanstack/vue-table";
+import { getPaginationRowModel, getSortedRowModel } from "@tanstack/vue-table";
 
 const router = useRouter();
 const recipeStore = useRecipeStore();
@@ -9,8 +9,22 @@ const itemStore = useItemStore();
 const { confirm } = useDeleteConfirm();
 
 const { search, pagination, tableRef, filteredTotal } = useTableState(
-  computed(() => recipeStore.recipes.length)
+  computed(() => filteredRecipes.value.length)
 );
+
+const sorting = ref([{ id: "name", desc: false }]);
+
+// Category filter
+const filterClass = ref("All");
+const classOptions = computed(() => {
+  const classes = new Set(recipeStore.recipes.map((r) => r.class).filter(Boolean));
+  return ["All", ...Array.from(classes).sort()];
+});
+
+const filteredRecipes = computed(() => {
+  if (filterClass.value === "All") return recipeStore.recipes;
+  return recipeStore.recipes.filter((r) => r.class === filterClass.value);
+});
 
 const columns: TableColumn<Recipe>[] = [
   expandColumn<Recipe>(),
@@ -61,6 +75,9 @@ const openModal = async () => await modal.open();
     :loading="recipeStore.loading"
     search-placeholder="Search recipes..."
   >
+    <template #filters>
+      <USelect v-model="filterClass" :items="classOptions" class="min-w-48" />
+    </template>
     <template #actions>
       <UButton icon="i-lucide-plus-circle" size="xl" @click="newRecipe" variant="ghost">Add Recipe</UButton>
     </template>
@@ -70,8 +87,10 @@ const openModal = async () => await modal.open();
         ref="tableRef"
         v-model:global-filter="search"
         v-model:pagination="pagination"
+        v-model:sorting="sorting"
+        :sorting-options="{ getSortedRowModel: getSortedRowModel() }"
         :pagination-options="{ getPaginationRowModel: getPaginationRowModel() }"
-        :data="recipeStore.recipes"
+        :data="filteredRecipes"
         :columns="columns"
         :loading="recipeStore.loading"
         @select="(_e: Event, row: any) => router.push(`/admin/recipes/${row.original._id}`)"
@@ -95,11 +114,11 @@ const openModal = async () => await modal.open();
     <!-- Mobile card view -->
     <div class="sm:hidden space-y-3">
       <div
-        v-for="recipe in recipeStore.recipes.filter(r => {
+        v-for="recipe in filteredRecipes.filter(r => {
           if (!search) return true;
           const term = search.toLowerCase();
           return r.name.toLowerCase().includes(term) || (r.class || '').toLowerCase().includes(term) || (r.type || '').toLowerCase().includes(term);
-        })"
+        }).sort((a, b) => a.name.localeCompare(b.name))"
         :key="recipe._id"
         class="bg-charcoal rounded-lg border border-brown/30 p-4 cursor-pointer"
         @click="router.push(`/admin/recipes/${recipe._id}`)"
@@ -121,7 +140,7 @@ const openModal = async () => await modal.open();
           </div>
         </div>
       </div>
-      <BaseEmptyState v-if="recipeStore.recipes.length === 0" icon="i-lucide-book-open" title="No recipes found" description="Create a recipe to define ingredient lists for your batches" action-label="Add Recipe" @action="newRecipe" />
+      <BaseEmptyState v-if="filteredRecipes.length === 0" icon="i-lucide-book-open" title="No recipes found" description="Create a recipe to define ingredient lists for your batches" action-label="Add Recipe" @action="newRecipe" />
     </div>
   </TableWrapper>
 </template>

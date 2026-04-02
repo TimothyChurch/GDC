@@ -1,14 +1,14 @@
 export default defineEventHandler(async (event) => {
-  const cloudinary = getCloudinary()
+  const cloudinary = getCloudinary(event)
 
   const formData = await readMultipartFormData(event)
   if (!formData || formData.length === 0) {
-    throw createError({ statusCode: 400, statusMessage: 'No file uploaded' })
+    throw createError({ status: 400, statusText: 'No file uploaded' })
   }
 
   const file = formData.find(f => f.name === 'file')
   if (!file || !file.data) {
-    throw createError({ statusCode: 400, statusMessage: 'No file field found' })
+    throw createError({ status: 400, statusText: 'No file field found' })
   }
 
   const folderField = formData.find(f => f.name === 'folder')
@@ -17,14 +17,14 @@ export default defineEventHandler(async (event) => {
   // Validate file size (max 10MB)
   const maxSize = 10 * 1024 * 1024
   if (file.data.length > maxSize) {
-    throw createError({ statusCode: 400, statusMessage: 'File exceeds 10MB limit' })
+    throw createError({ status: 400, statusText: 'File exceeds 10MB limit' })
   }
 
   // Validate file type
   const mime = file.type || ''
   const allowedTypes = ['image/jpeg', 'image/png', 'image/webp', 'image/gif', 'application/pdf']
   if (!allowedTypes.includes(mime)) {
-    throw createError({ statusCode: 400, statusMessage: 'File type not allowed. Use JPEG, PNG, WebP, GIF, or PDF.' })
+    throw createError({ status: 400, statusText: 'File type not allowed. Use JPEG, PNG, WebP, GIF, or PDF.' })
   }
 
   try {
@@ -50,6 +50,6 @@ export default defineEventHandler(async (event) => {
       bytes: result.bytes,
     }
   } catch {
-    throw createError({ statusCode: 500, statusMessage: 'Upload failed' })
+    throw createError({ status: 500, statusText: 'Upload failed' })
   }
 })

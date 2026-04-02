@@ -44,6 +44,7 @@ const productionLinks: NavLink[] = [
 
   { label: "Vessels", icon: "i-lucide-container", to: "/admin/vessels" },
   { label: "Barrels", icon: "i-lucide-cylinder", to: "/admin/barrels" },
+  { label: "Bulk Spirits", icon: "i-lucide-archive", to: "/admin/bulk-spirits" },
   { label: "Production", icon: "i-lucide-factory", to: "/admin/production" },
   { label: "Proofing", icon: "i-lucide-calculator", to: "/admin/proofing" },
 ];
@@ -172,27 +173,32 @@ async function openQuickAdd(panelName: string) {
   >
     <!-- Quick-add buttons -->
     <div v-if="!collapsed" class="flex items-center gap-1.5 px-3 pt-3 pb-1">
-      <button
+      <UButton
         v-for="action in quickActions"
         :key="action.panel"
-        class="flex-1 flex items-center justify-center gap-1.5 px-2 py-1.5 rounded-lg text-xs font-medium bg-brown/20 hover:bg-gold/15 text-parchment/50 hover:text-gold border border-transparent hover:border-gold/20 transition-all duration-200 cursor-pointer"
+        :icon="action.icon"
+        :label="action.label"
+        variant="ghost"
+        color="neutral"
+        size="xs"
+        class="flex-1 bg-brown/20 hover:bg-gold/15 text-parchment/50 hover:text-gold border border-transparent hover:border-gold/20 transition-all duration-200"
         :title="`New ${action.label}`"
         @click="openQuickAdd(action.panel)"
-      >
-        <UIcon :name="action.icon" class="text-sm" />
-        <span>{{ action.label }}</span>
-      </button>
+      />
     </div>
     <div v-else class="flex flex-col items-center gap-1 px-2 pt-3 pb-1">
-      <button
+      <UButton
         v-for="action in quickActions"
         :key="action.panel"
-        class="w-10 h-8 flex items-center justify-center rounded-lg bg-brown/20 hover:bg-gold/15 text-parchment/50 hover:text-gold border border-transparent hover:border-gold/20 transition-all duration-200 cursor-pointer"
+        icon="i-lucide-plus"
+        variant="ghost"
+        color="neutral"
+        size="xs"
+        square
+        class="w-10 h-8 bg-brown/20 hover:bg-gold/15 text-parchment/50 hover:text-gold border border-transparent hover:border-gold/20 transition-all duration-200"
         :title="`New ${action.label}`"
         @click="openQuickAdd(action.panel)"
-      >
-        <UIcon name="i-lucide-plus" class="text-xs" />
-      </button>
+      />
     </div>
 
     <!-- Sidebar content -->
@@ -266,19 +272,17 @@ async function openQuickAdd(panelName: string) {
       </NuxtLink>
 
       <!-- Collapse toggle (desktop only) -->
-      <button
-        class="hidden lg:flex items-center gap-3 w-full px-3 py-2 mt-1 rounded-lg text-sm text-parchment/60 hover:text-parchment/70 hover:bg-brown/20 transition-all duration-200"
+      <UButton
+        :icon="collapsed ? 'i-lucide-chevrons-right' : 'i-lucide-chevrons-left'"
+        :label="collapsed ? undefined : 'Collapse'"
+        variant="ghost"
+        color="neutral"
+        size="sm"
+        block
+        class="hidden lg:flex mt-1 text-parchment/60 hover:text-parchment/70 hover:bg-brown/20 transition-all duration-200"
         :class="collapsed ? 'justify-center' : ''"
         @click="emit('toggleCollapse')"
-      >
-        <UIcon
-          :name="
-            collapsed ? 'i-lucide-chevrons-right' : 'i-lucide-chevrons-left'
-          "
-          class="shrink-0 text-lg"
-        />
-        <span v-if="!collapsed">Collapse</span>
-      </button>
+      />
     </div>
   </nav>
 </template>

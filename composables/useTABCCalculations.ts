@@ -164,7 +164,7 @@ export function useTABCCalculations(month: Ref<string> | ComputedRef<string>) {
       const recipe = batch.recipe ? recipeStore.getRecipeById(batch.recipe) : null
       if (!recipe?.items?.length) return
       recipe.items.forEach(ing => {
-        const item = itemStore.getItemById(ing.item)
+        const item = itemStore.getItemById(ing._id)
         const name = item?.name || 'Unknown Material'
         const unit = ing.unit || 'units'
         const key = `${name}||${unit}`

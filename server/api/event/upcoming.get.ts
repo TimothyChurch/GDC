@@ -11,8 +11,8 @@ export default defineEventHandler(async () => {
     return events;
   } catch (error) {
     throw createError({
-      statusCode: 500,
-      statusMessage: "Failed to fetch upcoming events",
+      status: 500,
+      statusText: "Failed to fetch upcoming events",
     });
   }
 });

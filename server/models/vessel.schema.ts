@@ -13,6 +13,7 @@ export const Vessel = defineMongooseModel({
 		type: {
 			type: String,
 			required: true,
+			index: true,
 		},
 		stats: {
 			weight: {
@@ -87,6 +88,7 @@ export const Vessel = defineMongooseModel({
 		status: {
 			type: String,
 			required: false,
+			index: true,
 		},
 		isUsed: {
 			type: Boolean,

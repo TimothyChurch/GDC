@@ -98,13 +98,16 @@ const clearFilters = () => {
     </AdminPageHeader>
 
     <div class="flex gap-1.5 overflow-x-auto pb-3 mb-1 scrollbar-hide">
-      <button
+      <UButton
         v-for="tab in menuTabs"
         :key="tab.name"
-        class="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium border whitespace-nowrap transition-colors"
+        size="xs"
+        :variant="selectedMenu === tab.name ? 'soft' : 'ghost'"
+        :color="selectedMenu === tab.name ? 'primary' : 'neutral'"
+        class="rounded-full whitespace-nowrap"
         :class="selectedMenu === tab.name
-          ? 'bg-gold/15 text-gold border-gold/20'
-          : 'text-parchment/50 border-brown/20 hover:text-parchment/70 hover:border-brown/30'"
+          ? 'bg-gold/15 text-gold border border-gold/20'
+          : 'text-parchment/50 border border-brown/20 hover:text-parchment/70 hover:border-brown/30'"
         @click="selectedMenu = tab.name"
       >
         {{ tab.name }}
@@ -114,7 +117,7 @@ const clearFilters = () => {
         >
           {{ tab.count }}
         </span>
-      </button>
+      </UButton>
     </div>
 
     <!-- Search & Filters -->

@@ -22,13 +22,14 @@ const show = computed(() => legend.value.length >= 2)
 
 <template>
   <div v-if="show" class="mb-3">
-    <button
-      class="flex items-center gap-1 text-[10px] uppercase tracking-wider text-parchment/40 hover:text-parchment/60 transition-colors"
+    <UButton
+      variant="link"
+      size="xs"
+      :icon="collapsed ? 'i-lucide-chevron-right' : 'i-lucide-chevron-down'"
+      label="Batch Colors"
+      class="text-[10px] uppercase tracking-wider text-parchment/40 hover:text-parchment/60"
       @click="collapsed = !collapsed"
-    >
-      <UIcon :name="collapsed ? 'i-lucide-chevron-right' : 'i-lucide-chevron-down'" class="text-xs" />
-      Batch Colors
-    </button>
+    />
     <div v-if="!collapsed" class="flex flex-wrap gap-x-3 gap-y-1 mt-1.5">
       <div
         v-for="entry in legend"

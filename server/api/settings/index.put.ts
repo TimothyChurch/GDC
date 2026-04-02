@@ -11,7 +11,7 @@ export default defineEventHandler(async (event) => {
       { new: true, upsert: true, lean: true }
     );
     if (!updated) {
-      throw createError({ statusCode: 500, statusMessage: "Failed to update settings" });
+      throw createError({ status: 500, statusText: "Failed to update settings" });
     }
     // Convert Map to plain object for JSON serialization
     if (updated.barrelAgeDefaults instanceof Map) {
@@ -20,6 +20,6 @@ export default defineEventHandler(async (event) => {
     return updated;
   } catch (error: unknown) {
     if (isH3Error(error)) throw error;
-    throw createError({ statusCode: 500, statusMessage: "Failed to update settings" });
+    throw createError({ status: 500, statusText: "Failed to update settings" });
   }
 });

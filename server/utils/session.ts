@@ -7,10 +7,10 @@ export interface SessionData {
 
 let cachedSecret: string | null = null;
 
-function getSessionSecret(): string {
+function getSessionSecret(event: H3Event): string {
   if (cachedSecret) return cachedSecret;
 
-  const config = useRuntimeConfig();
+  const config = useRuntimeConfig(event);
   const secret = config.sessionSecret as string;
   if (!secret || secret.length < 32) {
     throw new Error('SESSION_SECRET env var must be set and be at least 32 characters');
@@ -21,7 +21,7 @@ function getSessionSecret(): string {
 
 export async function getAuthSession(event: H3Event) {
   return await useSession<SessionData>(event, {
-    password: getSessionSecret(),
+    password: getSessionSecret(event),
     maxAge: 60 * 60 * 24 * 7, // 7 days
     name: 'gdc-session',
     cookie: {

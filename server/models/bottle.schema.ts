@@ -9,14 +9,17 @@ export const Bottle = defineMongooseModel({
     name: {
       type: String,
       required: true,
+      index: true,
     },
     class: {
       type: String,
       required: false,
+      index: true,
     },
     type: {
       type: String,
       required: false,
+      index: true,
     },
     abv: {
       type: Number,
@@ -55,6 +58,7 @@ export const Bottle = defineMongooseModel({
       type: Boolean,
       required: false,
       default: false,
+      index: true,
     },
   },
   options: { timestamps: true },

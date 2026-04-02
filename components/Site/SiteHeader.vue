@@ -68,13 +68,14 @@ const isActive = (link: string) => {
             format="webp"
           />
         </NuxtLink>
-        <button
-          @click="mobileOpen = true"
-          class="text-parchment/80 hover:text-gold transition-colors bg-transparent p-2"
+        <UButton
+          variant="ghost"
+          icon="carbon:menu"
+          size="lg"
+          class="text-parchment/80 hover:text-gold"
           aria-label="Open menu"
-        >
-          <Icon name="carbon:menu" class="text-2xl" />
-        </button>
+          @click="mobileOpen = true"
+        />
       </div>
     </div>
 
@@ -91,13 +92,14 @@ const isActive = (link: string) => {
               height="64"
               format="webp"
             />
-            <button
-              @click="mobileOpen = false"
-              class="text-parchment/60 hover:text-gold transition-colors bg-transparent p-1"
+            <UButton
+              variant="ghost"
+              icon="carbon:close"
+              size="lg"
+              class="text-parchment/60 hover:text-gold"
               aria-label="Close menu"
-            >
-              <Icon name="carbon:close" class="text-2xl" />
-            </button>
+              @click="mobileOpen = false"
+            />
           </div>
 
           <nav class="flex flex-col gap-1">
@@ -123,13 +125,14 @@ const isActive = (link: string) => {
               <Icon name="carbon:user" class="text-xl" />
               <span class="text-lg font-semibold">Admin</span>
             </NuxtLink>
-            <button
+            <UButton
+              variant="ghost"
+              :icon="isDark ? 'carbon:moon' : 'carbon:sun'"
+              :label="isDark ? 'Dark Mode' : 'Light Mode'"
+              block
+              class="justify-start px-4 py-3 text-parchment/80 hover:text-gold hover:bg-gold/5 text-lg font-semibold"
               @click="toggleDark(); mobileOpen = false"
-              class="flex items-center gap-3 px-4 py-3 rounded-lg text-parchment/80 hover:text-gold hover:bg-gold/5 transition-colors bg-transparent w-full text-left"
-            >
-              <Icon :name="isDark ? 'carbon:moon' : 'carbon:sun'" class="text-xl" />
-              <span class="text-lg font-semibold">{{ isDark ? 'Dark Mode' : 'Light Mode' }}</span>
-            </button>
+            />
           </div>
         </div>
       </template>

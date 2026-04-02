@@ -1,9 +1,9 @@
 export default defineEventHandler(async (event) => {
-  const cloudinary = getCloudinary()
+  const cloudinary = getCloudinary(event)
 
   const publicId = getRouterParam(event, 'id')
   if (!publicId) {
-    throw createError({ statusCode: 400, statusMessage: 'Public ID required' })
+    throw createError({ status: 400, statusText: 'Public ID required' })
   }
 
   // The public ID comes URL-encoded with slashes replaced
@@ -13,13 +13,13 @@ export default defineEventHandler(async (event) => {
 
   // Validate that the ID starts with our folder prefix to prevent arbitrary deletions
   if (!fullId.startsWith('gdc/')) {
-    throw createError({ statusCode: 400, statusMessage: 'Invalid asset ID' })
+    throw createError({ status: 400, statusText: 'Invalid asset ID' })
   }
 
   try {
     const result = await cloudinary.uploader.destroy(fullId)
     return { success: result.result === 'ok', result: result.result }
   } catch {
-    throw createError({ statusCode: 500, statusMessage: 'Delete failed' })
+    throw createError({ status: 500, statusText: 'Delete failed' })
   }
 })

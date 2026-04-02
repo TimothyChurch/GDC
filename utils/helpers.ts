@@ -1,4 +1,5 @@
 import type { Item, Recipe, Bottle } from '~/types';
+import { calculateProofGallons } from '~/utils/proofGallons';
 
 export const latestPrice = (item: Item | string): number => {
 	const itemStore = useItemStore();
@@ -43,10 +44,10 @@ export const recipePrice = (recipe: Recipe | string) => {
 	const { ingredientCost } = useUnitConversion();
 
 	const selectedRecipe = typeof recipe === 'string' ? recipeStore.getRecipeById(recipe) : recipe;
-	if (!selectedRecipe || selectedRecipe.items.length === 0) return 0;
+	if (!selectedRecipe) return 0;
 
 	let total = 0;
-	for (const ingredient of selectedRecipe.items) {
+	for (const ingredient of selectedRecipe.items || []) {
 		const item = itemStore.getItemById(ingredient._id);
 		const pricePerUnit = latestPrice(ingredient._id);
 		total += ingredientCost(
@@ -56,7 +57,25 @@ export const recipePrice = (recipe: Recipe | string) => {
 			item?.inventoryUnit || ingredient.unit
 		);
 	}
+
+	// Add bulk spirit costs
+	if (selectedRecipe.bulkSpirits?.length) {
+		const bulkSpiritStore = useBulkSpiritStore();
+		for (const bs of selectedRecipe.bulkSpirits) {
+			const spirit = bulkSpiritStore.getBulkSpiritById(bs.bulkSpirit);
+			if (spirit && spirit.costPerProofGallon > 0) {
+				total += bulkSpiritIngredientCost(bs.volume, bs.volumeUnit, spirit);
+			}
+		}
+	}
+
 	return total;
+};
+
+/** Calculate the cost of a bulk spirit ingredient based on volume and cost per proof gallon */
+export const bulkSpiritIngredientCost = (volume: number, volumeUnit: string, spirit: { abv: number; costPerProofGallon: number }): number => {
+	const pg = calculateProofGallons(volume, volumeUnit, spirit.abv);
+	return pg * spirit.costPerProofGallon;
 };
 
 export const latestProduction = (bottle: string) => {

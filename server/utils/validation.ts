@@ -7,7 +7,7 @@ import mongoose from "mongoose";
  */
 export function validateObjectId(id: string | undefined, label = 'ID'): string {
   if (!id || !mongoose.Types.ObjectId.isValid(id)) {
-    throw createError({ statusCode: 400, statusMessage: `Invalid ${label} format` });
+    throw createError({ status: 400, statusText: `Invalid ${label} format` });
   }
   return id;
 }
@@ -45,8 +45,8 @@ export async function validateBody(
   } catch (error) {
     if (error instanceof yup.ValidationError) {
       throw createError({
-        statusCode: 400,
-        statusMessage: "Validation Error",
+        status: 400,
+        statusText: "Validation Error",
         data: error.errors,
       });
     }
@@ -79,7 +79,8 @@ export const batchCreateSchema = yup.object({
     .positive("Must be greater than 0")
     .required("Batch size is required"),
   batchSizeUnit: yup.string().required("Unit is required"),
-  pipeline: yup.array().of(yup.string()).min(1, "Pipeline must have at least one stage").required("Pipeline is required"),
+  pipeline: yup.array().of(yup.string()).min(1, "Pipeline must have at least one stage").required("Pipeline is required")
+    .test("unique-stages", "Pipeline must not contain duplicate stages", (val) => !val || new Set(val).size === val.length),
   currentStage: yup.string().required("Current stage is required"),
 });
 
@@ -166,7 +167,8 @@ export const purchaseOrderCreateSchema = yup.object({
 
 export const recipeCreateSchema = yup.object({
   name: yup.string().required("Name is required"),
-  pipeline: yup.array().of(yup.string()).min(1, "Pipeline must have at least one stage"),
+  pipeline: yup.array().of(yup.string()).min(1, "Pipeline must have at least one stage")
+    .test("unique-stages", "Pipeline must not contain duplicate stages", (val) => !val || new Set(val).size === val.length),
   pipelineTemplate: yup.string(),
 });
 
@@ -241,6 +243,14 @@ export const vesselCreateSchema = yup.object({
   previousContents: yup.string(),
 });
 
+export const bulkSpiritCreateSchema = yup.object({
+  name: yup.string().required("Name is required"),
+  spiritClass: yup.string().required("Spirit class is required"),
+  vessel: yup.string().nullable(),
+  volumeUnit: yup.string().default("gallon"),
+  notes: yup.string(),
+});
+
 // ─── Update Schemas (all fields optional) ────────────────────
 
 export const userUpdateSchema = yup.object({
@@ -256,7 +266,8 @@ export const batchUpdateSchema = yup.object({
   recipe: yup.string(),
   batchSize: yup.number().positive("Must be greater than 0"),
   batchSizeUnit: yup.string(),
-  pipeline: yup.array().of(yup.string()),
+  pipeline: yup.array().of(yup.string())
+    .test("unique-stages", "Pipeline must not contain duplicate stages", (val) => !val || new Set(val).size === val.length),
   currentStage: yup.string(),
   status: yup.string().oneOf(['active', 'completed', 'cancelled']),
   batchCost: yup.number().min(0),
@@ -334,7 +345,8 @@ export const purchaseOrderUpdateSchema = yup.object({
 
 export const recipeUpdateSchema = yup.object({
   name: yup.string(),
-  pipeline: yup.array().of(yup.string()),
+  pipeline: yup.array().of(yup.string())
+    .test("unique-stages", "Pipeline must not contain duplicate stages", (val) => !val || new Set(val).size === val.length),
   pipelineTemplate: yup.string(),
 });
 
@@ -365,6 +377,14 @@ export const vesselUpdateSchema = yup.object({
   type: yup.string(),
   isUsed: yup.boolean(),
   previousContents: yup.string(),
+});
+
+export const bulkSpiritUpdateSchema = yup.object({
+  name: yup.string(),
+  spiritClass: yup.string(),
+  vessel: yup.string().nullable(),
+  notes: yup.string(),
+  status: yup.string().oneOf(["active", "depleted"]),
 });
 
 export const equipmentLogCreateSchema = yup.object({

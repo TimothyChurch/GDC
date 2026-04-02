@@ -56,8 +56,8 @@ export default defineEventHandler(async (event) => {
     };
   } catch (error) {
     throw createError({
-      statusCode: 500,
-      statusMessage: "Failed to submit request",
+      status: 500,
+      statusText: "Failed to submit request",
     });
   }
 });

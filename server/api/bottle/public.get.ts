@@ -9,8 +9,8 @@ export default defineCachedEventHandler(
       return bottles;
     } catch {
       throw createError({
-        statusCode: 500,
-        statusMessage: 'Failed to fetch public bottles',
+        status: 500,
+        statusText: 'Failed to fetch public bottles',
       });
     }
   },

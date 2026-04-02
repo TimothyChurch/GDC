@@ -139,12 +139,13 @@ function formatDate(date: Date | string): string {
 
       <!-- Show more -->
       <div v-if="hasMore && !showAll" class="relative z-10 pl-9 pt-1">
-        <button
-          class="text-xs text-gold hover:text-copper transition-colors"
+        <UButton
+          variant="link"
+          size="xs"
+          class="text-gold hover:text-copper"
+          :label="`Show ${entries.length - INITIAL_COUNT} more entries`"
           @click="showAll = true"
-        >
-          Show {{ entries.length - INITIAL_COUNT }} more entries
-        </button>
+        />
       </div>
     </div>
   </div>

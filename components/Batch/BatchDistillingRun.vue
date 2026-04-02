@@ -17,6 +17,32 @@ const emit = defineEmits<{
 const batchStore = useBatchStore()
 const vesselStore = useVesselStore()
 
+// Per-run edit mode: only editable if parent editing AND user explicitly clicks edit (or run is new/empty)
+const runEditing = ref(false)
+
+// A run is considered "has data" if it has output or collected cuts saved
+const hasData = computed(() => {
+  const r = props.run
+  if (r.runType === 'stripping' && r.output?.volume && r.output.volume > 0) return true
+  if (r.runType === 'spirit' && r.collected?.hearts?.volume && r.collected.hearts.volume > 0) return true
+  if (r.total?.volume && r.total.volume > 0) return true
+  return false
+})
+
+// Effective editing: parent must be in edit mode, AND either the run is new/empty or user clicked edit
+const isRunEditing = computed(() => {
+  if (!props.editing) return false
+  // New/empty runs are always editable
+  if (!hasData.value && !props.run.completed) return true
+  // Otherwise only if user clicked edit
+  return runEditing.value
+})
+
+// When parent editing turns off, reset run edit state
+watch(() => props.editing, (val) => {
+  if (!val) runEditing.value = false
+})
+
 // Collapse/expand logic
 const globalExpanded = inject<Ref<boolean | null>>('distillingRunsGlobalExpanded', ref(null))
 const localCollapsed = ref(!props.editing)
@@ -34,10 +60,10 @@ watch(globalExpanded, (val) => {
 }, { immediate: false })
 
 // Effective collapsed state: never collapse while editing
-const collapsed = computed(() => props.editing ? false : localCollapsed.value)
+const collapsed = computed(() => isRunEditing.value ? false : localCollapsed.value)
 
 const toggleCollapsed = () => {
-  if (props.editing) return
+  if (isRunEditing.value) return
   localCollapsed.value = !localCollapsed.value
 }
 
@@ -120,7 +146,10 @@ const ensureOutput = () => {
   }
 }
 
-// Auto-initialize the right structure when run type changes
+// Auto-initialize the right structure on load and when run type changes
+if (local.value.runType === 'spirit') ensureCollected()
+if (local.value.runType === 'stripping') ensureOutput()
+
 watch(() => local.value.runType, (type) => {
   if (type === 'spirit') ensureCollected()
   if (type === 'stripping') ensureOutput()
@@ -206,9 +235,102 @@ const save = async () => {
       }
     }
     await batchStore.updateDistillingRun(props.batchId, props.runIndex, data)
+    // After save, exit run edit mode
+    runEditing.value = false
   } finally {
     saving.value = false
   }
+}
+
+// Complete run: saves output, empties the still, adds actual distillation output to destination vessel
+const completing = ref(false)
+const completeRun = async () => {
+  completing.value = true
+  try {
+    // Build save data
+    const data = { ...local.value }
+    if (calculatedTotal.value) {
+      data.total = calculatedTotal.value
+    }
+    data.completed = true
+
+    // Clean empty vessel strings
+    if (data.output && !data.output.vessel) data.output.vessel = undefined
+    if (data.collected) {
+      for (const key of cutLabels) {
+        const cut = data.collected[key]
+        if (cut && !cut.vessel) cut.vessel = undefined
+      }
+    }
+
+    // Get the stage vessel (the still)
+    const batch = batchStore.items.find(b => b._id === props.batchId)
+    const stillId = batch?.stages?.distilling?.vessel
+
+    if (stillId) {
+      // Capture the batch's value from the still before emptying (proportional to batch cost)
+      const still = vesselStore.getVesselById(stillId)
+      const stillBatchEntry = still?.contents?.find(c => c.batch === props.batchId)
+      const chargeValue = stillBatchEntry?.value || 0
+
+      // Step 1: Empty the still of this batch's contents (distillation changed the liquid)
+      if (still?.contents) {
+        still.contents = still.contents.filter(c => c.batch !== props.batchId)
+        vesselStore.vessel = still
+        await vesselStore.updateVessel()
+      }
+
+      // Step 2: Add the actual distillation output to destination vessel(s), carrying forward the value
+      if (data.runType === 'stripping' && data.output?.vessel && data.output.vessel !== 'disposed') {
+        // Stripping: all value from the charge transfers to the output
+        await vesselStore.addContents(data.output.vessel, {
+          batch: props.batchId,
+          volume: data.output.volume || 0,
+          volumeUnit: data.output.volumeUnit || 'gallon',
+          abv: data.output.abv || 0,
+          value: chargeValue,
+        })
+      } else if (data.runType === 'spirit' && data.collected) {
+        // Spirit: all value goes to hearts (the product); heads/tails have no value
+        for (const key of cutLabels) {
+          const cut = data.collected[key]
+          if (!cut || !cut.vessel || cut.vessel === 'disposed' || cut.disposed) continue
+          if ((cut.volume || 0) <= 0) continue
+          await vesselStore.addContents(cut.vessel, {
+            batch: props.batchId,
+            volume: cut.volume || 0,
+            volumeUnit: cut.volumeUnit || 'gallon',
+            abv: cut.abv || 0,
+            value: key === 'hearts' ? chargeValue : 0,
+          })
+        }
+      }
+    }
+
+    await batchStore.updateDistillingRun(props.batchId, props.runIndex, data)
+    runEditing.value = false
+  } finally {
+    completing.value = false
+  }
+}
+
+// Can complete: run has output data (stripping: output vessel + volume, spirit: hearts volume)
+const canComplete = computed(() => {
+  if (props.run.completed) return false
+  const r = local.value
+  if (r.runType === 'stripping') {
+    return (r.output?.volume || 0) > 0 && !!r.output?.vessel
+  }
+  if (r.runType === 'spirit') {
+    return (r.collected?.hearts?.volume || 0) > 0
+  }
+  return false
+})
+
+// Cancel editing and revert local changes
+const cancelEdit = () => {
+  runEditing.value = false
+  local.value = structuredClone(toRaw(props.run))
 }
 
 // Format date for display
@@ -232,16 +354,16 @@ const summaryProofGallons = computed(() => {
 </script>
 
 <template>
-  <div class="bg-brown/5 rounded-lg border border-brown/20 overflow-hidden">
+  <div class="bg-brown/5 rounded-lg border border-brown/20 overflow-hidden" :class="{ 'border-green-500/30': run.completed }">
     <!-- Collapsed summary row / Header -->
     <div
       class="flex items-center gap-2 px-4 py-3 cursor-pointer select-none transition-colors hover:bg-brown/10"
-      :class="{ 'cursor-default': editing }"
+      :class="{ 'cursor-default': isRunEditing }"
       @click="toggleCollapsed"
     >
       <!-- Chevron indicator (hidden when editing) -->
       <UIcon
-        v-if="!editing"
+        v-if="!isRunEditing"
         :name="collapsed ? 'i-lucide-chevron-right' : 'i-lucide-chevron-down'"
         class="text-parchment/40 shrink-0 transition-transform duration-200"
       />
@@ -257,6 +379,15 @@ const summaryProofGallons = computed(() => {
       >
         {{ local.runType || 'unset' }}
       </UBadge>
+      <UBadge
+        v-if="run.completed"
+        color="success"
+        variant="subtle"
+        size="xs"
+        class="shrink-0"
+      >
+        Complete
+      </UBadge>
 
       <!-- Collapsed summary details -->
       <template v-if="collapsed">
@@ -270,8 +401,16 @@ const summaryProofGallons = computed(() => {
       <template v-else>
         <span class="ml-auto" />
         <span class="text-xs text-parchment/50">{{ formatDate(local.date) }}</span>
+        <!-- Edit button for completed/saved runs -->
         <UButton
-          v-if="editing"
+          v-if="editing && !isRunEditing && hasData"
+          icon="i-lucide-pencil"
+          variant="ghost"
+          size="xs"
+          @click.stop="runEditing = true"
+        />
+        <UButton
+          v-if="isRunEditing"
           icon="i-lucide-trash-2"
           color="error"
           variant="ghost"
@@ -289,7 +428,7 @@ const summaryProofGallons = computed(() => {
       <div class="overflow-hidden">
         <div class="px-4 pb-4">
 
-    <template v-if="editing">
+    <template v-if="isRunEditing">
       <!-- Editing: Run Type & Date -->
       <div class="grid grid-cols-2 sm:grid-cols-3 gap-3 mb-4">
         <UFormField label="Run Type">
@@ -372,6 +511,7 @@ const summaryProofGallons = computed(() => {
         <div class="text-xs text-parchment/60 uppercase tracking-wider mb-2">Collected Cuts</div>
         <div class="space-y-2">
           <div v-for="cut in cutLabels" :key="cut" class="p-3 rounded border border-brown/10 bg-brown/5">
+            <template v-if="local.collected?.[cut]">
             <div class="flex items-center justify-between mb-2">
               <div class="text-xs font-semibold text-parchment/60 uppercase">{{ cutDisplayLabels[cut] || cut }}</div>
               <label class="flex items-center gap-1.5 cursor-pointer">
@@ -410,6 +550,7 @@ const summaryProofGallons = computed(() => {
                 <UInput v-model.number="local.collected![cut]!.abv" type="number" step="0.1" placeholder="0" />
               </UFormField>
             </div>
+            </template>
           </div>
         </div>
       </div>
@@ -431,9 +572,29 @@ const summaryProofGallons = computed(() => {
         </UFormField>
       </div>
 
-      <!-- Save -->
-      <div class="flex justify-end">
-        <UButton @click="save" :loading="saving" size="sm">Save Run</UButton>
+      <!-- Action buttons -->
+      <div class="flex items-center gap-2 justify-end">
+        <!-- Cancel edit (for runs that already have data) -->
+        <UButton
+          v-if="hasData"
+          variant="ghost"
+          color="neutral"
+          size="sm"
+          @click="cancelEdit"
+        >
+          Cancel
+        </UButton>
+        <UButton @click="save" :loading="saving" size="sm" variant="outline">Save Run</UButton>
+        <UButton
+          v-if="canComplete"
+          @click="completeRun"
+          :loading="completing"
+          size="sm"
+          color="success"
+          icon="i-lucide-check"
+        >
+          Complete Run
+        </UButton>
       </div>
     </template>
 

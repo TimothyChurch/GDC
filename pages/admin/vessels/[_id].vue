@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { getBarrelAgeDefault } from '~/composables/definitions'
+import { differenceInDays } from 'date-fns'
 
 definePageMeta({ layout: 'admin' })
 
@@ -69,11 +70,15 @@ const resolvedContents = computed(() => {
   })
 })
 
+const fillDate = computed(() => {
+  if (!vessel.value?.contents?.length) return null
+  const batch = batchStore.getBatchById(vessel.value.contents[0].batch)
+  return (batch?.stages as any)?.barrelAging?.entry?.date ? new Date((batch?.stages as any).barrelAging.entry.date) : null
+})
+
 const agingDuration = computed(() => {
-  if (vessel.value?.type !== 'Barrel' || !vessel.value?.createdAt) return null
-  const filled = new Date(vessel.value.createdAt)
-  const now = new Date()
-  const days = Math.floor((now.getTime() - filled.getTime()) / (1000 * 60 * 60 * 24))
+  if (vessel.value?.type !== 'Barrel' || !fillDate.value) return null
+  const days = differenceInDays(new Date(), fillDate.value)
   if (days < 30) return `${days} days`
   const months = Math.floor(days / 30)
   if (months < 12) return `${months} month${months > 1 ? 's' : ''}`
@@ -90,12 +95,10 @@ const effectiveTargetAge = computed(() => {
 })
 
 const barrelAgeProgress = computed(() => {
-  if (!vessel.value || vessel.value.type !== 'Barrel' || !vessel.value.createdAt) return null
+  if (!vessel.value || vessel.value.type !== 'Barrel' || !fillDate.value) return null
   const target = effectiveTargetAge.value
   if (!target) return null
-  const filled = new Date(vessel.value.createdAt)
-  const now = new Date()
-  const days = (now.getTime() - filled.getTime()) / (1000 * 60 * 60 * 24)
+  const days = differenceInDays(new Date(), fillDate.value)
   const months = parseFloat((days / 30.44).toFixed(1))
   const percent = Math.min(100, Math.round((months / target) * 100))
   return { months, target, percent }

@@ -27,6 +27,6 @@ export default defineEventHandler(async (event) => {
 
     return await Inventory.find(filter).sort({ date: -1 }).lean();
   } catch (error) {
-    throw createError({ statusCode: 500, statusMessage: "Failed to fetch inventory" });
+    throw createError({ status: 500, statusText: "Failed to fetch inventory" });
   }
 });

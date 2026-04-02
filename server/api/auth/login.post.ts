@@ -17,8 +17,8 @@ export default defineEventHandler(async (event) => {
   const attempts = loginAttempts.get(ip);
   if (attempts && attempts.count >= 5) {
     throw createError({
-      statusCode: 429,
-      statusMessage: 'Too many login attempts. Try again in 15 minutes.',
+      status: 429,
+      statusText: 'Too many login attempts. Try again in 15 minutes.',
     });
   }
 
@@ -32,7 +32,7 @@ export default defineEventHandler(async (event) => {
     current.count++;
     loginAttempts.set(ip, current);
     console.warn(`[AUTH] Failed login for ${validated.email} from ${ip} (unknown user)`);
-    throw createError({ statusCode: 401, statusMessage: 'Invalid credentials' });
+    throw createError({ status: 401, statusText: 'Invalid credentials' });
   }
 
   const user = users[0];
@@ -59,7 +59,7 @@ export default defineEventHandler(async (event) => {
     current.count++;
     loginAttempts.set(ip, current);
     console.warn(`[AUTH] Failed login for ${validated.email} from ${ip}`);
-    throw createError({ statusCode: 401, statusMessage: 'Invalid credentials' });
+    throw createError({ status: 401, statusText: 'Invalid credentials' });
   }
 
   // Clear attempts on successful login

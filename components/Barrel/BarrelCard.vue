@@ -1,10 +1,10 @@
 <script setup lang="ts">
 import type { Vessel } from '~/types'
 import { differenceInDays } from 'date-fns'
+import { getBarrelAgeDefault } from '~/composables/definitions'
 
 const props = defineProps<{
   vessel: Vessel
-  targetAgeDays?: number
 }>()
 
 const emit = defineEmits<{
@@ -51,8 +51,13 @@ const ageDisplay = computed(() => {
   return remainingMonths > 0 ? `${years}y ${remainingMonths}mo` : `${years}y`
 })
 
+const effectiveTargetAgeDays = computed(() => {
+  const months = props.vessel.targetAge || getBarrelAgeDefault(props.vessel.barrel?.size) || 0
+  return months * 30
+})
+
 const atTarget = computed(() =>
-  props.targetAgeDays ? ageDays.value >= props.targetAgeDays : false
+  effectiveTargetAgeDays.value ? ageDays.value >= effectiveTargetAgeDays.value : false
 )
 
 const ageFraction = computed(() => {

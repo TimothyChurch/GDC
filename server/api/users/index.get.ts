@@ -4,6 +4,6 @@ export default defineEventHandler(async (event) => {
 	try {
 		return await User.find({}).select('-password').lean();
 	} catch (error) {
-		throw createError({ statusCode: 500, statusMessage: 'Failed to fetch users' });
+		throw createError({ status: 500, statusText: 'Failed to fetch users' });
 	}
 });

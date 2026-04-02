@@ -61,6 +61,7 @@ export interface DistillingRun {
 	runNumber?: number;
 	runType?: 'stripping' | 'spirit';
 	date?: Date;
+	completed?: boolean;
 	chargeVolume?: number;
 	chargeVolumeUnit?: string;
 	chargeAbv?: number;

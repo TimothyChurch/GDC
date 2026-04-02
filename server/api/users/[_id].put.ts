@@ -17,16 +17,17 @@ export default defineEventHandler(async (event) => {
 		);
 		if (!user) {
 			throw createError({
-				statusCode: 404,
-				statusMessage: "User not found",
+				status: 404,
+				statusText: "User not found",
 			});
 		}
 		const { password, ...userWithoutPassword } = user.toObject();
 		return userWithoutPassword;
-	} catch (error) {
+	} catch (error: any) {
+		if (error?.status) throw error;
 		throw createError({
-			statusCode: 500,
-			statusMessage: "Failed to update user",
+			status: 500,
+			statusText: "Failed to update user",
 		});
 	}
 });

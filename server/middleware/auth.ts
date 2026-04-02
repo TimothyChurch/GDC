@@ -45,8 +45,8 @@ export default defineEventHandler(async (event) => {
   const session = await getAuthSession(event);
   if (!session.data.userId) {
     throw createError({
-      statusCode: 401,
-      statusMessage: 'Unauthorized',
+      status: 401,
+      statusText: 'Unauthorized',
     });
   }
 });

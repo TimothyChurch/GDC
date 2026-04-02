@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { getNextStageForActive, STAGE_VESSEL_TYPE } from '~/composables/batchPipeline'
+import { getNextStage, STAGE_VESSEL_TYPE } from '~/composables/batchPipeline'
 
 const batchStore = useBatchStore();
 const vesselStore = useVesselStore();
@@ -8,7 +8,7 @@ const vesselStore = useVesselStore();
 const getNextVesselOptions = (batchId: string) => {
   const batch = batchStore.getBatchById(batchId)
   if (!batch) return []
-  const next = getNextStageForActive(batch.pipeline, batch.currentStage, batch.currentStage).nextStage
+  const next = getNextStage(batch.pipeline, batch.currentStage)
   if (!next) return []
   const vesselType = STAGE_VESSEL_TYPE[next]
   if (!vesselType) return []
@@ -23,7 +23,7 @@ const getNextVesselOptions = (batchId: string) => {
 const getNextStageLabel = (batchId: string) => {
   const batch = batchStore.getBatchById(batchId)
   if (!batch) return 'Advance'
-  const next = getNextStageForActive(batch.pipeline, batch.currentStage, batch.currentStage).nextStage
+  const next = getNextStage(batch.pipeline, batch.currentStage)
   return next ? `Move to ${next}` : 'Advance'
 }
 
@@ -36,7 +36,7 @@ const advanceFromMashTun = async (mashTunId: string, targetVesselId: string) => 
   for (const batchId of batchIds) {
     const batch = batchStore.getBatchById(batchId)
     if (!batch) continue
-    const next = getNextStageForActive(batch.pipeline, batch.currentStage, batch.currentStage).nextStage
+    const next = getNextStage(batch.pipeline, batch.currentStage)
     if (next) {
       await batchStore.advanceToStage(batchId, next, { vessel: targetVesselId })
     }

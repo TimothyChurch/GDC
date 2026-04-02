@@ -27,17 +27,14 @@ export const Production = defineMongooseModel({
 			glassware: {
 				type: Schema.Types.ObjectId,
 				ref: 'Item',
-				required: true,
 			},
 			cap: {
 				type: Schema.Types.ObjectId,
 				ref: 'Item',
-				required: true,
 			},
 			label: {
 				type: Schema.Types.ObjectId,
 				ref: 'Item',
-				required: true,
 			},
 		},
 		quantity: {

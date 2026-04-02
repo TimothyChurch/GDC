@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { STAGE_KEY_MAP, hasReachedStage as _hasReached, isCurrentStage as _isCurrent, isStageActive, hasStageVolumes, getNextStageForActive, getActiveStages } from '~/composables/batchPipeline'
+import { STAGE_KEY_MAP, hasReachedStage as _hasReached, isStageActive, hasStageVolumes, getNextStage, getActiveStages, getPreviousStage } from '~/composables/batchPipeline'
 
 definePageMeta({ layout: 'admin' })
 
@@ -42,37 +42,68 @@ const hasReached = (stageName: string) => {
   return _hasReached(batch.value.pipeline, batch.value.currentStage, stageName)
 }
 
-// A stage is editable if it has volume > 0 (or is the current stage for legacy batches)
-const isEditable = (stageName: string) => {
+// A stage can be edited if it has been reached (active or completed batches)
+const canEdit = (stageName: string) => {
   if (!batch.value) return false
-  if (hasStageVolumes(batch.value)) {
-    return isStageActive(batch.value, stageName)
-  }
-  return _isCurrent(batch.value.currentStage, stageName)
+  if (batch.value.status !== 'active' && batch.value.status !== 'completed') return false
+  return hasReached(stageName)
 }
 
-// Stages that have volume and a valid next stage — returns { stage, pipelineIndex } for each
+// Per-stage edit mode toggle
+const editingStages = ref<Set<string>>(new Set())
+
+const isEditing = (stageName: string) => editingStages.value.has(stageName)
+
+const toggleEdit = (stageName: string) => {
+  if (editingStages.value.has(stageName)) {
+    editingStages.value.delete(stageName)
+  } else {
+    editingStages.value.add(stageName)
+  }
+}
+
+// Stages that have volume and a valid next stage
 const advancableStages = computed(() => {
-  if (!batch.value || batch.value.status !== 'active') return [] as { stage: string; pipelineIndex: number }[]
-  const result: { stage: string; pipelineIndex: number }[] = []
+  if (!batch.value || batch.value.status !== 'active') return [] as string[]
+  const result: string[] = []
 
   if (hasStageVolumes(batch.value)) {
     const active = getActiveStages(batch.value)
     for (const stage of active) {
       if (stage === 'Upcoming') {
-        if (batch.value.pipeline.length > 0) result.push({ stage, pipelineIndex: -1 })
+        if (batch.value.pipeline.length > 0) result.push(stage)
       } else {
-        const { nextStage, activePipelineIndex } = getNextStageForActive(batch.value.pipeline, stage, batch.value.currentStage)
-        if (nextStage) result.push({ stage, pipelineIndex: activePipelineIndex })
+        const next = getNextStage(batch.value.pipeline, stage)
+        if (next) result.push(stage)
       }
     }
   } else {
-    // Legacy: single advance button
-    const { activePipelineIndex } = getNextStageForActive(batch.value.pipeline, batch.value.currentStage, batch.value.currentStage)
-    result.push({ stage: batch.value.currentStage, pipelineIndex: activePipelineIndex })
+    // Legacy: advance from currentStage if there's a next stage
+    const next = batch.value.currentStage === 'Upcoming'
+      ? batch.value.pipeline[0]
+      : getNextStage(batch.value.pipeline, batch.value.currentStage)
+    if (next) result.push(batch.value.currentStage)
+  }
+
+  // Include terminal Storage stages (no next stage but has volume)
+  if (hasStageVolumes(batch.value)) {
+    const active = getActiveStages(batch.value)
+    for (const stage of active) {
+      if (stage === 'Storage' && !getNextStage(batch.value.pipeline, stage) && !result.includes(stage)) {
+        result.push(stage)
+      }
+    }
   }
 
   return result
+})
+
+// Barrel Aging handles its own advancement — but only when barrels actually contain this batch
+const barrelAgingHasBarrels = computed(() => {
+  if (!batch.value?._id) return false
+  return vesselStore.vessels.some(v =>
+    v.type === 'Barrel' && v.contents?.some(c => c.batch === batch.value!._id)
+  )
 })
 
 // Dynamic component map — use resolveComponent for runtime resolution of auto-imported components
@@ -89,22 +120,40 @@ const STAGE_COMPONENTS: Record<string, ReturnType<typeof resolveComponent>> = {
   'Bottled': resolveComponent('BatchBottled'),
 }
 
-// Stages rendered in reverse order (newest first), deduplicated by name
-// (duplicate pipeline entries share stage data, so one card per unique stage)
+// Stages rendered in reverse order (newest first)
 const reversedReachedStages = computed(() => {
   if (!batch.value) return []
-  const seen = new Set<string>()
   return [...batch.value.pipeline]
-    .filter(s => {
-      if (seen.has(s)) return false
-      seen.add(s)
-      return hasReached(s) && STAGE_COMPONENTS[s]
-    })
+    .filter(s => hasReached(s) && STAGE_COMPONENTS[s])
     .reverse()
 })
 
 // Pipeline editor modal state
 const pipelineEditorOpen = ref(false)
+
+// Step back functionality
+const reverting = ref(false)
+const confirmRevertStage = ref<string | null>(null)
+
+const canStepBack = (stageName: string) => {
+  if (!batch.value) return false
+  if (batch.value.status !== 'active' && batch.value.status !== 'completed') return false
+  if (!hasStageVolumes(batch.value)) return false
+  if (!isStageActive(batch.value, stageName)) return false
+  const prev = getPreviousStage(batch.value.pipeline, stageName)
+  return !!prev
+}
+
+const stepBack = async (stageName: string) => {
+  if (!batch.value) return
+  reverting.value = true
+  try {
+    await batchStore.revertToPreviousStage(batch.value._id, stageName)
+  } finally {
+    reverting.value = false
+    confirmRevertStage.value = null
+  }
+}
 
 </script>
 
@@ -171,7 +220,7 @@ const pipelineEditorOpen = ref(false)
     <BatchHeader :batch="batch" :recipe="recipe" />
 
     <!-- Upcoming advance action (no stage card for Upcoming) -->
-    <div v-if="batch.status === 'active' && advancableStages.some(a => a.stage === 'Upcoming')" class="flex justify-center">
+    <div v-if="batch.status === 'active' && advancableStages.includes('Upcoming')" class="flex justify-center">
       <BatchAdvanceAction
         :batch="batch"
         source-stage="Upcoming"
@@ -201,22 +250,73 @@ const pipelineEditorOpen = ref(false)
 
     <!-- Dynamic stage components — newest stage first, overview stays on top -->
     <template v-for="stage in reversedReachedStages" :key="stage">
-      <component
-        :is="STAGE_COMPONENTS[stage]"
-        :batch="batch"
-        :editing="isEditable(stage)"
-      />
-      <!-- Per-stage advance action directly below the card -->
-      <template v-for="adv in advancableStages.filter(a => a.stage === stage)" :key="`adv-${adv.stage}-${adv.pipelineIndex}`">
-        <div class="flex justify-center">
-          <BatchAdvanceAction
-            :batch="batch"
-            :source-stage="adv.stage"
-            :pipeline-index="adv.pipelineIndex"
-            @advanced="() => {}"
-          />
+      <div class="relative">
+        <!-- Edit toggle button -->
+        <div v-if="canEdit(stage)" class="absolute top-4 right-4 z-10">
+          <UButton
+            :icon="isEditing(stage) ? 'i-lucide-x' : 'i-lucide-pencil'"
+            size="xs"
+            :variant="isEditing(stage) ? 'soft' : 'ghost'"
+            :color="isEditing(stage) ? 'primary' : 'neutral'"
+            @click="toggleEdit(stage)"
+          >
+            {{ isEditing(stage) ? 'Done' : 'Edit' }}
+          </UButton>
         </div>
-      </template>
+
+        <component
+          :is="STAGE_COMPONENTS[stage]"
+          :batch="batch"
+          :editing="isEditing(stage)"
+        />
+      </div>
+
+      <!-- Per-stage actions: advance forward or step back -->
+      <div class="flex items-center justify-center gap-3">
+        <!-- Step Back button -->
+        <template v-if="canStepBack(stage)">
+          <UButton
+            v-if="confirmRevertStage !== stage"
+            icon="i-lucide-undo-2"
+            variant="ghost"
+            color="neutral"
+            size="sm"
+            class="text-parchment/40 hover:text-orange-400"
+            @click="confirmRevertStage = stage"
+          >
+            Step Back
+          </UButton>
+          <div v-else class="flex items-center gap-2 px-3 py-1.5 rounded-lg border border-orange-500/30 bg-orange-500/5">
+            <span class="text-xs text-orange-400">
+              Revert to {{ getPreviousStage(batch!.pipeline, stage) }}?
+            </span>
+            <UButton
+              size="xs"
+              color="warning"
+              :loading="reverting"
+              @click="stepBack(stage)"
+            >
+              Confirm
+            </UButton>
+            <UButton
+              size="xs"
+              variant="ghost"
+              color="neutral"
+              @click="confirmRevertStage = null"
+            >
+              Cancel
+            </UButton>
+          </div>
+        </template>
+
+        <!-- Advance forward (Barrel Aging handles its own advancement when barrels are linked) -->
+        <BatchAdvanceAction
+          v-if="advancableStages.includes(stage) && (stage !== 'Barrel Aging' || !barrelAgingHasBarrels)"
+          :batch="batch"
+          :source-stage="stage"
+          @advanced="() => {}"
+        />
+      </div>
     </template>
 
     <!-- Tasting Notes (visible on all stages) -->

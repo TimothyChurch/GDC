@@ -21,24 +21,36 @@ interface ProductionCostInput {
   bottleStore: ReturnType<typeof useBottleStore>
   batchStore: ReturnType<typeof useBatchStore>
   recipeStore: ReturnType<typeof useRecipeStore>
+  linkedBatchId?: Ref<string>
 }
 
-export function useProductionCosts({ localData, vesselStore, bottleStore, batchStore, recipeStore }: ProductionCostInput) {
-  /** Batch cost: sum of all batch content costs from selected vessels */
+export function useProductionCosts({ localData, vesselStore, bottleStore, batchStore, recipeStore, linkedBatchId }: ProductionCostInput) {
+  /** Linked batch for cost fallback (when vessel contents don't carry cost data) */
+  const linkedBatch = computed(() => {
+    const id = linkedBatchId?.value
+    if (!id) return null
+    return batchStore.getBatchById(id) || null
+  })
+
+  /** Batch cost: sum of content values from selected vessels, or fall back to batch recipeCost */
   const calculatedBatchCost = computed(() => {
     let total = 0
     if (localData.value.vessel?.length > 0) {
       localData.value.vessel.forEach((vid: any) => {
         const v = vesselStore.getVesselById(vid as unknown as string)
         v?.contents?.forEach(
-          (c: { cost: number }) => (total += c.cost || 0),
+          (c: { value?: number }) => (total += c.value || 0),
         )
       })
+    }
+    // Fall back to the linked batch's recipeCost if vessel contents had no value
+    if (total === 0 && linkedBatch.value) {
+      total = linkedBatch.value.recipeCost || linkedBatch.value.batchCost || 0
     }
     return total
   })
 
-  /** Barrel cost: sum of barrel costs from selected vessels */
+  /** Barrel cost: sum of barrel costs from selected vessels, or fall back to batch barrelCost */
   const calculatedBarrelCost = computed(() => {
     let total = 0
     if (localData.value.vessel?.length > 0) {
@@ -46,6 +58,10 @@ export function useProductionCosts({ localData, vesselStore, bottleStore, batchS
         const v = vesselStore.getVesselById(vid as unknown as string)
         total += v?.barrel?.cost || 0
       })
+    }
+    // Fall back to the linked batch's barrelCost when vessels aren't barrels
+    if (total === 0 && linkedBatch.value) {
+      total = linkedBatch.value.barrelCost || 0
     }
     return total
   })

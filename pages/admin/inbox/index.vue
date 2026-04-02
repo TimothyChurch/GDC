@@ -142,35 +142,39 @@ function formatDate(dateStr?: string): string {
     <div class="flex flex-col sm:flex-row sm:items-center gap-3 mb-6">
       <!-- Topic tabs -->
       <div class="flex flex-wrap gap-1.5">
-        <button
+        <UButton
           v-for="topic in topics"
           :key="topic"
+          :label="topic"
+          size="xs"
+          :variant="activeTopic === topic ? 'soft' : 'ghost'"
+          :color="activeTopic === topic ? 'primary' : 'neutral'"
           :class="[
-            'px-3 py-1.5 rounded-lg text-xs font-medium transition-all duration-200 cursor-pointer',
+            'transition-all duration-200',
             activeTopic === topic
               ? 'bg-gold/15 text-gold border border-gold/30'
               : 'bg-charcoal text-parchment/50 hover:text-parchment hover:bg-brown/30 border border-brown/20',
           ]"
           @click="activeTopic = topic"
-        >
-          {{ topic }}
-        </button>
+        />
       </div>
 
       <!-- Unread filter toggle -->
       <div class="sm:ml-auto flex items-center gap-2">
-        <button
+        <UButton
+          :icon="showUnreadOnly ? 'i-lucide-eye-off' : 'i-lucide-eye'"
+          :label="showUnreadOnly ? 'Unread only' : 'Show all'"
+          size="xs"
+          :variant="showUnreadOnly ? 'soft' : 'ghost'"
+          :color="showUnreadOnly ? 'warning' : 'neutral'"
           :class="[
-            'flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all duration-200 cursor-pointer',
+            'transition-all duration-200',
             showUnreadOnly
               ? 'bg-copper/15 text-copper border border-copper/30'
               : 'bg-charcoal text-parchment/50 hover:text-parchment hover:bg-brown/30 border border-brown/20',
           ]"
           @click="showUnreadOnly = !showUnreadOnly"
-        >
-          <UIcon :name="showUnreadOnly ? 'i-lucide-eye-off' : 'i-lucide-eye'" class="text-sm" />
-          {{ showUnreadOnly ? 'Unread only' : 'Show all' }}
-        </button>
+        />
       </div>
     </div>
 

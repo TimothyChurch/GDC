@@ -92,12 +92,11 @@ const inputClass = 'w-full rounded-md bg-cream dark:bg-charcoal px-3.5 py-2.5 te
             </div>
             <h3 class="text-lg font-semibold text-brown dark:text-parchment">Message Sent!</h3>
             <p class="mt-2 text-brown/70 dark:text-parchment/70">{{ responseMessage }}</p>
-            <button
+            <UButton
+              label="Send Another Message"
+              class="mt-6 bg-gold text-espresso hover:bg-copper"
               @click="status = 'idle'"
-              class="mt-6 rounded-md bg-gold px-6 py-2.5 text-sm font-semibold text-espresso hover:bg-copper transition-colors duration-300"
-            >
-              Send Another Message
-            </button>
+            />
           </div>
 
           <!-- Form -->
@@ -199,13 +198,13 @@ const inputClass = 'w-full rounded-md bg-cream dark:bg-charcoal px-3.5 py-2.5 te
             </div>
 
             <div>
-              <button
+              <UButton
                 type="submit"
                 :disabled="status === 'loading'"
-                class="rounded-md bg-gold px-8 py-3 text-sm font-semibold text-espresso hover:bg-copper transition-colors duration-300 disabled:opacity-50"
-              >
-                {{ status === 'loading' ? 'Sending...' : 'Send Message' }}
-              </button>
+                :loading="status === 'loading'"
+                :label="status === 'loading' ? 'Sending...' : 'Send Message'"
+                class="bg-gold text-espresso hover:bg-copper"
+              />
             </div>
 
             <p v-if="status === 'error'" class="text-sm text-red-500">

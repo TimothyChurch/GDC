@@ -3,8 +3,8 @@ export default defineEventHandler(async (event) => {
 
 	if (!Array.isArray(body)) {
 		throw createError({
-			statusCode: 400,
-			statusMessage: "Request body must be an array of inventory records",
+			status: 400,
+			statusText: "Request body must be an array of inventory records",
 		});
 	}
 
@@ -14,8 +14,8 @@ export default defineEventHandler(async (event) => {
 
 	if (body.length > 100) {
 		throw createError({
-			statusCode: 400,
-			statusMessage: "Cannot create more than 100 inventory records at once",
+			status: 400,
+			statusText: "Cannot create more than 100 inventory records at once",
 		});
 	}
 
@@ -31,8 +31,8 @@ export default defineEventHandler(async (event) => {
 		return await Inventory.insertMany(records);
 	} catch (error) {
 		throw createError({
-			statusCode: 500,
-			statusMessage: "Failed to create bulk inventory records",
+			status: 500,
+			statusText: "Failed to create bulk inventory records",
 		});
 	}
 });

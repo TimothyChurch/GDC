@@ -30,6 +30,6 @@ export default defineEventHandler(async () => {
     return settings;
   } catch (error: unknown) {
     if (isH3Error(error)) throw error;
-    throw createError({ statusCode: 500, statusMessage: "Failed to fetch settings" });
+    throw createError({ status: 500, statusText: "Failed to fetch settings" });
   }
 });

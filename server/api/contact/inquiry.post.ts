@@ -49,6 +49,6 @@ export default defineEventHandler(async (event) => {
 
 		return { success: true, message: "Thanks for reaching out! We'll get back to you soon." };
 	} catch (error) {
-		throw createError({ statusCode: 500, statusMessage: 'Failed to submit inquiry' });
+		throw createError({ status: 500, statusText: 'Failed to submit inquiry' });
 	}
 });

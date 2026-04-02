@@ -7,7 +7,7 @@ useServerSeoMeta({
 const router = useRouter();
 const { user, login, fetchUser } = useAuth();
 
-onMounted(async () => {
+await callOnce(async () => {
   await fetchUser();
   if (user.value) {
     router.push('/admin/dashboard');
@@ -39,11 +39,11 @@ const handleLogin = async () => {
 
 <template>
   <div
-    class="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8"
+    class="min-h-screen flex items-center justify-center bg-neutral-50 dark:bg-neutral-900 py-12 px-4 sm:px-6 lg:px-8"
   >
     <div class="max-w-md w-full space-y-8">
       <div>
-        <h2 class="mt-6 text-center text-3xl font-extrabold text-gray-900">
+        <h2 class="mt-6 text-center text-3xl font-extrabold text-neutral-900 dark:text-neutral-100">
           Sign in to your account
         </h2>
       </div>

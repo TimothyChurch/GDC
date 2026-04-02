@@ -94,6 +94,7 @@ const {
   bottleStore,
   batchStore,
   recipeStore,
+  linkedBatchId,
 })
 
 const canProceed = computed(() => {
@@ -145,6 +146,20 @@ const wizardSave = async () => {
             bottling: data.bottling,
           });
         }
+        // Empty the source vessels — batch has been bottled
+        if (data.vessel?.length > 0) {
+          for (const vesselId of data.vessel) {
+            const vessel = vesselStore.getVesselById(vesselId as unknown as string);
+            if (vessel) {
+              vessel.contents = (vessel.contents || []).filter(
+                (c: { batch: string }) => c.batch !== linkedBatchId.value
+              );
+              vesselStore.vessel = vessel;
+              await vesselStore.updateVessel();
+            }
+          }
+        }
+
         await batchStore.updateStageData(linkedBatchId.value, 'Bottled', {
           productionRecord: newId,
         }, 'Linked production record');

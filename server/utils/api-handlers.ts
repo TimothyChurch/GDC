@@ -81,7 +81,7 @@ function extractId(event: H3Event, paramName?: string): string {
     : params?._id ?? params?.id;
 
   if (!id) {
-    throw createError({ statusCode: 400, statusMessage: "Missing document ID" });
+    throw createError({ status: 400, statusText: "Missing document ID" });
   }
   return id;
 }
@@ -121,8 +121,8 @@ export function createGetAllHandler(
       return await query.lean();
     } catch (error) {
       throw createError({
-        statusCode: 500,
-        statusMessage: `Failed to fetch ${label}s`,
+        status: 500,
+        statusText: `Failed to fetch ${label}s`,
       });
     }
   });
@@ -148,16 +148,16 @@ export function createGetByIdHandler(
       const doc = await query.lean();
       if (!doc) {
         throw createError({
-          statusCode: 404,
-          statusMessage: `${model.modelName} not found`,
+          status: 404,
+          statusText: `${model.modelName} not found`,
         });
       }
       return doc;
     } catch (error: unknown) {
       if (isH3Error(error)) throw error;
       throw createError({
-        statusCode: 500,
-        statusMessage: `Failed to fetch ${label}`,
+        status: 500,
+        statusText: `Failed to fetch ${label}`,
       });
     }
   });
@@ -199,10 +199,15 @@ export function createCreateHandler(
       }
 
       return doc;
-    } catch (error) {
+    } catch (error: any) {
+      console.error(`Failed to create ${label}:`, error?.message || error);
+      if (error?.errors) {
+        const fields = Object.keys(error.errors).join(', ');
+        console.error(`Validation failed on fields: ${fields}`);
+      }
       throw createError({
-        statusCode: 500,
-        statusMessage: `Failed to create ${label}`,
+        status: 500,
+        statusText: `Failed to create ${label}`,
       });
     }
   });
@@ -244,16 +249,16 @@ export function createUpdateHandler(
       const updated = await query;
       if (!updated) {
         throw createError({
-          statusCode: 404,
-          statusMessage: `${model.modelName} not found`,
+          status: 404,
+          statusText: `${model.modelName} not found`,
         });
       }
       return updated;
     } catch (error: unknown) {
       if (isH3Error(error)) throw error;
       throw createError({
-        statusCode: 500,
-        statusMessage: `Failed to update ${label}`,
+        status: 500,
+        statusText: `Failed to update ${label}`,
       });
     }
   });
@@ -280,8 +285,8 @@ export function createDeleteHandler(
           const count = await check.model.countDocuments({ [check.field]: id });
           if (count > 0) {
             throw createError({
-              statusCode: 400,
-              statusMessage: `Cannot delete: ${count} ${check.label} reference this ${label}`,
+              status: 400,
+              statusText: `Cannot delete: ${count} ${check.label} reference this ${label}`,
             });
           }
         }
@@ -295,16 +300,16 @@ export function createDeleteHandler(
       const deleted = await model.findByIdAndDelete(id);
       if (!deleted) {
         throw createError({
-          statusCode: 404,
-          statusMessage: `${model.modelName} not found`,
+          status: 404,
+          statusText: `${model.modelName} not found`,
         });
       }
       return { message: `${model.modelName} deleted successfully` };
     } catch (error: unknown) {
       if (isH3Error(error)) throw error;
       throw createError({
-        statusCode: 500,
-        statusMessage: `Failed to delete ${label}`,
+        status: 500,
+        statusText: `Failed to delete ${label}`,
       });
     }
   });

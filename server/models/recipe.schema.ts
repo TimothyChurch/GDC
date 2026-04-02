@@ -9,14 +9,17 @@ export const Recipe = defineMongooseModel({
     name: {
       type: String,
       required: true,
+      index: true,
     },
     class: {
       type: String,
       required: true,
+      index: true,
     },
     type: {
       type: String,
       required: false,
+      index: true,
     },
     volume: {
       type: Number,
@@ -37,6 +40,23 @@ export const Recipe = defineMongooseModel({
           required: true,
         },
         unit: {
+          type: String,
+          required: true,
+        },
+      },
+    ],
+    bulkSpirits: [
+      {
+        bulkSpirit: {
+          type: Schema.Types.ObjectId,
+          ref: 'BulkSpirit',
+          required: true,
+        },
+        volume: {
+          type: Number,
+          required: true,
+        },
+        volumeUnit: {
           type: String,
           required: true,
         },
