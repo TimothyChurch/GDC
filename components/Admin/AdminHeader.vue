@@ -11,7 +11,7 @@ const isMac = computed(() =>
 </script>
 
 <template>
-  <header class="flex items-center justify-between px-4 lg:px-6 h-14 bg-charcoal border-b border-brown/50 shrink-0">
+  <header class="flex items-center justify-between px-4 lg:px-6 h-16 bg-charcoal border-b border-brown/50 shrink-0">
     <div class="flex items-center gap-3">
       <UButton
         class="lg:hidden"
@@ -40,12 +40,12 @@ const isMac = computed(() =>
     <UButton
       variant="outline"
       color="neutral"
-      size="sm"
+      size="md"
       icon="i-lucide-search"
       class="hidden md:flex border-brown/30 bg-espresso/50 hover:bg-brown/20 hover:border-brown/50 transition-all duration-200 text-parchment/60 hover:text-parchment/60"
       @click="open()"
     >
-      <span class="text-xs">Search...</span>
+      <span class="text-sm">Search...</span>
       <div class="flex items-center gap-0.5 ml-4">
         <UKbd :value="isMac ? 'meta' : 'ctrl'" size="sm" />
         <UKbd value="K" size="sm" />
@@ -56,31 +56,31 @@ const isMac = computed(() =>
       color="neutral"
       variant="ghost"
       icon="i-lucide-search"
-      size="sm"
+      size="md"
       @click="open()"
     />
 
-    <div class="flex items-center gap-2">
+    <div class="flex items-center gap-3">
       <ModalCalculators />
       <NuxtLink to="/admin/inbox">
         <UChip :show="unreadCount > 0" :text="unreadCount" color="error" size="lg">
           <UButton
             color="neutral"
             variant="ghost"
-            size="sm"
+            size="md"
             icon="i-lucide-bell"
             class="text-parchment/60 hover:text-parchment"
           />
         </UChip>
       </NuxtLink>
       <div class="hidden sm:flex items-center gap-2 text-sm text-parchment/70">
-        <UIcon name="i-lucide-user" class="text-copper" />
+        <UIcon name="i-lucide-user" class="text-copper size-5" />
         <span>{{ user?.email }}</span>
       </div>
       <UButton
         color="neutral"
         variant="ghost"
-        size="sm"
+        size="md"
         icon="i-lucide-log-out"
         class="text-parchment/60 hover:text-parchment"
         @click="logout"
