@@ -1,4 +1,5 @@
 export default defineEventHandler(async (event) => {
+  await requireRole(event, 'Admin');
   const body = await readBody(event);
   const sanitized = sanitize(body);
   await validateBody(sanitized, settingsUpdateSchema);

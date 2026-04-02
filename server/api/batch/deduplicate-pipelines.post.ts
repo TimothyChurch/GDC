@@ -6,7 +6,9 @@ import { Recipe } from "~/server/models/recipe.schema";
  * Removes duplicate stage entries while preserving order.
  * Safe to run multiple times — only updates documents with duplicate stages.
  */
-export default defineEventHandler(async () => {
+export default defineEventHandler(async (event) => {
+	await requireRole(event, 'Admin');
+
 	const batchResults = await deduplicateBatches();
 	const recipeResults = await deduplicateRecipes();
 

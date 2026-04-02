@@ -6,6 +6,8 @@ import { Recipe } from "~/server/models/recipe.schema";
  * Safe to run multiple times — only updates recipes without a pipeline.
  */
 export default defineEventHandler(async (event) => {
+	await requireRole(event, 'Admin');
+
 	const PIPELINE_MAP: Record<string, string[]> = {
 		'Whisky': ['Mashing', 'Fermenting', 'Distilling', 'Barrel Aging', 'Storage', 'Proofing', 'Bottled'],
 		'Brandy': ['Mashing', 'Fermenting', 'Distilling', 'Barrel Aging', 'Storage', 'Proofing', 'Bottled'],
