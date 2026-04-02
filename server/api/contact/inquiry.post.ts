@@ -1,6 +1,19 @@
 export default defineEventHandler(async (event) => {
 	const body = await readBody(event);
-	const sanitized = sanitize(body);
+
+	// Bot detection: honeypot field should be empty
+	if (body?.website) {
+		// Silently accept to not tip off bots, but don't save anything
+		return { success: true, message: "Thanks for reaching out! We'll get back to you soon." };
+	}
+
+	// Bot detection: form submitted too quickly (< 3 seconds)
+	if (body?._t && Date.now() - Number(body._t) < 3000) {
+		return { success: true, message: "Thanks for reaching out! We'll get back to you soon." };
+	}
+
+	const { website: _hp, _t, ...cleanBody } = body || {};
+	const sanitized = sanitize(cleanBody);
 	const validated = await validateBody(sanitized, contactInquirySchema);
 
 	try {

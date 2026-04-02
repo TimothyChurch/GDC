@@ -24,6 +24,8 @@ const email = ref('');
 const phone = ref('');
 const topic = ref(topicMap[route.query.topic as string] || '');
 const message = ref('');
+const website = ref(''); // honeypot — bots fill this, humans don't see it
+const formLoadedAt = Date.now();
 const status = ref<'idle' | 'loading' | 'success' | 'error'>('idle');
 const responseMessage = ref('');
 
@@ -48,6 +50,8 @@ const submit = async () => {
         phone: phone.value || undefined,
         topic: topic.value,
         message: message.value,
+        website: website.value || undefined,
+        _t: formLoadedAt,
       },
     });
     status.value = 'success';
@@ -197,6 +201,12 @@ const inputClass = 'w-full rounded-md bg-cream dark:bg-charcoal px-3.5 py-2.5 te
                 :class="inputClass"
                 placeholder="Tell us what you have in mind..."
               />
+            </div>
+
+            <!-- Honeypot — hidden from humans, bots auto-fill it -->
+            <div class="absolute -left-[9999px]" aria-hidden="true" tabindex="-1">
+              <label for="website">Website</label>
+              <input id="website" v-model="website" type="text" name="website" autocomplete="off" tabindex="-1" />
             </div>
 
             <div>
