@@ -14,6 +14,10 @@ export default defineNuxtConfig({
     "@nuxtjs/sitemap",
     "@nuxt/image",
   ],
+  image: {
+    quality: 80,
+    format: ['webp', 'jpg'],
+  },
   site: {
     url: process.env.DOMAIN || 'https://galvestondistilling.com',
   },
