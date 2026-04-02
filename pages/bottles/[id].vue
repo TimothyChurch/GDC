@@ -112,7 +112,7 @@ useSeoMeta({
                   {{ Dollar.format(bottle.price) }}
                 </span>
                 <span
-                  v-if="bottle.inStock !== false"
+                  v-if="bottle.inStock === true"
                   class="text-xs bg-green-500/15 text-green-600 dark:text-green-400 px-3 py-1 rounded-full font-semibold"
                 >
                   In Stock

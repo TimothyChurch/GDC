@@ -49,7 +49,7 @@ defineProps<{
         </span>
       </div>
 
-      <div v-if="bottle.inStock === false" class="mt-2">
+      <div v-if="bottle.inStock !== true" class="mt-2">
         <span class="text-xs text-red-400 font-semibold">Out of Stock</span>
       </div>
     </div>
