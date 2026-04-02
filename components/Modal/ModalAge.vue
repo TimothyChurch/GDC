@@ -12,64 +12,62 @@ const under21 = () => {
 </script>
 
 <template>
-  <Teleport to="body">
-    <div
-      v-if="!ageVerified"
-      role="dialog"
-      aria-modal="true"
-      aria-labelledby="age-modal-title"
-      class="fixed inset-0 z-[100] flex items-center justify-center bg-espresso/95 backdrop-blur-sm"
-    >
-      <div class="bg-charcoal rounded-xl shadow-2xl border border-gold/20 max-w-md w-full mx-4 p-8 text-center">
-        <NuxtImg
-          src="/images/Logo.png"
-          alt="Galveston Distilling Company"
-          class="h-24 w-auto mx-auto mb-6"
-          width="192"
-          height="96"
-          format="webp"
-        />
+  <div
+    v-if="!ageVerified"
+    role="dialog"
+    aria-modal="true"
+    aria-labelledby="age-modal-title"
+    class="fixed inset-0 z-[100] flex items-center justify-center bg-espresso/95 backdrop-blur-sm"
+  >
+    <div class="bg-charcoal rounded-xl shadow-2xl border border-gold/20 max-w-md w-full mx-4 p-8 text-center">
+      <NuxtImg
+        src="/images/Logo.png"
+        alt="Galveston Distilling Company"
+        class="h-24 w-auto mx-auto mb-6"
+        width="192"
+        height="96"
+        format="webp"
+      />
 
-        <template v-if="!denied">
-          <h2 id="age-modal-title" class="font-[Cormorant_Garamond] text-2xl sm:text-3xl font-bold text-parchment mb-2">
-            Welcome
-          </h2>
-          <p class="text-parchment/70 mb-8">
-            You must be of legal drinking age to enter this site.
-          </p>
-          <p class="text-parchment text-lg font-semibold mb-6">
-            Are you 21 or older?
-          </p>
-          <div class="flex justify-center gap-4">
-            <UButton
-              label="Yes, I'm 21+"
-              size="xl"
-              class="px-8 bg-gold text-espresso font-semibold hover:bg-copper transition-colors duration-300"
-              @click="over21"
-            />
-            <UButton
-              label="No, I'm not"
-              variant="outline"
-              color="neutral"
-              size="xl"
-              class="px-8 border-parchment/30 text-parchment/70 font-semibold hover:border-parchment/50 transition-colors duration-300"
-              @click="under21"
-            />
-          </div>
-        </template>
+      <template v-if="!denied">
+        <h2 id="age-modal-title" class="font-[Cormorant_Garamond] text-2xl sm:text-3xl font-bold text-parchment mb-2">
+          Welcome
+        </h2>
+        <p class="text-parchment/70 mb-8">
+          You must be of legal drinking age to enter this site.
+        </p>
+        <p class="text-parchment text-lg font-semibold mb-6">
+          Are you 21 or older?
+        </p>
+        <div class="flex justify-center gap-4">
+          <UButton
+            label="Yes, I'm 21+"
+            size="xl"
+            class="px-8 bg-gold text-espresso font-semibold hover:bg-copper transition-colors duration-300"
+            @click="over21"
+          />
+          <UButton
+            label="No, I'm not"
+            variant="outline"
+            color="neutral"
+            size="xl"
+            class="px-8 border-parchment/30 text-parchment/70 font-semibold hover:border-parchment/50 transition-colors duration-300"
+            @click="under21"
+          />
+        </div>
+      </template>
 
-        <template v-else>
-          <h2 class="font-[Cormorant_Garamond] text-2xl font-bold text-parchment mb-4">
-            Sorry
-          </h2>
-          <p class="text-parchment/70 mb-6">
-            You must be 21 or older to access this site. Please visit again when you are of legal drinking age.
-          </p>
-          <p class="text-parchment/60 text-sm">
-            Enjoy responsibly.
-          </p>
-        </template>
-      </div>
+      <template v-else>
+        <h2 class="font-[Cormorant_Garamond] text-2xl font-bold text-parchment mb-4">
+          Sorry
+        </h2>
+        <p class="text-parchment/70 mb-6">
+          You must be 21 or older to access this site. Please visit again when you are of legal drinking age.
+        </p>
+        <p class="text-parchment/60 text-sm">
+          Enjoy responsibly.
+        </p>
+      </template>
     </div>
-  </Teleport>
+  </div>
 </template>
