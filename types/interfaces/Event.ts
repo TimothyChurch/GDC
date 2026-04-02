@@ -7,6 +7,7 @@ export interface GDCEvent {
 	status: string;
 	notes?: string;
 	capacity?: number;
+	isPublic?: boolean;
 	createdAt?: string;
 	updatedAt?: string;
 }

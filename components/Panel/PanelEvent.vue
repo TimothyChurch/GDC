@@ -81,6 +81,14 @@ const contactEmail = computed(() => {
             <UFormField label="Capacity">
               <UInput v-model.number="localData.capacity" type="number" min="1" placeholder="Max seats (for public classes)" />
             </UFormField>
+            <UFormField label="Public Visibility">
+              <div class="flex items-center gap-3">
+                <USwitch v-model="localData.isPublic" />
+                <span class="text-sm text-parchment/70">
+                  {{ localData.isPublic ? 'Visible on public website' : 'Hidden from public website' }}
+                </span>
+              </div>
+            </UFormField>
             <UFormField label="Notes">
               <UTextarea v-model="localData.notes" rows="3" placeholder="Additional notes..." />
             </UFormField>

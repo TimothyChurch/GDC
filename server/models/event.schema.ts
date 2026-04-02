@@ -40,6 +40,11 @@ export const Event = defineMongooseModel({
       type: Number,
       required: false,
     },
+    isPublic: {
+      type: Boolean,
+      default: false,
+      index: true,
+    },
   },
   options: { timestamps: true },
 });

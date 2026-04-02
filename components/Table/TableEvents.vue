@@ -76,6 +76,18 @@ const columns: TableColumn<GDCEvent>[] = [
       }, () => status);
     },
   }),
+  {
+    id: "isPublic",
+    header: "Visibility",
+    accessorFn: (row) => row.isPublic ? "Public" : "Private",
+    cell: ({ row }) => {
+      return h(UBadge, {
+        color: row.original.isPublic ? "success" : "neutral",
+        variant: "subtle",
+        size: "sm",
+      }, () => row.original.isPublic ? "Public" : "Private");
+    },
+  },
   actionsColumn<GDCEvent>((row) => [
     {
       label: "View details",
@@ -197,9 +209,12 @@ defineExpose({ addItem });
             <div class="text-sm font-medium text-parchment">{{ getContactName(evt) }}</div>
             <div class="text-xs text-parchment/60">{{ evt.type }}</div>
           </div>
-          <UBadge :color="statusColors[evt.status] || 'neutral'" variant="subtle" size="xs">
-            {{ evt.status }}
-          </UBadge>
+          <div class="flex items-center gap-1.5">
+            <UBadge v-if="evt.isPublic" color="success" variant="subtle" size="xs">Public</UBadge>
+            <UBadge :color="statusColors[evt.status] || 'neutral'" variant="subtle" size="xs">
+              {{ evt.status }}
+            </UBadge>
+          </div>
         </div>
         <div class="space-y-1 text-xs">
           <div class="flex items-center gap-1.5 text-parchment/50">

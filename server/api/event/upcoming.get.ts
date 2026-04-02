@@ -3,9 +3,10 @@ export default defineEventHandler(async () => {
     const now = new Date();
     const events = await Event.find({
       status: "Confirmed",
+      isPublic: true,
       date: { $gte: now },
     })
-      .select("date type capacity groupSize")
+      .select("date type capacity groupSize isPublic")
       .sort({ date: 1 })
       .lean();
     return events;
