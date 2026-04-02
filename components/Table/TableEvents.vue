@@ -152,7 +152,7 @@ defineExpose({ addItem });
         :data="filteredEvents"
         :columns="columns"
         :loading="eventStore.loading"
-        @select="(_e: Event, row: any) => { eventStore.event = { ...structuredClone(toRaw(row.original)), contact: typeof row.original.contact === 'object' ? (row.original.contact as any)._id : row.original.contact }; openPanel() }"
+        @select="(_e: Event, row: any) => router.push(`/admin/events/${row.original._id}`)"
         :ui="{ tr: 'cursor-pointer' }"
       >
         <template #empty>
@@ -190,7 +190,7 @@ defineExpose({ addItem });
         })"
         :key="evt._id"
         class="bg-charcoal rounded-lg border border-brown/30 p-4"
-        @click="eventStore.event = { ...evt, contact: typeof evt.contact === 'object' ? (evt.contact as any)._id : evt.contact }; openPanel()"
+        @click="router.push(`/admin/events/${evt._id}`)"
       >
         <div class="flex items-start justify-between mb-2">
           <div>

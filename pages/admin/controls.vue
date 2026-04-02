@@ -183,14 +183,13 @@ watch(
 								:style="{ width: `${inputData.mashTun.power}%` }"
 							/>
 						</div>
-						<input
-							v-model.number="inputData.mashTun.power"
-							type="range"
-							min="0"
-							max="100"
+						<USlider
+							v-model="inputData.mashTun.power"
+							:min="0"
+							:max="100"
 							:disabled="!inputData.mashTun.status"
-							class="w-full mt-2 accent-copper"
-							aria-label="Mash tun power level"
+							color="primary"
+							class="mt-2"
 						/>
 					</div>
 
@@ -249,14 +248,13 @@ watch(
 								:style="{ width: `${inputData.kettle.power}%` }"
 							/>
 						</div>
-						<input
-							v-model.number="inputData.kettle.power"
-							type="range"
-							min="0"
-							max="100"
+						<USlider
+							v-model="inputData.kettle.power"
+							:min="0"
+							:max="100"
 							:disabled="!inputData.kettle.status"
-							class="w-full mt-2 accent-gold"
-							aria-label="Kettle power level"
+							color="primary"
+							class="mt-2"
 						/>
 					</div>
 
@@ -275,14 +273,13 @@ watch(
 								:style="{ width: `${inputData.kettle.reflux}%` }"
 							/>
 						</div>
-						<input
-							v-model.number="inputData.kettle.reflux"
-							type="range"
-							min="0"
-							max="100"
+						<USlider
+							v-model="inputData.kettle.reflux"
+							:min="0"
+							:max="100"
 							:disabled="!inputData.kettle.status"
-							class="w-full mt-2 accent-blue-400"
-							aria-label="Kettle reflux level"
+							color="info"
+							class="mt-2"
 						/>
 					</div>
 
