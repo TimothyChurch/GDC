@@ -1,12 +1,14 @@
 <script setup lang="ts">
-useServerSeoMeta({
-  title: 'About Us | Galveston Distilling Co',
-  description: 'Learn about Galveston Distilling Co — our story, our mission, and our commitment to crafting exceptional spirits on Galveston Island.',
-  ogTitle: 'About Us | Galveston Distilling Co',
-  ogDescription: 'Learn about Galveston Distilling Co — our story, our mission, and our commitment to crafting exceptional spirits on Galveston Island.',
-  ogImage: 'https://galvestondistilling.com/images/og-about.jpg',
-  ogUrl: 'https://galvestondistilling.com/about',
-});
+if (import.meta.server) {
+  useSeoMeta({
+    title: 'About Us | Galveston Distilling Co',
+    description: 'Learn about Galveston Distilling Co — our story, our mission, and our commitment to crafting exceptional spirits on Galveston Island.',
+    ogTitle: 'About Us | Galveston Distilling Co',
+    ogDescription: 'Learn about Galveston Distilling Co — our story, our mission, and our commitment to crafting exceptional spirits on Galveston Island.',
+    ogImage: 'https://galvestondistilling.com/images/og-about.jpg',
+    ogUrl: 'https://galvestondistilling.com/about',
+  });
+}
 </script>
 
 <template>

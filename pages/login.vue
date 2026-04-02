@@ -1,8 +1,10 @@
 <script setup lang="ts">
-useServerSeoMeta({
-  title: 'Sign In | Galveston Distilling Co',
-  robots: 'noindex, nofollow',
-});
+if (import.meta.server) {
+  useSeoMeta({
+    title: 'Sign In | Galveston Distilling Co',
+    robots: 'noindex, nofollow',
+  });
+}
 
 const router = useRouter();
 const { user, login, fetchUser } = useAuth();

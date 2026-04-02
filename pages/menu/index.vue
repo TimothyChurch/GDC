@@ -1,14 +1,16 @@
 <script setup lang="ts">
 import type { PublicCocktail } from "~/types";
 
-useServerSeoMeta({
-  title: 'Cocktail Menu | Galveston Distilling Co',
-  description: 'Explore our handcrafted cocktail menu featuring island-inspired drinks made with our own spirits.',
-  ogTitle: 'Cocktail Menu | Galveston Distilling Co',
-  ogDescription: 'Explore our handcrafted cocktail menu featuring island-inspired drinks made with our own spirits.',
-  ogImage: 'https://galvestondistilling.com/images/og-menu.jpg',
-  ogUrl: 'https://galvestondistilling.com/menu',
-});
+if (import.meta.server) {
+  useSeoMeta({
+    title: 'Cocktail Menu | Galveston Distilling Co',
+    description: 'Explore our handcrafted cocktail menu featuring island-inspired drinks made with our own spirits.',
+    ogTitle: 'Cocktail Menu | Galveston Distilling Co',
+    ogDescription: 'Explore our handcrafted cocktail menu featuring island-inspired drinks made with our own spirits.',
+    ogImage: 'https://galvestondistilling.com/images/og-menu.jpg',
+    ogUrl: 'https://galvestondistilling.com/menu',
+  });
+}
 
 const cocktailStore = usePublicCocktailStore();
 

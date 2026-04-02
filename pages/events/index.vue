@@ -1,12 +1,14 @@
 <script setup lang="ts">
-useServerSeoMeta({
-  title: 'Events | Galveston Distilling Co',
-  description: 'Book cocktail classes, distillery tours, and spirit tastings at Galveston Distilling Co.',
-  ogTitle: 'Events | Galveston Distilling Co',
-  ogDescription: 'Book cocktail classes, distillery tours, and spirit tastings at Galveston Distilling Co.',
-  ogImage: 'https://galvestondistilling.com/images/og-events.jpg',
-  ogUrl: 'https://galvestondistilling.com/events',
-});
+if (import.meta.server) {
+  useSeoMeta({
+    title: 'Events | Galveston Distilling Co',
+    description: 'Book cocktail classes, distillery tours, and spirit tastings at Galveston Distilling Co.',
+    ogTitle: 'Events | Galveston Distilling Co',
+    ogDescription: 'Book cocktail classes, distillery tours, and spirit tastings at Galveston Distilling Co.',
+    ogImage: 'https://galvestondistilling.com/images/og-events.jpg',
+    ogUrl: 'https://galvestondistilling.com/events',
+  });
+}
 </script>
 
 <template>

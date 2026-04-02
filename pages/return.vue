@@ -1,8 +1,10 @@
 <script setup lang="ts">
-useServerSeoMeta({
-  title: 'Payment Status | Galveston Distilling Co',
-  robots: 'noindex, nofollow',
-});
+if (import.meta.server) {
+  useSeoMeta({
+    title: 'Payment Status | Galveston Distilling Co',
+    robots: 'noindex, nofollow',
+  });
+}
 
 const route = useRoute();
 const sessionId = route.query.session_id as string | undefined;

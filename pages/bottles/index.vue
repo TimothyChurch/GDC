@@ -1,12 +1,14 @@
 <script setup lang="ts">
-useServerSeoMeta({
-  title: 'Our Spirits | Galveston Distilling Co',
-  description: 'Discover our collection of small-batch spirits crafted on Galveston Island, Texas.',
-  ogTitle: 'Our Spirits | Galveston Distilling Co',
-  ogDescription: 'Discover our collection of small-batch spirits crafted on Galveston Island, Texas.',
-  ogImage: 'https://galvestondistilling.com/images/og-spirits.jpg',
-  ogUrl: 'https://galvestondistilling.com/bottles',
-});
+if (import.meta.server) {
+  useSeoMeta({
+    title: 'Our Spirits | Galveston Distilling Co',
+    description: 'Discover our collection of small-batch spirits crafted on Galveston Island, Texas.',
+    ogTitle: 'Our Spirits | Galveston Distilling Co',
+    ogDescription: 'Discover our collection of small-batch spirits crafted on Galveston Island, Texas.',
+    ogImage: 'https://galvestondistilling.com/images/og-spirits.jpg',
+    ogUrl: 'https://galvestondistilling.com/bottles',
+  });
+}
 
 const bottleStore = usePublicBottleStore();
 

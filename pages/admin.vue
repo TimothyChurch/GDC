@@ -4,9 +4,11 @@ definePageMeta({
   middleware: "auth",
 });
 
-useServerSeoMeta({
-  robots: 'noindex, nofollow',
-});
+if (import.meta.server) {
+  useSeoMeta({
+    robots: 'noindex, nofollow',
+  });
+}
 </script>
 
 <template>

@@ -1,12 +1,14 @@
 <script setup lang="ts">
-useServerSeoMeta({
-  title: 'Cocktail Classes | Galveston Distilling Co',
-  description: 'Join our hands-on cocktail classes and learn to craft drinks with Galveston-made spirits.',
-  ogTitle: 'Cocktail Classes | Galveston Distilling Co',
-  ogDescription: 'Join our hands-on cocktail classes and learn to craft drinks with Galveston-made spirits.',
-  ogImage: 'https://galvestondistilling.com/images/og-events.jpg',
-  ogUrl: 'https://galvestondistilling.com/events/cocktailClass',
-});
+if (import.meta.server) {
+  useSeoMeta({
+    title: 'Cocktail Classes | Galveston Distilling Co',
+    description: 'Join our hands-on cocktail classes and learn to craft drinks with Galveston-made spirits.',
+    ogTitle: 'Cocktail Classes | Galveston Distilling Co',
+    ogDescription: 'Join our hands-on cocktail classes and learn to craft drinks with Galveston-made spirits.',
+    ogImage: 'https://galvestondistilling.com/images/og-events.jpg',
+    ogUrl: 'https://galvestondistilling.com/events/cocktailClass',
+  });
+}
 
 const { loadStripe } = useClientStripe();
 const nuxtApp = useNuxtApp();
