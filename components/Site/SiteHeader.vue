@@ -38,8 +38,8 @@ const isActive = (link: string) => {
             <NuxtImg
               src="/images/Logo.png"
               alt="Galveston Distilling Company"
-              class="h-20 px-2"
-              width="80"
+              class="h-20 w-auto px-2"
+              width="160"
               height="80"
               format="webp"
             />
@@ -62,8 +62,8 @@ const isActive = (link: string) => {
           <NuxtImg
             src="/images/Logo.png"
             alt="Galveston Distilling Company"
-            class="h-14"
-            width="56"
+            class="h-14 w-auto"
+            width="112"
             height="56"
             format="webp"
           />
@@ -87,8 +87,8 @@ const isActive = (link: string) => {
             <NuxtImg
               src="/images/Logo.png"
               alt="Galveston Distilling Company"
-              class="h-16"
-              width="64"
+              class="h-16 w-auto"
+              width="128"
               height="64"
               format="webp"
             />

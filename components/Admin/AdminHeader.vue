@@ -25,8 +25,8 @@ const isMac = computed(() =>
         <NuxtImg
           src="/images/Logo.png"
           alt="GDC"
-          class="h-8 w-8 rounded"
-          width="32"
+          class="h-8 w-auto rounded"
+          width="64"
           height="32"
           format="webp"
         />

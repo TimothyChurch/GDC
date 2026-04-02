@@ -24,8 +24,8 @@ const under21 = () => {
         <NuxtImg
           src="/images/Logo.png"
           alt="Galveston Distilling Company"
-          class="h-24 mx-auto mb-6"
-          width="96"
+          class="h-24 w-auto mx-auto mb-6"
+          width="192"
           height="96"
           format="webp"
         />

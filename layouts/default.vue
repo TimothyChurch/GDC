@@ -21,6 +21,6 @@ await callOnce('public-stores', async () => {
       <slot />
     </main>
     <SiteFooter />
-    <LazyModalAge />
+    <ModalAge />
   </div>
 </template>

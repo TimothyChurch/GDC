@@ -7,8 +7,8 @@
         <NuxtImg
           src="/images/Logo.png"
           alt="Galveston Distilling Company"
-          class="h-24"
-          width="96"
+          class="h-24 w-auto"
+          width="192"
           height="96"
           loading="lazy"
           format="webp"
