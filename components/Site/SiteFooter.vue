@@ -23,7 +23,7 @@
           <a
             href="https://maps.google.com/?q=2618+Market+St+Galveston+TX+77550"
             target="_blank"
-            rel="noopener"
+            rel="noopener noreferrer"
             class="text-sm text-gold hover:text-copper transition-colors mt-1"
           >
             Get Directions
@@ -56,10 +56,10 @@
       </div>
 
       <div class="flex justify-center gap-6 mt-10">
-        <a href="https://www.instagram.com/galvestondistillingco/" target="_blank" rel="noopener" aria-label="Instagram" class="text-parchment/60 hover:text-gold transition-colors">
+        <a href="https://www.instagram.com/galvestondistillingco/" target="_blank" rel="noopener noreferrer" aria-label="Instagram" class="text-parchment/60 hover:text-gold transition-colors">
           <Icon name="carbon:logo-instagram" class="text-xl" />
         </a>
-        <a href="https://www.facebook.com/GalvestonDistillingCo/" target="_blank" rel="noopener" aria-label="Facebook" class="text-parchment/60 hover:text-gold transition-colors">
+        <a href="https://www.facebook.com/GalvestonDistillingCo/" target="_blank" rel="noopener noreferrer" aria-label="Facebook" class="text-parchment/60 hover:text-gold transition-colors">
           <Icon name="carbon:logo-facebook" class="text-xl" />
         </a>
       </div>

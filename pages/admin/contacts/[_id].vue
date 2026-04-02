@@ -138,7 +138,7 @@ function poStatusColor(status: string) {
         </div>
         <div>
           <div class="text-xs text-parchment/60 uppercase tracking-wider mb-1">Website</div>
-          <a v-if="contact.website" :href="contact.website" target="_blank" class="text-sm text-copper hover:text-gold transition-colors">
+          <a v-if="contact.website" :href="contact.website" target="_blank" rel="noopener noreferrer" class="text-sm text-copper hover:text-gold transition-colors">
             {{ contact.website }}
           </a>
           <div v-else class="text-sm text-parchment/60">N/A</div>

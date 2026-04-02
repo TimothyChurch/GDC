@@ -47,6 +47,8 @@ const categories = [
           <NuxtImg
             :src="category.imageSrc"
             :alt="category.imageAlt"
+            width="600"
+            height="720"
             class="aspect-3/2 w-full object-cover group-hover:scale-105 transition-transform duration-500 lg:aspect-5/6"
             loading="lazy"
             sizes="sm:100vw lg:33vw"

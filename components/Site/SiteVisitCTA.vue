@@ -29,7 +29,7 @@
         <a
           href="https://maps.google.com/?q=2618+Market+St+Galveston+TX+77550"
           target="_blank"
-          rel="noopener"
+          rel="noopener noreferrer"
           class="rounded-md bg-gold px-6 py-3 text-sm font-semibold text-espresso hover:bg-copper transition-colors duration-300"
         >
           Get Directions

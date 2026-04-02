@@ -129,7 +129,7 @@ defineExpose({ addItem });
         <template #expanded="{ row }">
           <div class="flex gap-6 flex-wrap py-2 px-4">
             <UFormField label="Website">
-              <a v-if="row.original.website" :href="row.original.website" target="_blank" class="text-gold hover:underline">{{ row.original.website }}</a>
+              <a v-if="row.original.website" :href="row.original.website" target="_blank" rel="noopener noreferrer" class="text-gold hover:underline">{{ row.original.website }}</a>
               <span v-else class="text-parchment/60">N/A</span>
             </UFormField>
             <UFormField label="Address">
