@@ -11,8 +11,8 @@ if (import.meta.server) {
 }
 
 const { loadStripe } = useClientStripe();
-const nuxtApp = useNuxtApp();
-const stripePromise = loadStripe(nuxtApp.$config.public.stripe.key);
+const config = useRuntimeConfig();
+const stripePromise = loadStripe(config.public.stripe.key);
 const checkoutLoading = ref(true);
 
 const fetchClientSecret = async () => {
