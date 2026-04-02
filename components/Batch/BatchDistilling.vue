@@ -273,7 +273,7 @@ const saveStageFields = async () => {
               'w-8 h-8 rounded-full flex items-center justify-center text-sm transition-all',
               strippingCount > 0
                 ? 'bg-amber-500/20 text-amber-400 ring-2 ring-amber-500/30'
-                : 'bg-brown/20 text-parchment/30',
+                : 'bg-brown/20 text-parchment/50',
               workflowPhase === 'stripping' && 'animate-pulse',
             ]"
           >
@@ -302,7 +302,7 @@ const saveStageFields = async () => {
                 ? 'bg-yellow-500/20 text-yellow-400 ring-2 ring-yellow-500/30'
                 : strippingCount > 0
                   ? 'bg-yellow-500/10 text-yellow-400/60 ring-1 ring-yellow-500/20'
-                  : 'bg-brown/20 text-parchment/30',
+                  : 'bg-brown/20 text-parchment/50',
               workflowPhase === 'ready-for-spirit' && 'animate-pulse',
             ]"
           >
@@ -311,7 +311,7 @@ const saveStageFields = async () => {
           <span class="text-[10px] text-parchment/50 uppercase tracking-wider">Low Wines</span>
           <span v-if="strippingTotalVolume > 0" class="text-[10px] text-yellow-400 font-semibold">
             {{ strippingTotalVolume.toFixed(1) }} {{ strippingTotalUnit === 'gallon' ? 'gal' : strippingTotalUnit }}
-            <span v-if="strippingAvgAbv > 0" class="text-parchment/40">@ {{ strippingAvgAbv.toFixed(1) }}%</span>
+            <span v-if="strippingAvgAbv > 0" class="text-parchment/60">@ {{ strippingAvgAbv.toFixed(1) }}%</span>
           </span>
         </div>
 
@@ -330,7 +330,7 @@ const saveStageFields = async () => {
               'w-8 h-8 rounded-full flex items-center justify-center text-sm transition-all',
               spiritCount > 0
                 ? 'bg-copper/20 text-copper ring-2 ring-copper/30'
-                : 'bg-brown/20 text-parchment/30',
+                : 'bg-brown/20 text-parchment/50',
               workflowPhase === 'spirit' && 'animate-pulse',
             ]"
           >
@@ -357,7 +357,7 @@ const saveStageFields = async () => {
               'w-8 h-8 rounded-full flex items-center justify-center text-sm transition-all',
               workflowPhase === 'complete'
                 ? 'bg-green-500/20 text-green-400 ring-2 ring-green-500/30'
-                : 'bg-brown/20 text-parchment/30',
+                : 'bg-brown/20 text-parchment/50',
             ]"
           >
             <UIcon name="i-lucide-heart" />
@@ -408,7 +408,7 @@ const saveStageFields = async () => {
       <div class="flex items-center gap-2 mb-2">
         <UIcon name="i-lucide-flame" class="text-amber-400 text-sm" />
         <span class="text-xs font-semibold text-amber-400 uppercase tracking-wider">Stripping Runs</span>
-        <span class="text-[10px] text-parchment/40">({{ strippingCount }})</span>
+        <span class="text-[10px] text-parchment/60">({{ strippingCount }})</span>
       </div>
       <div class="space-y-3">
         <BatchDistillingRun
@@ -440,7 +440,7 @@ const saveStageFields = async () => {
       <div class="flex items-center gap-2 mb-2">
         <UIcon name="i-lucide-flask-conical" class="text-copper text-sm" />
         <span class="text-xs font-semibold text-copper uppercase tracking-wider">Spirit Runs</span>
-        <span class="text-[10px] text-parchment/40">({{ spiritCount }})</span>
+        <span class="text-[10px] text-parchment/60">({{ spiritCount }})</span>
       </div>
       <div class="space-y-3">
         <BatchDistillingRun

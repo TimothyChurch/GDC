@@ -472,7 +472,7 @@ const save = async () => {
 
           <UIcon
             :name="isCollapsed(barrel._id) ? 'i-lucide-chevron-right' : 'i-lucide-chevron-down'"
-            class="text-parchment/40 shrink-0 transition-transform duration-200"
+            class="text-parchment/60 shrink-0 transition-transform duration-200"
           />
           <UIcon name="i-lucide-cylinder" class="text-amber/70 shrink-0" />
           <span class="text-sm font-bold text-parchment font-[Cormorant_Garamond]">
@@ -564,7 +564,7 @@ const save = async () => {
                   <div class="text-sm text-parchment">
                     {{ getBarrelFillCost(barrel) > 0 ? Dollar.format(getBarrelFillCost(barrel)) : 'N/A' }}
                   </div>
-                  <div class="text-[10px] text-parchment/40">Recipe ingredient cost</div>
+                  <div class="text-[10px] text-parchment/60">Recipe ingredient cost</div>
                 </div>
                 <div>
                   <div class="text-xs text-parchment/60 uppercase tracking-wider mb-1">Barrel Cost</div>
@@ -636,7 +636,7 @@ const save = async () => {
       </div>
     </div>
 
-    <div v-else class="mb-5 text-sm text-parchment/40 italic">No barrels assigned</div>
+    <div v-else class="mb-5 text-sm text-parchment/60 italic">No barrels assigned</div>
 
     <!-- Entry / Exit -->
     <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-5">

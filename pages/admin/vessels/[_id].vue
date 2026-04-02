@@ -134,7 +134,7 @@ const deleteVessel = async () => {
 
 <template>
   <div v-if="!vesselStore.loaded" class="flex items-center justify-center py-12">
-    <UIcon name="i-lucide-loader-2" class="animate-spin text-3xl text-parchment/30" />
+    <UIcon name="i-lucide-loader-2" class="animate-spin text-3xl text-parchment/50" />
   </div>
 
   <div v-else-if="vessel" class="space-y-6">
@@ -236,8 +236,8 @@ const deleteVessel = async () => {
           <div class="text-sm text-parchment">
             <template v-if="effectiveTargetAge">
               {{ effectiveTargetAge }} months
-              <span v-if="!vessel.targetAge" class="text-parchment/40 text-xs">(default)</span>
-              <span v-else class="text-parchment/40 text-xs">(custom)</span>
+              <span v-if="!vessel.targetAge" class="text-parchment/60 text-xs">(default)</span>
+              <span v-else class="text-parchment/60 text-xs">(custom)</span>
             </template>
             <template v-else>Not set</template>
           </div>

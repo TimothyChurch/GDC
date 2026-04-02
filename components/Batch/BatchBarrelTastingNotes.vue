@@ -44,7 +44,7 @@ const submitTastingNote = async () => {
         <UIcon name="i-lucide-wine" class="text-sm text-amber-400" />
         <div class="text-xs text-parchment/60 uppercase tracking-wider">Tasting Notes</div>
       </div>
-      <span v-if="sortedTastingNotes.length > 0" class="text-xs text-parchment/40">
+      <span v-if="sortedTastingNotes.length > 0" class="text-xs text-parchment/60">
         {{ sortedTastingNotes.length }} {{ sortedTastingNotes.length === 1 ? 'note' : 'notes' }}
       </span>
     </div>

@@ -137,7 +137,7 @@ async function save() {
           variant="ghost"
           size="xs"
           square
-          class="rounded-full border border-dashed border-brown/40 text-parchment/30 hover:border-gold/60 hover:text-gold hover:bg-gold/5 transition-all"
+          class="rounded-full border border-dashed border-brown/40 text-parchment/50 hover:border-gold/60 hover:text-gold hover:bg-gold/5 transition-all"
           @click="insertAtIndex = 0"
         />
         <!-- Stage picker when inserting at index 0 -->
@@ -181,7 +181,7 @@ async function save() {
             {{ stage }}
             <span
               v-if="occurrences(stage) > 1"
-              class="text-xs text-parchment/40 ml-1"
+              class="text-xs text-parchment/60 ml-1"
             >
               (#{{ editedPipeline.slice(0, index + 1).filter(s => s === stage).length }})
             </span>
@@ -217,7 +217,7 @@ async function save() {
             variant="ghost"
             size="xs"
             square
-            class="rounded-full border border-dashed border-brown/40 text-parchment/30 hover:border-gold/60 hover:text-gold hover:bg-gold/5 transition-all"
+            class="rounded-full border border-dashed border-brown/40 text-parchment/50 hover:border-gold/60 hover:text-gold hover:bg-gold/5 transition-all"
             @click="insertAtIndex = index + 1"
           />
           <!-- Stage picker when inserting at this position -->
@@ -249,7 +249,7 @@ async function save() {
 
     <!-- Footer actions -->
     <div class="flex items-center justify-between mt-5 pt-4 border-t border-brown/20">
-      <span class="text-xs text-parchment/40">
+      <span class="text-xs text-parchment/60">
         {{ editedPipeline.length }} stages
       </span>
       <div class="flex gap-2">

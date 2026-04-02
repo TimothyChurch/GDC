@@ -69,7 +69,7 @@ function formatDate(date: Date | string): string {
     <div class="flex items-center gap-2 mb-4">
       <UIcon name="i-lucide-scroll-text" class="text-lg text-parchment/60" />
       <h3 class="text-lg font-bold text-parchment font-[Cormorant_Garamond]">Activity Log</h3>
-      <span v-if="entries.length > 0" class="text-xs text-parchment/40 ml-auto">
+      <span v-if="entries.length > 0" class="text-xs text-parchment/60 ml-auto">
         {{ entries.length }} {{ entries.length === 1 ? 'entry' : 'entries' }}
       </span>
     </div>
@@ -126,7 +126,7 @@ function formatDate(date: Date | string): string {
         <div class="flex-1 min-w-0 pt-0.5">
           <div class="flex items-baseline gap-2 flex-wrap">
             <span class="text-sm text-parchment">{{ entry.action }}</span>
-            <span class="text-[10px] text-parchment/40">{{ formatDate(entry.date) }}</span>
+            <span class="text-[10px] text-parchment/60">{{ formatDate(entry.date) }}</span>
             <span v-if="entry.user" class="text-[10px] text-parchment/50">
               by {{ entry.user }}
             </span>

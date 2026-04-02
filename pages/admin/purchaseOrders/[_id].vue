@@ -125,7 +125,7 @@ function statusColor(status: string) {
 
 <template>
   <div v-if="!purchaseOrderStore.loaded" class="flex items-center justify-center py-12">
-    <UIcon name="i-lucide-loader-2" class="animate-spin text-3xl text-parchment/30" />
+    <UIcon name="i-lucide-loader-2" class="animate-spin text-3xl text-parchment/50" />
   </div>
 
   <div v-else-if="po" class="space-y-6">
@@ -234,7 +234,7 @@ function statusColor(status: string) {
             <span class="text-parchment/60 hidden sm:block">{{ Dollar.format(item.price) }}</span>
             <span class="text-center hidden sm:block">
               <span v-if="item.taxable" class="text-[10px] font-semibold text-amber bg-amber/15 border border-amber/25 px-1.5 py-0.5 rounded-full">TAX</span>
-              <span v-else class="text-parchment/30">-</span>
+              <span v-else class="text-parchment/50">-</span>
             </span>
             <span class="text-parchment text-right font-medium">{{ Dollar.format(item.lineTotal) }}</span>
           </div>

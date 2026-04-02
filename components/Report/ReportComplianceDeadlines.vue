@@ -59,7 +59,7 @@ const {
       >
         <UIcon
           name="i-lucide-clock"
-          :class="criticalCount > 0 ? 'text-orange-400 text-2xl' : 'text-parchment/30 text-2xl'"
+          :class="criticalCount > 0 ? 'text-orange-400 text-2xl' : 'text-parchment/50 text-2xl'"
         />
         <div>
           <div class="text-sm font-semibold" :class="criticalCount > 0 ? 'text-orange-400' : 'text-parchment/50'">
@@ -85,7 +85,7 @@ const {
     <div class="bg-charcoal rounded-xl border border-brown/30 overflow-hidden">
       <div class="p-4 border-b border-brown/20">
         <h3 class="text-sm font-semibold text-parchment/70">Filing Deadlines — 90 Day Window</h3>
-        <p class="text-xs text-parchment/40 mt-0.5">Showing deadlines from 30 days ago through 90 days ahead</p>
+        <p class="text-xs text-parchment/60 mt-0.5">Showing deadlines from 30 days ago through 90 days ahead</p>
       </div>
 
       <div v-if="deadlines.length > 0">
@@ -109,12 +109,12 @@ const {
             <div class="min-w-0">
               <div class="flex items-center gap-2 flex-wrap">
                 <span class="text-sm font-medium text-parchment truncate">{{ deadline.title }}</span>
-                <span v-if="deadline.formNumber" class="text-[10px] text-parchment/40 shrink-0">
+                <span v-if="deadline.formNumber" class="text-[10px] text-parchment/60 shrink-0">
                   {{ deadline.formNumber }}
                 </span>
               </div>
               <div class="text-xs text-parchment/50 mt-0.5 truncate">{{ deadline.description }}</div>
-              <div class="text-xs text-parchment/40 mt-0.5">Due: {{ formatDeadlineDate(deadline.dueDate) }}</div>
+              <div class="text-xs text-parchment/60 mt-0.5">Due: {{ formatDeadlineDate(deadline.dueDate) }}</div>
             </div>
           </div>
 

@@ -76,7 +76,7 @@ async function deleteMessage() {
 
 <template>
   <div v-if="!messageStore.loaded" class="flex items-center justify-center py-12">
-    <UIcon name="i-lucide-loader-2" class="animate-spin text-3xl text-parchment/30" />
+    <UIcon name="i-lucide-loader-2" class="animate-spin text-3xl text-parchment/50" />
   </div>
 
   <div v-else-if="message" class="space-y-6">
@@ -137,9 +137,9 @@ async function deleteMessage() {
         >
           {{ message.topic }}
         </UBadge>
-        <span v-if="message.createdAt" class="text-xs text-parchment/40 sm:ml-auto">
+        <span v-if="message.createdAt" class="text-xs text-parchment/60 sm:ml-auto">
           {{ formatDate(message.createdAt) }}
-          <span class="text-parchment/30 ml-1">({{ formatRelative(message.createdAt) }})</span>
+          <span class="text-parchment/50 ml-1">({{ formatRelative(message.createdAt) }})</span>
         </span>
       </div>
 

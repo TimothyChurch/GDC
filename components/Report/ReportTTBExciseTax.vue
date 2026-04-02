@@ -335,7 +335,7 @@ const period2Overdue = computed(() => {
           </div>
         </div>
       </div>
-      <p class="text-xs text-parchment/40 mt-3 print:text-gray-500">
+      <p class="text-xs text-parchment/60 mt-3 print:text-gray-500">
         CBMA Tier 1 rate of $2.70/PG applies to the first 100,000 proof gallons domestically produced and removed per calendar year.
         Ensure your annual assignment of CBMA credits to TTB is current before claiming reduced rates.
       </p>

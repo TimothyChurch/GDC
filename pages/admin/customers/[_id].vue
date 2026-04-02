@@ -92,7 +92,7 @@ function formatMessageDate(dateStr?: string): string {
 
 <template>
   <div v-if="!contactStore.loaded" class="flex items-center justify-center py-12">
-    <UIcon name="i-lucide-loader-2" class="animate-spin text-3xl text-parchment/30" />
+    <UIcon name="i-lucide-loader-2" class="animate-spin text-3xl text-parchment/50" />
   </div>
 
   <div v-else-if="contact" class="space-y-6">
@@ -263,7 +263,7 @@ function formatMessageDate(dateStr?: string): string {
                 >
                   {{ msg.topic }}
                 </UBadge>
-                <span class="text-xs text-parchment/40">{{ formatMessageDate(msg.createdAt) }}</span>
+                <span class="text-xs text-parchment/60">{{ formatMessageDate(msg.createdAt) }}</span>
               </div>
               <p class="text-sm text-parchment/70 line-clamp-2">{{ msg.message }}</p>
             </div>

@@ -159,7 +159,7 @@ const stepBack = async (stageName: string) => {
 
 <template>
   <div v-if="!batchStore.loaded" class="flex items-center justify-center py-12">
-    <UIcon name="i-lucide-loader-2" class="animate-spin text-3xl text-parchment/30" />
+    <UIcon name="i-lucide-loader-2" class="animate-spin text-3xl text-parchment/50" />
   </div>
 
   <div v-else-if="batch" class="space-y-6">
@@ -281,7 +281,7 @@ const stepBack = async (stageName: string) => {
             variant="ghost"
             color="neutral"
             size="sm"
-            class="text-parchment/40 hover:text-orange-400"
+            class="text-parchment/60 hover:text-orange-400"
             @click="confirmRevertStage = stage"
           >
             Step Back

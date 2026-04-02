@@ -124,8 +124,8 @@ const printSheet = () => window.print()
                 <tr v-for="item in cat.items" :key="item._id" class="border-b border-brown/15 last:border-0">
                   <td class="px-3 py-2 text-parchment">{{ item.name }}</td>
                   <td class="px-3 py-2 text-center text-parchment/60">{{ item.inventoryUnit || '' }}</td>
-                  <td class="px-3 py-2 text-center text-parchment/30">___</td>
-                  <td class="px-3 py-2 text-parchment/30">___</td>
+                  <td class="px-3 py-2 text-center text-parchment/50">___</td>
+                  <td class="px-3 py-2 text-parchment/50">___</td>
                 </tr>
               </tbody>
             </table>

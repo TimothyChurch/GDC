@@ -71,7 +71,7 @@ function formatDate(date: string | Date): string {
     <div class="flex items-center gap-2 mb-4">
       <UIcon name="i-lucide-wine" class="text-lg text-amber-400" />
       <h3 class="text-lg font-bold text-parchment font-[Cormorant_Garamond]">Tasting Notes</h3>
-      <span v-if="sortedNotes.length > 0" class="text-xs text-parchment/40 ml-auto">
+      <span v-if="sortedNotes.length > 0" class="text-xs text-parchment/60 ml-auto">
         {{ sortedNotes.length }} {{ sortedNotes.length === 1 ? 'note' : 'notes' }}
       </span>
     </div>
@@ -148,7 +148,7 @@ function formatDate(date: string | Date): string {
           </span>
           <span
             v-if="note.addedBy"
-            class="text-[11px] text-parchment/40 ml-auto hidden sm:inline"
+            class="text-[11px] text-parchment/60 ml-auto hidden sm:inline"
           >
             by {{ note.addedBy }}
           </span>

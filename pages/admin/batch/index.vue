@@ -49,7 +49,7 @@ const filteredBatches = computed(() => {
             square
             :variant="viewMode === 'table' ? 'soft' : 'ghost'"
             :color="viewMode === 'table' ? 'primary' : 'neutral'"
-            :class="viewMode === 'table' ? 'bg-brown/30 text-gold' : 'text-parchment/40 hover:text-parchment/70'"
+            :class="viewMode === 'table' ? 'bg-brown/30 text-gold' : 'text-parchment/60 hover:text-parchment/70'"
             title="Table view"
             @click="viewMode = 'table'"
           />
@@ -59,7 +59,7 @@ const filteredBatches = computed(() => {
             square
             :variant="viewMode === 'board' ? 'soft' : 'ghost'"
             :color="viewMode === 'board' ? 'primary' : 'neutral'"
-            :class="viewMode === 'board' ? 'bg-brown/30 text-gold' : 'text-parchment/40 hover:text-parchment/70'"
+            :class="viewMode === 'board' ? 'bg-brown/30 text-gold' : 'text-parchment/60 hover:text-parchment/70'"
             title="Board view"
             @click="viewMode = 'board'"
           />

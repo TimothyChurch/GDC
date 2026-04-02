@@ -153,7 +153,7 @@ const addPurchaseOrder = () => {
                   <td>{{ Dollar.format(item.price) }}</td>
                   <td>
                     <span v-if="item.taxable" class="text-[10px] font-semibold text-amber bg-amber/15 border border-amber/25 px-1.5 py-0.5 rounded-full">TAX</span>
-                    <span v-else class="text-parchment/30">-</span>
+                    <span v-else class="text-parchment/50">-</span>
                   </td>
                   <td>{{ Dollar.format(item.price * item.quantity) }}</td>
                 </tr>

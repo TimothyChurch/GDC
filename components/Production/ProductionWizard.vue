@@ -148,7 +148,7 @@ const bottleStore = useBottleStore()
             <UIcon name="i-lucide-landmark" class="text-parchment/50 w-4 h-4" />
             <div>
               <span class="text-parchment/70">TTB Federal Excise Tax</span>
-              <span class="text-[10px] text-parchment/40 ml-1">($2.70/PG)</span>
+              <span class="text-[10px] text-parchment/60 ml-1">($2.70/PG)</span>
             </div>
           </div>
           <span class="text-parchment font-medium">{{
@@ -162,7 +162,7 @@ const bottleStore = useBottleStore()
             <UIcon name="i-lucide-map-pin" class="text-parchment/50 w-4 h-4" />
             <div>
               <span class="text-parchment/70">TABC Texas Excise Tax</span>
-              <span class="text-[10px] text-parchment/40 ml-1">($2.40/WG)</span>
+              <span class="text-[10px] text-parchment/60 ml-1">($2.40/WG)</span>
             </div>
           </div>
           <span class="text-parchment font-medium">{{

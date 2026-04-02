@@ -365,7 +365,7 @@ const summaryProofGallons = computed(() => {
       <UIcon
         v-if="!isRunEditing"
         :name="collapsed ? 'i-lucide-chevron-right' : 'i-lucide-chevron-down'"
-        class="text-parchment/40 shrink-0 transition-transform duration-200"
+        class="text-parchment/60 shrink-0 transition-transform duration-200"
       />
 
       <span class="text-sm font-bold text-parchment font-[Cormorant_Garamond] shrink-0">

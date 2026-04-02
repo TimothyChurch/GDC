@@ -215,7 +215,7 @@ const removeItem = (index: number) => {
                     <span class="truncate block">{{
                       itemStore.items.find((i) => i._id === item.item)?.name
                     }}</span>
-                    <span v-if="item.brand" class="text-xs text-parchment/40">{{
+                    <span v-if="item.brand" class="text-xs text-parchment/60">{{
                       item.brand
                     }}</span>
                   </div>

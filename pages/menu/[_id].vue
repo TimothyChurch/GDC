@@ -44,7 +44,7 @@ const formattedAmount = (amount: number): string => {
 <template>
   <!-- Not found state -->
   <div v-if="!cocktail" class="min-h-[60vh] flex flex-col items-center justify-center px-6">
-    <Icon name="i-lucide-search-x" class="text-5xl text-brown/30 dark:text-parchment/30 mb-4" />
+    <Icon name="i-lucide-search-x" class="text-5xl text-brown/30 dark:text-parchment/50 mb-4" />
     <h1 class="font-[Cormorant_Garamond] text-3xl font-bold text-brown dark:text-parchment mb-2">
       Cocktail Not Found
     </h1>

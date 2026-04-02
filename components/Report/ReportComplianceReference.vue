@@ -5,27 +5,27 @@
       <div class="space-y-2 text-xs text-parchment/60">
         <div class="flex justify-between gap-2">
           <span>Monthly operational reports</span>
-          <span class="text-parchment/40 shrink-0">15th of following month</span>
+          <span class="text-parchment/60 shrink-0">15th of following month</span>
         </div>
         <div class="flex justify-between gap-2">
           <span>FET deposit — Period 1 (1st-15th)</span>
-          <span class="text-parchment/40 shrink-0">29th of same month</span>
+          <span class="text-parchment/60 shrink-0">29th of same month</span>
         </div>
         <div class="flex justify-between gap-2">
           <span>FET deposit — Period 2 (16th-end)</span>
-          <span class="text-parchment/40 shrink-0">14th of following month</span>
+          <span class="text-parchment/60 shrink-0">14th of following month</span>
         </div>
         <div class="flex justify-between gap-2">
           <span>Annual physical inventory</span>
-          <span class="text-parchment/40 shrink-0">January 15</span>
+          <span class="text-parchment/60 shrink-0">January 15</span>
         </div>
         <div class="flex justify-between gap-2">
           <span>CBMA annual claim</span>
-          <span class="text-parchment/40 shrink-0">January 31</span>
+          <span class="text-parchment/60 shrink-0">January 31</span>
         </div>
         <div class="flex justify-between gap-2">
           <span>Record retention</span>
-          <span class="text-parchment/40 shrink-0">3 years at premises</span>
+          <span class="text-parchment/60 shrink-0">3 years at premises</span>
         </div>
       </div>
     </div>
@@ -35,27 +35,27 @@
       <div class="space-y-2 text-xs text-parchment/60">
         <div class="flex justify-between gap-2">
           <span>Monthly production &amp; disposition report</span>
-          <span class="text-parchment/40 shrink-0">15th of following month</span>
+          <span class="text-parchment/60 shrink-0">15th of following month</span>
         </div>
         <div class="flex justify-between gap-2">
           <span>Texas excise tax ($2.40/WG)</span>
-          <span class="text-parchment/40 shrink-0">15th of following month</span>
+          <span class="text-parchment/60 shrink-0">15th of following month</span>
         </div>
         <div class="flex justify-between gap-2">
           <span>Permit renewal</span>
-          <span class="text-parchment/40 shrink-0">Per permit expiry date</span>
+          <span class="text-parchment/60 shrink-0">Per permit expiry date</span>
         </div>
         <div class="flex justify-between gap-2">
           <span>DTC sales limit</span>
-          <span class="text-parchment/40 shrink-0">2 bottles/person/30 days</span>
+          <span class="text-parchment/60 shrink-0">2 bottles/person/30 days</span>
         </div>
         <div class="flex justify-between gap-2">
           <span>Tasting room sample limit</span>
-          <span class="text-parchment/40 shrink-0">1 oz/product, 3 oz total</span>
+          <span class="text-parchment/60 shrink-0">1 oz/product, 3 oz total</span>
         </div>
         <div class="flex justify-between gap-2">
           <span>Record retention</span>
-          <span class="text-parchment/40 shrink-0">3 years</span>
+          <span class="text-parchment/60 shrink-0">3 years</span>
         </div>
       </div>
     </div>

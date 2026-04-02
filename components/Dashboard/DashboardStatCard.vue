@@ -61,7 +61,7 @@ const iconColorClasses = {
         </span>
       </div>
     </div>
-    <UIcon name="i-lucide-chevron-right" class="text-parchment/0 group-hover:text-parchment/40 transition-all duration-200 ml-auto shrink-0 self-center" />
+    <UIcon name="i-lucide-chevron-right" class="text-parchment/0 group-hover:text-parchment/60 transition-all duration-200 ml-auto shrink-0 self-center" />
   </NuxtLink>
   <div
     v-else

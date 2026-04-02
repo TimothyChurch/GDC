@@ -132,7 +132,7 @@ async function saveCategories() {
 
     <!-- Empty state -->
     <div v-if="localCategories.length === 0" class="text-center py-6 mb-4">
-      <UIcon name="i-lucide-tags" class="text-3xl text-parchment/30 mb-2" />
+      <UIcon name="i-lucide-tags" class="text-3xl text-parchment/50 mb-2" />
       <p class="text-sm text-parchment/50">No categories defined</p>
     </div>
 

@@ -204,10 +204,10 @@ const createProductionRecord = async () => {
           </div>
           <div>
             <div class="text-xs text-parchment/50">Potential Sales</div>
-            <div class="text-sm font-medium" :class="totalSalesValue ? 'text-green-400' : 'text-parchment/40'">
+            <div class="text-sm font-medium" :class="totalSalesValue ? 'text-green-400' : 'text-parchment/60'">
               {{ totalSalesValue ? Dollar.format(totalSalesValue) : 'N/A' }}
             </div>
-            <div v-if="bottleProduct?.price" class="text-[10px] text-parchment/40">
+            <div v-if="bottleProduct?.price" class="text-[10px] text-parchment/60">
               {{ bottleCount }} x {{ Dollar.format(bottleProduct.price) }}
             </div>
           </div>
@@ -220,7 +220,7 @@ const createProductionRecord = async () => {
             >
               {{ Dollar.format(profitMargin) }}
             </div>
-            <div v-else class="text-sm text-parchment/40">N/A</div>
+            <div v-else class="text-sm text-parchment/60">N/A</div>
           </div>
         </div>
       </div>

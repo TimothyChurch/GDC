@@ -27,7 +27,7 @@ const show = computed(() => legend.value.length >= 2)
       size="xs"
       :icon="collapsed ? 'i-lucide-chevron-right' : 'i-lucide-chevron-down'"
       label="Batch Colors"
-      class="text-[10px] uppercase tracking-wider text-parchment/40 hover:text-parchment/60"
+      class="text-[10px] uppercase tracking-wider text-parchment/60 hover:text-parchment/60"
       @click="collapsed = !collapsed"
     />
     <div v-if="!collapsed" class="flex flex-wrap gap-x-3 gap-y-1 mt-1.5">

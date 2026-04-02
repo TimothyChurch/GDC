@@ -284,7 +284,7 @@ const pendingBatchName = computed(() => {
             <div :class="['w-1.5 h-1.5 rounded-full shrink-0', `bg-${stage.color === 'copper' ? 'copper' : stage.color + '-400'}`]" />
             <span class="text-xs text-parchment/60 truncate hover:text-gold transition-colors">
               {{ getRecipeName(entry.recipe) }}
-              <span v-if="entry.volume" class="text-parchment/40">({{ entry.volume }}{{ entry.volumeUnit }})</span>
+              <span v-if="entry.volume" class="text-parchment/60">({{ entry.volume }}{{ entry.volumeUnit }})</span>
             </span>
           </div>
           <span

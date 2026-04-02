@@ -155,7 +155,7 @@ const relatedBatches = computed(() =>
 
 <template>
   <div v-if="!recipeStore.loaded" class="flex items-center justify-center py-12">
-    <UIcon name="i-lucide-loader-2" class="animate-spin text-3xl text-parchment/30" />
+    <UIcon name="i-lucide-loader-2" class="animate-spin text-3xl text-parchment/50" />
   </div>
 
   <div v-else-if="recipe" class="space-y-6">
@@ -263,7 +263,7 @@ const relatedBatches = computed(() =>
           <UIcon
             v-if="index < recipe.pipeline.length - 1"
             name="i-lucide-chevron-right"
-            class="text-parchment/30 mx-1 shrink-0"
+            class="text-parchment/50 mx-1 shrink-0"
           />
         </div>
       </div>

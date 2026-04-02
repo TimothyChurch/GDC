@@ -118,7 +118,7 @@ const display = (name: string) =>
         >
           <UIcon
             name="i-lucide-grip-vertical"
-            class="text-parchment/30 shrink-0"
+            class="text-parchment/50 shrink-0"
           />
           <UIcon
             :name="display(stage).icon"
@@ -126,7 +126,7 @@ const display = (name: string) =>
             class="shrink-0"
           />
           <span class="text-sm text-parchment flex-1">{{ stage }}</span>
-          <span class="text-[10px] text-parchment/40 tabular-nums">{{
+          <span class="text-[10px] text-parchment/60 tabular-nums">{{
             index + 1
           }}</span>
           <div class="flex items-center gap-0.5">

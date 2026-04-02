@@ -183,13 +183,13 @@ const save = async () => {
         <div class="text-xs text-parchment/60 uppercase tracking-wider mb-1">Desired Days</div>
         <template v-if="editing">
           <UInput v-model.number="local.duration" type="number" placeholder="e.g. 7" />
-          <div v-if="recipe?.macerationDays && !stage?.duration" class="text-xs text-parchment/40 mt-1">
+          <div v-if="recipe?.macerationDays && !stage?.duration" class="text-xs text-parchment/60 mt-1">
             Default from recipe: {{ recipe.macerationDays }} days
           </div>
         </template>
         <div v-else class="text-sm text-parchment">
           <template v-if="stage?.duration">{{ stage.duration }} days</template>
-          <template v-else-if="recipe?.macerationDays">{{ recipe.macerationDays }} days <span class="text-parchment/40">(from recipe)</span></template>
+          <template v-else-if="recipe?.macerationDays">{{ recipe.macerationDays }} days <span class="text-parchment/60">(from recipe)</span></template>
           <template v-else>N/A</template>
         </div>
       </div>
@@ -200,7 +200,7 @@ const save = async () => {
       <div class="flex items-center justify-between mb-3">
         <div class="text-xs text-parchment/60 uppercase tracking-wider">
           Ingredients
-          <span class="text-parchment/40 ml-1">(scaled to {{ batch.batchSize }} {{ batch.batchSizeUnit }})</span>
+          <span class="text-parchment/60 ml-1">(scaled to {{ batch.batchSize }} {{ batch.batchSizeUnit }})</span>
         </div>
         <span class="text-sm font-semibold text-gold">{{ Dollar.format(scaledTotalCost) }}</span>
       </div>

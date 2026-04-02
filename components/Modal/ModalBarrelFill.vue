@@ -203,7 +203,7 @@ const shortUnit = (unit: string) => unit.replace(/gallon/i, 'gal').replace(/lite
                 <UIcon name="i-lucide-droplets" class="inline text-xs" />
                 Add {{ waterNeeded.toFixed(1) }} {{ shortUnit(sourceVolumeUnit) }} water
               </div>
-              <div v-else class="text-sm text-parchment/40">
+              <div v-else class="text-sm text-parchment/60">
                 No proofing needed
               </div>
             </div>
@@ -286,7 +286,7 @@ const shortUnit = (unit: string) => unit.replace(/gallon/i, 'gal').replace(/lite
               <span :class="allocatedVolume > proovedVolume + 0.01 ? 'text-red-400' : 'text-parchment/50'">
                 {{ allocatedVolume.toFixed(1) }} {{ shortUnit(sourceVolumeUnit) }} allocated
               </span>
-              <span class="text-parchment/40">
+              <span class="text-parchment/60">
                 {{ availableVolume.toFixed(1) }} {{ shortUnit(sourceVolumeUnit) }} remaining
               </span>
             </div>

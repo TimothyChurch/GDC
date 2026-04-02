@@ -194,7 +194,7 @@ const printSheet = () => {
                   <td class="px-4 py-2 text-center text-xs text-parchment/50">
                     <template v-if="getLastCount(entry._id)">
                       {{ formatLastCount(entry, getLastCount(entry._id)!.quantity) }}
-                      <div class="text-parchment/40">{{ new Date(getLastCount(entry._id)!.date).toLocaleDateString() }}</div>
+                      <div class="text-parchment/60">{{ new Date(getLastCount(entry._id)!.date).toLocaleDateString() }}</div>
                     </template>
                     <span v-else class="text-parchment/20">--</span>
                   </td>

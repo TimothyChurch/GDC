@@ -122,7 +122,7 @@ const save = async () => {
       <div class="flex items-center justify-between mb-3">
         <div class="text-xs text-parchment/60 uppercase tracking-wider">
           Ingredients
-          <span class="text-parchment/40 ml-1">(scaled to {{ batch.batchSize }} {{ batch.batchSizeUnit }})</span>
+          <span class="text-parchment/60 ml-1">(scaled to {{ batch.batchSize }} {{ batch.batchSizeUnit }})</span>
         </div>
         <div class="flex items-center gap-3">
           <span class="text-sm font-semibold text-gold">{{ Dollar.format(scaledTotalCost) }}</span>

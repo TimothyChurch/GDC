@@ -71,7 +71,7 @@ async function saveBarrels() {
 
     <!-- Empty state -->
     <div v-if="localBarrels.length === 0" class="text-center py-6">
-      <UIcon name="i-lucide-cylinder" class="text-3xl text-parchment/30 mb-2" />
+      <UIcon name="i-lucide-cylinder" class="text-3xl text-parchment/50 mb-2" />
       <p class="text-sm text-parchment/50">No barrel defaults defined</p>
     </div>
 

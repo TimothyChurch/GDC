@@ -97,7 +97,7 @@ const getVesselNames = (vesselIds: string[]) => {
               <div class="text-xs text-parchment/60 uppercase tracking-wider">Total Cost</div>
               <div class="text-sm font-semibold text-parchment/70">{{ Dollar.format(prod.productionCost || 0) }}</div>
             </div>
-            <UIcon name="i-lucide-chevron-right" class="text-parchment/30 shrink-0 hidden sm:block" />
+            <UIcon name="i-lucide-chevron-right" class="text-parchment/50 shrink-0 hidden sm:block" />
           </div>
         </div>
       </div>

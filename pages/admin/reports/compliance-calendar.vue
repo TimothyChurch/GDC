@@ -31,7 +31,7 @@ const tabcPermitExpiry = ref('')
         placeholder="YYYY-MM-DD"
         class="w-40"
       />
-      <span class="text-xs text-parchment/40">Optional — enables permit renewal deadline</span>
+      <span class="text-xs text-parchment/60">Optional — enables permit renewal deadline</span>
     </div>
 
     <ReportComplianceDeadlines :tabc-permit-expiry="tabcPermitExpiry || undefined" />

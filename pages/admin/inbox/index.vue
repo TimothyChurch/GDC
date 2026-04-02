@@ -229,7 +229,7 @@ function formatDate(dateStr?: string): string {
             </div>
 
             <!-- Email -->
-            <div class="text-xs text-parchment/40 mb-1.5">
+            <div class="text-xs text-parchment/60 mb-1.5">
               {{ msg.email }}
             </div>
 
@@ -247,7 +247,7 @@ function formatDate(dateStr?: string): string {
 
           <!-- Right side: timestamp + actions -->
           <div class="flex flex-col items-end gap-2 shrink-0">
-            <span class="text-[11px] text-parchment/40 whitespace-nowrap">
+            <span class="text-[11px] text-parchment/60 whitespace-nowrap">
               {{ formatDate(msg.createdAt) }}
             </span>
 
@@ -292,7 +292,7 @@ function formatDate(dateStr?: string): string {
               </p>
 
               <!-- Contact details footer -->
-              <div class="flex flex-wrap items-center gap-4 mt-4 pt-3 border-t border-brown/15 text-xs text-parchment/40">
+              <div class="flex flex-wrap items-center gap-4 mt-4 pt-3 border-t border-brown/15 text-xs text-parchment/60">
                 <a
                   :href="`mailto:${msg.email}`"
                   class="flex items-center gap-1.5 text-gold hover:text-gold/80 transition-colors"
@@ -346,12 +346,12 @@ function formatDate(dateStr?: string): string {
       class="flex flex-col items-center justify-center py-16 text-center"
     >
       <div class="w-16 h-16 rounded-full bg-charcoal flex items-center justify-center mb-4">
-        <UIcon name="i-lucide-inbox" class="text-3xl text-parchment/30" />
+        <UIcon name="i-lucide-inbox" class="text-3xl text-parchment/50" />
       </div>
       <h3 class="text-lg font-medium text-parchment/60 mb-1">
         {{ showUnreadOnly ? 'No unread messages' : activeTopic !== 'All' ? `No ${activeTopic} messages` : 'No messages yet' }}
       </h3>
-      <p class="text-sm text-parchment/40">
+      <p class="text-sm text-parchment/60">
         {{ showUnreadOnly ? 'All messages have been read.' : 'Messages from the contact form will appear here.' }}
       </p>
     </div>

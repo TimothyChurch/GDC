@@ -210,7 +210,7 @@ const tabcCards = [
               {{ nextDeadlineDays }} day{{ nextDeadlineDays !== 1 ? 's' : '' }}
             </div>
           </div>
-          <UIcon name="i-lucide-arrow-right" class="text-parchment/30 group-hover:text-parchment/60 transition-colors" />
+          <UIcon name="i-lucide-arrow-right" class="text-parchment/50 group-hover:text-parchment/60 transition-colors" />
         </div>
       </div>
     </NuxtLink>

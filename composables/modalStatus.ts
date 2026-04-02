@@ -6,8 +6,3 @@ export const useCalculatorModal = () => {
   };
   return { calculatorModalStatus, toggleCalculatorModal };
 };
-
-export const useCocktailModal = () => {
-  const cocktailModalOpen = useState('cocktailModalOpen', () => false);
-  return { cocktailModalOpen };
-};

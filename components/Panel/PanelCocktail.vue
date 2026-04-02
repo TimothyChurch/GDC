@@ -192,7 +192,7 @@ const onDragEnd = () => {
                 @drop="onDrop(index)"
                 @dragend="onDragEnd"
               >
-                <UIcon name="i-lucide-grip-vertical" class="text-parchment/40 cursor-grab shrink-0" />
+                <UIcon name="i-lucide-grip-vertical" class="text-parchment/60 cursor-grab shrink-0" />
                 <span class="flex-1 text-sm truncate">
                   {{ getIngredientName(ingredient) }}
                   <span v-if="ingredient.sourceType === 'bottle'" class="text-xs text-copper/70 ml-1">(Bottle)</span>

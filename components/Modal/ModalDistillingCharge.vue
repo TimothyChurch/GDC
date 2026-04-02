@@ -215,7 +215,7 @@ const fillMax = () => {
               @click="toggleSelectAll"
             />
           </div>
-          <div v-if="sourceVesselOptions.length === 0" class="text-xs text-parchment/40 italic">
+          <div v-if="sourceVesselOptions.length === 0" class="text-xs text-parchment/60 italic">
             No vessels contain this batch
           </div>
           <div v-else class="space-y-1.5">
@@ -233,14 +233,14 @@ const fillMax = () => {
             >
               <UIcon
                 :name="sourceVessels.includes(option.value) ? 'i-lucide-check-square' : 'i-lucide-square'"
-                :class="sourceVessels.includes(option.value) ? 'text-copper' : 'text-parchment/30'"
+                :class="sourceVessels.includes(option.value) ? 'text-copper' : 'text-parchment/50'"
               />
               <span class="flex-1 truncate">{{ option.label }}</span>
             </UButton>
           </div>
           <div v-if="sourceVessels.length > 0 && remainingVolume > 0" class="mt-1.5 text-xs text-parchment/50">
             Total: {{ remainingVolume.toFixed(1) }} {{ chargeVolumeUnit }} @ {{ remainingAbv.toFixed(1) }}% ABV
-            <span v-if="sourceVessels.length > 1" class="text-parchment/30">
+            <span v-if="sourceVessels.length > 1" class="text-parchment/50">
               ({{ sourceVessels.length }} vessels)
             </span>
           </div>
@@ -294,7 +294,7 @@ const fillMax = () => {
                 :style="{ width: `${chargePercent}%` }"
               />
             </div>
-            <div class="flex justify-between text-xs text-parchment/40 mt-0.5">
+            <div class="flex justify-between text-xs text-parchment/60 mt-0.5">
               <span>{{ chargeVolume || 0 }} {{ chargeVolumeUnit }}</span>
               <span>{{ remainingVolume.toFixed(1) }} available</span>
             </div>

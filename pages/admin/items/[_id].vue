@@ -109,7 +109,7 @@ const stockStatusColor = computed(() =>
 
 <template>
   <div v-if="!itemStore.loaded" class="flex items-center justify-center py-12">
-    <UIcon name="i-lucide-loader-2" class="animate-spin text-3xl text-parchment/30" />
+    <UIcon name="i-lucide-loader-2" class="animate-spin text-3xl text-parchment/50" />
   </div>
 
   <div v-else-if="item" class="space-y-6">

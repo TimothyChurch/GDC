@@ -38,7 +38,7 @@ const BORDER_TOP_MAP: Record<string, string> = {
 <template>
   <div>
     <!-- Empty state when no batches at all -->
-    <div v-if="columns.length === 0" class="text-center py-12 text-parchment/40">
+    <div v-if="columns.length === 0" class="text-center py-12 text-parchment/60">
       <UIcon name="i-lucide-kanban" class="text-3xl mb-2" />
       <p class="text-sm">No batches to display</p>
     </div>
