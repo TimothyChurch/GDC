@@ -53,10 +53,12 @@ export const Production = defineMongooseModel({
 		productionCost: {
 			type: Number,
 			required: true,
+			min: 0,
 		},
 		bottleCost: {
 			type: Number,
 			required: true,
+			min: 0,
 		},
 	},
 	options: { timestamps: true, autoIndex: true },
