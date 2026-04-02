@@ -5,7 +5,7 @@ export const ITEM_CATEGORIES = [
   "Bar Supplies",
   "Other",
 ] as const;
-export type ItemCategory = string;
+export type ItemCategory = (typeof ITEM_CATEGORIES)[number];
 
 export interface Item {
   _id: string;
