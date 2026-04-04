@@ -25,6 +25,7 @@ const props = defineProps<{
   sourceVesselId?: string
   defaultRunType?: 'stripping' | 'spirit'
   isFirstRun?: boolean
+  forceRunType?: boolean
 }>()
 
 const emit = defineEmits<{
@@ -356,7 +357,7 @@ const submit = () => {
         </div>
 
         <!-- Run Type -->
-        <div>
+        <div v-if="!forceRunType">
           <div class="text-xs text-parchment/60 uppercase tracking-wider mb-2">Run Type</div>
           <div class="flex gap-2">
             <UButton

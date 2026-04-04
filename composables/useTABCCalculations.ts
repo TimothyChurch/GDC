@@ -64,11 +64,24 @@ export function useTABCCalculations(month: Ref<string> | ComputedRef<string>) {
 
   // ─── Section 1: Production ────────────────────────────────────────────────────
 
+  // Get distilling start date from either new spiritRun stage or legacy distilling stage
+  const getDistillingStartDate = (b: any): Date | null => {
+    const spiritDate = b.stages?.spiritRun?.startedAt
+    const distDate = b.stages?.distilling?.startedAt
+    const dateStr = spiritDate || distDate
+    return dateStr ? new Date(dateStr) : null
+  }
+
+  // Get spirit runs from both new and legacy stage structures
+  const getSpiritRuns = (b: any) => {
+    const newRuns = b.stages?.spiritRun?.runs || []
+    const legacyRuns = normalizeDistillingRuns(b.stages?.distilling)
+    return [...newRuns, ...legacyRuns].filter((r: any) => r.runType === 'spirit')
+  }
+
   const distilledBatches = computed(() =>
     batchStore.batches.filter(b => {
-      const distDate = (b.stages as any)?.distilling?.startedAt
-        ? new Date((b.stages as any).distilling.startedAt)
-        : null
+      const distDate = getDistillingStartDate(b)
       if (!distDate) return false
       return distDate >= monthStart.value && distDate <= monthEnd.value
     })
@@ -80,13 +93,13 @@ export function useTABCCalculations(month: Ref<string> | ComputedRef<string>) {
     distilledBatches.value.forEach(batch => {
       const recipe = batch.recipe ? recipeStore.getRecipeById(batch.recipe) : null
       const spiritType = recipe?.class || recipe?.type || 'Unknown'
-      const runs = normalizeDistillingRuns((batch.stages as any)?.distilling)
+      const runs = getSpiritRuns(batch)
 
       let heartsVol = 0
       let heartsAbvWeighted = 0
 
       for (const run of runs) {
-        if (run.runType === 'spirit' && run.collected?.hearts) {
+        if (run.collected?.hearts) {
           const h = run.collected.hearts
           const vol = toGallons(h.volume || 0, h.volumeUnit || 'gallon')
           heartsVol += vol
@@ -121,9 +134,9 @@ export function useTABCCalculations(month: Ref<string> | ComputedRef<string>) {
     let headsWG = 0, tailsWG = 0, headsAbvWt = 0, tailsAbvWt = 0
 
     distilledBatches.value.forEach(batch => {
-      const runs = normalizeDistillingRuns((batch.stages as any)?.distilling)
+      const runs = getSpiritRuns(batch)
       for (const run of runs) {
-        if (run.runType !== 'spirit' || !run.collected) continue
+        if (!run.collected) continue
         const heads = run.collected.heads
         const lateHeads = run.collected.lateHeads
         const tails = run.collected.tails

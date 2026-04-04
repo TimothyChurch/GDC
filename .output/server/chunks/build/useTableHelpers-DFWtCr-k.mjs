@@ -1,4 +1,4 @@
-import { resolveComponent, h, ref, useTemplateRef, computed } from 'vue';
+import { ref, useTemplateRef, computed, resolveComponent, h } from 'vue';
 
 function renderSortHeader(column, label) {
   const UButton = resolveComponent("UButton");

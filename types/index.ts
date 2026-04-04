@@ -1,4 +1,4 @@
-import type { Batch, BatchStages, BatchLogEntry, BatchStageBase, TastingNote, TransferLogEntry, MashingStage, FermentingStage, DistillingStage, DistillingRun, DistillingAddition, DistillingCut, MacerationStage, FilteringStage, BarrelAgingStage, StorageStage, BlendingStage, ProofingStage, BottledStage } from './interfaces/Batch';
+import type { Batch, BatchStages, BatchLogEntry, BatchStageBase, TastingNote, TransferLogEntry, MashingStage, FermentingStage, StrippingRunStage, LowWinesStage, SpiritRunStage, DistillingStage, DistillingRun, DistillingAddition, DistillingCut, MacerationStage, FilteringStage, BarrelAgingStage, StorageStage, BlendingStage, ProofingStage, BottledStage } from './interfaces/Batch';
 import type { Bottle } from './interfaces/Bottle';
 import type { Cocktail, CocktailIngredient, IngredientSourceType } from './interfaces/Cocktail';
 import type { Contact } from './interfaces/Contact';
@@ -28,6 +28,9 @@ export type {
 	TransferLogEntry,
 	MashingStage,
 	FermentingStage,
+	StrippingRunStage,
+	LowWinesStage,
+	SpiritRunStage,
 	DistillingStage,
 	DistillingRun,
 	DistillingAddition,

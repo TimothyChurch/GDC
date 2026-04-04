@@ -3,6 +3,9 @@ export const ALL_STAGES = [
   "Upcoming",
   "Mashing",
   "Fermenting",
+  "Stripping Run",
+  "Low Wines",
+  "Spirit Run",
   "Distilling",
   "Maceration",
   "Filtering",
@@ -20,7 +23,9 @@ export const PIPELINE_TEMPLATES: Record<string, StageName[]> = {
   "Grain Spirit (Barreled)": [
     "Mashing",
     "Fermenting",
-    "Distilling",
+    "Stripping Run",
+    "Low Wines",
+    "Spirit Run",
     "Barrel Aging",
     "Storage",
     "Proofing",
@@ -29,7 +34,9 @@ export const PIPELINE_TEMPLATES: Record<string, StageName[]> = {
   "Grain Spirit (Unbarreled)": [
     "Mashing",
     "Fermenting",
-    "Distilling",
+    "Stripping Run",
+    "Low Wines",
+    "Spirit Run",
     "Storage",
     "Proofing",
     "Bottled",
@@ -59,7 +66,9 @@ export const PIPELINE_TEMPLATES: Record<string, StageName[]> = {
   "Neutral Spirit": [
     "Mashing",
     "Fermenting",
-    "Distilling",
+    "Stripping Run",
+    "Low Wines",
+    "Spirit Run",
     "Storage",
   ],
   Custom: [],
@@ -69,6 +78,9 @@ export const PIPELINE_TEMPLATES: Record<string, StageName[]> = {
 export const STAGE_KEY_MAP: Record<string, string> = {
   Mashing: "mashing",
   Fermenting: "fermenting",
+  "Stripping Run": "strippingRun",
+  "Low Wines": "lowWines",
+  "Spirit Run": "spiritRun",
   Distilling: "distilling",
   Maceration: "maceration",
   Filtering: "filtering",
@@ -84,6 +96,9 @@ export const STAGE_DISPLAY: Record<string, { icon: string; color: string }> = {
   Upcoming: { icon: "i-lucide-calendar-clock", color: "blue" },
   Mashing: { icon: "i-lucide-flame", color: "orange" },
   Fermenting: { icon: "i-lucide-beaker", color: "yellow" },
+  "Stripping Run": { icon: "i-lucide-flask-conical", color: "copper" },
+  "Low Wines": { icon: "i-lucide-beaker", color: "amber" },
+  "Spirit Run": { icon: "i-lucide-flask-round", color: "rose" },
   Distilling: { icon: "i-lucide-flask-conical", color: "copper" },
   Maceration: { icon: "i-lucide-leaf", color: "emerald" },
   Filtering: { icon: "i-lucide-filter", color: "sky" },
@@ -98,6 +113,9 @@ export const STAGE_DISPLAY: Record<string, { icon: string; color: string }> = {
 export const STAGE_VESSEL_TYPE: Record<string, string> = {
   Mashing: "Mash Tun",
   Fermenting: "Fermenter",
+  "Stripping Run": "Still",
+  "Low Wines": "Tank",
+  "Spirit Run": "Still",
   Distilling: "Still",
   Maceration: "Tank",
   Filtering: "Tank",
@@ -241,6 +259,7 @@ const TEXT_COLOR_MAP: Record<string, string> = {
   purple: "text-purple-400",
   pink: "text-pink-400",
   cyan: "text-cyan-400",
+  rose: "text-rose-400",
   green: "text-green-400",
 };
 
@@ -255,6 +274,7 @@ const BG_COLOR_MAP: Record<string, string> = {
   purple: "bg-purple-500/10 border-purple-500/30",
   pink: "bg-pink-500/10 border-pink-500/30",
   cyan: "bg-cyan-500/10 border-cyan-500/30",
+  rose: "bg-rose-500/10 border-rose-500/30",
   green: "bg-green-500/10 border-green-500/30",
 };
 

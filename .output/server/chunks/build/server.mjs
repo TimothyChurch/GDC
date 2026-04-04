@@ -689,13 +689,13 @@ const _routes = [
         name: "admin-users",
         path: "users",
         meta: __nuxt_page_meta$V || {},
-        component: () => import('./users-eiVLLlBy.mjs').then((n) => n.a)
+        component: () => import('./users-B8uzpF--.mjs').then((n) => n.a)
       },
       {
         name: "admin-barrels",
         path: "barrels",
         meta: __nuxt_page_meta$U || {},
-        component: () => import('./barrels-pRXy2P6r.mjs')
+        component: () => import('./barrels-B6civ0DO.mjs')
       },
       {
         name: "admin-controls",
@@ -719,19 +719,19 @@ const _routes = [
         name: "admin-dashboard",
         path: "dashboard",
         meta: __nuxt_page_meta$Q || {},
-        component: () => import('./dashboard-cdL7tesJ.mjs')
+        component: () => import('./dashboard-_miPb5I2.mjs')
       },
       {
         name: "admin-batch-_id",
         path: "batch/:_id()",
         meta: __nuxt_page_meta$P || {},
-        component: () => import('./__id_-CymgwWg1.mjs')
+        component: () => import('./__id_-KBP1FHZZ.mjs')
       },
       {
         name: "admin-batch",
         path: "batch",
         meta: __nuxt_page_meta$O || {},
-        component: () => import('./index-u1QDa0kq.mjs')
+        component: () => import('./index-BFK7cme_.mjs')
       },
       {
         name: "admin-inbox-_id",
@@ -749,121 +749,121 @@ const _routes = [
         name: "admin-items-_id",
         path: "items/:_id()",
         meta: __nuxt_page_meta$L || {},
-        component: () => import('./__id_-Cjx0ivLn.mjs')
+        component: () => import('./__id_-CAxbeedf.mjs')
       },
       {
         name: "admin-items",
         path: "items",
         meta: __nuxt_page_meta$K || {},
-        component: () => import('./index-BjyJnGRF.mjs')
+        component: () => import('./index-C89jtlqf.mjs')
       },
       {
         name: "admin-bulk-spirits",
         path: "bulk-spirits",
         meta: __nuxt_page_meta$J || {},
-        component: () => import('./bulk-spirits-DqD7yhHb.mjs')
+        component: () => import('./bulk-spirits--Je44AWM.mjs')
       },
       {
         name: "admin-events-_id",
         path: "events/:_id()",
         meta: __nuxt_page_meta$I || {},
-        component: () => import('./__id_-BhEW1q9u.mjs')
+        component: () => import('./__id_-B435u5re.mjs')
       },
       {
         name: "admin-events",
         path: "events",
         meta: __nuxt_page_meta$H || {},
-        component: () => import('./index-Cwy2g1td.mjs')
+        component: () => import('./index-Sr9xVnkH.mjs')
       },
       {
         name: "admin-bottles-_id",
         path: "bottles/:_id()",
         meta: __nuxt_page_meta$G || {},
-        component: () => import('./__id_-w0pIhgnF.mjs')
+        component: () => import('./__id_-Q3HPZD4V.mjs')
       },
       {
         name: "admin-bottles",
         path: "bottles",
         meta: __nuxt_page_meta$F || {},
-        component: () => import('./index-Bn27MdZN.mjs')
+        component: () => import('./index-C9viJimP.mjs')
       },
       {
         name: "admin-recipes-_id",
         path: "recipes/:_id()",
         meta: __nuxt_page_meta$E || {},
-        component: () => import('./__id_-7NJG0NlY.mjs')
+        component: () => import('./__id_-Dhq-BdAt.mjs')
       },
       {
         name: "admin-recipes",
         path: "recipes",
         meta: __nuxt_page_meta$D || {},
-        component: () => import('./index-Qho2o9ia.mjs')
+        component: () => import('./index-BPDG7Jsd.mjs')
       },
       {
         name: "admin-reports-costs",
         path: "reports/costs",
         meta: __nuxt_page_meta$C || {},
-        component: () => import('./costs-CCfdftlV.mjs')
+        component: () => import('./costs-DFzyIf-u.mjs')
       },
       {
         name: "admin-reports",
         path: "reports",
         meta: __nuxt_page_meta$B || {},
-        component: () => import('./index-BKFjGMb2.mjs')
+        component: () => import('./index-yZFutZUj.mjs')
       },
       {
         name: "admin-vessels-_id",
         path: "vessels/:_id()",
         meta: __nuxt_page_meta$A || {},
-        component: () => import('./__id_-ZIxhVSkT.mjs')
+        component: () => import('./__id_-DK0CoZpr.mjs')
       },
       {
         name: "admin-vessels",
         path: "vessels",
         meta: __nuxt_page_meta$z || {},
-        component: () => import('./index-Ct6SqPAv.mjs')
+        component: () => import('./index-BUrLoQyw.mjs')
       },
       {
         name: "admin-cocktails-grid",
         path: "cocktails/grid",
         meta: __nuxt_page_meta$y || {},
-        component: () => import('./grid-COeKHYVc.mjs')
+        component: () => import('./grid-CKD2hdyl.mjs')
       },
       {
         name: "admin-contacts-_id",
         path: "contacts/:_id()",
         meta: __nuxt_page_meta$x || {},
-        component: () => import('./__id_-TivlCNaB.mjs')
+        component: () => import('./__id_-Ck4wBBTd.mjs')
       },
       {
         name: "admin-contacts",
         path: "contacts",
         meta: __nuxt_page_meta$w || {},
-        component: () => import('./index-BQ5lnFwC.mjs')
+        component: () => import('./index-D3p2jYaf.mjs')
       },
       {
         name: "admin-cocktails-_id",
         path: "cocktails/:_id()",
         meta: __nuxt_page_meta$v || {},
-        component: () => import('./__id_-SD8eyri_.mjs')
+        component: () => import('./__id_-QqrZxiQh.mjs')
       },
       {
         name: "admin-cocktails",
         path: "cocktails",
         meta: __nuxt_page_meta$u || {},
-        component: () => import('./index-C_Nyxb_S.mjs')
+        component: () => import('./index-D8IPNiCz.mjs')
       },
       {
         name: "admin-customers-_id",
         path: "customers/:_id()",
         meta: __nuxt_page_meta$t || {},
-        component: () => import('./__id_-C4YKPgeL.mjs')
+        component: () => import('./__id_-Dj0EXDN2.mjs')
       },
       {
         name: "admin-customers",
         path: "customers",
         meta: __nuxt_page_meta$s || {},
-        component: () => import('./index-fu8gfpAB.mjs')
+        component: () => import('./index-CFpIGi5o.mjs')
       },
       {
         name: "admin-inventory",
@@ -881,7 +881,7 @@ const _routes = [
         name: "admin-inventory-other",
         path: "inventory/other",
         meta: __nuxt_page_meta$p || {},
-        component: () => import('./other-fNjfTZVU.mjs')
+        component: () => import('./other-DWCIJ8lp.mjs')
       },
       {
         name: "admin-inventory-print",
@@ -893,25 +893,25 @@ const _routes = [
         name: "admin-reports-barrels",
         path: "reports/barrels",
         meta: __nuxt_page_meta$n || {},
-        component: () => import('./barrels-D8gYTcSy.mjs')
+        component: () => import('./barrels-Dco4YMHV.mjs')
       },
       {
         name: "admin-inventory-slug",
         path: "inventory/:slug()",
         meta: __nuxt_page_meta$m || {},
-        component: () => import('./_slug_-DrKJ1aJd.mjs')
+        component: () => import('./_slug_-vMfvpw8Q.mjs')
       },
       {
         name: "admin-production-_id",
         path: "production/:_id()",
         meta: __nuxt_page_meta$l || {},
-        component: () => import('./__id_-c0Wjipd5.mjs')
+        component: () => import('./__id_-DQL0Yupb.mjs')
       },
       {
         name: "admin-production",
         path: "production",
         meta: __nuxt_page_meta$k || {},
-        component: () => import('./index-D_X5mBdu.mjs')
+        component: () => import('./index-k1tyAbrj.mjs')
       },
       {
         name: "admin-bottles-inventory",
@@ -929,7 +929,7 @@ const _routes = [
         name: "admin-inventory-bottling",
         path: "inventory/bottling",
         meta: __nuxt_page_meta$h || {},
-        component: () => import('./bottling-Cag5mISv.mjs')
+        component: () => import('./bottling-C38EJBVz.mjs')
       },
       {
         name: "admin-reports-production",
@@ -941,43 +941,43 @@ const _routes = [
         name: "admin-reports-ttb-storage",
         path: "reports/ttb-storage",
         meta: __nuxt_page_meta$f || {},
-        component: () => import('./ttb-storage-BI9wxBzN.mjs')
+        component: () => import('./ttb-storage-D5Yhyr-_.mjs')
       },
       {
         name: "admin-inventory-botanicals",
         path: "inventory/botanicals",
         meta: __nuxt_page_meta$e || {},
-        component: () => import('./botanicals-BohP_IPl.mjs')
+        component: () => import('./botanicals-CkUig2PQ.mjs')
       },
       {
         name: "admin-purchaseOrders-_id",
         path: "purchaseOrders/:_id()",
         meta: __nuxt_page_meta$d || {},
-        component: () => import('./__id_-nJmPr5SU.mjs')
+        component: () => import('./__id_-DQ_DOt6X.mjs')
       },
       {
         name: "admin-purchaseOrders",
         path: "purchaseOrders",
         meta: __nuxt_page_meta$c || {},
-        component: () => import('./index-BxHaArGn.mjs')
+        component: () => import('./index-RD_rVdXl.mjs')
       },
       {
         name: "admin-reports-tabc-monthly",
         path: "reports/tabc-monthly",
         meta: __nuxt_page_meta$b || {},
-        component: () => import('./tabc-monthly-DNE_LL5I.mjs')
+        component: () => import('./tabc-monthly-Bq8NzG9P.mjs')
       },
       {
         name: "admin-inventory-ingredients",
         path: "inventory/ingredients",
         meta: __nuxt_page_meta$a || {},
-        component: () => import('./ingredients-MCj1OMfI.mjs')
+        component: () => import('./ingredients-CDP7ujZA.mjs')
       },
       {
         name: "admin-inventory-bar-supplies",
         path: "inventory/bar-supplies",
         meta: __nuxt_page_meta$9 || {},
-        component: () => import('./bar-supplies-D7bPWD3P.mjs')
+        component: () => import('./bar-supplies-DQU3mjdb.mjs')
       },
       {
         name: "admin-reports-ttb-excise-tax",
@@ -989,19 +989,19 @@ const _routes = [
         name: "admin-reports-ttb-processing",
         path: "reports/ttb-processing",
         meta: __nuxt_page_meta$7 || {},
-        component: () => import('./ttb-processing-BVeK2bsD.mjs')
+        component: () => import('./ttb-processing-D-AjBy1b.mjs')
       },
       {
         name: "admin-reports-ttb-production",
         path: "reports/ttb-production",
         meta: __nuxt_page_meta$6 || {},
-        component: () => import('./ttb-production-EoSUx3yr.mjs')
+        component: () => import('./ttb-production-B6HDGGez.mjs')
       },
       {
         name: "admin-inventory-shopping-list",
         path: "inventory/shopping-list",
         meta: __nuxt_page_meta$5 || {},
-        component: () => import('./shopping-list-BDrGj8s7.mjs')
+        component: () => import('./shopping-list-B56cKGYk.mjs')
       },
       {
         name: "admin-reports-tabc-excise-tax",
@@ -1025,7 +1025,7 @@ const _routes = [
   {
     name: "login",
     path: "/login",
-    component: () => import('./login-DtEbSQoy.mjs')
+    component: () => import('./login-B4AjU0DK.mjs')
   },
   {
     name: __nuxt_page_meta$1?.name,
@@ -7458,8 +7458,8 @@ _sfc_main$3.setup = (props, ctx) => {
 };
 const __nuxt_component_0$1 = Object.assign(_sfc_main$3, { __name: "UApp" });
 const layouts = {
-  admin: defineAsyncComponent(() => import('./admin-7-JjfVWL.mjs').then((n) => n.a).then((m) => m.default || m)),
-  default: defineAsyncComponent(() => import('./default-Bt-7nJE5.mjs').then((m) => m.default || m))
+  admin: defineAsyncComponent(() => import('./admin-7BUZFj_w.mjs').then((n) => n.a).then((m) => m.default || m)),
+  default: defineAsyncComponent(() => import('./default-BSWtU2B-.mjs').then((m) => m.default || m))
 };
 const routeRulesMatcher = _routeRulesMatcher;
 const LayoutLoader = defineComponent({
@@ -7824,5 +7824,5 @@ let entry;
 }
 const entry_default = ((ssrContext) => entry(ssrContext));
 
-export { useAsyncData as $, createReusableTemplate as A, formErrorsInjectionKey as B, formInputsInjectionKey as C, inputIdInjectionKey as D, formFieldInjectionKey as E, isArrayOfArray as F, get as G, _sfc_main$c as H, getDisplayValue as I, useState as J, createSharedComposable as K, compare as L, fieldGroupInjectionKey as M, formBusInjectionKey as N, formStateInjectionKey as O, formLoadingInjectionKey as P, formOptionsInjectionKey as Q, useEventBus as R, reactiveOmit as S, _sfc_main$9 as T, pickLinkProps as U, _sfc_main$a as V, omit as W, createError as X, useNuxtApp as Y, fetchDefaults as Z, __nuxt_component_0 as _, useSeoMeta as a, useRequestFetch as a0, defineNuxtRouteMiddleware as a1, isDark as a2, toggleDark as a3, refThrottled as a4, useMagicKeys as a5, useEventListener as a6, __nuxt_component_2 as b, __nuxt_component_1$1 as c, __nuxt_component_0$2 as d, entry_default as default, _sfc_main$8 as e, _sfc_main$e as f, useOverlay as g, useRouter as h, useAppConfig as i, useFormField as j, useWebSocket as k, useRuntimeConfig as l, useToast as m, navigateTo as n, useLocalStorage as o, usePortal as p, useVModel as q, reactivePick as r, useFieldGroup as s, tv as t, useRoute as u, useComponentIcons as v, _sfc_main$b as w, looseToNumber as x, useLocale as y, useDebounceFn as z };
+export { useAsyncData as $, createReusableTemplate as A, formErrorsInjectionKey as B, formInputsInjectionKey as C, inputIdInjectionKey as D, formFieldInjectionKey as E, isArrayOfArray as F, get as G, _sfc_main$c as H, getDisplayValue as I, useState as J, createSharedComposable as K, compare as L, fieldGroupInjectionKey as M, reactiveOmit as N, _sfc_main$9 as O, pickLinkProps as P, _sfc_main$a as Q, omit as R, createError as S, formBusInjectionKey as T, formStateInjectionKey as U, formLoadingInjectionKey as V, formOptionsInjectionKey as W, useEventBus as X, useNuxtApp as Y, fetchDefaults as Z, __nuxt_component_0 as _, useSeoMeta as a, useRequestFetch as a0, defineNuxtRouteMiddleware as a1, isDark as a2, toggleDark as a3, refThrottled as a4, useMagicKeys as a5, useEventListener as a6, __nuxt_component_2 as b, __nuxt_component_1$1 as c, __nuxt_component_0$2 as d, entry_default as default, _sfc_main$8 as e, _sfc_main$e as f, useOverlay as g, useRouter as h, useAppConfig as i, useFormField as j, useWebSocket as k, useRuntimeConfig as l, useToast as m, navigateTo as n, useLocalStorage as o, usePortal as p, useVModel as q, reactivePick as r, useFieldGroup as s, tv as t, useRoute as u, useComponentIcons as v, _sfc_main$b as w, looseToNumber as x, useLocale as y, useDebounceFn as z };
 //# sourceMappingURL=server.mjs.map

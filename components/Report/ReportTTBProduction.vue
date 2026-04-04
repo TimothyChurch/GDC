@@ -25,10 +25,33 @@ const monthLabel = computed(() =>
   monthStart.value.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })
 )
 
+// Get the distilling start date from either legacy distilling stage or new spirit run stage
+const getDistillingStartDate = (b: Batch): Date | null => {
+  const spiritDate = (b.stages as any)?.spiritRun?.startedAt
+  const distDate = (b.stages as any)?.distilling?.startedAt
+  const dateStr = spiritDate || distDate
+  return dateStr ? new Date(dateStr) : null
+}
+
+// Get all spirit runs from a batch (checks both new spiritRun stage and legacy distilling stage)
+const getSpiritRuns = (b: Batch) => {
+  const newRuns = (b.stages as any)?.spiritRun?.runs || []
+  const legacyRuns = normalizeDistillingRuns((b.stages as any)?.distilling)
+  return [...newRuns, ...legacyRuns].filter((r: any) => r.runType === 'spirit')
+}
+
+// Get all runs (stripping + spirit) from a batch
+const getAllRuns = (b: Batch) => {
+  const strippingRuns = (b.stages as any)?.strippingRun?.runs || []
+  const spiritRuns = (b.stages as any)?.spiritRun?.runs || []
+  const legacyRuns = normalizeDistillingRuns((b.stages as any)?.distilling)
+  return [...strippingRuns, ...spiritRuns, ...legacyRuns]
+}
+
 // Batches distilled during the selected month
 const distilledBatches = computed(() => {
   return batchStore.batches.filter(b => {
-    const distDate = (b.stages as any)?.distilling?.startedAt ? new Date((b.stages as any).distilling.startedAt) : null
+    const distDate = getDistillingStartDate(b)
     if (!distDate) return false
     return distDate >= monthStart.value && distDate <= monthEnd.value
   })
@@ -41,14 +64,14 @@ const productionByType = computed(() => {
   distilledBatches.value.forEach(batch => {
     const recipe = batch.recipe ? recipeStore.getRecipeById(batch.recipe) : null
     const spiritType = recipe?.class || recipe?.type || 'Unknown'
-    const runs = normalizeDistillingRuns((batch.stages as any)?.distilling)
+    const runs = getSpiritRuns(batch)
 
     // Sum hearts from spirit runs only (stripping output is low wines, not final spirit)
     let heartsVol = 0
     let heartsAbvWeighted = 0
 
     for (const run of runs) {
-      if (run.runType === 'spirit' && run.collected?.hearts) {
+      if (run.collected?.hearts) {
         const h = run.collected.hearts
         const vol = toGallons(h.volume || 0, h.volumeUnit || 'gallon')
         heartsVol += vol
@@ -89,10 +112,10 @@ const headsAndTails = computed(() => {
   let headsWG = 0, headsPG = 0, lateHeadsWG = 0, lateHeadsPG = 0, tailsWG = 0, tailsPG = 0
 
   distilledBatches.value.forEach(batch => {
-    const runs = normalizeDistillingRuns((batch.stages as any)?.distilling)
+    const runs = getSpiritRuns(batch)
 
     for (const run of runs) {
-      if (run.runType !== 'spirit' || !run.collected) continue
+      if (!run.collected) continue
 
       const heads = run.collected.heads
       const lateHeads = run.collected.lateHeads

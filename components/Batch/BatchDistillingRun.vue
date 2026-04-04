@@ -3,11 +3,14 @@ import type { DistillingRun, DistillingAddition, DistillingCut } from '~/types'
 import { calculateProofGallons } from '~/utils/proofGallons'
 import { convertUnitRatio } from '~/utils/conversions'
 
-const props = defineProps<{
+const props = withDefaults(defineProps<{
   run: DistillingRun
   runIndex: number
   batchId: string
-}>()
+  stageKey?: 'distilling' | 'strippingRun' | 'spiritRun'
+}>(), {
+  stageKey: 'distilling',
+})
 
 const emit = defineEmits<{
   delete: [runIndex: number]
@@ -216,7 +219,7 @@ const save = async () => {
         if (cut && !cut.vessel) cut.vessel = undefined
       }
     }
-    await batchStore.updateDistillingRun(props.batchId, props.runIndex, data)
+    await batchStore.updateRunByStageKey(props.stageKey, props.batchId, props.runIndex, data)
     // After save, exit run edit mode
     runEditing.value = false
   } finally {
@@ -247,7 +250,7 @@ const completeRun = async () => {
 
     // Get the stage vessel (the still)
     const batch = batchStore.items.find(b => b._id === props.batchId)
-    const stillId = batch?.stages?.distilling?.vessel
+    const stillId = (batch?.stages as any)?.[props.stageKey]?.vessel
 
     if (stillId) {
       // Capture the batch's value from the still before emptying (proportional to batch cost)
@@ -289,7 +292,7 @@ const completeRun = async () => {
       }
     }
 
-    await batchStore.updateDistillingRun(props.batchId, props.runIndex, data)
+    await batchStore.updateRunByStageKey(props.stageKey, props.batchId, props.runIndex, data)
     runEditing.value = false
   } finally {
     completing.value = false

@@ -1,5 +1,9 @@
 <script setup lang="ts">
 const vesselStore = useVesselStore();
+const batchStore = useBatchStore();
+
+// Batches currently in Low Wines stage
+const lowWinesBatches = computed(() => batchStore.lowWinesBatches);
 </script>
 
 <template>
@@ -21,6 +25,19 @@ const vesselStore = useVesselStore();
           <div v-for="content in still.contents" :key="content.batch">
             <DashboardBatchCard :batchId="content.batch" />
           </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Low Wines holding -->
+    <div v-if="lowWinesBatches.length > 0" class="mt-3">
+      <div class="flex items-center gap-2 mb-2">
+        <UIcon name="i-lucide-beaker" class="text-amber-400 text-xs" />
+        <span class="text-xs font-semibold text-amber-400 uppercase tracking-wider">Low Wines</span>
+      </div>
+      <div class="flex flex-col gap-2">
+        <div v-for="batch in lowWinesBatches" :key="batch._id">
+          <DashboardBatchCard :batchId="batch._id" />
         </div>
       </div>
     </div>

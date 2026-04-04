@@ -110,6 +110,9 @@ const barrelAgingHasBarrels = computed(() => {
 const STAGE_COMPONENTS: Record<string, ReturnType<typeof resolveComponent>> = {
   'Mashing': resolveComponent('BatchMashing'),
   'Fermenting': resolveComponent('BatchFermenting'),
+  'Stripping Run': resolveComponent('BatchStrippingRun'),
+  'Low Wines': resolveComponent('BatchLowWines'),
+  'Spirit Run': resolveComponent('BatchSpiritRun'),
   'Distilling': resolveComponent('BatchDistilling'),
   'Maceration': resolveComponent('BatchMaceration'),
   'Filtering': resolveComponent('BatchFiltering'),

@@ -1,1 +1,0 @@
-import{u as n}from"./D7T8xN0c.js";import{n as r}from"./Prj0Dqqr.js";const a=["Bottling","Base Ingredient","Botanical","Bar Supplies","Other"];function u(){const e=[...a];try{const t=n();return r(()=>t.loaded&&t.itemCategories.length>0?t.itemCategories.map(o=>o.category):e)}catch{return r(()=>e)}}export{u};

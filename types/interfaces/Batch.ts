@@ -96,6 +96,22 @@ export interface DistillingStage extends BatchStageBase {
 	};
 }
 
+export interface StrippingRunStage extends BatchStageBase {
+	runs?: DistillingRun[];
+}
+
+export interface LowWinesStage extends BatchStageBase {
+	volume?: number;
+	volumeUnit?: string;
+	abv?: number;
+	proofGallons?: number;
+	sourceRuns?: number;
+}
+
+export interface SpiritRunStage extends BatchStageBase {
+	runs?: DistillingRun[];
+}
+
 export interface MacerationStage extends BatchStageBase {
 	baseSpirit: {
 		source?: string;
@@ -205,6 +221,9 @@ export interface BottledStage extends BatchStageBase {
 export interface BatchStages {
 	mashing?: MashingStage;
 	fermenting?: FermentingStage;
+	strippingRun?: StrippingRunStage;
+	lowWines?: LowWinesStage;
+	spiritRun?: SpiritRunStage;
 	distilling?: DistillingStage;
 	maceration?: MacerationStage;
 	filtering?: FilteringStage;
@@ -214,7 +233,7 @@ export interface BatchStages {
 	proofing?: ProofingStage;
 	bottled?: BottledStage;
 	/** Index signature for dynamic stage key access via STAGE_KEY_MAP */
-	[key: string]: BatchStageBase | MashingStage | FermentingStage | DistillingStage | MacerationStage | FilteringStage | BarrelAgingStage | StorageStage | BlendingStage | ProofingStage | BottledStage | undefined;
+	[key: string]: BatchStageBase | MashingStage | FermentingStage | StrippingRunStage | LowWinesStage | SpiritRunStage | DistillingStage | MacerationStage | FilteringStage | BarrelAgingStage | StorageStage | BlendingStage | ProofingStage | BottledStage | undefined;
 }
 
 // --- Tasting note entry ---

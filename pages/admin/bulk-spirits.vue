@@ -1,92 +1,78 @@
 <script setup lang="ts">
 import type { BulkSpirit } from '~/types'
 import type { TableColumn } from '@nuxt/ui'
+import { LazyPanelBulkSpirit } from '#components'
+import { getPaginationRowModel } from '@tanstack/vue-table'
 
 definePageMeta({ layout: 'admin' })
 
-const router = useRouter()
 const bulkSpiritStore = useBulkSpiritStore()
 const vesselStore = useVesselStore()
 const { confirm } = useDeleteConfirm()
+const overlay = useOverlay()
+const panel = overlay.create(LazyPanelBulkSpirit)
+
+const { search, pagination, tableRef, filteredTotal } = useTableState(
+  computed(() => bulkSpiritStore.bulkSpirits.length),
+)
 
 function vesselName(id?: string) {
   if (!id) return '-'
   return vesselStore.getVesselById(id)?.name || '-'
 }
 
-function shortUnit(unit: string) {
-  return unit.replace(/gallon/i, 'gal').replace(/liter/i, 'L')
-}
-
 const columns: TableColumn<BulkSpirit>[] = [
-  sortableColumn<BulkSpirit>('name', 'Name'),
-  sortableColumn<BulkSpirit>('spiritClass', 'Class'),
-  sortableColumn<BulkSpirit>('volume', 'Volume', {
-    cell: ({ row }) => `${row.original.volume.toFixed(1)} ${shortUnit(row.original.volumeUnit)}`,
-  }),
-  sortableColumn<BulkSpirit>('abv', 'ABV', {
+  { accessorKey: 'name', header: 'Name' },
+  { accessorKey: 'spiritClass', header: 'Class' },
+  {
+    accessorKey: 'volume',
+    header: 'Volume',
+    cell: ({ row }) => `${row.original.volume.toFixed(1)} ${row.original.volumeUnit === 'gallon' ? 'gal' : row.original.volumeUnit}`,
+  },
+  {
+    accessorKey: 'abv',
+    header: 'ABV',
     cell: ({ row }) => `${row.original.abv.toFixed(1)}%`,
-  }),
-  sortableColumn<BulkSpirit>('proofGallons', 'Proof Gallons', {
+  },
+  {
+    accessorKey: 'proofGallons',
+    header: 'Proof Gallons',
     cell: ({ row }) => row.original.proofGallons.toFixed(2),
-  }),
-  sortableColumn<BulkSpirit>('costPerProofGallon', '$/PG', {
+  },
+  {
+    accessorKey: 'costPerProofGallon',
+    header: '$/PG',
     cell: ({ row }) => Dollar.format(row.original.costPerProofGallon),
-  }),
-  sortableColumn<BulkSpirit>('totalValue', 'Total Value', {
+  },
+  {
+    accessorKey: 'totalValue',
+    header: 'Total Value',
     cell: ({ row }) => Dollar.format(row.original.totalValue),
-  }),
+  },
   {
     id: 'vessel',
     header: 'Vessel',
     cell: ({ row }) => vesselName(row.original.vessel),
-  } as TableColumn<BulkSpirit>,
+  },
   {
     id: 'status',
     header: 'Status',
-    cell: ({ row }) => {
-      const UBadge = resolveComponent('UBadge')
-      return h(UBadge, {
-        color: row.original.status === 'active' ? 'success' : 'neutral',
-        variant: 'subtle',
-      }, () => row.original.status)
-    },
-  } as TableColumn<BulkSpirit>,
-  actionsColumn<BulkSpirit>((row) => [
-    {
-      label: 'View Ledger',
-      icon: 'i-lucide-scroll-text',
-      onSelect() { showLedger.value = showLedger.value === row.original._id ? null : row.original._id },
-    },
-    {
-      label: 'Edit',
-      icon: 'i-lucide-pencil',
-      onSelect() { editBulkSpirit(row.original._id) },
-    },
-    {
-      label: 'Delete',
-      variant: 'danger',
-      async onClick() {
-        const confirmed = await confirm('Bulk Spirit', row.original.name)
-        if (confirmed) {
-          await bulkSpiritStore.deleteBulkSpirit(row.original._id)
-        }
-      },
-    },
-  ]),
+  },
+  {
+    id: 'actions',
+  },
 ]
 
-const showPanel = ref(false)
 const showLedger = ref<string | null>(null)
 
 function newBulkSpirit() {
   bulkSpiritStore.resetBulkSpirit()
-  showPanel.value = true
+  panel.open()
 }
 
 function editBulkSpirit(id: string) {
   bulkSpiritStore.setBulkSpirit(id)
-  showPanel.value = true
+  panel.open()
 }
 </script>
 
@@ -131,13 +117,45 @@ function editBulkSpirit(id: string) {
     </div>
 
     <!-- Table -->
-    <div class="rounded-xl border border-brown/30 bg-charcoal overflow-hidden">
+    <TableWrapper
+      v-model:search="search"
+      v-model:pagination="pagination"
+      :total-items="filteredTotal"
+      :loading="bulkSpiritStore.loading"
+      search-placeholder="Search bulk spirits..."
+    >
       <UTable
+        ref="tableRef"
+        v-model:global-filter="search"
+        v-model:pagination="pagination"
+        :pagination-options="{ getPaginationRowModel: getPaginationRowModel() }"
         :data="bulkSpiritStore.bulkSpirits"
         :columns="columns"
         :loading="bulkSpiritStore.loading"
         class="w-full"
       >
+        <template #status-cell="{ row }">
+          <UBadge
+            :color="row.original.status === 'active' ? 'success' : 'neutral'"
+            variant="subtle"
+          >
+            {{ row.original.status }}
+          </UBadge>
+        </template>
+        <template #actions-cell="{ row }">
+          <div class="text-right">
+            <UDropdownMenu
+              :content="{ align: 'end' }"
+              :items="[
+                { label: 'View Ledger', icon: 'i-lucide-scroll-text', onSelect() { showLedger = showLedger === row.original._id ? null : row.original._id } },
+                { label: 'Edit', icon: 'i-lucide-pencil', onSelect() { editBulkSpirit(row.original._id) } },
+                { label: 'Delete', variant: 'danger', async onClick() { if (await confirm('Bulk Spirit', row.original.name)) await bulkSpiritStore.deleteBulkSpirit(row.original._id) } },
+              ]"
+            >
+              <UButton icon="i-lucide-ellipsis-vertical" color="neutral" variant="ghost" />
+            </UDropdownMenu>
+          </div>
+        </template>
         <template #empty>
           <BaseEmptyState
             icon="i-lucide-archive"
@@ -148,17 +166,12 @@ function editBulkSpirit(id: string) {
           />
         </template>
       </UTable>
-    </div>
+    </TableWrapper>
 
     <!-- Ledger detail -->
     <div v-if="showLedger" class="mt-6 rounded-xl border border-brown/30 bg-charcoal p-4">
       <BulkSpiritLedger :bulk-spirit-id="showLedger" />
     </div>
 
-    <!-- Slideover panel -->
-    <PanelBulkSpirit
-      v-if="showPanel"
-      @close="showPanel = false"
-    />
   </div>
 </template>

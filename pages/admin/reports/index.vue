@@ -22,7 +22,11 @@ const filledBarrels = computed(() =>
 
 // TTB stats
 const distillingBatches = computed(() =>
-  batchStore.batches.filter(b => (b.stages as any)?.distilling?.startedAt).length
+  batchStore.batches.filter(b =>
+    (b.stages as any)?.distilling?.startedAt ||
+    (b.stages as any)?.spiritRun?.startedAt ||
+    (b.stages as any)?.strippingRun?.startedAt
+  ).length
 )
 const barreledBatches = computed(() =>
   batchStore.batches.filter(b => (b.stages as any)?.barrelAging?.entry?.date).length

@@ -6,7 +6,7 @@ const emptyStages = (): BatchStages => ({});
 const defaultBatch = (): Batch => ({
 	_id: '',
 	recipe: '',
-	pipeline: ['Mashing', 'Fermenting', 'Distilling', 'Storage', 'Proofing', 'Bottled'],
+	pipeline: ['Mashing', 'Fermenting', 'Stripping Run', 'Low Wines', 'Spirit Run', 'Storage', 'Proofing', 'Bottled'],
 	currentStage: 'Upcoming',
 	status: 'active',
 	recipeCost: undefined as unknown as number,
@@ -41,6 +41,9 @@ export const useBatchStore = defineStore('batches', () => {
 	const mashingBatches = computed(() => getBatchesInStage('Mashing'));
 	const fermentingBatches = computed(() => getBatchesInStage('Fermenting'));
 	const distillingBatches = computed(() => getBatchesInStage('Distilling'));
+	const strippingRunBatches = computed(() => getBatchesInStage('Stripping Run'));
+	const lowWinesBatches = computed(() => getBatchesInStage('Low Wines'));
+	const spiritRunBatches = computed(() => getBatchesInStage('Spirit Run'));
 	const storedBatches = computed(() => getBatchesInStage('Storage'));
 	const barrelAgingBatches = computed(() => getBatchesInStage('Barrel Aging'));
 	const macerationBatches = computed(() => getBatchesInStage('Maceration'));
@@ -375,6 +378,102 @@ export const useBatchStore = defineStore('batches', () => {
 		await updateBatch();
 	};
 
+	// --- Stripping run management ---
+
+	const addStrippingRun = async (batchId: string, run: DistillingRun): Promise<void> => {
+		const target = crud.items.value.find((b) => b._id === batchId);
+		if (!target) return;
+
+		if (!target.stages.strippingRun) target.stages.strippingRun = {};
+		if (!target.stages.strippingRun.runs) target.stages.strippingRun.runs = [];
+
+		run.runNumber = target.stages.strippingRun.runs.length + 1;
+		run.runType = 'stripping';
+		target.stages.strippingRun.runs.push(run);
+
+		addLogEntry(target, `Added stripping run #${run.runNumber}`);
+
+		crud.item.value = target;
+		await updateBatch();
+	};
+
+	const updateStrippingRun = async (batchId: string, runIndex: number, data: Partial<DistillingRun>): Promise<void> => {
+		const target = crud.items.value.find((b) => b._id === batchId);
+		if (!target?.stages?.strippingRun?.runs?.[runIndex]) return;
+
+		Object.assign(target.stages.strippingRun.runs[runIndex], data);
+		addLogEntry(target, `Updated stripping run #${target.stages.strippingRun.runs[runIndex].runNumber}`);
+
+		crud.item.value = target;
+		await updateBatch();
+	};
+
+	const deleteStrippingRun = async (batchId: string, runIndex: number): Promise<void> => {
+		const target = crud.items.value.find((b) => b._id === batchId);
+		if (!target?.stages?.strippingRun?.runs?.[runIndex]) return;
+
+		const removedNumber = target.stages.strippingRun.runs[runIndex].runNumber;
+		target.stages.strippingRun.runs.splice(runIndex, 1);
+		target.stages.strippingRun.runs.forEach((r: DistillingRun, i: number) => { r.runNumber = i + 1; });
+
+		addLogEntry(target, `Deleted stripping run #${removedNumber}`);
+
+		crud.item.value = target;
+		await updateBatch();
+	};
+
+	// --- Spirit run management ---
+
+	const addSpiritRun = async (batchId: string, run: DistillingRun): Promise<void> => {
+		const target = crud.items.value.find((b) => b._id === batchId);
+		if (!target) return;
+
+		if (!target.stages.spiritRun) target.stages.spiritRun = {};
+		if (!target.stages.spiritRun.runs) target.stages.spiritRun.runs = [];
+
+		run.runNumber = target.stages.spiritRun.runs.length + 1;
+		run.runType = 'spirit';
+		target.stages.spiritRun.runs.push(run);
+
+		addLogEntry(target, `Added spirit run #${run.runNumber}`);
+
+		crud.item.value = target;
+		await updateBatch();
+	};
+
+	const updateSpiritRun = async (batchId: string, runIndex: number, data: Partial<DistillingRun>): Promise<void> => {
+		const target = crud.items.value.find((b) => b._id === batchId);
+		if (!target?.stages?.spiritRun?.runs?.[runIndex]) return;
+
+		Object.assign(target.stages.spiritRun.runs[runIndex], data);
+		addLogEntry(target, `Updated spirit run #${target.stages.spiritRun.runs[runIndex].runNumber}`);
+
+		crud.item.value = target;
+		await updateBatch();
+	};
+
+	const deleteSpiritRun = async (batchId: string, runIndex: number): Promise<void> => {
+		const target = crud.items.value.find((b) => b._id === batchId);
+		if (!target?.stages?.spiritRun?.runs?.[runIndex]) return;
+
+		const removedNumber = target.stages.spiritRun.runs[runIndex].runNumber;
+		target.stages.spiritRun.runs.splice(runIndex, 1);
+		target.stages.spiritRun.runs.forEach((r: DistillingRun, i: number) => { r.runNumber = i + 1; });
+
+		addLogEntry(target, `Deleted spirit run #${removedNumber}`);
+
+		crud.item.value = target;
+		await updateBatch();
+	};
+
+	// --- Generic run update by stage key (used by BatchDistillingRun component) ---
+
+	const updateRunByStageKey = async (stageKey: string, batchId: string, runIndex: number, data: Partial<DistillingRun>): Promise<void> => {
+		if (stageKey === 'strippingRun') return updateStrippingRun(batchId, runIndex, data);
+		if (stageKey === 'spiritRun') return updateSpiritRun(batchId, runIndex, data);
+		return updateDistillingRun(batchId, runIndex, data);
+	};
+
 	// --- Activity log ---
 
 	const addLogEntry = (target: Batch, action: string, details?: string): void => {
@@ -640,6 +739,9 @@ export const useBatchStore = defineStore('batches', () => {
 		mashingBatches,
 		fermentingBatches,
 		distillingBatches,
+		strippingRunBatches,
+		lowWinesBatches,
+		spiritRunBatches,
 		storedBatches,
 		barrelAgingBatches,
 		macerationBatches,
@@ -653,6 +755,13 @@ export const useBatchStore = defineStore('batches', () => {
 		addDistillingRun,
 		updateDistillingRun,
 		deleteDistillingRun,
+		addStrippingRun,
+		updateStrippingRun,
+		deleteStrippingRun,
+		addSpiritRun,
+		updateSpiritRun,
+		deleteSpiritRun,
+		updateRunByStageKey,
 		// Activity log
 		addNote,
 		// Tasting notes

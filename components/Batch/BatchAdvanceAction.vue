@@ -48,6 +48,7 @@ const stageColorClasses = computed(() => {
     purple: 'bg-purple-500/15 text-purple-400 border-purple-500/25 hover:bg-purple-500/25',
     pink: 'bg-pink-500/15 text-pink-400 border-pink-500/25 hover:bg-pink-500/25',
     cyan: 'bg-cyan-500/15 text-cyan-400 border-cyan-500/25 hover:bg-cyan-500/25',
+    rose: 'bg-rose-500/15 text-rose-400 border-rose-500/25 hover:bg-rose-500/25',
     green: 'bg-green-500/15 text-green-400 border-green-500/25 hover:bg-green-500/25',
   }
   return map[color] || 'bg-brown/15 text-parchment/50 border-brown/25'
@@ -60,8 +61,10 @@ const advancing = ref(false)
 const outputAbv = ref(0)
 const transferUnit = ref(props.batch.batchSizeUnit || 'gallon')
 
-// Detect when advancing FROM distilling (output volume differs from input)
-const isFromDistilling = computed(() => effectiveSource.value === 'Distilling')
+// Detect when advancing FROM distilling-type stages (output volume differs from input)
+const isFromDistilling = computed(() =>
+  effectiveSource.value === 'Distilling' || effectiveSource.value === 'Stripping Run' || effectiveSource.value === 'Spirit Run'
+)
 
 // Detect when advancing FROM barrel aging (need source barrel selector)
 const isFromBarrelAging = computed(() => effectiveSource.value === 'Barrel Aging')
@@ -146,8 +149,8 @@ const vesselOptions = computed(() => {
 
 const needsVessel = computed(() => {
   if (!nextStage.value) return false
-  // Distilling uses charge modal instead of simple vessel select
-  if (nextStage.value === 'Distilling') return false
+  // Distilling-type stages use charge modal instead of simple vessel select
+  if (nextStage.value === 'Distilling' || nextStage.value === 'Stripping Run' || nextStage.value === 'Spirit Run') return false
   // Barrel Aging uses barrel fill modal with multi-barrel support
   if (nextStage.value === 'Barrel Aging') return false
   // Bottled stage doesn't need a vessel — it needs a production record
@@ -160,7 +163,7 @@ const isBottledAdvance = computed(() =>
 )
 
 const isDistillingAdvance = computed(() =>
-  nextStage.value === 'Distilling'
+  nextStage.value === 'Distilling' || nextStage.value === 'Stripping Run' || nextStage.value === 'Spirit Run'
 )
 
 const isBarrelAgingAdvance = computed(() =>
@@ -178,6 +181,9 @@ const handleClick = async () => {
 }
 
 const advanceToDistilling = async () => {
+  const targetStage = nextStage.value!
+  const isStrippingRun = targetStage === 'Stripping Run'
+  const isSpiritRun = targetStage === 'Spirit Run'
   const sourceVesselId = getCurrentVesselId()
 
   const chargeModal = overlay.create(LazyModalDistillingCharge)
@@ -185,6 +191,8 @@ const advanceToDistilling = async () => {
     batchId: props.batch._id,
     sourceVesselId,
     isFirstRun: true,
+    defaultRunType: isStrippingRun ? 'stripping' as const : isSpiritRun ? 'spirit' as const : undefined,
+    forceRunType: isStrippingRun || isSpiritRun,
   })
 
   if (!result) return
@@ -198,7 +206,6 @@ const advanceToDistilling = async () => {
         const vessel = vesselStore.getVesselById(vesselId)
         const entry = vessel?.contents?.find(c => c.batch === props.batch._id)
         if (!entry || entry.volume <= 0) continue
-        // Transfer this vessel's full batch contents
         await vesselStore.transferBatchContents(
           vesselId,
           result.stillId,
@@ -225,13 +232,13 @@ const advanceToDistilling = async () => {
     const vol = result.chargeVolume || sourceVolume.value
     await batchStore.advanceToStage(
       props.batch._id,
-      'Distilling',
+      targetStage,
       { vessel: result.stillId },
       vol,
       effectiveSource.value,
     )
 
-    // Create first distilling run with charge data
+    // Create first run with charge data
     const firstRun: DistillingRun = {
       runType: result.runType,
       date: new Date(),
@@ -252,12 +259,20 @@ const advanceToDistilling = async () => {
         tails: { vessel: '', volume: undefined, volumeUnit: 'gallon', abv: undefined },
       }
     }
-    await batchStore.addDistillingRun(props.batch._id, firstRun)
+
+    // Add run to the correct stage
+    if (isStrippingRun) {
+      await batchStore.addStrippingRun(props.batch._id, firstRun)
+    } else if (isSpiritRun) {
+      await batchStore.addSpiritRun(props.batch._id, firstRun)
+    } else {
+      await batchStore.addDistillingRun(props.batch._id, firstRun)
+    }
 
     emit('advanced')
   } catch (error: unknown) {
     toast.add({
-      title: 'Failed to advance to Distilling',
+      title: `Failed to advance to ${targetStage}`,
       description: getErrorMessage(error),
       color: 'error',
       icon: 'i-lucide-alert-circle',
@@ -458,10 +473,21 @@ const advance = async () => {
         props.batch._id,
         stageName,
         stageData,
-        sourceVolInBatchUnit,    // Deduct full still charge from Distilling (in batch units)
+        sourceVolInBatchUnit,    // Deduct full still charge from source (in batch units)
         effectiveSource.value,
         volInBatchUnit,          // Only add distillate output to destination (in batch units)
       )
+
+      // When advancing Stripping Run → Low Wines, auto-populate low wines stage data
+      if (effectiveSource.value === 'Stripping Run' && stageName === 'Low Wines') {
+        const strippingRuns = props.batch.stages?.strippingRun?.runs || []
+        await batchStore.updateStageData(props.batch._id, 'Low Wines', {
+          volume: vol,
+          volumeUnit: transferUnit.value,
+          abv: outputAbv.value,
+          sourceRuns: strippingRuns.length,
+        })
+      }
     } else {
       // Standard transfer — use selectedSourceBarrel if transferring from barrel aging,
       // otherwise fall back to the stage's recorded vessel
@@ -541,8 +567,19 @@ const bulkSpiritOptions = computed(() =>
   bulkSpiritStore.activeBulkSpirits.map((bs) => ({ label: `${bs.name} (${bs.volume.toFixed(1)} ${bs.volumeUnit})`, value: bs._id }))
 )
 
-// Get storage stage data for volume/ABV
+// Find the vessel that actually contains this batch's spirit
+const batchVesselContents = computed(() => {
+  for (const vessel of vesselStore.vessels) {
+    const entry = vessel.contents?.find(c => c.batch === props.batch._id)
+    if (entry) return { vesselId: vessel._id, ...entry }
+  }
+  return null
+})
+
+// Storage summary: prefer vessel contents (authoritative), fall back to stage data
 const storageStageData = computed(() => {
+  const vc = batchVesselContents.value
+  if (vc) return { volume: vc.volume, volumeUnit: vc.volumeUnit, abv: vc.abv, value: vc.value }
   const stageData = (props.batch.stages as any)?.storage
   return stageData || {}
 })
@@ -551,22 +588,13 @@ const completeToBulkStorage = async () => {
   if (!selectedBulkSpirit.value) return
   completingToBulk.value = true
   try {
-    const stageData = storageStageData.value
-    const volume = stageData.volume || getStageVolume(props.batch, 'Storage')
-    const volumeUnit = stageData.volumeUnit || props.batch.batchSizeUnit || 'gallon'
-    const abv = stageData.abv || 0
+    const vc = batchVesselContents.value
 
-    // Calculate the value from vessel contents or batch cost
-    const currentVesselId = getCurrentVesselId()
-    let value = 0
-    if (currentVesselId) {
-      const vessel = vesselStore.getVesselById(currentVesselId)
-      const entry = vessel?.contents?.find(c => c.batch === props.batch._id)
-      value = entry?.value || 0
-    }
-    if (!value) {
-      value = props.batch.batchCost || props.batch.recipeCost || 0
-    }
+    // Use vessel contents as the authoritative source for volume/ABV/value
+    const volume = vc?.volume || getStageVolume(props.batch, 'Storage')
+    const volumeUnit = vc?.volumeUnit || props.batch.batchSizeUnit || 'gallon'
+    const abv = vc?.abv || 0
+    const value = vc?.value || props.batch.batchCost || props.batch.recipeCost || 0
 
     // Deposit into bulk spirit
     await bulkSpiritStore.deposit(selectedBulkSpirit.value, {
@@ -578,8 +606,9 @@ const completeToBulkStorage = async () => {
     })
 
     // Clear vessel contents for this batch
-    if (currentVesselId) {
-      const vessel = vesselStore.getVesselById(currentVesselId)
+    const sourceVesselId = vc?.vesselId || getCurrentVesselId()
+    if (sourceVesselId) {
+      const vessel = vesselStore.getVesselById(sourceVesselId)
       if (vessel) {
         vessel.contents = (vessel.contents || []).filter(c => c.batch !== props.batch._id)
         vesselStore.vessel = vessel
@@ -655,7 +684,7 @@ const completeToBulkStorage = async () => {
             <div>
               <span class="text-parchment/50">Volume:</span>
               <span class="text-parchment ml-1">
-                {{ (storageStageData.volume || getStageVolume(batch, 'Storage')).toFixed(1) }}
+                {{ (storageStageData.volume || 0).toFixed(1) }}
                 {{ storageStageData.volumeUnit || batch.batchSizeUnit }}
               </span>
             </div>
