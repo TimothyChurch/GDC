@@ -1,0 +1,8 @@
+User-agent: *
+Allow: /
+Disallow: /admin/
+Disallow: /api/
+Disallow: /login
+Disallow: /return
+Disallow: /calculator
+Sitemap: https://galvestondistilling.com/sitemap.xml
