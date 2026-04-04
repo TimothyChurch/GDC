@@ -18,6 +18,8 @@ export const useContactStore = defineStore('contacts', () => {
 		}),
 	});
 
+	const toast = useToast();
+
 	// Domain-specific getters
 	const getVendors = () => crud.items.value.filter((c) => c.type === 'Vendor');
 	const getCustomers = () => crud.items.value.filter((c) => c.type === 'Customer');
@@ -30,6 +32,37 @@ export const useContactStore = defineStore('contacts', () => {
 				c.lastName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
 				c.businessName?.toLowerCase().includes(searchTerm.toLowerCase()),
 		);
+	};
+
+	const mergeCustomers = async (primaryId: string, duplicateId: string) => {
+		try {
+			const result = await $fetch<{ merged: Contact; transferred: Record<string, number> }>(
+				'/api/contact/merge',
+				{ method: 'POST', body: { primaryId, duplicateId } },
+			);
+			// Update primary in local state
+			const idx = crud.items.value.findIndex((c) => c._id === primaryId);
+			if (idx !== -1) crud.items.value[idx] = result.merged;
+			// Remove duplicate from local state
+			crud.items.value = crud.items.value.filter((c) => c._id !== duplicateId);
+
+			const total = Object.values(result.transferred).reduce((a, b) => a + b, 0);
+			toast.add({
+				title: 'Customers merged',
+				description: total > 0 ? `${total} record(s) transferred` : undefined,
+				color: 'success',
+				icon: 'i-lucide-merge',
+			});
+			return result;
+		} catch (error: unknown) {
+			toast.add({
+				title: 'Failed to merge customers',
+				description: getErrorMessage(error),
+				color: 'error',
+				icon: 'i-lucide-alert-circle',
+			});
+			throw error;
+		}
 	};
 
 	return {
@@ -48,5 +81,6 @@ export const useContactStore = defineStore('contacts', () => {
 		getCustomers,
 		getNewsletterSubscribers,
 		search,
+		mergeCustomers,
 	};
 });

@@ -6,7 +6,6 @@ import { convertUnitRatio } from '~/utils/conversions'
 const props = defineProps<{
   run: DistillingRun
   runIndex: number
-  editing: boolean
   batchId: string
 }>()
 
@@ -17,7 +16,7 @@ const emit = defineEmits<{
 const batchStore = useBatchStore()
 const vesselStore = useVesselStore()
 
-// Per-run edit mode: only editable if parent editing AND user explicitly clicks edit (or run is new/empty)
+// Per-run edit mode: each run has its own edit button
 const runEditing = ref(false)
 
 // A run is considered "has data" if it has output or collected cuts saved
@@ -29,29 +28,12 @@ const hasData = computed(() => {
   return false
 })
 
-// Effective editing: parent must be in edit mode, AND either the run is new/empty or user clicked edit
-const isRunEditing = computed(() => {
-  if (!props.editing) return false
-  // New/empty runs are always editable
-  if (!hasData.value && !props.run.completed) return true
-  // Otherwise only if user clicked edit
-  return runEditing.value
-})
-
-// When parent editing turns off, reset run edit state
-watch(() => props.editing, (val) => {
-  if (!val) runEditing.value = false
-})
+// Effective editing: only when user explicitly clicks the edit button
+const isRunEditing = computed(() => runEditing.value)
 
 // Collapse/expand logic
 const globalExpanded = inject<Ref<boolean | null>>('distillingRunsGlobalExpanded', ref(null))
-const localCollapsed = ref(!props.editing)
-
-// When editing prop changes, force expand
-watch(() => props.editing, (isEditing) => {
-  if (isEditing) localCollapsed.value = false
-  else localCollapsed.value = true
-})
+const localCollapsed = ref(true)
 
 // When global expanded changes (from parent toggle), sync local state
 watch(globalExpanded, (val) => {
@@ -401,9 +383,9 @@ const summaryProofGallons = computed(() => {
       <template v-else>
         <span class="ml-auto" />
         <span class="text-xs text-parchment/50">{{ formatDate(local.date) }}</span>
-        <!-- Edit button for completed/saved runs -->
+        <!-- Edit button -->
         <UButton
-          v-if="editing && !isRunEditing && hasData"
+          v-if="!isRunEditing"
           icon="i-lucide-pencil"
           variant="ghost"
           size="xs"

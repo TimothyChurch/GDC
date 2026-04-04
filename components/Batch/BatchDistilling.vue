@@ -133,20 +133,32 @@ const addRun = async (defaultRunType: 'stripping' | 'spirit') => {
 
   addingRun.value = true
   try {
-    // Transfer charge from all selected source vessels to still
+    // Transfer charge from source vessels to still using per-vessel volumes
     const sourceVessels = result.chargeSourceVessels || (result.chargeSourceVessel ? [result.chargeSourceVessel] : [])
     if (result.chargeVolume > 0 && sourceVessels.length > 0) {
       for (const vesselId of sourceVessels) {
-        const vessel = vesselStore.getVesselById(vesselId)
-        const entry = vessel?.contents?.find(c => c.batch === props.batch._id)
-        if (!entry || entry.volume <= 0) continue
-        await vesselStore.transferBatchContents(
-          vesselId,
-          result.stillId,
-          props.batch._id,
-          entry.volume,
-          entry.volumeUnit,
-        )
+        // Use per-vessel volume if available, otherwise fall back to full contents
+        const perVessel = result.chargePerVessel?.find(p => p.vesselId === vesselId)
+        if (perVessel) {
+          await vesselStore.transferBatchContents(
+            vesselId,
+            result.stillId,
+            props.batch._id,
+            perVessel.volume,
+            perVessel.volumeUnit,
+          )
+        } else {
+          const vessel = vesselStore.getVesselById(vesselId)
+          const entry = vessel?.contents?.find(c => c.batch === props.batch._id)
+          if (!entry || entry.volume <= 0) continue
+          await vesselStore.transferBatchContents(
+            vesselId,
+            result.stillId,
+            props.batch._id,
+            entry.volume,
+            entry.volumeUnit,
+          )
+        }
       }
     }
 
@@ -416,23 +428,33 @@ const saveStageFields = async () => {
           :key="run.runNumber || getRunIndex(run)"
           :run="run"
           :run-index="getRunIndex(run)"
-          :editing="editing"
           :batch-id="batch._id"
           @delete="deleteRun"
         />
       </div>
     </div>
 
-    <!-- Ready for spirit run hint -->
+    <!-- Ready for spirit run CTA -->
     <div
-      v-if="editing && workflowPhase === 'ready-for-spirit'"
-      class="flex items-center gap-2 rounded-lg border border-copper/20 bg-copper/5 px-3 py-2 mb-4"
+      v-if="workflowPhase === 'ready-for-spirit'"
+      class="flex items-center justify-between rounded-lg border border-copper/30 bg-copper/10 px-4 py-3 mb-4"
     >
-      <UIcon name="i-lucide-arrow-down" class="text-copper shrink-0" />
-      <span class="text-xs text-parchment/70">
-        Low wines accumulated from {{ strippingCount }} stripping {{ strippingCount === 1 ? 'run' : 'runs' }}.
-        Ready to charge the still for a spirit run.
-      </span>
+      <div class="flex items-center gap-2">
+        <UIcon name="i-lucide-flask-conical" class="text-copper shrink-0" />
+        <span class="text-sm text-parchment/80">
+          Low wines accumulated from {{ strippingCount }} stripping {{ strippingCount === 1 ? 'run' : 'runs' }}.
+          Ready for spirit run.
+        </span>
+      </div>
+      <UButton
+        icon="i-lucide-plus"
+        color="primary"
+        size="sm"
+        :loading="addingRun"
+        @click="addRun('spirit')"
+      >
+        Start Spirit Run
+      </UButton>
     </div>
 
     <!-- Spirit Runs Section -->
@@ -448,7 +470,6 @@ const saveStageFields = async () => {
           :key="run.runNumber || getRunIndex(run)"
           :run="run"
           :run-index="getRunIndex(run)"
-          :editing="editing"
           :batch-id="batch._id"
           @delete="deleteRun"
         />

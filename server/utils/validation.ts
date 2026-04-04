@@ -183,17 +183,27 @@ export const eventCreateSchema = yup.object({
   date: yup.date().required("Date is required"),
   groupSize: yup
     .number()
-    .positive("Must be greater than 0")
-    .required("Group size is required"),
-  contact: yup.string().required("Contact is required"),
+    .min(0, "Must be 0 or greater")
+    .default(0),
+  contact: yup.string().nullable(),
   type: yup
     .string()
-    .oneOf(["Private Class", "Private Event", "Tasting"])
+    .oneOf(["Cocktail Class", "Private Class", "Private Event", "Tasting"])
     .required("Type is required"),
   status: yup
     .string()
     .oneOf(["Pending", "Confirmed", "Completed", "Cancelled"]),
   notes: yup.string(),
+  capacity: yup.number().positive().nullable(),
+  isPublic: yup.boolean(),
+  price: yup.number().min(0, 'Price cannot be negative').nullable(),
+  addOns: yup.array().of(
+    yup.object({
+      name: yup.string().required('Add-on name is required'),
+      price: yup.number().min(0).required('Add-on price is required'),
+      description: yup.string(),
+    })
+  ).nullable(),
 });
 
 export const eventRequestSchema = yup.object({
@@ -208,7 +218,7 @@ export const eventRequestSchema = yup.object({
     .required("Group size is required"),
   type: yup
     .string()
-    .oneOf(["Private Class", "Private Event", "Tasting"])
+    .oneOf(["Cocktail Class", "Private Class", "Private Event", "Tasting"])
     .required("Type is required"),
   notes: yup.string(),
 });
@@ -352,13 +362,24 @@ export const recipeUpdateSchema = yup.object({
 
 export const eventUpdateSchema = yup.object({
   date: yup.date(),
-  groupSize: yup.number().positive("Must be greater than 0"),
-  contact: yup.string(),
-  type: yup.string().oneOf(["Private Class", "Private Event", "Tasting"]),
+  groupSize: yup.number().min(0, "Must be 0 or greater"),
+  contact: yup.string().nullable(),
+  type: yup.string().oneOf(["Cocktail Class", "Private Class", "Private Event", "Tasting"]),
   status: yup
     .string()
     .oneOf(["Pending", "Confirmed", "Completed", "Cancelled"]),
   notes: yup.string(),
+  capacity: yup.number().positive().nullable(),
+  isPublic: yup.boolean(),
+  price: yup.number().min(0, 'Price cannot be negative').nullable(),
+  addOns: yup.array().of(
+    yup.object({
+      _id: yup.string(),
+      name: yup.string().required('Add-on name is required'),
+      price: yup.number().min(0).required('Add-on price is required'),
+      description: yup.string(),
+    })
+  ).nullable(),
 });
 
 export const messageUpdateSchema = yup.object({

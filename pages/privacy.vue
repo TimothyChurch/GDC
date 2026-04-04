@@ -53,8 +53,8 @@ if (import.meta.server) {
         <section>
           <h2 class="text-2xl font-bold text-brown dark:text-parchment">Third-Party Services</h2>
           <p>
-            We use Stripe for payment processing. When you make a purchase, your payment information
-            is handled directly by Stripe under their privacy policy. We do not store your payment
+            We use Square for payment processing. When you make a purchase, your payment information
+            is handled directly by Square under their privacy policy. We do not store your payment
             card details.
           </p>
         </section>

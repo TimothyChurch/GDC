@@ -6,7 +6,7 @@ export default defineEventHandler(async () => {
       isPublic: true,
       date: { $gte: now },
     })
-      .select("date type capacity groupSize isPublic")
+      .select("date type capacity groupSize isPublic price addOns")
       .sort({ date: 1 })
       .lean();
     return events;

@@ -9,7 +9,6 @@ export default defineNuxtConfig({
     "nuxt-mongoose",
     "@pinia/nuxt",
     ...(process.env.NODE_ENV === 'test' ? ['@nuxt/test-utils/module' as const] : []),
-    "@unlok-co/nuxt-stripe",
     "nuxt-meta-pixel",
     "@nuxtjs/sitemap",
     "@nuxt/image",
@@ -59,7 +58,7 @@ export default defineNuxtConfig({
         'X-XSS-Protection': '1; mode=block',
         'Referrer-Policy': 'strict-origin-when-cross-origin',
         'Strict-Transport-Security': 'max-age=31536000; includeSubDomains',
-        'Content-Security-Policy': "default-src 'self'; script-src 'self' 'unsafe-inline' https://js.stripe.com https://connect.facebook.net; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: blob: https://*.stripe.com https://www.facebook.com; frame-src https://js.stripe.com https://www.facebook.com; connect-src 'self' https://api.stripe.com https://*.facebook.com https://*.facebook.net",
+        'Content-Security-Policy': "default-src 'self'; script-src 'self' 'unsafe-inline' https://connect.facebook.net; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: blob: https://www.facebook.com; frame-src https://www.facebook.com; connect-src 'self' https://*.facebook.com https://*.facebook.net",
       },
     },
     '/': { prerender: true },
@@ -78,21 +77,15 @@ export default defineNuxtConfig({
     // Server — Nuxt auto-maps NUXT_SESSION_SECRET, NUXT_DOMAIN, etc. at runtime
     sessionSecret: '',
     domain: '',
-    stripePriceId: '',
-    stripeWebhookSecret: '',
+    squareAccessToken: '',
+    squareWebhookSignatureKey: '',
+    squareEnvironment: 'sandbox',
     cloudinaryCloudName: '',
     cloudinaryApiKey: '',
     cloudinaryApiSecret: '',
-    stripe: {
-      key: '',
-      options: {},
-    },
     // Client — Nuxt auto-maps NUXT_PUBLIC_* at runtime
     public: {
-      stripe: {
-        key: '',
-        options: {},
-      },
+      squareLocationId: '',
       metapixel: {
         default: { id: "1254208522870414" },
       },

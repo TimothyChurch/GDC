@@ -7,11 +7,13 @@ export const useEventStore = defineStore('events', () => {
 		defaultItem: () => ({
 			_id: '',
 			date: '',
-			groupSize: 1,
+			groupSize: 0,
 			contact: '',
 			type: 'Private Class',
 			status: 'Pending',
 			notes: '',
+			price: undefined as number | undefined,
+			addOns: [] as { name: string; price: number; description?: string }[],
 		}),
 	});
 

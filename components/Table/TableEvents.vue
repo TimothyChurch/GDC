@@ -98,8 +98,12 @@ const columns: TableColumn<GDCEvent>[] = [
     {
       label: "Edit event",
       onSelect() {
-        const clone = structuredClone(toRaw(row.original));
-        eventStore.event = { ...clone, contact: typeof row.original.contact === 'object' ? (row.original.contact as any)._id : clone.contact };
+        const raw = toRaw(row.original);
+        const contactId = raw.contact && typeof raw.contact === 'object'
+          ? (raw.contact as any)._id
+          : raw.contact;
+        eventStore.setItem(raw._id);
+        eventStore.event.contact = contactId;
         openPanel();
       },
     },

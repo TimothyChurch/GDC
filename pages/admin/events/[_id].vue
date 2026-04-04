@@ -58,10 +58,12 @@ const eventPanel = overlay.create(LazyPanelEvent)
 
 const editEvent = () => {
   if (!event.value) return
-  eventStore.event = {
-    ...structuredClone(toRaw(event.value)),
-    contact: typeof event.value.contact === 'object' ? (event.value.contact as any)._id : event.value.contact,
-  }
+  const raw = toRaw(event.value)
+  const contactId = raw.contact && typeof raw.contact === 'object'
+    ? (raw.contact as any)._id
+    : raw.contact
+  eventStore.setItem(raw._id)
+  eventStore.event.contact = contactId
   eventPanel.open()
 }
 
@@ -193,10 +195,43 @@ const deleteEvent = async () => {
       </div>
     </div>
 
-    <!-- Linked Customer -->
+    <!-- Bookings -->
     <div class="bg-charcoal rounded-xl border border-brown/30 p-5">
-      <h3 class="text-lg font-bold text-parchment font-[Cormorant_Garamond] mb-4">Customer</h3>
-      <div v-if="linkedContact" class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
+      <h3 class="text-lg font-bold text-parchment font-[Cormorant_Garamond] mb-4">
+        Bookings
+        <span v-if="event.bookings?.length" class="text-sm font-normal text-parchment/50 ml-2">
+          ({{ event.bookings.length }})
+        </span>
+      </h3>
+
+      <div v-if="event.bookings?.length" class="space-y-3">
+        <div
+          v-for="booking in event.bookings"
+          :key="booking.orderId"
+          class="flex items-center justify-between gap-4 bg-espresso/50 rounded-lg px-4 py-3 border border-brown/20"
+        >
+          <div class="min-w-0 flex-1">
+            <NuxtLink
+              :to="`/admin/customers/${booking.contact}`"
+              class="text-sm font-medium text-copper hover:text-gold transition-colors"
+            >
+              {{ booking.name }}
+            </NuxtLink>
+            <div class="text-xs text-parchment/50 mt-0.5">{{ booking.email }}</div>
+          </div>
+          <div class="text-center shrink-0">
+            <div class="text-sm font-bold text-parchment">{{ booking.quantity }}</div>
+            <div class="text-[10px] text-parchment/50 uppercase">{{ booking.quantity === 1 ? 'seat' : 'seats' }}</div>
+          </div>
+          <div class="text-right shrink-0">
+            <div class="text-sm font-bold text-gold">${{ booking.amount.toFixed(2) }}</div>
+            <div class="text-[10px] text-parchment/50">{{ new Date(booking.bookedAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) }}</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Fallback: single linked contact (legacy events without bookings) -->
+      <div v-else-if="linkedContact" class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
         <div>
           <div class="text-xs text-parchment/60 uppercase tracking-wider mb-1">Name</div>
           <NuxtLink
@@ -221,12 +256,10 @@ const deleteEvent = async () => {
           <div v-else class="text-sm text-parchment/60">N/A</div>
         </div>
       </div>
-      <div v-else-if="contactName !== '—'" class="text-sm text-parchment/70">
-        {{ contactName }}
-      </div>
+
       <div v-else class="text-center py-4">
-        <UIcon name="i-lucide-user-x" class="text-2xl text-parchment/20 mx-auto mb-2" />
-        <p class="text-sm text-parchment/50">No customer linked to this event</p>
+        <UIcon name="i-lucide-ticket" class="text-2xl text-parchment/20 mx-auto mb-2" />
+        <p class="text-sm text-parchment/50">No bookings yet</p>
       </div>
     </div>
   </div>

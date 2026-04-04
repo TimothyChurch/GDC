@@ -72,34 +72,49 @@ const columns: TableColumn<Contact>[] = [
       return h("span", { class: "text-parchment/50" }, "0");
     },
   },
-  actionsColumn<Contact>((row) => [
-    {
-      label: "View Details",
-      onSelect() {
-        router.push(`/admin/customers/${row.original._id}`);
-      },
+  {
+    id: "actions",
+    header: "",
+    cell: ({ row }) => {
+      return h("div", { class: "flex items-center justify-end gap-1" }, [
+        h(resolveComponent("UButton"), {
+          icon: "i-lucide-eye",
+          color: "neutral",
+          variant: "ghost",
+          size: "xs",
+          "aria-label": "View details",
+          onClick: () => router.push(`/admin/customers/${row.original._id}`),
+        }),
+        h(resolveComponent("UButton"), {
+          icon: "i-lucide-pencil",
+          color: "neutral",
+          variant: "ghost",
+          size: "xs",
+          "aria-label": "Edit customer",
+          onClick: () => {
+            contactStore.contact = structuredClone(toRaw(row.original));
+            openPanel();
+          },
+        }),
+        h(resolveComponent("UButton"), {
+          icon: "i-lucide-trash-2",
+          color: "error",
+          variant: "ghost",
+          size: "xs",
+          "aria-label": "Delete customer",
+          onClick: async () => {
+            const name =
+              row.original.businessName ||
+              `${row.original.firstName} ${row.original.lastName}`;
+            const confirmed = await confirm("Customer", name);
+            if (confirmed) {
+              contactStore.deleteContact(row.original._id);
+            }
+          },
+        }),
+      ]);
     },
-    {
-      label: "Edit customer",
-      onSelect() {
-        contactStore.contact = structuredClone(toRaw(row.original));
-        openPanel();
-      },
-    },
-    {
-      label: "Delete customer",
-      variant: "danger",
-      async onClick() {
-        const name =
-          row.original.businessName ||
-          `${row.original.firstName} ${row.original.lastName}`;
-        const confirmed = await confirm("Customer", name);
-        if (confirmed) {
-          contactStore.deleteContact(row.original._id);
-        }
-      },
-    },
-  ]),
+  },
 ];
 
 // Panel slide-over
@@ -206,6 +221,30 @@ defineExpose({ addCustomer });
             <UIcon name="i-lucide-phone" class="text-sm shrink-0" />
             <a :href="`tel:${customer.phone}`" class="text-parchment/70" @click.stop>{{ customer.phone }}</a>
           </div>
+        </div>
+        <div class="flex items-center justify-end gap-1 mt-3 pt-2 border-t border-brown/20">
+          <UButton
+            icon="i-lucide-pencil"
+            color="neutral"
+            variant="ghost"
+            size="xs"
+            @click.stop="() => { contactStore.contact = structuredClone(toRaw(customer)); openPanel(); }"
+          >
+            Edit
+          </UButton>
+          <UButton
+            icon="i-lucide-trash-2"
+            color="error"
+            variant="ghost"
+            size="xs"
+            @click.stop="async () => {
+              const name = customer.businessName || `${customer.firstName} ${customer.lastName}`;
+              const confirmed = await confirm('Customer', name);
+              if (confirmed) contactStore.deleteContact(customer._id);
+            }"
+          >
+            Delete
+          </UButton>
         </div>
       </div>
       <BaseEmptyState v-if="customers.length === 0" icon="i-lucide-building-2" title="No customers found" description="Add customers to track events and relationships" action-label="Add Customer" @action="addCustomer" />

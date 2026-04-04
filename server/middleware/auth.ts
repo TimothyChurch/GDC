@@ -16,11 +16,11 @@ export default defineEventHandler(async (event) => {
     { path: '/api/contact/subscribe', method: 'POST' },
     { path: '/api/contact/inquiry', method: 'POST' },
     { path: '/api/event/request', method: 'POST' },
-    { path: '/api/stripe', method: '*' },
+    { path: '/api/square', method: '*' },
   ];
 
   // Public GET-only routes (for public-facing pages)
-  const publicGetRoutes = ['/api/cocktail', '/api/bottle', '/api/item', '/api/auth/me', '/api/event/upcoming'];
+  const publicGetRoutes = ['/api/cocktail', '/api/bottle', '/api/item', '/api/auth/me', '/api/event/upcoming', '/api/event/public'];
 
   // Check if this is a public route
   for (const route of publicRoutes) {

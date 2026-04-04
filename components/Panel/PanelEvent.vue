@@ -6,11 +6,22 @@ const emit = defineEmits<{ close: [boolean] }>();
 const schema = yup.object({
   date: yup.string().required('Date is required'),
   type: yup.string().required('Type is required'),
-  groupSize: yup.number().positive('Must be positive').required('Group size is required'),
+  groupSize: yup.number().min(0, 'Must be 0 or greater'),
   status: yup.string().required('Status is required'),
 });
 
 const eventStore = useEventStore();
+
+// Ensure addOns array exists before cloning so snapshot matches
+if (!eventStore.event.addOns) eventStore.event.addOns = [];
+
+// Format date for HTML date input (YYYY-MM-DD)
+if (eventStore.event.date) {
+  const d = new Date(eventStore.event.date);
+  if (!isNaN(d.getTime())) {
+    eventStore.event.date = d.toISOString().split('T')[0];
+  }
+}
 
 const { localData, isDirty, saving, save, cancel } = useFormPanel({
   source: () => eventStore.event,
@@ -22,6 +33,15 @@ const { localData, isDirty, saving, save, cancel } = useFormPanel({
 });
 
 const isNew = !localData.value._id;
+
+function addAddOn() {
+  if (!localData.value.addOns) localData.value.addOns = [];
+  localData.value.addOns.push({ name: '', price: 0, description: '' });
+}
+
+function removeAddOn(idx: number) {
+  localData.value.addOns?.splice(idx, 1);
+}
 
 const typeOptions = EVENT_TYPES;
 const statusOptions = EVENT_STATUS_OPTIONS;
@@ -69,7 +89,7 @@ const contactEmail = computed(() => {
             <UFormField label="Date" name="date">
               <UInput v-model="localData.date" type="date" />
             </UFormField>
-            <UFormField label="Group Size" name="groupSize">
+            <UFormField v-if="localData.type !== 'Cocktail Class'" label="Group Size" name="groupSize">
               <UInput v-model.number="localData.groupSize" type="number" min="1" />
             </UFormField>
             <UFormField label="Type" name="type">
@@ -89,6 +109,25 @@ const contactEmail = computed(() => {
                 </span>
               </div>
             </UFormField>
+            <UFormField label="Price per Person ($)">
+              <UInput v-model.number="localData.price" type="number" min="0" step="0.01" placeholder="e.g. 75.00" />
+            </UFormField>
+
+            <!-- Add-ons -->
+            <div class="space-y-3">
+              <div class="flex items-center justify-between">
+                <span class="text-sm font-medium text-parchment/70">Add-ons</span>
+                <UButton size="xs" icon="i-lucide-plus" variant="outline" @click="addAddOn">Add</UButton>
+              </div>
+              <div v-for="(addOn, idx) in localData.addOns" :key="idx" class="flex gap-2 items-start">
+                <UInput v-model="addOn.name" placeholder="Name" class="flex-1" />
+                <UInput v-model.number="addOn.price" type="number" step="0.01" placeholder="Price ($)" class="w-28" />
+                <UInput v-model="addOn.description" placeholder="Description" class="flex-1" />
+                <UButton icon="i-lucide-x" color="error" variant="ghost" size="xs" @click="removeAddOn(idx)" />
+              </div>
+              <p v-if="!localData.addOns?.length" class="text-xs text-parchment/40">No add-ons configured</p>
+            </div>
+
             <UFormField label="Notes">
               <UTextarea v-model="localData.notes" rows="3" placeholder="Additional notes..." />
             </UFormField>

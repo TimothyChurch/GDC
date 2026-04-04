@@ -45,11 +45,13 @@ function formatDate(val: string) {
   })
 }
 
-// Panel slide-overs
-import { LazyPanelContact, LazyPanelEvent } from '#components'
+// Panel slide-overs & modals
+import { LazyPanelContact, LazyPanelEvent, LazyModalMergeCustomers, LazyModalLinkEvent } from '#components'
 const overlay = useOverlay()
 const contactPanel = overlay.create(LazyPanelContact)
 const eventPanel = overlay.create(LazyPanelEvent)
+const mergeModal = overlay.create(LazyModalMergeCustomers)
+const linkEventModal = overlay.create(LazyModalLinkEvent)
 
 const editContact = () => {
   if (!contact.value) return
@@ -78,6 +80,23 @@ const deleteContact = async () => {
   await contactStore.deleteContact(contact.value._id)
   toast.add({ title: 'Customer deleted', color: 'success', icon: 'i-lucide-trash-2' })
   router.push('/admin/customers')
+}
+
+const openMerge = async () => {
+  const result = await mergeModal.open({ preselectedId: route.params._id as string })
+  if (result) {
+    // If the current customer was the duplicate (deleted), navigate away
+    if (!contactStore.getContactById(route.params._id as string)) {
+      router.push('/admin/customers')
+    }
+  }
+}
+
+const openLinkEvent = async () => {
+  await linkEventModal.open({
+    contactId: route.params._id as string,
+    contactName: displayName.value,
+  })
 }
 
 function formatMessageDate(dateStr?: string): string {
@@ -110,6 +129,15 @@ function formatMessageDate(dateStr?: string): string {
           @click="router.push('/admin/customers')"
         >
           Back
+        </UButton>
+        <UButton
+          icon="i-lucide-merge"
+          variant="outline"
+          color="neutral"
+          size="sm"
+          @click="openMerge"
+        >
+          Merge
         </UButton>
         <UButton
           icon="i-lucide-pencil"
@@ -180,14 +208,24 @@ function formatMessageDate(dateStr?: string): string {
     <div class="bg-charcoal rounded-xl border border-brown/30 p-5">
       <div class="flex items-center justify-between mb-4">
         <h3 class="text-lg font-bold text-parchment font-[Cormorant_Garamond]">Events</h3>
-        <UButton
-          icon="i-lucide-plus"
-          variant="ghost"
-          size="sm"
-          @click="addEvent"
-        >
-          Add Event
-        </UButton>
+        <div class="flex items-center gap-1">
+          <UButton
+            icon="i-lucide-link"
+            variant="ghost"
+            size="sm"
+            @click="openLinkEvent"
+          >
+            Link Existing
+          </UButton>
+          <UButton
+            icon="i-lucide-plus"
+            variant="ghost"
+            size="sm"
+            @click="addEvent"
+          >
+            Add Event
+          </UButton>
+        </div>
       </div>
       <div v-if="customerEvents.length > 0" class="divide-y divide-brown/20">
         <div class="grid grid-cols-5 gap-4 pb-2 text-xs text-parchment/60 uppercase tracking-wider hidden sm:grid">
