@@ -1,0 +1,1 @@
+import{u as n}from"./CFSN-4Vt.js";import{n as r}from"./DBkIids7.js";const a=["Bottling","Base Ingredient","Botanical","Bar Supplies","Other"];function u(){const e=[...a];try{const t=n();return r(()=>t.loaded&&t.itemCategories.length>0?t.itemCategories.map(o=>o.category):e)}catch{return r(()=>e)}}export{u};
