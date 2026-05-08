@@ -65,9 +65,7 @@ function formatLastCount(entry: CountEntry, qty: number) {
 }
 
 function getLastCount(itemId: string) {
-  const records = inventoryStore.inventories
-    .filter((inv) => inv.item === itemId)
-    .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
+  const records = sortByDateDesc(inventoryStore.inventories.filter((inv) => inv.item === itemId))
   return records[0] || null
 }
 

@@ -1,4 +1,4 @@
-import { d as defineEventHandler, g as getRequestIP, c as createError, r as readBody, s as sanitize, v as validateBody, U as User, a as getAuthSession, u as userLoginSchema } from '../../../nitro/nitro.mjs';
+import { d as defineEventHandler, r as rateLimit, g as getRequestIP, a as readBody, s as sanitize, v as validateBody, U as User, c as createError, b as rateLimitClear, e as getAuthSession, u as userLoginSchema } from '../../../nitro/nitro.mjs';
 import bcrypt from 'bcryptjs';
 import 'mongoose';
 import 'yup';
@@ -19,29 +19,20 @@ import '@iconify/utils';
 import 'fast-xml-parser';
 import 'ipx';
 
-const loginAttempts = /* @__PURE__ */ new Map();
+const LOGIN_RATE_LIMIT = {
+  key: "auth:login",
+  limit: 5,
+  windowMs: 15 * 60 * 1e3,
+  message: "Too many login attempts. Try again in 15 minutes."
+};
 const login_post = defineEventHandler(async (event) => {
+  rateLimit(event, LOGIN_RATE_LIMIT);
   const ip = getRequestIP(event) || "unknown";
-  const now = Date.now();
-  const existing = loginAttempts.get(ip);
-  if (existing && now >= existing.resetAt) {
-    loginAttempts.delete(ip);
-  }
-  const attempts = loginAttempts.get(ip);
-  if (attempts && attempts.count >= 5) {
-    throw createError({
-      status: 429,
-      statusText: "Too many login attempts. Try again in 15 minutes."
-    });
-  }
   const body = await readBody(event);
   const sanitized = sanitize(body);
   const validated = await validateBody(sanitized, userLoginSchema);
   const users = await User.find({ email: validated.email });
   if (users.length === 0) {
-    const current = loginAttempts.get(ip) || { count: 0, resetAt: now + 15 * 60 * 1e3 };
-    current.count++;
-    loginAttempts.set(ip, current);
     console.warn(`[AUTH] Failed login for ${validated.email} from ${ip} (unknown user)`);
     throw createError({ status: 401, statusText: "Invalid credentials" });
   }
@@ -60,13 +51,10 @@ const login_post = defineEventHandler(async (event) => {
     }
   }
   if (!isMatch) {
-    const current = loginAttempts.get(ip) || { count: 0, resetAt: now + 15 * 60 * 1e3 };
-    current.count++;
-    loginAttempts.set(ip, current);
     console.warn(`[AUTH] Failed login for ${validated.email} from ${ip}`);
     throw createError({ status: 401, statusText: "Invalid credentials" });
   }
-  loginAttempts.delete(ip);
+  rateLimitClear(event, LOGIN_RATE_LIMIT.key);
   const session = await getAuthSession(event);
   await session.clear();
   const newSession = await getAuthSession(event);

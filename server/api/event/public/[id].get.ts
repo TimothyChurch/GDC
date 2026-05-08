@@ -4,7 +4,7 @@ export default defineEventHandler(async (event) => {
     throw createError({ status: 400, statusText: 'Event ID is required' });
   }
 
-  const doc = await Event.findOne({
+  const doc = await GDCEvent.findOne({
     _id: id,
     isPublic: true,
     status: 'Confirmed',

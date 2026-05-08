@@ -190,7 +190,7 @@ defineExpose({ addCustomer });
         v-for="customer in customers.filter(c => {
           if (!search) return true;
           const term = search.toLowerCase();
-          return (c.businessName?.toLowerCase().includes(term)) || (`${c.firstName} ${c.lastName}`.toLowerCase().includes(term)) || c.email?.toLowerCase().includes(term);
+          return formatContactName(c).toLowerCase().includes(term) || c.email?.toLowerCase().includes(term);
         })"
         :key="customer._id"
         class="bg-charcoal rounded-lg border border-brown/30 p-4"
@@ -203,7 +203,7 @@ defineExpose({ addCustomer });
             </div>
             <div>
               <div class="text-sm font-medium text-parchment flex items-center gap-2">
-                {{ customer.businessName || `${customer.firstName} ${customer.lastName}` }}
+                {{ formatContactName(customer) }}
                 <UBadge v-if="customer.newsletter" color="success" variant="subtle" size="xs">Newsletter</UBadge>
               </div>
             </div>
@@ -238,7 +238,7 @@ defineExpose({ addCustomer });
             variant="ghost"
             size="xs"
             @click.stop="async () => {
-              const name = customer.businessName || `${customer.firstName} ${customer.lastName}`;
+              const name = formatContactName(customer);
               const confirmed = await confirm('Customer', name);
               if (confirmed) contactStore.deleteContact(customer._id);
             }"

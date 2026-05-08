@@ -1,4 +1,4 @@
-import { o as createCreateHandler, al as vesselCreateSchema, V as Vessel } from '../../../nitro/nitro.mjs';
+import { q as createCreateHandler, ax as vesselCreateSchema, V as Vessel } from '../../../nitro/nitro.mjs';
 import 'mongoose';
 import 'yup';
 import 'cloudinary';

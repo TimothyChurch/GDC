@@ -30,7 +30,7 @@ export default defineEventHandler(async (event) => {
 
 	let updated = 0;
 	for (const recipe of recipes) {
-		const recipeClass = recipe.class as string;
+		const recipeClass = recipe.class as unknown as string;
 		const pipeline = PIPELINE_MAP[recipeClass] || DEFAULT_PIPELINE;
 
 		// Determine template name for reference
@@ -39,10 +39,10 @@ export default defineEventHandler(async (event) => {
 			templateName = 'Grain Spirit (Barreled)';
 		} else if (recipeClass === 'Gin') {
 			// Check type for redistilled vs compounded
-			const recipeType = recipe.type as string;
+			const recipeType = recipe.type as unknown as string;
 			if (recipeType?.toLowerCase().includes('compounded')) {
 				templateName = 'Compounded Gin';
-				recipe.pipeline = ['Maceration', 'Filtering', 'Storage', 'Proofing', 'Bottled'];
+				(recipe.pipeline as unknown as string[]) = ['Maceration', 'Filtering', 'Storage', 'Proofing', 'Bottled'];
 			} else {
 				templateName = 'Redistilled Gin';
 			}
@@ -54,10 +54,10 @@ export default defineEventHandler(async (event) => {
 			templateName = 'Grain Spirit (Unbarreled)';
 		}
 
-		if (!recipe.pipeline || recipe.pipeline.length === 0) {
-			recipe.pipeline = pipeline;
+		if (!recipe.pipeline || (recipe.pipeline as unknown as string[]).length === 0) {
+			(recipe.pipeline as unknown as string[]) = pipeline;
 		}
-		recipe.pipelineTemplate = templateName;
+		recipe.pipelineTemplate = templateName as any;
 		await recipe.save();
 		updated++;
 	}

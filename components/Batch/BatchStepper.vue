@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { STAGE_DISPLAY, stageTextColor } from '~/composables/batchPipeline'
+import { formatVolume } from '~/utils/formatting'
 
 const props = defineProps<{
   pipeline: string[]
@@ -18,12 +19,13 @@ const currentIndex = computed(() =>
 
 // Include "Upcoming" as index -1 for display
 const displayStages = computed(() => {
+  const upcoming = STAGE_DISPLAY['Upcoming'] ?? { icon: 'i-lucide-circle', color: 'neutral' }
   return [
-    { name: 'Upcoming', ...STAGE_DISPLAY['Upcoming'] },
-    ...props.pipeline.map((name) => ({
-      name,
-      ...(STAGE_DISPLAY[name] || { icon: 'i-lucide-circle', color: 'neutral' }),
-    })),
+    { name: 'Upcoming', icon: upcoming.icon, color: upcoming.color },
+    ...props.pipeline.map((name) => {
+      const display = STAGE_DISPLAY[name] ?? { icon: 'i-lucide-circle', color: 'neutral' }
+      return { name, icon: display.icon, color: display.color }
+    }),
   ]
 })
 
@@ -45,7 +47,7 @@ const volumeLabel = (stageName: string): string => {
   const vol = props.stageVolumes[stageName] || 0
   if (vol <= 0) return ''
   const unit = (props.batchSizeUnit || 'gallon').replace(/gallon/i, 'gal').replace(/liter/i, 'L')
-  return `${vol}${unit}`
+  return `${formatVolume(vol)}${unit}`
 }
 
 // Determine node state: 'active' (has volume, pulsing), 'completed' (past), 'future' (not reached)

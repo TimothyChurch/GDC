@@ -1,4 +1,4 @@
-import { f as createGetByIdHandler, B as BulkSpirit } from '../../../nitro/nitro.mjs';
+import { i as createGetByIdHandler, B as BulkSpirit } from '../../../nitro/nitro.mjs';
 import 'mongoose';
 import 'yup';
 import 'cloudinary';

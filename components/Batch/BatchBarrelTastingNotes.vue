@@ -9,9 +9,9 @@ const batchStore = useBatchStore()
 
 const sortedTastingNotes = computed(() => {
   if (!props.batch.tastingNotes?.length) return []
-  return props.batch.tastingNotes
-    .map((note, originalIndex) => ({ ...note, originalIndex }))
-    .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
+  return sortByDateDesc(
+    props.batch.tastingNotes.map((note, originalIndex) => ({ ...note, originalIndex })),
+  )
 })
 
 const newTastingNote = ref({

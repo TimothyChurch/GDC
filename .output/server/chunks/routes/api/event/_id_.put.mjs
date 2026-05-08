@@ -1,4 +1,4 @@
-import { h as createUpdateHandler, O as eventUpdateSchema, D as Event } from '../../../nitro/nitro.mjs';
+import { o as createUpdateHandler, S as eventUpdateSchema, G as GDCEvent } from '../../../nitro/nitro.mjs';
 import 'mongoose';
 import 'yup';
 import 'cloudinary';
@@ -18,7 +18,7 @@ import '@iconify/utils';
 import 'fast-xml-parser';
 import 'ipx';
 
-const _id__put = createUpdateHandler(Event, {
+const _id__put = createUpdateHandler(GDCEvent, {
   schema: eventUpdateSchema,
   populate: "contact",
   nullableFields: ["contact"]

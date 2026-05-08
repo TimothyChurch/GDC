@@ -1,4 +1,4 @@
-import { d as defineEventHandler, a as getAuthSession, c as createError, U as User } from '../../../nitro/nitro.mjs';
+import { d as defineEventHandler, e as getAuthSession, c as createError, U as User } from '../../../nitro/nitro.mjs';
 import 'mongoose';
 import 'yup';
 import 'cloudinary';

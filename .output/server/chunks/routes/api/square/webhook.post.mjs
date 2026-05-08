@@ -1,4 +1,4 @@
-import { d as defineEventHandler, ab as useRuntimeConfig, c as createError, ae as readRawBody, af as getHeader, aa as useSquareClient, F as Contact, D as Event } from '../../../nitro/nitro.mjs';
+import { d as defineEventHandler, ah as useRuntimeConfig, c as createError, ak as readRawBody, al as getHeader, ag as useSquareClient, H as GDCContact, G as GDCEvent } from '../../../nitro/nitro.mjs';
 import require$$1 from 'crypto';
 import 'mongoose';
 import 'yup';
@@ -36,10 +36,17 @@ const webhook_post = defineEventHandler(async (event) => {
   const hmac = require$$1.createHmac("sha256", webhookSignatureKey);
   hmac.update(notificationUrl + body);
   const expectedSignature = hmac.digest("base64");
-  if (signature !== expectedSignature) {
+  const sigBuf = Buffer.from(signature);
+  const expBuf = Buffer.from(expectedSignature);
+  if (sigBuf.length !== expBuf.length || !require$$1.timingSafeEqual(sigBuf, expBuf)) {
     throw createError({ status: 400, statusText: "Invalid webhook signature" });
   }
-  const payload = JSON.parse(body);
+  let payload;
+  try {
+    payload = JSON.parse(body);
+  } catch {
+    throw createError({ status: 400, statusText: "Invalid JSON payload" });
+  }
   if (payload.type === "payment.completed") {
     const orderId = (_c = (_b = (_a = payload.data) == null ? void 0 : _a.object) == null ? void 0 : _b.payment) == null ? void 0 : _c.order_id;
     if (orderId) {
@@ -54,7 +61,7 @@ const webhook_post = defineEventHandler(async (event) => {
         let bookingName = "Unknown";
         let bookingEmail = "";
         if (contactId) {
-          const contact = await Contact.findById(contactId).select("firstName lastName email").lean();
+          const contact = await GDCContact.findById(contactId).select("firstName lastName email").lean();
           if (contact) {
             bookingName = `${contact.firstName} ${contact.lastName}`;
             bookingEmail = contact.email || "";
@@ -66,7 +73,7 @@ const webhook_post = defineEventHandler(async (event) => {
             totalCents += ((_f = item.totalMoney) == null ? void 0 : _f.amount) || /* @__PURE__ */ BigInt("0");
           }
         }
-        await Event.updateOne(
+        await GDCEvent.updateOne(
           { _id: originId, processedOrders: { $ne: orderId } },
           {
             $inc: { groupSize: quantity },

@@ -11,7 +11,7 @@ const recipeStore = useRecipeStore()
 const barrelData = computed(() => {
   return vesselStore.barrels.map(barrel => {
     const hasFill = barrel.contents && barrel.contents.length > 0
-    const batch = hasFill ? batchStore.getBatchById(barrel.contents![0].batch) : null
+    const batch = hasFill ? batchStore.getBatchById(barrel.contents![0]!.batch) : null
     const recipe = batch?.recipe ? recipeStore.getRecipeById(batch.recipe) : null
     const fillDate = (batch?.stages as any)?.barrelAging?.entry?.date ? new Date((batch?.stages as any).barrelAging.entry.date) : null
     const ageDays = fillDate ? differenceInDays(new Date(), fillDate) : 0
@@ -80,11 +80,11 @@ const ageDistribution = computed(() => {
     '3+ yr': 0,
   }
   filledBarrels.value.forEach(b => {
-    if (b.ageDays < 180) buckets['< 6 mo']++
-    else if (b.ageDays < 365) buckets['6-12 mo']++
-    else if (b.ageDays < 730) buckets['1-2 yr']++
-    else if (b.ageDays < 1095) buckets['2-3 yr']++
-    else buckets['3+ yr']++
+    if (b.ageDays < 180) buckets['< 6 mo']!++
+    else if (b.ageDays < 365) buckets['6-12 mo']!++
+    else if (b.ageDays < 730) buckets['1-2 yr']!++
+    else if (b.ageDays < 1095) buckets['2-3 yr']!++
+    else buckets['3+ yr']!++
   })
   return {
     labels: Object.keys(buckets),

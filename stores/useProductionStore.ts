@@ -48,6 +48,7 @@ export const useProductionStore = defineStore('productions', () => {
 			toast.add({ title: 'Production created', color: 'success', icon: 'i-lucide-check-circle' });
 			return created._id;
 		} catch (error: unknown) {
+			console.error('[useProductionStore.createAndReturnId]', error);
 			toast.add({ title: 'Failed to create production', description: getErrorMessage(error), color: 'error', icon: 'i-lucide-alert-circle' });
 			return null;
 		} finally {
@@ -167,9 +168,7 @@ export const useProductionStore = defineStore('productions', () => {
 	};
 
 	const getProductionsByBottle = (bottleId: string): Production[] => {
-		return [...crud.items.value]
-			.filter((p) => p.bottle === bottleId)
-			.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+		return sortByDateDesc(crud.items.value.filter((p) => p.bottle === bottleId));
 	};
 
 	return {

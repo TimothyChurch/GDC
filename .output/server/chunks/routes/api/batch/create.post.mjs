@@ -1,4 +1,4 @@
-import { d as defineEventHandler, r as readBody, s as sanitize, v as validateBody, e as Batch, c as createError, j as batchCreateSchema } from '../../../nitro/nitro.mjs';
+import { d as defineEventHandler, a as readBody, s as sanitize, v as validateBody, h as Batch, c as createError, k as batchCreateSchema } from '../../../nitro/nitro.mjs';
 import 'mongoose';
 import 'yup';
 import 'cloudinary';

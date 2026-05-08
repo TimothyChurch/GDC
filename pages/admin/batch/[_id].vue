@@ -1,7 +1,11 @@
 <script setup lang="ts">
 import { STAGE_KEY_MAP, hasReachedStage as _hasReached, isStageActive, hasStageVolumes, getNextStage, getActiveStages, getPreviousStage } from '~/composables/batchPipeline'
+import { useLocalStorage } from '@vueuse/core'
 
 definePageMeta({ layout: 'admin' })
+
+// View preference (kanban summary vs stacked full cards), persisted per user in localStorage.
+const viewMode = useLocalStorage<'stacked' | 'kanban'>('gdc:batch-detail-view', 'stacked')
 
 const route = useRoute()
 const router = useRouter()
@@ -158,6 +162,20 @@ const stepBack = async (stageName: string) => {
   }
 }
 
+// Template refs keyed by stage name. Vue calls setStageRef(stage, el) on mount/unmount.
+const stageRefs = new Map<string, HTMLElement>()
+function setStageRef(stage: string, el: unknown) {
+  if (el instanceof HTMLElement) stageRefs.set(stage, el)
+  else stageRefs.delete(stage)
+}
+
+// Clicking a kanban card switches to stacked view and scrolls to that stage's full card.
+const focusStage = async (stage: string) => {
+  viewMode.value = 'stacked'
+  await nextTick()
+  stageRefs.get(stage)?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+}
+
 </script>
 
 <template>
@@ -199,6 +217,24 @@ const stepBack = async (stageName: string) => {
         :batch-size-unit="batch.batchSizeUnit"
         class="flex-1"
       />
+      <UFieldGroup size="xs">
+        <UButton
+          :variant="viewMode === 'stacked' ? 'solid' : 'outline'"
+          :color="viewMode === 'stacked' ? 'primary' : 'neutral'"
+          icon="i-lucide-rows-3"
+          @click="viewMode = 'stacked'"
+        >
+          Stacked
+        </UButton>
+        <UButton
+          :variant="viewMode === 'kanban' ? 'solid' : 'outline'"
+          :color="viewMode === 'kanban' ? 'primary' : 'neutral'"
+          icon="i-lucide-columns-3"
+          @click="viewMode = 'kanban'"
+        >
+          Kanban
+        </UButton>
+      </UFieldGroup>
       <UButton
         v-if="batch.status === 'active'"
         icon="i-lucide-pencil-ruler"
@@ -220,40 +256,64 @@ const stepBack = async (stageName: string) => {
       </template>
     </UModal>
 
-    <BatchHeader :batch="batch" :recipe="recipe" />
+    <!-- Summary + Current Vessels side-by-side. Vessels collapse to full-width below summary on smaller screens. -->
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
+      <BatchHeader :batch="batch" :recipe="recipe" class="lg:col-span-2" />
 
-    <!-- Upcoming advance action (no stage card for Upcoming) -->
-    <div v-if="batch.status === 'active' && advancableStages.includes('Upcoming')" class="flex justify-center">
-      <BatchAdvanceAction
-        :batch="batch"
-        source-stage="Upcoming"
-        @advanced="() => {}"
-      />
-    </div>
-
-    <!-- Current Vessels -->
-    <div v-if="containingVessels.length > 0" class="bg-charcoal rounded-xl border border-brown/30 p-5">
-      <h3 class="text-lg font-bold text-parchment font-[Cormorant_Garamond] mb-4">Current Vessels</h3>
-      <div class="divide-y divide-brown/20">
-        <div
-          v-for="vessel in containingVessels"
-          :key="vessel._id"
-          class="flex items-center justify-between py-2 text-sm"
-        >
-          <NuxtLink
-            :to="`/admin/vessels/${vessel._id}`"
-            class="text-gold hover:text-copper transition-colors"
+      <div v-if="containingVessels.length > 0" class="bg-charcoal rounded-xl border border-brown/30 p-5 lg:col-span-1">
+        <h3 class="text-lg font-bold text-parchment font-[Cormorant_Garamond] mb-4">Current Vessels</h3>
+        <div class="divide-y divide-brown/20">
+          <div
+            v-for="vessel in containingVessels"
+            :key="vessel._id"
+            class="flex items-center justify-between py-2 text-sm"
           >
-            {{ vessel.name }}
-          </NuxtLink>
-          <span class="text-parchment/50 text-xs">{{ vessel.type }}</span>
+            <NuxtLink
+              :to="`/admin/vessels/${vessel._id}`"
+              class="text-gold hover:text-copper transition-colors"
+            >
+              {{ vessel.name }}
+            </NuxtLink>
+            <span class="text-parchment/50 text-xs">{{ vessel.type }}</span>
+          </div>
         </div>
       </div>
     </div>
 
-    <!-- Dynamic stage components — newest stage first, overview stays on top -->
+    <!-- Recipe card (all pipelines) -->
+    <BatchRecipeCard v-if="recipe" :recipe="recipe" :batch-size="batch.batchSize" :batch-size-unit="batch.batchSizeUnit" />
+
+    <!-- Phase 6 — unified Transfer Action shortcuts. Routes through the new
+         atomic Transfer engine. -->
+    <div
+      v-if="batch.status === 'active'"
+      class="flex flex-wrap items-center gap-2 rounded-xl border border-brown/30 bg-charcoal/60 p-3"
+    >
+      <span class="text-xs uppercase tracking-wide text-parchment/50 mr-1">Transfer</span>
+      <TransferShortcutAdvanceStage :batch="batch" />
+      <TransferShortcutWithinStageMove :batch="batch" />
+      <TransferShortcutWithdraw :batch="batch" />
+      <TransferShortcutDestroy :batch="batch" />
+    </div>
+
+    <!-- Upcoming advance action (no stage card for Upcoming) -->
+    <div v-if="batch.status === 'active' && advancableStages.includes('Upcoming')" class="flex justify-center">
+      <TransferShortcutAdvanceStage :batch="batch" source-stage="Upcoming" />
+    </div>
+
+    <!-- Kanban summary view: compact horizontal cards for active stages + next stage. -->
+    <BatchStageKanban
+      v-if="viewMode === 'kanban'"
+      :batch="batch"
+      :advancable-stages="advancableStages"
+      :barrel-aging-has-barrels="barrelAgingHasBarrels"
+      @select-stage="focusStage"
+    />
+
+    <!-- Dynamic stage components — newest stage first, overview stays on top. Hidden in kanban view. -->
+    <template v-if="viewMode === 'stacked'">
     <template v-for="stage in reversedReachedStages" :key="stage">
-      <div class="relative">
+      <div :ref="(el) => setStageRef(stage, el)" class="relative scroll-mt-24">
         <!-- Edit toggle button -->
         <div v-if="canEdit(stage)" class="absolute top-4 right-4 z-10">
           <UButton
@@ -312,18 +372,23 @@ const stepBack = async (stageName: string) => {
           </div>
         </template>
 
-        <!-- Advance forward (Barrel Aging handles its own advancement when barrels are linked) -->
-        <BatchAdvanceAction
+        <!-- Advance forward (Barrel Aging handles its own advancement when barrels are linked).
+             Terminal Storage offers a "Complete to Bulk Storage" finisher instead. -->
+        <TransferShortcutAdvanceStage
           v-if="advancableStages.includes(stage) && (stage !== 'Barrel Aging' || !barrelAgingHasBarrels)"
           :batch="batch"
           :source-stage="stage"
-          @advanced="() => {}"
+        />
+        <BatchCompleteToBulk
+          v-else-if="stage === 'Storage' && !getNextStage(batch.pipeline, stage) && batch.status === 'active'"
+          :batch="batch"
         />
       </div>
     </template>
+    </template>
 
-    <!-- Tasting Notes (visible on all stages) -->
-    <BatchTastingNotes :batch="batch" />
+    <!-- Transfer ledger (Phase 6.8) — query-driven view of the new Transfer collection. -->
+    <TransferHistory :batch="batch" />
 
     <!-- Activity Log -->
     <BatchActivityLog :batch="batch" />

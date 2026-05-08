@@ -1,4 +1,4 @@
-import { o as createCreateHandler, a0 as messageCreateSchema, M as Message } from '../../../nitro/nitro.mjs';
+import { q as createCreateHandler, a2 as messageCreateSchema, M as Message } from '../../../nitro/nitro.mjs';
 import 'mongoose';
 import 'yup';
 import 'cloudinary';

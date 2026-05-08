@@ -54,10 +54,9 @@ const newType = (type: string) => {
             </UFormField>
             <UFormField label="Recipe" name="recipe">
               <USelectMenu
-                :items="recipeStore.recipes"
+                :items="recipeStore.recipes.map(r => ({ label: r.name, value: r._id }))"
                 searchable
-                label-key="name"
-                value-key="_id"
+                value-key="value"
                 v-model="localData.recipe"
                 class="w-full"
               />
@@ -98,7 +97,7 @@ const newType = (type: string) => {
                 <USwitch v-model="localData.inStock" />
               </UFormField>
               <UFormField v-if="!isNew" label="Archived">
-                <USwitch v-model="localData.archived" color="red" />
+                <USwitch v-model="localData.archived" color="error" />
               </UFormField>
             </div>
             <FormImageUpload

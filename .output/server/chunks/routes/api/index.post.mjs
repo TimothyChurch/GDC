@@ -1,4 +1,4 @@
-import { d as defineEventHandler, ag as getCloudinary, ah as readMultipartFormData, c as createError } from '../../nitro/nitro.mjs';
+import { d as defineEventHandler, l as requireRole, as as getCloudinary, at as readMultipartFormData, c as createError } from '../../nitro/nitro.mjs';
 import 'mongoose';
 import 'yup';
 import 'cloudinary';
@@ -20,6 +20,7 @@ import 'ipx';
 
 const index_post = defineEventHandler(async (event) => {
   var _a;
+  await requireRole(event, "Admin", "Manager", "Staff");
   const cloudinary = getCloudinary(event);
   const formData = await readMultipartFormData(event);
   if (!formData || formData.length === 0) {

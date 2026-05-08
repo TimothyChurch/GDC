@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import * as yup from 'yup';
+import type { TransferInput } from '~/types/interfaces/Transfer';
 
 const editSchema = yup.object({
   date: yup.string().required('Date is required'),
@@ -27,6 +28,8 @@ const vesselStore = useVesselStore();
 const bottleStore = useBottleStore();
 const batchStore = useBatchStore();
 const recipeStore = useRecipeStore();
+const transferStore = useTransferStore();
+const toast = useToast();
 
 // Track the batch ID for linking after creation
 const linkedBatchId = ref(props.prefill?.batchId || '');
@@ -117,6 +120,63 @@ const linkedBatchRecipeName = computed(() => {
   return batchStore.getRecipeNameByBatchId(linkedBatchId.value) || 'Batch';
 });
 
+/**
+ * Phase 7.1/7.2 — drain ALL vessels containing the linked batch via a single
+ * tax_paid_withdrawal transfer (atomic), then create the Production record,
+ * then adjust inventory. Replaces the previous direct vessel.contents mutation
+ * which had been silently no-op'd by Phase 4's vessel-PUT guard.
+ *
+ * `data.vessel[]` (the user-selected list) is preserved on the Production doc
+ * for display, but the engine sources from every vessel actually holding the
+ * batch — if a barrel was forgotten in the wizard, this fixes Bug 5.1.
+ */
+function findVesselSlotsForBatch(batchId: string) {
+  const slots: { vesselId: string; volume: number; proof: number; abv: number; volumeUnit: string; value: number }[] = [];
+  for (const v of vesselStore.crud.items.value) {
+    const slot = (v.contents || []).find((c: any) => String(c.batch) === batchId);
+    if (slot && slot.volume > 0) {
+      const proof = (slot as any).proof ?? (slot.abv != null ? slot.abv * 2 : 0);
+      slots.push({
+        vesselId: v._id,
+        volume: slot.volume,
+        proof,
+        abv: slot.abv ?? proof / 2,
+        volumeUnit: slot.volumeUnit || 'gallon',
+        value: slot.value || 0,
+      });
+    }
+  }
+  return slots;
+}
+
+async function drainBatchVesselsForBottling(batchId: string): Promise<{ totalVolume: number; weightedProof: number } | null> {
+  const slots = findVesselSlotsForBatch(batchId);
+  if (slots.length === 0) {
+    return { totalVolume: 0, weightedProof: 0 };
+  }
+  const totalVolume = slots.reduce((s, x) => s + x.volume, 0);
+  const totalPG = slots.reduce((s, x) => s + (x.volume * x.proof) / 100, 0);
+  const weightedProof = totalVolume > 0 ? (totalPG * 100) / totalVolume : 0;
+
+  const batch = batchStore.getBatchById(batchId);
+  const fromStage = batch?.currentStage || null;
+
+  const input: TransferInput = {
+    type: 'tax_paid_withdrawal',
+    batch: batchId,
+    fromStage,
+    toStage: 'Bottled',
+    sources: slots.map((s) => ({ vessel: s.vesselId, volume: s.volume, proof: s.proof })),
+    destinations: [{ vessel: null, volume: totalVolume, proof: weightedProof }],
+    loss: { volume: 0, proof: 0, reasonCode: 'no_loss' },
+    ttbAccount: { from: null, to: 'tax_paid' },
+    notes: `Bottling withdrawal: production record pending`,
+  };
+  const result = await transferStore.create(input);
+  if (!result) return null;
+  return { totalVolume, weightedProof };
+}
+
 const wizardSave = async () => {
   // For batch-linked new productions, handle save directly to avoid
   // useFormPanel's onClose double-emitting after our custom onSave emit
@@ -136,35 +196,51 @@ const wizardSave = async () => {
       data.productionCost = totalProductionCost.value;
       data.bottleCost = data.quantity > 0 ? totalProductionCost.value / data.quantity : 0;
 
+      // Override user-selected vessels with EVERY vessel holding the batch
+      // (defensive — fixes Bug 5.1 if a barrel was missed in the wizard).
+      const allBatchVessels = findVesselSlotsForBatch(linkedBatchId.value).map((s) => s.vesselId);
+      if (allBatchVessels.length > 0) {
+        data.vessel = allBatchVessels as any;
+      }
+
+      // 1. Atomic drain via the transfer engine.
+      const drain = await drainBatchVesselsForBottling(linkedBatchId.value);
+      if (!drain) {
+        // Toast already shown by useTransferStore.create
+        saving.value = false;
+        return;
+      }
+
+      // 2. Create the Production record.
       Object.assign(productionsStore.production, data);
       const newId = await productionsStore.createAndReturnId(data);
-      if (newId) {
-        if (updateInventory.value) {
-          await productionsStore.adjustInventoryForProduction({
-            quantity: data.quantity,
-            bottle: data.bottle,
-            bottling: data.bottling,
-          });
-        }
-        // Empty the source vessels — batch has been bottled
-        if (data.vessel?.length > 0) {
-          for (const vesselId of data.vessel) {
-            const vessel = vesselStore.getVesselById(vesselId as unknown as string);
-            if (vessel) {
-              vessel.contents = (vessel.contents || []).filter(
-                (c: { batch: string }) => c.batch !== linkedBatchId.value
-              );
-              vesselStore.vessel = vessel;
-              await vesselStore.updateVessel();
-            }
-          }
-        }
-
-        await batchStore.updateStageData(linkedBatchId.value, 'Bottled', {
-          productionRecord: newId,
-        }, 'Linked production record');
-        emit("close", newId);
+      if (!newId) {
+        toast.add({
+          title: 'Production record failed',
+          description: 'Vessels were drained but the production document was not saved. Reverse the most recent transfer or recreate the production manually.',
+          color: 'error',
+          icon: 'i-lucide-alert-triangle',
+          duration: 12000,
+        });
+        saving.value = false;
+        return;
       }
+
+      // 3. Inventory side-effects.
+      if (updateInventory.value) {
+        await productionsStore.adjustInventoryForProduction({
+          quantity: data.quantity,
+          bottle: data.bottle,
+          bottling: data.bottling,
+        });
+      }
+
+      // 4. Record the production link on the batch's Bottled stage.
+      await batchStore.updateStageData(linkedBatchId.value, 'Bottled', {
+        productionRecord: newId,
+      }, 'Linked production record');
+
+      emit("close", newId);
     } finally {
       saving.value = false;
     }
@@ -244,9 +320,8 @@ const wizardSave = async () => {
             <UFormField label="Bottle" name="bottle">
               <USelectMenu
                 v-model="localData.bottle"
-                :items="bottleStore.bottles"
-                label-key="name"
-                value-key="_id"
+                :items="bottleStore.bottles.map(b => ({ label: b.name, value: b._id }))"
+                value-key="value"
                 searchable
               />
             </UFormField>

@@ -1,5 +1,12 @@
 import type { Contents } from './Contents';
 
+export interface PreviousContentsEntry {
+	batchRecipeName?: string;
+	batchId?: string;
+	departedAt?: Date | string;
+	transferId?: string;
+}
+
 export interface Vessel {
 	_id: string;
 	name: string;
@@ -26,8 +33,13 @@ export interface Vessel {
 	location?: string;
 	status?: string;
 	isUsed?: boolean;
+	/** @deprecated — use `previousContentsHistory[0]` for the most recent entry. */
 	previousContents?: string;
+	previousContentsHistory?: PreviousContentsEntry[];
 	targetAge?: number;
+	/** Bumped by the Transfer engine on every transfer touching this vessel. */
+	contentsVersion?: number;
+	cachedAt?: Date | string;
 	createdAt?: string;
 	updatedAt?: string;
 }

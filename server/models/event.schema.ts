@@ -1,7 +1,7 @@
 import { defineMongooseModel } from "#nuxt/mongoose";
 import { Schema } from "mongoose";
 
-export const Event = defineMongooseModel({
+export const GDCEvent = defineMongooseModel({
   name: "Event",
   schema: {
     date: {

@@ -1,4 +1,4 @@
-import { l as createGetAllHandler, E as EquipmentLog } from '../../nitro/nitro.mjs';
+import { m as createGetAllHandler, E as EquipmentLog } from '../../nitro/nitro.mjs';
 import 'mongoose';
 import 'yup';
 import 'cloudinary';

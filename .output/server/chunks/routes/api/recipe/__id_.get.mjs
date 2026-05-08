@@ -1,4 +1,4 @@
-import { f as createGetByIdHandler, R as Recipe } from '../../../nitro/nitro.mjs';
+import { i as createGetByIdHandler, R as Recipe } from '../../../nitro/nitro.mjs';
 import 'mongoose';
 import 'yup';
 import 'cloudinary';

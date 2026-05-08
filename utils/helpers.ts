@@ -9,9 +9,7 @@ export const latestPrice = (item: Item | string): number => {
 	const selectedItem = typeof item === 'string' ? itemStore.getItemById(item) : item;
 	if (!selectedItem) return 0;
 
-	const sortedPurchaseOrders = [...purchaseOrderStore.purchaseOrders].sort(
-		(a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()
-	);
+	const sortedPurchaseOrders = sortByDateDesc(purchaseOrderStore.purchaseOrders);
 
 	for (const po of sortedPurchaseOrders) {
 		const lineItem = po.items.find((i) => i.item === selectedItem._id);

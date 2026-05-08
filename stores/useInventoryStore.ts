@@ -54,7 +54,8 @@ export const useInventoryStore = defineStore("inventories", () => {
   const ensureLoaded = async (): Promise<void> => {
     if (!crud.loaded.value) {
       try {
-        await getInventories();
+        // Trailing 12 months + buffer so stock-rate calculations have full coverage
+        await getInventories({ days: 400 });
         crud.loaded.value = true;
       } catch {
         // loaded stays false -- will retry on next call
@@ -98,9 +99,7 @@ export const useInventoryStore = defineStore("inventories", () => {
   const getCurrentStock = (itemId: string): number => {
     const itemRecords = getInventoriesByItem(itemId);
     if (itemRecords.length === 0) return 0;
-    const sorted = [...itemRecords].sort(
-      (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime(),
-    );
+    const sorted = sortByDateDesc(itemRecords);
     return sorted[0] ? getTotalQuantity(sorted[0]) : 0;
   };
 
@@ -127,6 +126,7 @@ export const useInventoryStore = defineStore("inventories", () => {
       crud.items.value.push(...created);
       return created;
     } catch (error: unknown) {
+      console.error('[useInventoryStore.bulkCreateInventories]', error);
       toast.add({
         title: "Failed to create inventory records",
         description: getErrorMessage(error),

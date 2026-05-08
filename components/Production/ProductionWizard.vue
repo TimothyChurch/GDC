@@ -70,9 +70,8 @@ const bottleStore = useBottleStore()
       <UFormField label="Bottle">
         <USelectMenu
           v-model="localData.bottle"
-          :items="bottleStore.bottles"
-          label-key="name"
-          value-key="_id"
+          :items="bottleStore.bottles.map(b => ({ label: b.name, value: b._id }))"
+          value-key="value"
           searchable
           class="w-full"
         />

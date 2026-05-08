@@ -18,12 +18,7 @@ const vesselName = computed(() => {
   return vesselStore.getVesselById(stage.value.vessel)?.name || 'Unknown'
 })
 
-const sortedReadings = computed(() => {
-  const readings = stage.value?.readings || []
-  return [...readings].sort(
-    (a, b) => new Date(a.date).getTime() - new Date(b.date).getTime()
-  )
-})
+const sortedReadings = computed(() => sortByDateAsc(stage.value?.readings || []))
 
 const estimatedABV = computed(() => {
   const og = stage.value?.originalGravity

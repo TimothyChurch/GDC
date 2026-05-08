@@ -1,4 +1,4 @@
-import { d as defineEventHandler, K as validateObjectId, I as Inventory, c as createError } from '../../../../nitro/nitro.mjs';
+import { d as defineEventHandler, N as validateObjectId, I as Inventory, c as createError } from '../../../../nitro/nitro.mjs';
 import 'mongoose';
 import 'yup';
 import 'cloudinary';

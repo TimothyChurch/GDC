@@ -1,4 +1,4 @@
-import { o as createCreateHandler, Q as eventCreateSchema, D as Event } from '../../../nitro/nitro.mjs';
+import { q as createCreateHandler, T as eventCreateSchema, G as GDCEvent } from '../../../nitro/nitro.mjs';
 import 'mongoose';
 import 'yup';
 import 'cloudinary';
@@ -18,7 +18,7 @@ import '@iconify/utils';
 import 'fast-xml-parser';
 import 'ipx';
 
-const create_post = createCreateHandler(Event, {
+const create_post = createCreateHandler(GDCEvent, {
   schema: eventCreateSchema,
   populate: "contact",
   falsyFields: { contact: "deleteIfFalsy" }

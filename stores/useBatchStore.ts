@@ -1,5 +1,6 @@
 import type { Batch, BatchStages, DistillingRun, MashingStage, Recipe, TastingNote, TransferLogEntry } from '~/types';
 import { STAGE_KEY_MAP, isStageActive, getActiveStages, hasStageVolumes, getStageIndex, getPreviousStage } from '~/composables/batchPipeline';
+import { calculateProofGallons } from '~/utils/proofGallons';
 
 const emptyStages = (): BatchStages => ({});
 
@@ -26,6 +27,23 @@ export const useBatchStore = defineStore('batches', () => {
 		name: 'Batch',
 		apiPath: '/api/batch',
 		defaultItem: defaultBatch,
+		// Strip engine-owned fields from PUT payloads so the 409 USE_TRANSFER_ENDPOINT
+		// guard on /api/batch/[id].put doesn't reject routine batch updates
+		// (notes, recipe, costs, distilling runs data, etc.).
+		// stageVolumes / stageProofs / transferLog mutations must go through
+		// the Transfer engine via useTransferStore.
+		beforeUpdate: (b) => {
+			const {
+				stageVolumes,
+				stageProofs,
+				transferLog,
+				cacheVersion,
+				cachedAt,
+				ttbAccount,
+				...rest
+			} = b as any;
+			return rest;
+		},
 	});
 
 	// --- Computed filters ---
@@ -91,81 +109,75 @@ export const useBatchStore = defineStore('batches', () => {
 		});
 	};
 
-	// --- Pipeline-based stage advancement ---
+	// --- Pipeline-based stage advancement (engine-routed, Phase 4) ---
+	//
+	// All three methods below route through the Transfer Engine
+	// (`server/utils/transferEngine.ts`) for atomicity, period-locking, and
+	// audit. The legacy in-memory mutation pattern is gone — the engine
+	// returns updated docs which the transferStore syncs back into the
+	// batch + vessel stores. Fixes Bugs 1.1, 4.1, 6.1, 12.1 from
+	// PLAN-PIPELINE-REVAMP.md §4.1.
+	//
+	// PROOF DEFAULTING: legacy callers (existing UI in advanced stages of
+	// distillation) don't capture proof. We default to 0 for both source
+	// and destination, which trivially balances PG (0 = 0 + 0). Phase 5/6
+	// UI work will surface proof inputs and pass them through.
 
-	/** Start the first production stage with optional partial volume transfer */
-	const startFirstStage = async (batchId: string, vesselId: string, transferVolume?: number): Promise<void> => {
+	const findVesselsContaining = (batchId: string): { vesselId: string; volume: number; proof: number }[] => {
 		const vesselStore = useVesselStore();
+		const out: { vesselId: string; volume: number; proof: number }[] = [];
+		for (const v of vesselStore.crud.items.value) {
+			const slot = (v.contents || []).find((c: any) => String(c.batch) === batchId);
+			if (slot && slot.volume > 0) {
+				const proof = slot.proof ?? (slot.abv != null ? slot.abv * 2 : 0);
+				out.push({ vesselId: v._id, volume: slot.volume, proof });
+			}
+		}
+		return out;
+	};
+
+	/** Start the first production stage with optional partial volume transfer.
+	 * Routes through the Transfer Engine. Side effects (inventory withdrawal,
+	 * bulk-spirit withdrawal) still run client-side after a successful transfer.
+	 */
+	const startFirstStage = async (batchId: string, vesselId: string, transferVolume?: number): Promise<void> => {
 		const target = crud.items.value.find((b) => b._id === batchId);
 		if (!target) return;
 
-		ensureStageVolumes(target);
+		const firstStage = target.pipeline[0]!;
+		const stageVolumes = target.stageVolumes || {};
+		const upcomingVolume = stageVolumes['Upcoming'] || target.batchSize || 0;
+		const volume = transferVolume != null ? Math.min(transferVolume, upcomingVolume) : upcomingVolume;
+		if (volume <= 0) return;
 
-		const firstStage = target.pipeline[0];
-		const upcomingVolume = target.stageVolumes!['Upcoming'] || target.batchSize || 0;
-		const actualVolume = transferVolume != null ? Math.min(transferVolume, upcomingVolume) : upcomingVolume;
-
-		const remainingUpcoming = upcomingVolume - actualVolume;
-		if (remainingUpcoming > 0.001) {
-			target.stageVolumes!['Upcoming'] = remainingUpcoming;
-		} else {
-			delete target.stageVolumes!['Upcoming'];
-		}
-
-		target.stageVolumes![firstStage] = (target.stageVolumes![firstStage] || 0) + actualVolume;
-
-		const firstStageIdx = getStageIndex(target.pipeline, firstStage);
-		const currentIdx = target.currentStage === 'Upcoming' ? -1 : getStageIndex(target.pipeline, target.currentStage);
-		if (firstStageIdx > currentIdx) {
-			target.currentStage = firstStage;
-		}
-
-		const stageKey = STAGE_KEY_MAP[firstStage];
-		if (stageKey) {
-			if (!target.stages[stageKey]) {
-				target.stages[stageKey] = {};
-			}
-			const stage = target.stages[stageKey]!;
-			if (!stage.startedAt) {
-				stage.startedAt = new Date();
-			}
-			if (vesselId && !stage.vessel) {
-				stage.vessel = vesselId;
-			}
-		}
-
-		addTransferLogEntry(target, {
-			from: 'Upcoming',
-			to: firstStage,
-			volume: actualVolume,
-			volumeUnit: target.batchSizeUnit || 'gallon',
-			vessel: vesselId || undefined,
+		const transferStore = useTransferStore();
+		await transferStore.create({
+			type: 'stage_transition',
+			batch: batchId,
+			fromStage: 'Upcoming',
+			toStage: firstStage,
+			sources: [],  // Upcoming has no physical source — engine bypasses balance check
+			destinations: [{ vessel: vesselId, stage: firstStage, volume, proof: 0 }],
+			loss: { volume: 0, proof: 0, reasonCode: 'no_loss' },
 		});
-		addLogEntry(target, `Transferred ${actualVolume} ${target.batchSizeUnit || 'gal'} to ${firstStage}`);
 
-		crud.item.value = target;
-		await updateBatch();
-
-		if (vesselId) {
-			await vesselStore.addContents(vesselId, {
-				batch: batchId,
-				volume: actualVolume,
-				volumeUnit: target.batchSizeUnit || 'gallon',
-				abv: 0,
-				value: (target.batchCost || 0) * (actualVolume / (target.batchSize || actualVolume)),
-			});
-		}
-
-		// Withdraw ingredients from inventory when entering Mashing
+		// Side effects — these are NOT part of the transfer; they're separate writes.
+		// The transfer succeeded atomically; these can fail without affecting batch state.
 		if (firstStage === 'Mashing') {
 			await withdrawMashIngredients(batchId);
 		}
-
-		// Withdraw bulk spirits when starting first stage
 		await withdrawBulkSpirits(batchId);
 	};
 
-	/** Advance a batch from sourceStage to targetStage with optional partial volume. */
+	/** Advance a batch from sourceStage to targetStage with optional partial volume.
+	 *
+	 * Source vessel selection: looks up vessels currently containing the batch.
+	 * If exactly one is found, it's used as the source. If multiple, the caller
+	 * must specify them (Phase 5/6 UI gives the user a picker; for now we
+	 * advance from the first matching vessel and warn).
+	 *
+	 * For 'Upcoming' as fromStage, no source vessel is needed.
+	 */
 	const advanceToStage = async (
 		batchId: string,
 		targetStage: string,
@@ -177,82 +189,70 @@ export const useBatchStore = defineStore('batches', () => {
 		const target = crud.items.value.find((b) => b._id === batchId);
 		if (!target) return;
 
-		ensureStageVolumes(target);
-
 		const targetIdx = getStageIndex(target.pipeline, targetStage);
 		let fromStage = sourceStage;
 		if (!fromStage) {
 			if (targetIdx === 0) {
 				fromStage = 'Upcoming';
 			} else if (targetIdx > 0) {
-				fromStage = target.pipeline[targetIdx - 1];
+				fromStage = target.pipeline[targetIdx - 1]!;
 			} else {
 				fromStage = target.currentStage;
 			}
 		}
 
-		const sourceVolume = target.stageVolumes![fromStage] || 0;
+		const sourceVolume = (target.stageVolumes || {})[fromStage] || 0;
 		const actualVolume = transferVolume != null ? Math.min(transferVolume, sourceVolume) : sourceVolume;
-		if (actualVolume <= 0) return;
-
-		const remainingSource = sourceVolume - actualVolume;
-		if (remainingSource > 0.001) {
-			target.stageVolumes![fromStage] = remainingSource;
-		} else {
-			delete target.stageVolumes![fromStage];
-			const sourceKey = STAGE_KEY_MAP[fromStage];
-			if (sourceKey && target.stages[sourceKey]) {
-				target.stages[sourceKey]!.completedAt = new Date();
-			}
-		}
+		if (actualVolume <= 0 && fromStage !== 'Upcoming') return;
 
 		const destVol = destinationVolume != null ? destinationVolume : actualVolume;
-		target.stageVolumes![targetStage] = (target.stageVolumes![targetStage] || 0) + destVol;
 
-		const currentIdx = target.currentStage === 'Upcoming' ? -1 : getStageIndex(target.pipeline, target.currentStage);
-		if (targetIdx > currentIdx) {
-			target.currentStage = targetStage;
-		}
+		const transferStore = useTransferStore();
 
-		const newStageKey = STAGE_KEY_MAP[targetStage];
-		if (newStageKey) {
-			if (!target.stages[newStageKey]) {
-				target.stages[newStageKey] = {};
+		// Build sources from vessels actually holding the batch (multi-vessel-aware).
+		// If fromStage is 'Upcoming', sources is empty (engine bypass).
+		let sources: { vessel: string; volume: number; proof: number }[] = [];
+		if (fromStage !== 'Upcoming') {
+			const containing = findVesselsContaining(batchId);
+			if (containing.length === 0) {
+				console.warn(`[advanceToStage] No vessels contain batch ${batchId}; cannot determine source.`);
+				return;
 			}
-			const stage = target.stages[newStageKey]!;
-			if (!stage.startedAt) {
-				stage.startedAt = new Date();
+			// Allocate the requested actualVolume across vessels (greedy from first).
+			let remaining = actualVolume;
+			for (const c of containing) {
+				if (remaining <= 0) break;
+				const takeVol = Math.min(remaining, c.volume);
+				sources.push({ vessel: c.vesselId, volume: takeVol, proof: c.proof });
+				remaining -= takeVol;
 			}
-			if (stageData?.vessel && !stage.vessel) {
-				stage.vessel = stageData.vessel;
-			}
-		}
-
-		if (targetStage === 'Bottled') {
-			const activeNonBottled = Object.entries(target.stageVolumes!)
-				.filter(([stage, vol]) => stage !== 'Bottled' && vol > 0);
-			if (activeNonBottled.length === 0) {
-				target.status = 'completed';
+			if (remaining > 0.001) {
+				console.warn(`[advanceToStage] Requested ${actualVolume} gal but only ${actualVolume - remaining} gal available across vessels.`);
 			}
 		}
 
-		addTransferLogEntry(target, {
-			from: fromStage,
-			to: targetStage,
-			volume: destVol,
-			volumeUnit: target.batchSizeUnit || 'gallon',
-			vessel: stageData?.vessel || undefined,
+		// Destination: caller-supplied vessel (or null for stages without a physical vessel like Storage).
+		const destinations = stageData?.vessel
+			? [{ vessel: stageData.vessel, stage: targetStage, volume: destVol, proof: 0 }]
+			: [];
+
+		// Loss = source volume - dest volume (only when distillation produces less than charged).
+		const lossVolume = Math.max(0, actualVolume - destVol);
+		const loss = lossVolume > 0
+			? { volume: lossVolume, proof: 0, reasonCode: 'foreshots_heads_tails' as const }
+			: { volume: 0, proof: 0, reasonCode: 'no_loss' as const };
+
+		await transferStore.create({
+			type: 'stage_transition',
+			batch: batchId,
+			fromStage,
+			toStage: targetStage,
+			sources,
+			destinations,
+			loss,
 		});
-		if (destinationVolume != null && destinationVolume !== actualVolume) {
-			addLogEntry(target, `Distilled ${actualVolume} ${target.batchSizeUnit || 'gal'} from ${fromStage}, collected ${destVol} ${target.batchSizeUnit || 'gal'} to ${targetStage}`);
-		} else {
-			addLogEntry(target, `Transferred ${actualVolume} ${target.batchSizeUnit || 'gal'} from ${fromStage} to ${targetStage}`);
-		}
 
-		crud.item.value = target;
-		await updateBatch();
-
-		// Withdraw ingredients from inventory when entering Mashing
+		// Mashing-entry side effect (inventory withdrawal)
 		if (targetStage === 'Mashing') {
 			await withdrawMashIngredients(batchId);
 		}
@@ -277,56 +277,45 @@ export const useBatchStore = defineStore('batches', () => {
 		await updateBatch();
 	};
 
-	/** Revert volume from a stage back to the previous stage in the pipeline */
+	/** Revert volume from a stage back to the previous stage in the pipeline.
+	 *
+	 * Engine-routed (Phase 4): finds the most recent committed `stage_transition`
+	 * transfer where `toStage === fromStage`, and calls the engine's reverse
+	 * primitive. The reverse atomically restores both batch and vessel state.
+	 *
+	 * Fixes Bug 12.1 — the legacy implementation only touched stageVolumes,
+	 * leaving vessels in an inconsistent ghost state.
+	 */
 	const revertToPreviousStage = async (batchId: string, fromStage: string): Promise<void> => {
 		const target = crud.items.value.find((b) => b._id === batchId);
 		if (!target) return;
 
-		ensureStageVolumes(target);
+		const transferStore = useTransferStore();
 
-		const prevStage = getPreviousStage(target.pipeline, fromStage);
-		if (!prevStage) return;
-
-		const volumeToRevert = target.stageVolumes![fromStage] || 0;
-		if (volumeToRevert <= 0) return;
-
-		// Move volume back to previous stage
-		delete target.stageVolumes![fromStage];
-		target.stageVolumes![prevStage] = (target.stageVolumes![prevStage] || 0) + volumeToRevert;
-
-		// Clear completedAt on the previous stage since it's active again
-		const prevKey = STAGE_KEY_MAP[prevStage];
-		if (prevKey && target.stages[prevKey]) {
-			delete target.stages[prevKey]!.completedAt;
-		}
-
-		// If batch was marked completed (all volume in Bottled), revert to active
-		if (target.status === 'completed') {
-			target.status = 'active';
-		}
-
-		// Recalculate currentStage as the furthest stage with volume
-		const activeStages = Object.entries(target.stageVolumes!)
-			.filter(([, vol]) => vol > 0)
-			.map(([stage]) => stage);
-		let furthestIdx = -1;
-		for (const stage of activeStages) {
-			if (stage === 'Upcoming') continue;
-			const idx = getStageIndex(target.pipeline, stage);
-			if (idx > furthestIdx) furthestIdx = idx;
-		}
-		target.currentStage = furthestIdx >= 0 ? target.pipeline[furthestIdx]! : (activeStages.includes('Upcoming') ? 'Upcoming' : target.pipeline[0]!);
-
-		addTransferLogEntry(target, {
-			from: fromStage,
-			to: prevStage,
-			volume: volumeToRevert,
-			volumeUnit: target.batchSizeUnit || 'gallon',
+		// Find the most recent committed transfer that landed liquid in `fromStage`.
+		// We query the server rather than rely on local cache to be sure we get the latest.
+		const candidates = await transferStore.list({
+			batch: batchId,
+			type: 'stage_transition',
+			status: 'committed',
+			limit: 50,
 		});
-		addLogEntry(target, `Reverted ${volumeToRevert} ${target.batchSizeUnit || 'gal'} from ${fromStage} back to ${prevStage}`);
 
-		crud.item.value = target;
-		await updateBatch();
+		const target_transfer = candidates.find(
+			t => t.toStage === fromStage,
+		);
+
+		if (!target_transfer) {
+			toast.add({
+				title: 'Nothing to revert',
+				description: `No committed transfer landed liquid in ${fromStage}.`,
+				color: 'warning',
+				icon: 'i-lucide-alert-triangle',
+			});
+			return;
+		}
+
+		await transferStore.reverse(target_transfer._id, `Revert ${fromStage} → ${getPreviousStage(target.pipeline, fromStage) || 'previous stage'}`);
 	};
 
 	// --- Distilling run management ---
@@ -380,6 +369,38 @@ export const useBatchStore = defineStore('batches', () => {
 
 	// --- Stripping run management ---
 
+	// Recompute the lowWines stage totals from all stripping run outputs.
+	// Low wines is the accumulation of every stripping run — volume sums, ABV is volume-weighted.
+	const recomputeLowWines = (target: Batch): void => {
+		const runs = target.stages?.strippingRun?.runs || [];
+		const runsWithOutput = runs.filter((r: DistillingRun) => (r.output?.volume || r.total?.volume || 0) > 0);
+
+		if (!target.stages.lowWines) target.stages.lowWines = {};
+		const lw: any = target.stages.lowWines;
+
+		if (runsWithOutput.length === 0) {
+			lw.volume = 0;
+			lw.abv = 0;
+			lw.proofGallons = 0;
+			lw.sourceRuns = runs.length;
+			return;
+		}
+
+		const totalVol = runsWithOutput.reduce((s: number, r: DistillingRun) => s + (r.output?.volume || r.total?.volume || 0), 0);
+		const weightedAbv = runsWithOutput.reduce((s: number, r: DistillingRun) => {
+			const vol = r.output?.volume || r.total?.volume || 0;
+			const abv = r.output?.abv || r.total?.abv || 0;
+			return s + vol * abv;
+		}, 0);
+		const avgAbv = totalVol > 0 ? weightedAbv / totalVol : 0;
+
+		lw.volume = totalVol;
+		lw.volumeUnit = runsWithOutput[0].output?.volumeUnit || runsWithOutput[0].total?.volumeUnit || lw.volumeUnit || 'gallon';
+		lw.abv = avgAbv;
+		lw.proofGallons = totalVol > 0 && avgAbv > 0 ? calculateProofGallons(totalVol, lw.volumeUnit, avgAbv) : 0;
+		lw.sourceRuns = runs.length;
+	};
+
 	const addStrippingRun = async (batchId: string, run: DistillingRun): Promise<void> => {
 		const target = crud.items.value.find((b) => b._id === batchId);
 		if (!target) return;
@@ -390,6 +411,7 @@ export const useBatchStore = defineStore('batches', () => {
 		run.runNumber = target.stages.strippingRun.runs.length + 1;
 		run.runType = 'stripping';
 		target.stages.strippingRun.runs.push(run);
+		recomputeLowWines(target);
 
 		addLogEntry(target, `Added stripping run #${run.runNumber}`);
 
@@ -402,6 +424,7 @@ export const useBatchStore = defineStore('batches', () => {
 		if (!target?.stages?.strippingRun?.runs?.[runIndex]) return;
 
 		Object.assign(target.stages.strippingRun.runs[runIndex], data);
+		recomputeLowWines(target);
 		addLogEntry(target, `Updated stripping run #${target.stages.strippingRun.runs[runIndex].runNumber}`);
 
 		crud.item.value = target;
@@ -415,6 +438,7 @@ export const useBatchStore = defineStore('batches', () => {
 		const removedNumber = target.stages.strippingRun.runs[runIndex].runNumber;
 		target.stages.strippingRun.runs.splice(runIndex, 1);
 		target.stages.strippingRun.runs.forEach((r: DistillingRun, i: number) => { r.runNumber = i + 1; });
+		recomputeLowWines(target);
 
 		addLogEntry(target, `Deleted stripping run #${removedNumber}`);
 

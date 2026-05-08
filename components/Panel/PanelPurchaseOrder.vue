@@ -151,7 +151,7 @@ const removeItem = (index: number) => {
                   v-model="localData.vendor"
                   :items="
                     contactStore.contacts.map((c) => ({
-                      label: c.businessName || `${c.firstName} ${c.lastName}`,
+                      label: formatContactName(c),
                       value: c._id,
                     }))
                   "

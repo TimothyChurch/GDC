@@ -1,4 +1,4 @@
-import { f as createGetByIdHandler, F as Contact } from '../../../nitro/nitro.mjs';
+import { i as createGetByIdHandler, H as GDCContact } from '../../../nitro/nitro.mjs';
 import 'mongoose';
 import 'yup';
 import 'cloudinary';
@@ -18,7 +18,7 @@ import '@iconify/utils';
 import 'fast-xml-parser';
 import 'ipx';
 
-const _id__get = createGetByIdHandler(Contact);
+const _id__get = createGetByIdHandler(GDCContact);
 
 export { _id__get as default };
 //# sourceMappingURL=_id_.get.mjs.map

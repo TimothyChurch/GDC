@@ -332,14 +332,37 @@ export const Batch = defineMongooseModel({
 			addedBy: String,
 		}],
 
-		// --- Volume tracking across stages ---
+		// --- Volume tracking across stages (denormalized cache; recomputable from Transfer ledger) ---
 		stageVolumes: {
 			type: Map,
 			of: Number,
 			default: {},
 		},
 
-		// --- Transfer log ---
+		// --- Proof-per-stage cache (added by Transfer engine; pairs with stageVolumes for PG) ---
+		// PG for a stage = stageVolumes[stage] * stageProofs[stage] / 100
+		stageProofs: {
+			type: Map,
+			of: Number,
+			default: {},
+		},
+
+		// --- TTB account this batch's spirits live in (auto-updated on stage transitions) ---
+		ttbAccount: {
+			type: String,
+			enum: ['production', 'storage', 'processing', 'tib_external', 'tax_paid'] as string[],
+			default: 'production',
+			index: true,
+		},
+
+		// --- Cache versioning (bumped on every Transfer that touches this batch) ---
+		cacheVersion: { type: Number, default: 0 },
+		cachedAt: Date,
+
+		// --- Legacy transfer log ---
+		// DEPRECATED: replaced by Transfer collection. Kept readable for one
+		// release cycle so old UI keeps working during cutover. New code MUST NOT
+		// write to this field; the Transfer engine writes to the Transfer collection.
 		transferLog: [{
 			from: String,
 			to: String,

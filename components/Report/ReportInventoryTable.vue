@@ -16,11 +16,9 @@ const showOutOfStock = ref(false)
 // All item inventory (with trackInventory filter applied)
 const allItemInventory = computed(() => {
   return itemStore.items.filter(item => item.trackInventory !== false).map(item => {
-    const records = inventoryStore.inventories
-      .filter(inv => inv.item === item._id)
-      .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
-    const latestQty = records.length > 0 ? records[0].quantity : 0
-    const previousQty = records.length > 1 ? records[1].quantity : null
+    const records = sortByDateDesc(inventoryStore.inventories.filter(inv => inv.item === item._id))
+    const latestQty = records.length > 0 ? records[0]!.quantity : 0
+    const previousQty = records.length > 1 ? records[1]!.quantity : null
     const unitPrice = latestPrice(item._id) || 0
     return {
       _id: item._id,
@@ -30,7 +28,7 @@ const allItemInventory = computed(() => {
       currentStock: latestQty,
       previousStock: previousQty,
       delta: previousQty !== null ? latestQty - previousQty : null,
-      lastCounted: records.length > 0 ? new Date(records[0].date) : null,
+      lastCounted: records.length > 0 ? new Date(records[0]!.date) : null,
       unitPrice,
       totalValue: latestQty * unitPrice,
     }
@@ -46,10 +44,8 @@ const itemInventory = computed(() => {
 // All bottle inventory
 const allBottleInventory = computed(() => {
   return bottleStore.activeBottles.map(bottle => {
-    const records = inventoryStore.inventories
-      .filter(inv => inv.item === bottle._id)
-      .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
-    const latestQty = records.length > 0 ? records[0].quantity : 0
+    const records = sortByDateDesc(inventoryStore.inventories.filter(inv => inv.item === bottle._id))
+    const latestQty = records.length > 0 ? records[0]!.quantity : 0
     const totalProduced = productionStore.productions
       .filter(p => p.bottle === bottle._id)
       .reduce((sum, p) => sum + (p.quantity || 0), 0)
@@ -62,7 +58,7 @@ const allBottleInventory = computed(() => {
       price: bottle.price || 0,
       retailValue: latestQty * (bottle.price || 0),
       inStock: bottle.inStock,
-      lastCounted: records.length > 0 ? new Date(records[0].date) : null,
+      lastCounted: records.length > 0 ? new Date(records[0]!.date) : null,
     }
   }).sort((a, b) => a.name.localeCompare(b.name))
 })

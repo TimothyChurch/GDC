@@ -1,10 +1,12 @@
 # Nuxt dev/build outputs
-# .output
+.output
 .data
 .nuxt
 .nitro
 .cache
 dist
+# Guard against `nuxt build false` typo (the literal string "false" gets used as outDir)
+false/
 
 # Node dependencies
 node_modules
@@ -22,3 +24,10 @@ logs
 .env
 .env.*
 !.env.example
+
+# TLS / certs (never commit private keys)
+*.crt
+*.key
+*.pem
+*.p12
+*.pfx

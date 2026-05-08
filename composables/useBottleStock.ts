@@ -8,39 +8,53 @@ interface BottleStockStatus {
 }
 
 const LOW_STOCK_THRESHOLD_MONTHS = 1;
+const TRAILING_MONTHS = 12;
+const DAYS_PER_MONTH = 30.44;
+const MS_PER_DAY = 1000 * 60 * 60 * 24;
 
 /**
- * Compute stock metrics from a sorted (chronological) list of inventory records.
- * Ignores out-of-stock periods and restock intervals.
+ * Compute stock metrics from a list of inventory records.
+ * - Uses only the trailing 12 months of usage data.
+ * - Skips intervals where prior stock was 0 (out-of-stock periods).
+ * - Skips intervals that increase (restocks).
+ * - Clips intervals that straddle the 12-month window so usage and active
+ *   days are prorated to the windowed portion only.
  */
 function computeStockStatus(records: Inventory[]): BottleStockStatus {
   if (records.length === 0) {
     return { currentStock: 0, avgMonthlyUsage: 0, monthsRemaining: Infinity, isLowStock: false };
   }
 
-  const sorted = [...records].sort(
-    (a, b) => new Date(a.date).getTime() - new Date(b.date).getTime(),
-  );
-  const currentStock = sorted[sorted.length - 1].quantity;
+  const sorted = sortByDateAsc(records);
+  const currentStock = sorted[sorted.length - 1]!.quantity;
+  const cutoffMs = Date.now() - TRAILING_MONTHS * DAYS_PER_MONTH * MS_PER_DAY;
 
   let totalUsage = 0;
   let totalActiveDays = 0;
   for (let i = 1; i < sorted.length; i++) {
-    const prevQty = sorted[i - 1].quantity;
-    const currQty = sorted[i].quantity;
-    if (prevQty === 0) continue;
-    if (currQty < prevQty) {
-      const days =
-        (new Date(sorted[i].date).getTime() -
-          new Date(sorted[i - 1].date).getTime()) /
-        (1000 * 60 * 60 * 24);
-      totalUsage += prevQty - currQty;
-      totalActiveDays += days;
-    }
+    const prev = sorted[i - 1]!;
+    const curr = sorted[i]!;
+    const prevMs = new Date(prev.date).getTime();
+    const currMs = new Date(curr.date).getTime();
+
+    if (currMs <= cutoffMs) continue;
+    if (prev.quantity === 0) continue;
+    if (curr.quantity >= prev.quantity) continue;
+
+    const intervalMs = currMs - prevMs;
+    if (intervalMs <= 0) continue;
+
+    const startMs = Math.max(prevMs, cutoffMs);
+    const overlapMs = currMs - startMs;
+    if (overlapMs <= 0) continue;
+
+    const ratio = overlapMs / intervalMs;
+    totalUsage += (prev.quantity - curr.quantity) * ratio;
+    totalActiveDays += overlapMs / MS_PER_DAY;
   }
 
   const avgMonthlyUsage =
-    totalActiveDays > 0 ? totalUsage / (totalActiveDays / 30.44) : 0;
+    totalActiveDays > 0 ? totalUsage / (totalActiveDays / DAYS_PER_MONTH) : 0;
   const monthsRemaining =
     avgMonthlyUsage > 0 ? currentStock / avgMonthlyUsage : Infinity;
   const isLowStock =

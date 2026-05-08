@@ -1,4 +1,4 @@
-import { d as defineEventHandler, r as readBody, s as sanitize, v as validateBody, F as Contact, c as createError, L as newsletterSubscribeSchema } from '../../../nitro/nitro.mjs';
+import { d as defineEventHandler, r as rateLimit, a as readBody, s as sanitize, v as validateBody, H as GDCContact, c as createError, O as newsletterSubscribeSchema } from '../../../nitro/nitro.mjs';
 import 'mongoose';
 import 'yup';
 import 'cloudinary';
@@ -19,16 +19,22 @@ import 'fast-xml-parser';
 import 'ipx';
 
 const subscribe_post = defineEventHandler(async (event) => {
+  rateLimit(event, {
+    key: "contact:subscribe",
+    limit: 5,
+    windowMs: 15 * 60 * 1e3,
+    message: "Too many subscription attempts. Please try again later."
+  });
   const body = await readBody(event);
   const sanitized = sanitize(body);
   const validated = await validateBody(sanitized, newsletterSubscribeSchema);
   try {
-    const existing = await Contact.findOne({ email: validated.email });
+    const existing = await GDCContact.findOne({ email: validated.email });
     if (existing) {
-      await Contact.findByIdAndUpdate(existing._id, { newsletter: true, type: "Customer" });
+      await GDCContact.findByIdAndUpdate(existing._id, { newsletter: true, type: "Customer" });
       return { success: true, message: "You're now subscribed to our newsletter!" };
     }
-    await Contact.create({
+    await GDCContact.create({
       email: validated.email,
       firstName: validated.firstName || void 0,
       lastName: validated.lastName || void 0,

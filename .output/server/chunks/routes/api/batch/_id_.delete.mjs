@@ -1,4 +1,4 @@
-import { b as createDeleteHandler, B as BulkSpirit, E as EquipmentLog, V as Vessel, e as Batch } from '../../../nitro/nitro.mjs';
+import { f as createDeleteHandler, B as BulkSpirit, E as EquipmentLog, V as Vessel, h as Batch } from '../../../nitro/nitro.mjs';
 import 'mongoose';
 import 'yup';
 import 'cloudinary';

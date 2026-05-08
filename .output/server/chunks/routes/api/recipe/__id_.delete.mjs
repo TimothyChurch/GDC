@@ -1,4 +1,4 @@
-import { b as createDeleteHandler, e as Batch, R as Recipe } from '../../../nitro/nitro.mjs';
+import { f as createDeleteHandler, h as Batch, R as Recipe } from '../../../nitro/nitro.mjs';
 import 'mongoose';
 import 'yup';
 import 'cloudinary';

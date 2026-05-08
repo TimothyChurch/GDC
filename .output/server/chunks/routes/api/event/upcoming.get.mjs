@@ -1,4 +1,4 @@
-import { d as defineEventHandler, D as Event, c as createError } from '../../../nitro/nitro.mjs';
+import { d as defineEventHandler, G as GDCEvent, c as createError } from '../../../nitro/nitro.mjs';
 import 'mongoose';
 import 'yup';
 import 'cloudinary';
@@ -21,7 +21,7 @@ import 'ipx';
 const upcoming_get = defineEventHandler(async () => {
   try {
     const now = /* @__PURE__ */ new Date();
-    const events = await Event.find({
+    const events = await GDCEvent.find({
       status: "Confirmed",
       isPublic: true,
       date: { $gte: now }

@@ -1,4 +1,4 @@
-import { d as defineEventHandler, k as requireRole, U as User, c as createError, a8 as isH3Error } from '../../../nitro/nitro.mjs';
+import { d as defineEventHandler, l as requireRole, U as User, c as createError, ae as isH3Error } from '../../../nitro/nitro.mjs';
 import 'mongoose';
 import 'yup';
 import 'cloudinary';

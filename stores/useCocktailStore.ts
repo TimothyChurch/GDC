@@ -50,6 +50,7 @@ export const useCocktailStore = defineStore("cocktails", () => {
       });
       toast.add({ title: `Cocktail ${target.visible ? 'shown' : 'hidden'}`, color: 'success', icon: 'i-lucide-check-circle' });
     } catch (error: unknown) {
+      console.error('[useCocktailStore.toggleVisibility]', error);
       target.visible = previousValue;
       toast.add({ title: 'Failed to update visibility', description: getErrorMessage(error), color: 'error', icon: 'i-lucide-alert-circle' });
     }

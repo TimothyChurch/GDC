@@ -1,1 +1,1 @@
-export default createDeleteHandler(Event);
+export default createDeleteHandler(GDCEvent);

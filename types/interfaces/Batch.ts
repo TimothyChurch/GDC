@@ -266,6 +266,10 @@ export interface BatchLogEntry {
 	details?: string;
 }
 
+// --- TTB account ---
+
+export type BatchTtbAccount = 'production' | 'storage' | 'processing' | 'tib_external' | 'tax_paid';
+
 // --- Main Batch interface ---
 
 export interface Batch {
@@ -284,6 +288,15 @@ export interface Batch {
 	stages: BatchStages;
 	tastingNotes?: TastingNote[];
 	stageVolumes?: Record<string, number>;
+	/** Proof per stage; pairs with stageVolumes for PG calculation.
+	 *  PG_per_stage = stageVolumes[stage] * stageProofs[stage] / 100 */
+	stageProofs?: Record<string, number>;
+	/** TTB account this batch's spirits live in. Auto-updated on stage transitions. */
+	ttbAccount?: BatchTtbAccount;
+	/** Bumped by the Transfer engine on every transfer touching this batch. */
+	cacheVersion?: number;
+	cachedAt?: Date | string;
+	/** @deprecated — replaced by Transfer collection. Kept readable for one release cycle. */
 	transferLog?: TransferLogEntry[];
 	log?: BatchLogEntry[];
 	createdAt?: string;

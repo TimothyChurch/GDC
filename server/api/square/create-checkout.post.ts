@@ -1,14 +1,22 @@
 export default defineEventHandler(async (event) => {
+  rateLimit(event, {
+    key: 'square:create-checkout',
+    limit: 10,
+    windowMs: 15 * 60 * 1000,
+    message: 'Too many checkout attempts. Please try again later.',
+  });
+
   const config = useRuntimeConfig(event);
   const client = useSquareClient(event);
 
-  const body = await readBody(event);
+  const body = sanitize(await readBody(event));
   const origin = body?.origin as { type?: string; id?: string } | undefined;
   const quantity = Math.max(1, Math.floor(Number(body?.quantity) || 1));
 
   if (!origin?.type || !origin?.id) {
     throw createError({ status: 400, statusText: 'Origin type and id are required' });
   }
+  validateObjectId(origin.id, 'Origin');
 
   // Validate customer info
   const customerInfo = body?.customer as { firstName?: string; lastName?: string; email?: string; phone?: string } | undefined;
@@ -17,15 +25,15 @@ export default defineEventHandler(async (event) => {
   }
 
   // Find or create contact by email
-  let contact = await Contact.findOne({ email: customerInfo.email });
+  let contact = await GDCContact.findOne({ email: customerInfo.email });
   if (contact) {
-    await Contact.findByIdAndUpdate(contact._id, {
+    await GDCContact.findByIdAndUpdate(contact._id, {
       firstName: customerInfo.firstName,
       lastName: customerInfo.lastName,
       ...(customerInfo.phone && { phone: customerInfo.phone }),
     });
   } else {
-    contact = await Contact.create({
+    contact = await GDCContact.create({
       firstName: customerInfo.firstName,
       lastName: customerInfo.lastName,
       email: customerInfo.email,
@@ -40,19 +48,19 @@ export default defineEventHandler(async (event) => {
   let itemLabel = '';
 
   if (origin.type === 'event') {
-    const classEvent = await Event.findById(origin.id).lean();
+    const classEvent = await GDCEvent.findById(origin.id).lean();
     if (!classEvent) {
       throw createError({ status: 404, statusText: 'Event not found' });
     }
-    if (classEvent.status !== 'Confirmed') {
+    if ((classEvent.status as unknown as string) !== 'Confirmed') {
       throw createError({ status: 400, statusText: 'This event is not available for booking' });
     }
     if (!classEvent.price) {
       throw createError({ status: 400, statusText: 'This event does not have a price configured' });
     }
     if (classEvent.capacity) {
-      const booked = classEvent.groupSize || 0;
-      const available = classEvent.capacity - booked;
+      const booked = (classEvent.groupSize as unknown as number) || 0;
+      const available = (classEvent.capacity as unknown as number) - booked;
       if (quantity > available) {
         throw createError({
           status: 400,
@@ -63,12 +71,12 @@ export default defineEventHandler(async (event) => {
       }
     }
 
-    itemLabel = `${classEvent.type} — ${new Date(classEvent.date).toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })}`;
+    itemLabel = `${classEvent.type} — ${new Date(classEvent.date as unknown as string).toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })}`;
     lineItems.push({
       name: itemLabel,
       quantity: String(quantity),
       basePriceMoney: {
-        amount: toCents(classEvent.price),
+        amount: toCents(classEvent.price as unknown as number),
         currency: 'USD',
       },
     });
@@ -83,7 +91,7 @@ export default defineEventHandler(async (event) => {
             name: addOn.name,
             quantity: String(selected.quantity || quantity),
             basePriceMoney: {
-              amount: toCents(addOn.price),
+              amount: toCents(addOn.price as unknown as number),
               currency: 'USD',
             },
           });

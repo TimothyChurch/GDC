@@ -1,6 +1,6 @@
 import { useSlots, toRef, computed, unref, mergeProps, withCtx, renderSlot, toHandlers, openBlock, createBlock, createCommentVNode, createVNode, useSSRContext } from 'vue';
 import { ssrRenderComponent, ssrRenderSlot } from 'vue/server-renderer';
-import { ax as defu } from '../nitro/nitro.mjs';
+import { aJ as defu } from '../nitro/nitro.mjs';
 import { useForwardPropsEmits } from 'reka-ui';
 import { HoverCard, Popover } from 'reka-ui/namespaced';
 import { i as useAppConfig, r as reactivePick, p as usePortal, t as tv } from './server.mjs';

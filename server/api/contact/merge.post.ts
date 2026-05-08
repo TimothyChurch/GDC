@@ -6,6 +6,8 @@ const mergeSchema = yup.object({
 });
 
 export default defineEventHandler(async (event) => {
+  await requireRole(event, 'Admin');
+
   const body = await readBody(event);
   const sanitized = sanitize(body);
   const { primaryId, duplicateId } = await validateBody(sanitized, mergeSchema);
@@ -18,8 +20,8 @@ export default defineEventHandler(async (event) => {
   validateObjectId(duplicateId, 'Duplicate contact');
 
   const [primary, duplicate] = await Promise.all([
-    Contact.findById(primaryId),
-    Contact.findById(duplicateId),
+    GDCContact.findById(primaryId),
+    GDCContact.findById(duplicateId),
   ]);
 
   if (!primary) {
@@ -54,12 +56,12 @@ export default defineEventHandler(async (event) => {
   // Transfer all references from duplicate to primary
   const [eventUpdates, bookingUpdates, messageUpdates, poUpdates] = await Promise.all([
     // Events where duplicate is the main contact
-    Event.updateMany(
+    GDCEvent.updateMany(
       { contact: duplicateId },
       { $set: { contact: primaryId } },
     ),
     // Event bookings where duplicate is the booking contact
-    Event.updateMany(
+    GDCEvent.updateMany(
       { 'bookings.contact': duplicateId },
       { $set: { 'bookings.$[elem].contact': primaryId } },
       { arrayFilters: [{ 'elem.contact': duplicateId }] },
@@ -77,7 +79,7 @@ export default defineEventHandler(async (event) => {
   ]);
 
   await primary.save();
-  await Contact.findByIdAndDelete(duplicateId);
+  await GDCContact.findByIdAndDelete(duplicateId);
 
   return {
     merged: primary.toObject(),

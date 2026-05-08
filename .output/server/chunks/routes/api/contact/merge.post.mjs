@@ -1,4 +1,4 @@
-import { d as defineEventHandler, r as readBody, s as sanitize, v as validateBody, c as createError, K as validateObjectId, F as Contact, D as Event, M as Message, A as PurchaseOrder } from '../../../nitro/nitro.mjs';
+import { d as defineEventHandler, l as requireRole, a as readBody, s as sanitize, v as validateBody, c as createError, N as validateObjectId, H as GDCContact, G as GDCEvent, M as Message, F as PurchaseOrder } from '../../../nitro/nitro.mjs';
 import * as yup from 'yup';
 import 'mongoose';
 import 'cloudinary';
@@ -23,6 +23,7 @@ const mergeSchema = yup.object({
   duplicateId: yup.string().required("Duplicate contact ID is required")
 });
 const merge_post = defineEventHandler(async (event) => {
+  await requireRole(event, "Admin");
   const body = await readBody(event);
   const sanitized = sanitize(body);
   const { primaryId, duplicateId } = await validateBody(sanitized, mergeSchema);
@@ -32,8 +33,8 @@ const merge_post = defineEventHandler(async (event) => {
   validateObjectId(primaryId, "Primary contact");
   validateObjectId(duplicateId, "Duplicate contact");
   const [primary, duplicate] = await Promise.all([
-    Contact.findById(primaryId),
-    Contact.findById(duplicateId)
+    GDCContact.findById(primaryId),
+    GDCContact.findById(duplicateId)
   ]);
   if (!primary) {
     throw createError({ status: 404, statusText: "Primary contact not found" });
@@ -69,12 +70,12 @@ ${duplicate.notes}`;
   }
   const [eventUpdates, bookingUpdates, messageUpdates, poUpdates] = await Promise.all([
     // Events where duplicate is the main contact
-    Event.updateMany(
+    GDCEvent.updateMany(
       { contact: duplicateId },
       { $set: { contact: primaryId } }
     ),
     // Event bookings where duplicate is the booking contact
-    Event.updateMany(
+    GDCEvent.updateMany(
       { "bookings.contact": duplicateId },
       { $set: { "bookings.$[elem].contact": primaryId } },
       { arrayFilters: [{ "elem.contact": duplicateId }] }
@@ -91,7 +92,7 @@ ${duplicate.notes}`;
     )
   ]);
   await primary.save();
-  await Contact.findByIdAndDelete(duplicateId);
+  await GDCContact.findByIdAndDelete(duplicateId);
   return {
     merged: primary.toObject(),
     transferred: {

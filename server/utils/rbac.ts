@@ -24,7 +24,7 @@ export async function requireRole(event: H3Event, ...allowedRoles: string[]) {
     });
   }
 
-  const userRole = user.role || 'Staff';
+  const userRole = (user.role as unknown as string) || 'Staff';
   if (!allowedRoles.includes(userRole)) {
     throw createError({
       status: 403,

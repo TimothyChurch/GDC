@@ -40,7 +40,8 @@ export const useSettingsStore = defineStore("settings", () => {
     loading.value = true;
     try {
       settings.value = await $fetch<Settings>("/api/settings");
-    } catch {
+    } catch (error: unknown) {
+      console.error('[useSettingsStore.fetchSettings]', error);
       toast.add({
         title: "Failed to load settings",
         color: "error",
@@ -75,6 +76,7 @@ export const useSettingsStore = defineStore("settings", () => {
         icon: "i-lucide-check-circle",
       });
     } catch (error: unknown) {
+      console.error('[useSettingsStore.updateSettings]', error);
       toast.add({
         title: "Failed to save settings",
         description: getErrorMessage(error),

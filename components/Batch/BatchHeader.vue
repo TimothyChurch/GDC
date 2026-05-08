@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import type { Batch, Recipe } from '~/types'
 import { STAGE_DISPLAY, stageTextColor, stageBgColor, hasStageVolumes, getActiveStages } from '~/composables/batchPipeline'
+import { formatVolume } from '~/utils/formatting'
 
 const props = defineProps<{
   batch: Batch
@@ -144,7 +145,7 @@ const volumeUnit = computed(() => {
         :class="stageBgColor(entry.color)"
       >
         <UIcon :name="entry.icon" :class="stageTextColor(entry.color)" class="text-xs" />
-        {{ entry.stage }}: {{ entry.volume }} {{ volumeUnit }}
+        {{ entry.stage }}: {{ formatVolume(entry.volume) }} {{ volumeUnit }}
       </span>
     </div>
 

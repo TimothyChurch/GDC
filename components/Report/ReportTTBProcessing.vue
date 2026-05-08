@@ -13,11 +13,11 @@ const recipeStore = useRecipeStore()
 
 // Parse month range
 const monthStart = computed(() => {
-  const [y, m] = props.month.split('-').map(Number)
+  const [y = 0, m = 0] = props.month.split('-').map(Number)
   return new Date(y, m - 1, 1)
 })
 const monthEnd = computed(() => {
-  const [y, m] = props.month.split('-').map(Number)
+  const [y = 0, m = 0] = props.month.split('-').map(Number)
   return new Date(y, m, 0, 23, 59, 59)
 })
 

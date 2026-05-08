@@ -1,4 +1,4 @@
-import { h as createUpdateHandler, n as bottleUpdateSchema, m as Bottle } from '../../../nitro/nitro.mjs';
+import { o as createUpdateHandler, p as bottleUpdateSchema, n as Bottle } from '../../../nitro/nitro.mjs';
 import 'mongoose';
 import 'yup';
 import 'cloudinary';

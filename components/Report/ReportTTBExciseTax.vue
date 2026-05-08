@@ -35,11 +35,11 @@ const bottleStore = useBottleStore()
 // ─── Date helpers ────────────────────────────────────────────────────────────
 
 const monthStart = computed(() => {
-  const [y, m] = props.month.split('-').map(Number)
+  const [y = 0, m = 0] = props.month.split('-').map(Number)
   return new Date(y, m - 1, 1)
 })
 const monthEnd = computed(() => {
-  const [y, m] = props.month.split('-').map(Number)
+  const [y = 0, m = 0] = props.month.split('-').map(Number)
   return new Date(y, m, 0, 23, 59, 59)
 })
 const monthLabel = computed(() =>
@@ -200,13 +200,13 @@ const cbmaTier1Remaining = computed(() =>
 
 const period1DueDate = computed(() => {
   // Period 1 (1st–15th): deposit due the 29th of the same month
-  const [y, m] = props.month.split('-').map(Number)
+  const [y = 0, m = 0] = props.month.split('-').map(Number)
   return new Date(y, m - 1, 29).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })
 })
 
 const period2DueDate = computed(() => {
   // Period 2 (16th–end): deposit due the 14th of the following month
-  const [y, m] = props.month.split('-').map(Number)
+  const [y = 0, m = 0] = props.month.split('-').map(Number)
   const nextMonth = m === 12 ? 1 : m + 1
   const nextYear = m === 12 ? y + 1 : y
   return new Date(nextYear, nextMonth - 1, 14).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })
@@ -214,11 +214,11 @@ const period2DueDate = computed(() => {
 
 const now = new Date()
 const period1Overdue = computed(() => {
-  const [y, m] = props.month.split('-').map(Number)
+  const [y = 0, m = 0] = props.month.split('-').map(Number)
   return now > new Date(y, m - 1, 29) && period1PG.value > 0
 })
 const period2Overdue = computed(() => {
-  const [y, m] = props.month.split('-').map(Number)
+  const [y = 0, m = 0] = props.month.split('-').map(Number)
   const nextMonth = m === 12 ? 1 : m + 1
   const nextYear = m === 12 ? y + 1 : y
   return now > new Date(nextYear, nextMonth - 1, 14) && period2PG.value > 0

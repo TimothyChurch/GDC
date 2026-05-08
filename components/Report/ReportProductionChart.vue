@@ -35,6 +35,7 @@ const avgCostPerBottle = computed(() =>
   totalBottles.value > 0 ? totalCost.value / totalBottles.value : 0
 )
 const totalRuns = computed(() => filteredProductions.value.length)
+const filteredProductionsSorted = computed(() => sortByDateDesc(filteredProductions.value))
 
 // Production by product (doughnut chart)
 const productBreakdown = computed(() => {
@@ -92,7 +93,7 @@ const timelineData = computed(() => {
   const sorted = Array.from(monthMap.entries()).sort(([a], [b]) => a.localeCompare(b))
   return {
     labels: sorted.map(([k]) => {
-      const [y, m] = k.split('-')
+      const [y = '0', m = '0'] = k.split('-')
       return new Date(+y, +m - 1).toLocaleDateString('en-US', { month: 'short', year: '2-digit' })
     }),
     datasets: [{
@@ -132,7 +133,7 @@ const costTrendData = computed(() => {
   const sorted = Array.from(monthMap.entries()).sort(([a], [b]) => a.localeCompare(b))
   return {
     labels: sorted.map(([k]) => {
-      const [y, m] = k.split('-')
+      const [y = '0', m = '0'] = k.split('-')
       return new Date(+y, +m - 1).toLocaleDateString('en-US', { month: 'short', year: '2-digit' })
     }),
     datasets: [
@@ -243,7 +244,7 @@ const lineOptions = {
           </thead>
           <tbody>
             <tr
-              v-for="p in filteredProductions.slice().sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())"
+              v-for="p in filteredProductionsSorted"
               :key="p._id"
               class="border-b border-brown/10 hover:bg-brown/10"
             >

@@ -4,11 +4,8 @@ const inventoryStore = useInventoryStore();
 
 function getLatestQuantity(bottleId: string): number | null {
   const records = inventoryStore.getInventoriesByItem(bottleId);
-  if (records.length === 0) return null;
-  const sorted = [...records].sort((a, b) =>
-    new Date(b.date).getTime() - new Date(a.date).getTime()
-  );
-  return sorted[0].quantity;
+  const [latest] = sortByDateDesc(records);
+  return latest?.quantity ?? null;
 }
 
 const sortedBottles = computed(() =>

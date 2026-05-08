@@ -39,11 +39,11 @@ export function useTABCCalculations(month: Ref<string> | ComputedRef<string>) {
   // ─── Date helpers ─────────────────────────────────────────────────────────────
 
   const monthStart = computed(() => {
-    const [y, m] = month.value.split('-').map(Number)
+    const [y = 0, m = 1] = month.value.split('-').map(Number)
     return new Date(y, m - 1, 1)
   })
   const monthEnd = computed(() => {
-    const [y, m] = month.value.split('-').map(Number)
+    const [y = 0, m = 1] = month.value.split('-').map(Number)
     return new Date(y, m, 0, 23, 59, 59)
   })
   const monthLabel = computed(() =>
@@ -52,7 +52,7 @@ export function useTABCCalculations(month: Ref<string> | ComputedRef<string>) {
 
   // TABC report due date: 15th of following month
   const dueDate = computed(() => {
-    const [y, m] = month.value.split('-').map(Number)
+    const [y = 0, m = 1] = month.value.split('-').map(Number)
     const nextMonth = m === 12 ? 1 : m + 1
     const nextYear = m === 12 ? y + 1 : y
     return new Date(nextYear, nextMonth - 1, 15).toLocaleDateString('en-US', {
@@ -187,7 +187,7 @@ export function useTABCCalculations(month: Ref<string> | ComputedRef<string>) {
       })
     })
     return Array.from(map.entries())
-      .map(([key, data]) => ({ name: key.split('||')[0], amount: data.amount, unit: data.unit }))
+      .map(([key, data]) => ({ name: key.split('||')[0] ?? '', amount: data.amount, unit: data.unit }))
       .sort((a, b) => a.name.localeCompare(b.name))
   })
 

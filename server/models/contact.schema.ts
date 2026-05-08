@@ -1,6 +1,6 @@
 import { defineMongooseModel } from "#nuxt/mongoose";
 
-export const Contact = defineMongooseModel({
+export const GDCContact = defineMongooseModel({
   name: "Contact",
   schema: {
     firstName: {

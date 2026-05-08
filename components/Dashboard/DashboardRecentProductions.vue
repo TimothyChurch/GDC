@@ -2,11 +2,9 @@
 const productionStore = useProductionStore();
 const bottleStore = useBottleStore();
 
-const recentProductions = computed(() => {
-  return [...productionStore.productions]
-    .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
-    .slice(0, 8);
-});
+const recentProductions = computed(() =>
+  sortByDateDesc(productionStore.productions).slice(0, 8),
+);
 
 const totalBottlesProduced = computed(() => {
   return productionStore.productions.reduce((sum, p) => sum + (p.quantity || 0), 0);

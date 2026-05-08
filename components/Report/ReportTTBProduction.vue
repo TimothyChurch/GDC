@@ -13,11 +13,11 @@ const itemStore = useItemStore()
 
 // Parse month range
 const monthStart = computed(() => {
-  const [y, m] = props.month.split('-').map(Number)
+  const [y = 0, m = 0] = props.month.split('-').map(Number)
   return new Date(y, m - 1, 1)
 })
 const monthEnd = computed(() => {
-  const [y, m] = props.month.split('-').map(Number)
+  const [y = 0, m = 0] = props.month.split('-').map(Number)
   return new Date(y, m, 0, 23, 59, 59) // last day of month
 })
 
@@ -164,7 +164,7 @@ const materialsUsed = computed(() => {
 
   return Array.from(map.entries())
     .map(([key, data]) => ({
-      name: key.split('||')[0],
+      name: key.split('||')[0] ?? '',
       amount: data.amount,
       unit: data.unit,
     }))

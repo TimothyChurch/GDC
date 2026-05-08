@@ -55,6 +55,7 @@ export const useContactStore = defineStore('contacts', () => {
 			});
 			return result;
 		} catch (error: unknown) {
+			console.error('[useContactStore.mergeContacts]', error);
 			toast.add({
 				title: 'Failed to merge customers',
 				description: getErrorMessage(error),

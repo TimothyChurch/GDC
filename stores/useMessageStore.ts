@@ -41,6 +41,7 @@ export const useMessageStore = defineStore('messages', () => {
 				crud.items.value[index] = updated;
 			}
 		} catch (error) {
+			console.error('[useMessageStore.markAsRead]', error);
 			const toast = useToast();
 			toast.add({
 				title: 'Failed to mark message as read',
@@ -61,6 +62,7 @@ export const useMessageStore = defineStore('messages', () => {
 				crud.items.value[index] = updated;
 			}
 		} catch (error) {
+			console.error('[useMessageStore.markAsUnread]', error);
 			const toast = useToast();
 			toast.add({
 				title: 'Failed to mark message as unread',

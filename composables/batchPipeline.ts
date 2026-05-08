@@ -139,7 +139,7 @@ export function getNextStage(
 ): string | null {
   const idx = pipeline.indexOf(currentStage);
   if (idx < 0 || idx >= pipeline.length - 1) return null;
-  return pipeline[idx + 1];
+  return pipeline[idx + 1] ?? null;
 }
 
 /** Get the previous stage in a pipeline from the current stage */
@@ -149,7 +149,7 @@ export function getPreviousStage(
 ): string | null {
   const idx = pipeline.indexOf(currentStage);
   if (idx <= 0) return null;
-  return pipeline[idx - 1];
+  return pipeline[idx - 1] ?? null;
 }
 
 /** Check if a batch has reached (or passed) a given stage */

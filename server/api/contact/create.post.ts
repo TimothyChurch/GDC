@@ -1,3 +1,3 @@
-export default createCreateHandler(Contact, {
+export default createCreateHandler(GDCContact, {
   schema: contactCreateSchema,
 });

@@ -142,7 +142,7 @@ const display = (name: string) =>
               icon="i-lucide-chevron-down"
               color="neutral"
               variant="ghost"
-              size="2xs"
+              size="xs"
               :disabled="index >= pipeline.length - 1"
               @click="moveStage(index, 1)"
             />

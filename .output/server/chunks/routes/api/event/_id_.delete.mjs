@@ -1,4 +1,4 @@
-import { b as createDeleteHandler, D as Event } from '../../../nitro/nitro.mjs';
+import { f as createDeleteHandler, G as GDCEvent } from '../../../nitro/nitro.mjs';
 import 'mongoose';
 import 'yup';
 import 'cloudinary';
@@ -18,7 +18,7 @@ import '@iconify/utils';
 import 'fast-xml-parser';
 import 'ipx';
 
-const _id__delete = createDeleteHandler(Event);
+const _id__delete = createDeleteHandler(GDCEvent);
 
 export { _id__delete as default };
 //# sourceMappingURL=_id_.delete.mjs.map

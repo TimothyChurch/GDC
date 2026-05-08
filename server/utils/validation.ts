@@ -1,5 +1,12 @@
 import * as yup from "yup";
 import mongoose from "mongoose";
+import {
+  TRANSFER_TYPES,
+  LOSS_REASON_CODES,
+  TTB_ACCOUNTS,
+  GAUGING_METHODS,
+  REPORTING_PERIOD_STATUS,
+} from "../../composables/transferDefinitions";
 
 /**
  * Validate that a string is a valid MongoDB ObjectId.
@@ -422,6 +429,88 @@ const inventoryCategoryDefSchema = yup.object({
   icon: yup.string().default("i-lucide-box"),
   description: yup.string().default(""),
 });
+
+// ─── Transfer Engine Schemas ─────────────────────────────────
+
+const gaugingSchema = yup.object({
+  method: yup.string().oneOf([...GAUGING_METHODS]).optional(),
+  temperatureF: yup.number().nullable().optional(),
+  operator: yup.string().nullable().optional(),
+}).default(undefined);
+
+const transferSourceSchema = yup.object({
+  vessel: yup.string().required("Source vessel is required"),
+  volume: yup.number().min(0, "Volume cannot be negative").required("Source volume is required"),
+  proof: yup.number().min(0, "Proof cannot be negative").max(200, "Proof cannot exceed 200").required("Source proof is required"),
+  gauging: gaugingSchema.optional(),
+});
+
+const transferDestinationSchema = yup.object({
+  vessel: yup.string().nullable().defined(),  // null allowed for destruction/withdrawal
+  stage: yup.string().nullable().optional(),
+  volume: yup.number().min(0, "Volume cannot be negative").required("Destination volume is required"),
+  proof: yup.number().min(0).max(200, "Proof cannot exceed 200").required("Destination proof is required"),
+  gauging: gaugingSchema.optional(),
+});
+
+const transferLossSchema = yup.object({
+  volume: yup.number().min(0, "Loss volume cannot be negative").required("Loss volume is required (0 if no loss)"),
+  proof: yup.number().min(0).max(200).optional(),
+  reasonCode: yup.string().oneOf([...LOSS_REASON_CODES]).required("Loss reason code is required"),
+  notes: yup.string().nullable().optional(),
+}).required("Loss line is required (use reasonCode='no_loss' if zero)");
+
+const transferTtbAccountSchema = yup.object({
+  from: yup.string().oneOf([...TTB_ACCOUNTS]).nullable().optional(),
+  to: yup.string().oneOf([...TTB_ACCOUNTS]).nullable().optional(),
+}).optional();
+
+const transferAttachmentSchema = yup.object({
+  url: yup.string().required("Attachment URL is required"),
+  kind: yup.string().oneOf(["bol", "gauge_record", "photo", "other"]).required("Attachment kind is required"),
+  filename: yup.string().optional(),
+});
+
+export const transferCreateSchema = yup.object({
+  type: yup.string().oneOf([...TRANSFER_TYPES]).required("Transfer type is required"),
+  batch: yup.string().required("Batch is required"),
+  fromStage: yup.string().nullable().optional(),
+  toStage: yup.string().nullable().optional(),
+  sources: yup.array().of(transferSourceSchema).required("Sources array is required").min(0),
+  destinations: yup.array().of(transferDestinationSchema).required("Destinations array is required").min(0),
+  loss: transferLossSchema,
+  ttbAccount: transferTtbAccountSchema,
+  notes: yup.string().nullable().optional(),
+  attachments: yup.array().of(transferAttachmentSchema).optional(),
+}).test(
+  "has-source-or-dest",
+  "Transfer must have at least one source or one destination",
+  (val) => !!val && ((val.sources?.length || 0) + (val.destinations?.length || 0)) > 0,
+);
+
+export const transferReverseSchema = yup.object({
+  notes: yup.string().nullable().optional(),
+});
+
+// ─── Reporting Period Schemas ────────────────────────────────
+
+export const reportingPeriodCreateSchema = yup.object({
+  period: yup.string()
+    .matches(/^\d{4}-\d{2}$/, "Period must be in YYYY-MM format")
+    .required("Period is required"),
+  status: yup.string().oneOf([...REPORTING_PERIOD_STATUS]).default("open"),
+  notes: yup.string().nullable().optional(),
+});
+
+export const reportingPeriodCloseSchema = yup.object({
+  notes: yup.string().nullable().optional(),
+});
+
+export const reportingPeriodSubmitSchema = yup.object({
+  notes: yup.string().nullable().optional(),
+});
+
+// ─── Settings (existing — leave below) ───────────────────────
 
 export const settingsUpdateSchema = yup.object({
   itemCategories: yup

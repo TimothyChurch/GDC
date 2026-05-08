@@ -1,3 +1,3 @@
-export default createUpdateHandler(Contact, {
+export default createUpdateHandler(GDCContact, {
   schema: contactUpdateSchema,
 });

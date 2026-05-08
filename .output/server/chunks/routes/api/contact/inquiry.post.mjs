@@ -1,4 +1,4 @@
-import { d as defineEventHandler, r as readBody, s as sanitize, v as validateBody, F as Contact, M as Message, c as createError, J as contactInquirySchema } from '../../../nitro/nitro.mjs';
+import { d as defineEventHandler, r as rateLimit, a as readBody, s as sanitize, v as validateBody, H as GDCContact, M as Message, c as createError, L as contactInquirySchema } from '../../../nitro/nitro.mjs';
 import 'mongoose';
 import 'yup';
 import 'cloudinary';
@@ -19,6 +19,12 @@ import 'fast-xml-parser';
 import 'ipx';
 
 const inquiry_post = defineEventHandler(async (event) => {
+  rateLimit(event, {
+    key: "contact:inquiry",
+    limit: 5,
+    windowMs: 60 * 60 * 1e3,
+    message: "Too many submissions. Please try again later."
+  });
   const body = await readBody(event);
   if (body == null ? void 0 : body.website) {
     return { success: true, message: "Thanks for reaching out! We'll get back to you soon." };
@@ -31,7 +37,7 @@ const inquiry_post = defineEventHandler(async (event) => {
   const validated = await validateBody(sanitized, contactInquirySchema);
   try {
     let contactId;
-    const existing = await Contact.findOne({ email: validated.email });
+    const existing = await GDCContact.findOne({ email: validated.email });
     if (existing) {
       contactId = existing._id.toString();
       const notePrefix = `[${validated.topic}] `;
@@ -40,14 +46,14 @@ const inquiry_post = defineEventHandler(async (event) => {
       const updatedNotes = existingNotes ? `${newNote}
 ---
 ${existingNotes}` : newNote;
-      await Contact.findByIdAndUpdate(existing._id, {
+      await GDCContact.findByIdAndUpdate(existing._id, {
         notes: updatedNotes,
         firstName: validated.firstName || existing.firstName,
         lastName: validated.lastName || existing.lastName,
         phone: validated.phone || existing.phone
       });
     } else {
-      const newContact = await Contact.create({
+      const newContact = await GDCContact.create({
         firstName: validated.firstName,
         lastName: validated.lastName,
         email: validated.email,

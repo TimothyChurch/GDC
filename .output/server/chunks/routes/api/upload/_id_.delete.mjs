@@ -1,4 +1,4 @@
-import { d as defineEventHandler, ag as getCloudinary, S as getRouterParam, c as createError, Y as getQuery } from '../../../nitro/nitro.mjs';
+import { d as defineEventHandler, l as requireRole, as as getCloudinary, W as getRouterParam, c as createError, _ as getQuery } from '../../../nitro/nitro.mjs';
 import 'mongoose';
 import 'yup';
 import 'cloudinary';
@@ -19,6 +19,7 @@ import 'fast-xml-parser';
 import 'ipx';
 
 const _id__delete = defineEventHandler(async (event) => {
+  await requireRole(event, "Admin", "Manager", "Staff");
   const cloudinary = getCloudinary(event);
   const publicId = getRouterParam(event, "id");
   if (!publicId) {

@@ -1,4 +1,4 @@
-import { b as createDeleteHandler, A as PurchaseOrder, D as Event, F as Contact } from '../../../nitro/nitro.mjs';
+import { f as createDeleteHandler, F as PurchaseOrder, G as GDCEvent, H as GDCContact } from '../../../nitro/nitro.mjs';
 import 'mongoose';
 import 'yup';
 import 'cloudinary';
@@ -18,10 +18,10 @@ import '@iconify/utils';
 import 'fast-xml-parser';
 import 'ipx';
 
-const _id__delete = createDeleteHandler(Contact, {
+const _id__delete = createDeleteHandler(GDCContact, {
   referenceChecks: [
     { model: PurchaseOrder, field: "vendor", label: "purchase order(s)" },
-    { model: Event, field: "contact", label: "event(s)" }
+    { model: GDCEvent, field: "contact", label: "event(s)" }
   ]
 });
 

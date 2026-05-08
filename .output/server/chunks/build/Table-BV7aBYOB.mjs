@@ -5,7 +5,7 @@ import { useSlots, ref, computed, useModel, useTemplateRef, toRef, watch, unref,
 import { ssrRenderComponent, ssrRenderAttr, ssrRenderClass, ssrRenderStyle, ssrRenderList, ssrRenderSlot, ssrInterpolate, ssrRenderAttrs } from 'vue/server-renderer';
 import { useForwardProps, Primitive, useForwardPropsEmits, PaginationRoot, PaginationList, PaginationFirst, PaginationPrev, PaginationListItem, PaginationEllipsis, PaginationNext, PaginationLast } from 'reka-ui';
 import { y as useLocale, i as useAppConfig, t as tv, A as createReusableTemplate, r as reactivePick, z as useDebounceFn, e as _sfc_main$8 } from './server.mjs';
-import { aR as upperFirst, ax as defu } from '../nitro/nitro.mjs';
+import { b1 as upperFirst, aJ as defu } from '../nitro/nitro.mjs';
 import { useVueTable, getExpandedRowModel, getSortedRowModel, getFilteredRowModel, getCoreRowModel, FlexRender } from '@tanstack/vue-table';
 import { useVirtualizer } from '@tanstack/vue-virtual';
 

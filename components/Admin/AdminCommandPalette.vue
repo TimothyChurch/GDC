@@ -183,7 +183,7 @@ const groups = computed(() => {
       id: 'contacts',
       label: 'Contacts',
       items: contactStore.contacts.map(c => ({
-        label: c.businessName || `${c.firstName} ${c.lastName}`,
+        label: formatContactName(c),
         suffix: c.type,
         icon: 'i-lucide-users',
         onSelect: () => navigate(`/admin/contacts/${c._id}`),

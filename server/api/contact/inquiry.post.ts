@@ -1,4 +1,11 @@
 export default defineEventHandler(async (event) => {
+	rateLimit(event, {
+		key: 'contact:inquiry',
+		limit: 5,
+		windowMs: 60 * 60 * 1000,
+		message: 'Too many submissions. Please try again later.',
+	});
+
 	const body = await readBody(event);
 
 	// Bot detection: honeypot field should be empty
@@ -19,7 +26,7 @@ export default defineEventHandler(async (event) => {
 	try {
 		// Check if this email already exists as a contact
 		let contactId: string | undefined;
-		const existing = await Contact.findOne({ email: validated.email });
+		const existing = await GDCContact.findOne({ email: validated.email });
 		if (existing) {
 			contactId = existing._id.toString();
 
@@ -31,14 +38,14 @@ export default defineEventHandler(async (event) => {
 				? `${newNote}\n---\n${existingNotes}`
 				: newNote;
 
-			await Contact.findByIdAndUpdate(existing._id, {
+			await GDCContact.findByIdAndUpdate(existing._id, {
 				notes: updatedNotes,
 				firstName: validated.firstName || existing.firstName,
 				lastName: validated.lastName || existing.lastName,
 				phone: validated.phone || existing.phone,
 			});
 		} else {
-			const newContact = await Contact.create({
+			const newContact = await GDCContact.create({
 				firstName: validated.firstName,
 				lastName: validated.lastName,
 				email: validated.email,

@@ -1,2 +1,0 @@
-const __vite__mapDeps=(i,m=__vite__mapDeps,d=(m.f||(m.f=["./CWMdDJ0A.js","./DBkIids7.js","./entry.V22RAgfM.css","./CCt_1oSi.js","./A71QgfSc.js","./CssIL5Ww.js","./UZKT6tzH.js","./Bxr1htnW.js"])))=>i.map(i=>d[i]);
-import{C as r,D as n,E as a}from"./DBkIids7.js";const s=r(()=>n(()=>import("./CWMdDJ0A.js"),__vite__mapDeps([0,1,2,3,4,5,6,7]),import.meta.url).then(e=>e.default||e.default||e)),i=()=>{const e=a();return{confirm:async(t,o)=>await e.create(s).open({entityName:t,entityLabel:o})===!0}};export{i as u};

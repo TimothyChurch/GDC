@@ -13,40 +13,50 @@ const stage = computed(() => props.batch.stages?.lowWines as LowWinesStage | und
 const strippingStage = computed(() => props.batch.stages?.strippingRun as StrippingRunStage | undefined)
 const strippingRuns = computed(() => strippingStage.value?.runs || [])
 
-// Low wines volume: from stage data (populated on advancement) or calculated from stripping output
+// Low wines are the accumulation of all stripping run outputs.
+// Always derive from runs when any exist so a newly-added run is reflected immediately;
+// fall back to the stored stage value only for historical batches with no run records.
+const runsWithOutput = computed(() =>
+  strippingRuns.value.filter(r => (r.output?.volume || r.total?.volume || 0) > 0)
+)
+
 const volume = computed(() => {
-  if (stage.value?.volume) return stage.value.volume
-  return strippingRuns.value.reduce((sum, r) => sum + (r.output?.volume || r.total?.volume || 0), 0)
+  if (runsWithOutput.value.length > 0) {
+    return runsWithOutput.value.reduce((sum, r) => sum + (r.output?.volume || r.total?.volume || 0), 0)
+  }
+  return stage.value?.volume || 0
 })
 
 const volumeUnit = computed(() => {
-  if (stage.value?.volumeUnit) return stage.value.volumeUnit
-  return strippingRuns.value[0]?.output?.volumeUnit || strippingRuns.value[0]?.total?.volumeUnit || 'gallon'
+  return runsWithOutput.value[0]?.output?.volumeUnit
+    || runsWithOutput.value[0]?.total?.volumeUnit
+    || stage.value?.volumeUnit
+    || 'gallon'
 })
 
 const abv = computed(() => {
-  if (stage.value?.abv) return stage.value.abv
-  const runsWithOutput = strippingRuns.value.filter(r => (r.output?.volume || r.total?.volume) && (r.output?.abv || r.total?.abv))
-  if (runsWithOutput.length === 0) return 0
-  const totalVol = runsWithOutput.reduce((s, r) => s + (r.output?.volume || r.total?.volume || 0), 0)
-  if (totalVol === 0) return 0
-  return runsWithOutput.reduce((s, r) => {
-    const vol = r.output?.volume || r.total?.volume || 0
-    const a = r.output?.abv || r.total?.abv || 0
-    return s + vol * a
-  }, 0) / totalVol
+  const runs = runsWithOutput.value.filter(r => (r.output?.abv || r.total?.abv || 0) > 0)
+  if (runs.length > 0) {
+    const totalVol = runs.reduce((s, r) => s + (r.output?.volume || r.total?.volume || 0), 0)
+    if (totalVol === 0) return stage.value?.abv || 0
+    return runs.reduce((s, r) => {
+      const vol = r.output?.volume || r.total?.volume || 0
+      const a = r.output?.abv || r.total?.abv || 0
+      return s + vol * a
+    }, 0) / totalVol
+  }
+  return stage.value?.abv || 0
 })
 
 const proofGallons = computed(() => {
-  if (stage.value?.proofGallons) return stage.value.proofGallons
   if (volume.value > 0 && abv.value > 0) {
     return calculateProofGallons(volume.value, volumeUnit.value, abv.value)
   }
-  return 0
+  return stage.value?.proofGallons || 0
 })
 
 const sourceRunCount = computed(() => {
-  return stage.value?.sourceRuns || strippingRuns.value.length
+  return strippingRuns.value.length || stage.value?.sourceRuns || 0
 })
 
 const startDate = computed(() => {

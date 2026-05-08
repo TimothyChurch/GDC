@@ -1,4 +1,4 @@
-import { b as createDeleteHandler, V as Vessel, c as createError } from '../../../nitro/nitro.mjs';
+import { f as createDeleteHandler, V as Vessel, c as createError } from '../../../nitro/nitro.mjs';
 import 'mongoose';
 import 'yup';
 import 'cloudinary';

@@ -1,4 +1,4 @@
-import { f as createGetByIdHandler, D as Event } from '../../../nitro/nitro.mjs';
+import { i as createGetByIdHandler, G as GDCEvent } from '../../../nitro/nitro.mjs';
 import 'mongoose';
 import 'yup';
 import 'cloudinary';
@@ -18,7 +18,7 @@ import '@iconify/utils';
 import 'fast-xml-parser';
 import 'ipx';
 
-const _id__get = createGetByIdHandler(Event, {
+const _id__get = createGetByIdHandler(GDCEvent, {
   populate: "contact"
 });
 

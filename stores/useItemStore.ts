@@ -45,9 +45,7 @@ export const useItemStore = defineStore("items", () => {
   // Pre-indexed map: itemId -> most recent PO line item data (built once, cached via computed)
   const _latestPOLineItems = computed(() => {
     const purchaseOrderStore = usePurchaseOrderStore();
-    const sorted = [...purchaseOrderStore.purchaseOrders].sort(
-      (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime(),
-    );
+    const sorted = sortByDateDesc(purchaseOrderStore.purchaseOrders);
 
     const map = new Map<string, { price: number; size: number; sizeUnit: string }>();
     for (const po of sorted) {
@@ -104,8 +102,7 @@ export const useItemStore = defineStore("items", () => {
   const getVendorName = (itemId: string): string | null => {
     const purchaseOrderStore = usePurchaseOrderStore();
     const contactStore = useContactStore();
-    const sorted = [...purchaseOrderStore.purchaseOrders]
-      .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+    const sorted = sortByDateDesc(purchaseOrderStore.purchaseOrders);
     for (const po of sorted) {
       if (po.items.some((i) => i.item === itemId)) {
         return contactStore.getContactById(po.vendor)?.businessName || null;
@@ -116,8 +113,7 @@ export const useItemStore = defineStore("items", () => {
 
   const getVendorId = (itemId: string): string | null => {
     const purchaseOrderStore = usePurchaseOrderStore();
-    const sorted = [...purchaseOrderStore.purchaseOrders]
-      .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+    const sorted = sortByDateDesc(purchaseOrderStore.purchaseOrders);
     for (const po of sorted) {
       if (po.items.some((i) => i.item === itemId)) {
         return po.vendor;

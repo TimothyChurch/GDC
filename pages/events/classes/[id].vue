@@ -1,8 +1,10 @@
 <script setup lang="ts">
+import type { GDCEvent } from '~/types/interfaces/Event';
+
 const route = useRoute();
 const classId = route.params.id as string;
 
-const { data: classEvent, status: fetchStatus, error: fetchError } = useFetch(`/api/event/public/${classId}`);
+const { data: classEvent, status: fetchStatus, error: fetchError } = useFetch<GDCEvent>(`/api/event/public/${classId}`);
 
 // SEO meta (reactive based on fetched data)
 if (import.meta.server) {

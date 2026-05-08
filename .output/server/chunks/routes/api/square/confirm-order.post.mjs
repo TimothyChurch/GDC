@@ -1,4 +1,4 @@
-import { d as defineEventHandler, r as readBody, c as createError, aa as useSquareClient, F as Contact, D as Event } from '../../../nitro/nitro.mjs';
+import { d as defineEventHandler, a as readBody, c as createError, ag as useSquareClient, H as GDCContact, G as GDCEvent } from '../../../nitro/nitro.mjs';
 import 'mongoose';
 import 'yup';
 import 'cloudinary';
@@ -46,7 +46,7 @@ const confirmOrder_post = defineEventHandler(async (event) => {
   const totalDollars = Number(totalCents) / 100;
   let guest = null;
   if (contactId) {
-    const contact = await Contact.findById(contactId).select("firstName lastName email phone").lean();
+    const contact = await GDCContact.findById(contactId).select("firstName lastName email phone").lean();
     if (contact) {
       guest = {
         _id: String(contact._id),
@@ -61,7 +61,7 @@ const confirmOrder_post = defineEventHandler(async (event) => {
   if (originType && originId) {
     origin = { type: originType, id: originId };
     if (originType === "event") {
-      const evt = await Event.findById(originId).select("type date capacity groupSize").lean();
+      const evt = await GDCEvent.findById(originId).select("type date capacity groupSize").lean();
       if (evt) {
         origin.label = `${evt.type} \u2014 ${new Date(evt.date).toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric" })}`;
       }
@@ -72,7 +72,7 @@ const confirmOrder_post = defineEventHandler(async (event) => {
   );
   const isCompleted = order.state === "COMPLETED" || !!hasPaidTender;
   if (isCompleted && originType === "event" && originId) {
-    await Event.updateOne(
+    await GDCEvent.updateOne(
       { _id: originId, processedOrders: { $ne: orderId } },
       {
         $inc: { groupSize: quantity },

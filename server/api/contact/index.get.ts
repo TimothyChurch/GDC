@@ -1,1 +1,1 @@
-export default createGetAllHandler(Contact);
+export default createGetAllHandler(GDCContact);

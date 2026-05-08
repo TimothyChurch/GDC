@@ -14,6 +14,7 @@ const itemStore = useItemStore();
 const { confirm } = useDeleteConfirm();
 
 const tableData = computed(() => props.data ?? purchaseOrderStore.purchaseOrders)
+const tableDataSorted = computed(() => sortByDateDesc(tableData.value))
 
 const { search, pagination, tableRef, filteredTotal } = useTableState(
   computed(() => tableData.value.length)
@@ -25,8 +26,7 @@ const columns: TableColumn<PurchaseOrder>[] = [
   sortableColumn<PurchaseOrder>("vendor", "Vendor", {
     cell: ({ row }) => {
       const contact = contactStore.getContactById(row.original.vendor);
-      if (contact?.firstName) return `${contact.firstName} ${contact.lastName}`;
-      return contact?.businessName || "Unknown";
+      return formatContactName(contact) || "Unknown";
     },
   }),
   sortableColumn<PurchaseOrder>("total", "Total Amount", {
@@ -173,12 +173,10 @@ const addPurchaseOrder = () => {
     <!-- Mobile card view -->
     <div class="sm:hidden space-y-3">
       <div
-        v-for="po in tableData.slice().sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()).filter(p => {
+        v-for="po in tableDataSorted.filter(p => {
           if (!search) return true;
           const term = search.toLowerCase();
-          const vendor = contactStore.getContactById(p.vendor);
-          const vendorName = vendor?.businessName || `${vendor?.firstName || ''} ${vendor?.lastName || ''}`.trim();
-          return vendorName.toLowerCase().includes(term) || p.status.toLowerCase().includes(term);
+          return formatContactName(contactStore.getContactById(p.vendor)).toLowerCase().includes(term) || p.status.toLowerCase().includes(term);
         })"
         :key="po._id"
         class="bg-charcoal rounded-lg border border-brown/30 p-4 cursor-pointer"
@@ -186,7 +184,7 @@ const addPurchaseOrder = () => {
       >
         <div class="flex items-start justify-between mb-2">
           <div>
-            <div class="text-sm font-medium text-parchment">{{ contactStore.getContactById(po.vendor)?.businessName || `${contactStore.getContactById(po.vendor)?.firstName || ''} ${contactStore.getContactById(po.vendor)?.lastName || ''}`.trim() || 'Unknown' }}</div>
+            <div class="text-sm font-medium text-parchment">{{ formatContactName(contactStore.getContactById(po.vendor)) || 'Unknown' }}</div>
             <div class="text-xs text-parchment/60">{{ new Date(po.date).toLocaleDateString() }}</div>
           </div>
           <span

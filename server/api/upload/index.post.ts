@@ -1,4 +1,6 @@
 export default defineEventHandler(async (event) => {
+  await requireRole(event, 'Admin', 'Manager', 'Staff')
+
   const cloudinary = getCloudinary(event)
 
   const formData = await readMultipartFormData(event)

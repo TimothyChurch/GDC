@@ -22,11 +22,18 @@ export default defineEventHandler(async (event) => {
   hmac.update(notificationUrl + body);
   const expectedSignature = hmac.digest('base64');
 
-  if (signature !== expectedSignature) {
+  const sigBuf = Buffer.from(signature);
+  const expBuf = Buffer.from(expectedSignature);
+  if (sigBuf.length !== expBuf.length || !crypto.timingSafeEqual(sigBuf, expBuf)) {
     throw createError({ status: 400, statusText: 'Invalid webhook signature' });
   }
 
-  const payload = JSON.parse(body);
+  let payload: { type?: string; data?: { object?: { payment?: { order_id?: string } } } };
+  try {
+    payload = JSON.parse(body);
+  } catch {
+    throw createError({ status: 400, statusText: 'Invalid JSON payload' });
+  }
 
   if (payload.type === 'payment.completed') {
     const orderId = payload.data?.object?.payment?.order_id;
@@ -44,12 +51,12 @@ export default defineEventHandler(async (event) => {
         let bookingName = 'Unknown';
         let bookingEmail = '';
         if (contactId) {
-          const contact = await Contact.findById(contactId)
+          const contact = await GDCContact.findById(contactId)
             .select('firstName lastName email')
             .lean();
           if (contact) {
             bookingName = `${contact.firstName} ${contact.lastName}`;
-            bookingEmail = contact.email || '';
+            bookingEmail = (contact.email as unknown as string) || '';
           }
         }
 
@@ -61,7 +68,7 @@ export default defineEventHandler(async (event) => {
           }
         }
 
-        await Event.updateOne(
+        await GDCEvent.updateOne(
           { _id: originId, processedOrders: { $ne: orderId } },
           {
             $inc: { groupSize: quantity },

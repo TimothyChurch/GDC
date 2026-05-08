@@ -1,6 +1,6 @@
-export default createDeleteHandler(Contact, {
+export default createDeleteHandler(GDCContact, {
   referenceChecks: [
     { model: PurchaseOrder, field: "vendor", label: "purchase order(s)" },
-    { model: Event, field: "contact", label: "event(s)" },
+    { model: GDCEvent, field: "contact", label: "event(s)" },
   ],
 });

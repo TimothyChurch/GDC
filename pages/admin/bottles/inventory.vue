@@ -31,6 +31,7 @@ watch(
 
 const search = ref('')
 const saving = ref(false)
+const inventoryDate = ref(new Date().toISOString().slice(0, 10))
 
 const filteredBottles = computed(() => {
   if (!search.value) return bottles.value
@@ -43,9 +44,7 @@ const getTotal = (bottle: { bar: number; office: number; boxed: number }) =>
   Number(bottle.bar) + Number(bottle.office) + Number(bottle.boxed) * 12
 
 const getLastCount = (bottleId: string) => {
-  const records = inventoryStore.inventories
-    .filter((inv) => inv.item === bottleId)
-    .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
+  const records = sortByDateDesc(inventoryStore.inventories.filter((inv) => inv.item === bottleId))
   return records[0] || null
 }
 
@@ -59,7 +58,7 @@ const printSheet = () => window.print()
 
 const submitInventory = async () => {
   saving.value = true
-  const date = new Date()
+  const date = inventoryDate.value ? new Date(`${inventoryDate.value}T00:00:00`) : new Date()
   try {
     for (const bottle of bottles.value) {
       const total = getTotal(bottle)
@@ -89,13 +88,20 @@ const submitInventory = async () => {
       </template>
     </AdminPageHeader>
 
-    <div class="mb-4 print:hidden">
+    <div class="mb-4 print:hidden flex flex-wrap gap-3 items-end">
       <UInput
         v-model="search"
         placeholder="Search bottles..."
         icon="i-lucide-search"
         class="max-w-xs"
       />
+      <UFormField label="Inventory Date">
+        <UInput
+          v-model="inventoryDate"
+          type="date"
+          icon="i-lucide-calendar"
+        />
+      </UFormField>
     </div>
 
     <!-- Desktop Table -->
@@ -179,7 +185,7 @@ const submitInventory = async () => {
       <div class="text-center mb-4">
         <h1 class="text-xl font-bold">Galveston Distilling Co</h1>
         <h2 class="text-lg">Inventory Count Sheet</h2>
-        <p class="text-sm mt-1">Date: {{ new Date().toLocaleDateString() }}</p>
+        <p class="text-sm mt-1">Date: {{ inventoryDate ? new Date(`${inventoryDate}T00:00:00`).toLocaleDateString() : new Date().toLocaleDateString() }}</p>
       </div>
       <div class="mb-6 text-sm">
         Counted by: ________________________________________

@@ -24,17 +24,9 @@ const inventory = computed(() =>
 const addInventory = ref(false);
 const showRecords = ref(false);
 
-const inventoryNewestFirst = computed(() =>
-  [...inventory.value].sort(
-    (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime(),
-  ),
-);
+const inventoryNewestFirst = computed(() => sortByDateDesc(inventory.value));
 
-const sortedInventory = computed(() =>
-  [...inventory.value].sort(
-    (a, b) => new Date(a.date).getTime() - new Date(b.date).getTime(),
-  ),
-);
+const sortedInventory = computed(() => sortByDateAsc(inventory.value));
 
 const currentStock = computed(() => {
   if (sortedInventory.value.length === 0) return 0;

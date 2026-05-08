@@ -4,9 +4,12 @@ export default defineEventHandler(async () => {
     if (!settings) {
       settings = await new Settings({}).save().then((doc) => doc.toObject());
     }
+    if (!settings) {
+      throw createError({ status: 500, statusText: "Failed to initialize settings" });
+    }
     // Convert Map to plain object for JSON serialization
     if (settings.barrelAgeDefaults instanceof Map) {
-      settings.barrelAgeDefaults = Object.fromEntries(settings.barrelAgeDefaults);
+      settings.barrelAgeDefaults = Object.fromEntries(settings.barrelAgeDefaults) as any;
     }
     // Migrate old string[] categories to rich InventoryCategoryDef[]
     if (
@@ -25,7 +28,7 @@ export default defineEventHandler(async () => {
       await Settings.findByIdAndUpdate(settings._id, {
         $set: { itemCategories: migrated },
       });
-      settings.itemCategories = migrated;
+      settings.itemCategories = migrated as any;
     }
     return settings;
   } catch (error: unknown) {

@@ -1,4 +1,4 @@
-import { l as createGetAllHandler, D as Event } from '../../nitro/nitro.mjs';
+import { m as createGetAllHandler, G as GDCEvent } from '../../nitro/nitro.mjs';
 import 'mongoose';
 import 'yup';
 import 'cloudinary';
@@ -18,7 +18,7 @@ import '@iconify/utils';
 import 'fast-xml-parser';
 import 'ipx';
 
-const index_get = createGetAllHandler(Event, {
+const index_get = createGetAllHandler(GDCEvent, {
   populate: "contact",
   sort: { date: -1 }
 });

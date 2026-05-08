@@ -1,4 +1,4 @@
-import { d as defineEventHandler, k as requireRole, r as readBody, v as validateBody, s as sanitize, U as User, c as createError, aj as userCreateSchema } from '../../../nitro/nitro.mjs';
+import { d as defineEventHandler, l as requireRole, a as readBody, v as validateBody, s as sanitize, U as User, c as createError, av as userCreateSchema } from '../../../nitro/nitro.mjs';
 import bcrypt from 'bcryptjs';
 import 'mongoose';
 import 'yup';

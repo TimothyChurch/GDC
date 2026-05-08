@@ -1,4 +1,4 @@
-import { d as defineEventHandler, Y as getQuery, c as createError, aa as useSquareClient, F as Contact, D as Event } from '../../../nitro/nitro.mjs';
+import { d as defineEventHandler, _ as getQuery, c as createError, ag as useSquareClient, H as GDCContact, G as GDCEvent } from '../../../nitro/nitro.mjs';
 import 'mongoose';
 import 'yup';
 import 'cloudinary';
@@ -39,7 +39,7 @@ const orderStatus_get = defineEventHandler(async (event) => {
   const totalDollars = Number(totalCents) / 100;
   let guest = null;
   if (metadata.contactId) {
-    const contact = await Contact.findById(metadata.contactId).select("firstName lastName email phone").lean();
+    const contact = await GDCContact.findById(metadata.contactId).select("firstName lastName email phone").lean();
     if (contact) {
       guest = {
         _id: String(contact._id),
@@ -54,7 +54,7 @@ const orderStatus_get = defineEventHandler(async (event) => {
   if (metadata.originType && metadata.originId) {
     origin = { type: metadata.originType, id: metadata.originId };
     if (metadata.originType === "event") {
-      const evt = await Event.findById(metadata.originId).select("type date").lean();
+      const evt = await GDCEvent.findById(metadata.originId).select("type date").lean();
       if (evt) {
         origin.label = `${evt.type} \u2014 ${new Date(evt.date).toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric" })}`;
       }

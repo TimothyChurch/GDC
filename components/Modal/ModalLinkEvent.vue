@@ -17,14 +17,12 @@ const selectedEventId = ref('');
 
 // Events not linked to any contact (or linked to a different contact)
 const unlinkedEvents = computed(() =>
-  eventStore.events
-    .filter((e) => {
-      const contactRef = typeof e.contact === 'object' && e.contact
-        ? (e.contact as any)._id
-        : e.contact;
-      return !contactRef;
-    })
-    .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()),
+  sortByDateDesc(eventStore.events.filter((e) => {
+    const contactRef = typeof e.contact === 'object' && e.contact
+      ? (e.contact as any)._id
+      : e.contact;
+    return !contactRef;
+  })),
 );
 
 const eventOptions = computed(() =>

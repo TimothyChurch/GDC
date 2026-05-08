@@ -1,1 +1,1 @@
-export default createGetByIdHandler(Contact);
+export default createGetByIdHandler(GDCContact);

@@ -14,6 +14,7 @@ const toast = useToast();
 const recipeStore = useRecipeStore();
 const itemStore = useItemStore();
 const batchStore = useBatchStore();
+const bulkSpiritStore = useBulkSpiritStore();
 const { confirm } = useDeleteConfirm();
 
 const stageDisplay = (name: string) =>
@@ -143,6 +144,26 @@ const ingredients = computed(() => {
       amount: ing.amount,
       unit: ing.unit,
       pricePerUnit: price,
+      cost,
+    };
+  });
+});
+
+// Bulk spirit display data enriched from the store
+const bulkSpiritIngredients = computed(() => {
+  if (!recipe.value?.bulkSpirits?.length) return [];
+  return recipe.value.bulkSpirits.map((bs) => {
+    const spirit = bulkSpiritStore.getBulkSpiritById(bs.bulkSpirit);
+    const cost = spirit && spirit.costPerProofGallon > 0
+      ? bulkSpiritIngredientCost(bs.volume, bs.volumeUnit, spirit)
+      : 0;
+    return {
+      id: bs.bulkSpirit,
+      name: spirit?.name || 'Unknown Spirit',
+      volume: bs.volume,
+      volumeUnit: bs.volumeUnit,
+      abv: spirit?.abv ?? 0,
+      costPerPG: spirit?.costPerProofGallon ?? 0,
       cost,
     };
   });
@@ -429,6 +450,38 @@ const relatedBatches = computed(() =>
             :disabled="!newIngredient._id || !newIngredient.amount || !newIngredient.unit"
             @click="addIngredient"
           />
+        </div>
+      </div>
+    </div>
+
+    <!-- Base Spirits -->
+    <div v-if="bulkSpiritIngredients.length > 0" class="bg-charcoal rounded-xl border border-brown/30 p-5">
+      <h3 class="text-lg font-bold text-parchment font-[Cormorant_Garamond] mb-4">Base Spirits</h3>
+      <div class="space-y-0">
+        <div class="grid grid-cols-[1fr_100px_80px_80px_90px_80px] gap-2 pb-2 text-xs text-parchment/60 uppercase tracking-wider">
+          <span>Spirit</span>
+          <span>Volume</span>
+          <span>Unit</span>
+          <span>ABV</span>
+          <span>$/PG</span>
+          <span class="text-right">Cost</span>
+        </div>
+        <div
+          v-for="bs in bulkSpiritIngredients"
+          :key="bs.id"
+          class="grid grid-cols-[1fr_100px_80px_80px_90px_80px] gap-2 py-1.5 items-center border-t border-brown/10"
+        >
+          <NuxtLink
+            :to="`/admin/bulk-spirits/${bs.id}`"
+            class="text-sm text-gold hover:text-copper transition-colors truncate"
+          >
+            {{ bs.name }}
+          </NuxtLink>
+          <span class="text-sm text-parchment">{{ bs.volume }}</span>
+          <span class="text-sm text-parchment/60">{{ bs.volumeUnit }}</span>
+          <span class="text-sm text-parchment/60">{{ bs.abv }}%</span>
+          <span class="text-sm text-parchment/60">{{ Dollar.format(bs.costPerPG) }}</span>
+          <span class="text-sm text-parchment text-right">{{ Dollar.format(bs.cost) }}</span>
         </div>
       </div>
     </div>

@@ -14,6 +14,6 @@ export const useAgeVerification = () => {
 // Derived from STAGE_DISPLAY in batchPipeline.ts — single source of truth
 export const BATCH_STAGES = ALL_STAGES.map((name) => ({
   name,
-  icon: STAGE_DISPLAY[name].icon,
-  color: STAGE_DISPLAY[name].color,
+  icon: STAGE_DISPLAY[name]?.icon ?? '',
+  color: STAGE_DISPLAY[name]?.color ?? '',
 }));

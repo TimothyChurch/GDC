@@ -1,4 +1,4 @@
-import { f as createGetByIdHandler, V as Vessel } from '../../../nitro/nitro.mjs';
+import { i as createGetByIdHandler, V as Vessel } from '../../../nitro/nitro.mjs';
 import 'mongoose';
 import 'yup';
 import 'cloudinary';

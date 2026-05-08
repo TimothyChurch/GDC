@@ -28,7 +28,7 @@ const buttonLabel = () => {
 		</UFieldGroup>
 
 		<template #content>
-			<DatePicker
+			<BaseDatePicker
 				v-model="model"
 				is-required />
 		</template>

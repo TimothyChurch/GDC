@@ -33,7 +33,7 @@ export default defineEventHandler(async (event) => {
   // Fetch guest details
   let guest = null;
   if (contactId) {
-    const contact = await Contact.findById(contactId)
+    const contact = await GDCContact.findById(contactId)
       .select('firstName lastName email phone')
       .lean();
     if (contact) {
@@ -53,7 +53,7 @@ export default defineEventHandler(async (event) => {
     origin = { type: originType, id: originId };
 
     if (originType === 'event') {
-      const evt = await Event.findById(originId)
+      const evt = await GDCEvent.findById(originId)
         .select('type date capacity groupSize')
         .lean();
       if (evt) {
@@ -70,7 +70,7 @@ export default defineEventHandler(async (event) => {
 
   if (isCompleted && originType === 'event' && originId) {
     // Only update if this orderId hasn't been processed yet
-    await Event.updateOne(
+    await GDCEvent.updateOne(
       { _id: originId, processedOrders: { $ne: orderId } },
       {
         $inc: { groupSize: quantity },

@@ -20,6 +20,8 @@ const cbmaRateOptions = [
 // This value must be entered by the user for accurate tier tracking
 const ytdProofGallons = ref<number>(0)
 
+const printPage = () => window.print()
+
 const months = computed(() => {
   const result: { label: string; value: string }[] = []
   const d = new Date()
@@ -44,7 +46,7 @@ const months = computed(() => {
       icon="i-lucide-receipt"
     >
       <template #actions>
-        <UButton variant="outline" icon="i-lucide-printer" size="sm" class="print:hidden" @click="(window as any).print()">Print</UButton>
+        <UButton variant="outline" icon="i-lucide-printer" size="sm" class="print:hidden" @click="printPage">Print</UButton>
         <NuxtLink to="/admin/reports">
           <UButton variant="outline" icon="i-lucide-arrow-left" size="sm">Back</UButton>
         </NuxtLink>

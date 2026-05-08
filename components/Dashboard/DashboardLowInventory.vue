@@ -19,8 +19,7 @@ interface InventoryAlert {
 // Get the latest inventory count for each item
 const latestInventoryByItem = computed(() => {
   const map = new Map<string, number>();
-  const sortedInventories = [...inventoryStore.inventories]
-    .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+  const sortedInventories = sortByDateDesc(inventoryStore.inventories);
 
   for (const inv of sortedInventories) {
     if (!map.has(inv.item)) {

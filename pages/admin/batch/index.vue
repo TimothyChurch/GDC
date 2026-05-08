@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { useLocalStorage } from '@vueuse/core'
+import { LazyPanelBatch } from '#components'
 import { ALL_STAGES, STAGE_DISPLAY, stageTextColor, stageBgColor } from '~/composables/batchPipeline'
 
 definePageMeta({ layout: 'admin' })
@@ -9,6 +10,10 @@ const batchStore = useBatchStore()
 const viewMode = useLocalStorage('batch-view-mode', 'table')
 
 const selectedFilter = ref('All')
+
+// Stages that accumulate over time and aren't actively worked — hidden from
+// the batch index. Still reachable from the batch detail page.
+const HIDDEN_STAGES = new Set(['Barrel Aging', 'Bottled'])
 
 // Filter options: All, Active, Completed, then individual stages that have batches
 const filterTabs = computed(() => {
@@ -20,6 +25,7 @@ const filterTabs = computed(() => {
 
   // Add stage-specific tabs for stages that have active batches (volume-aware)
   for (const stage of ALL_STAGES) {
+    if (HIDDEN_STAGES.has(stage)) continue
     const count = batchStore.getBatchesInStage(stage).length
     if (count > 0) {
       tabs.push({ name: stage, count, type: 'stage' })
@@ -28,6 +34,13 @@ const filterTabs = computed(() => {
 
   return tabs
 })
+
+const overlay = useOverlay()
+const batchPanel = overlay.create(LazyPanelBatch)
+const addBatch = async () => {
+  batchStore.resetBatch()
+  await batchPanel.open()
+}
 
 const filteredBatches = computed(() => {
   if (selectedFilter.value === 'All') return undefined
@@ -42,6 +55,16 @@ const filteredBatches = computed(() => {
   <div>
     <AdminPageHeader title="Batches" subtitle="Manage batch lifecycle from mashing to bottling" icon="i-lucide-flask-conical">
       <template #actions>
+        <UButton
+          icon="i-lucide-plus"
+          size="sm"
+          color="primary"
+          variant="solid"
+          class="bg-gold/90 text-charcoal hover:bg-gold"
+          @click="addBatch"
+        >
+          New Batch
+        </UButton>
         <div class="flex items-center gap-1 rounded-lg border border-brown/20 p-0.5">
           <UButton
             icon="i-lucide-table-2"

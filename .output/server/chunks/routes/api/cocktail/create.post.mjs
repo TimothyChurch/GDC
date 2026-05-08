@@ -1,4 +1,4 @@
-import { o as createCreateHandler, y as cocktailCreateSchema, C as Cocktail } from '../../../nitro/nitro.mjs';
+import { q as createCreateHandler, A as cocktailCreateSchema, C as Cocktail } from '../../../nitro/nitro.mjs';
 import 'mongoose';
 import 'yup';
 import 'cloudinary';

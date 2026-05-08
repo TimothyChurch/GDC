@@ -11,11 +11,11 @@ const recipeStore = useRecipeStore()
 
 // Parse month range
 const monthStart = computed(() => {
-  const [y, m] = props.month.split('-').map(Number)
+  const [y = 0, m = 0] = props.month.split('-').map(Number)
   return new Date(y, m - 1, 1)
 })
 const monthEnd = computed(() => {
-  const [y, m] = props.month.split('-').map(Number)
+  const [y = 0, m = 0] = props.month.split('-').map(Number)
   return new Date(y, m, 0, 23, 59, 59)
 })
 
@@ -120,7 +120,7 @@ const barrelInventory = computed(() => {
   return vesselStore.barrels
     .filter(barrel => barrel.contents && barrel.contents.length > 0)
     .map(barrel => {
-      const content = barrel.contents![0]
+      const content = barrel.contents![0]!
       const batch = batchStore.getBatchById(content.batch)
       const recipe = batch?.recipe ? recipeStore.getRecipeById(batch.recipe) : null
       const entryDate = (batch?.stages as any)?.barrelAging?.entry?.date ? new Date((batch?.stages as any).barrelAging.entry.date) : null

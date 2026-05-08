@@ -1,4 +1,4 @@
-import { aP as executeAsync } from '../nitro/nitro.mjs';
+import { a$ as executeAsync } from '../nitro/nitro.mjs';
 import { a1 as defineNuxtRouteMiddleware, n as navigateTo } from './server.mjs';
 import { u as useAuth } from './useAuth-DX6ojG3V.mjs';
 import 'mongoose';

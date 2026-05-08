@@ -42,7 +42,7 @@ const ledgerEntries = computed(() => {
   for (const w of bs.value.withdrawals || []) {
     entries.push({ type: 'withdrawal', ...w });
   }
-  return entries.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+  return sortByDateAsc(entries);
 });
 </script>
 

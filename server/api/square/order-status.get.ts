@@ -25,7 +25,7 @@ export default defineEventHandler(async (event) => {
   // Fetch contact details if available
   let guest = null;
   if (metadata.contactId) {
-    const contact = await Contact.findById(metadata.contactId)
+    const contact = await GDCContact.findById(metadata.contactId)
       .select('firstName lastName email phone')
       .lean();
     if (contact) {
@@ -45,7 +45,7 @@ export default defineEventHandler(async (event) => {
     origin = { type: metadata.originType, id: metadata.originId };
 
     if (metadata.originType === 'event') {
-      const evt = await Event.findById(metadata.originId)
+      const evt = await GDCEvent.findById(metadata.originId)
         .select('type date')
         .lean();
       if (evt) {

@@ -9,11 +9,8 @@ const showOutOfStock = ref(false)
 
 function getLatestQuantity(itemId: string): number {
   const records = inventoryStore.getInventoriesByItem(itemId)
-  if (records.length === 0) return 0
-  const sorted = [...records].sort((a, b) =>
-    new Date(b.date).getTime() - new Date(a.date).getTime()
-  )
-  return sorted[0].quantity
+  const [latest] = sortByDateDesc(records)
+  return latest?.quantity ?? 0
 }
 
 const categorizedItems = computed(() =>

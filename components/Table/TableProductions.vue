@@ -5,6 +5,7 @@ import { getPaginationRowModel } from "@tanstack/vue-table";
 
 const router = useRouter();
 const productionsStore = useProductionStore();
+const productionsSorted = computed(() => sortByDateDesc(productionsStore.productions));
 const vesselStore = useVesselStore();
 const bottlestore = useBottleStore();
 const { confirm } = useDeleteConfirm();
@@ -121,7 +122,7 @@ defineExpose({ newItem });
     <!-- Mobile card view -->
     <div class="sm:hidden space-y-3">
       <div
-        v-for="prod in productionsStore.productions.slice().sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()).filter(p => {
+        v-for="prod in productionsSorted.filter(p => {
           if (!search) return true;
           const term = search.toLowerCase();
           const bottleName = bottlestore.getName(p.bottle) || '';

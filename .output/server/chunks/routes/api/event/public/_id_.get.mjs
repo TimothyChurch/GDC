@@ -1,4 +1,4 @@
-import { d as defineEventHandler, S as getRouterParam, c as createError, D as Event } from '../../../../nitro/nitro.mjs';
+import { d as defineEventHandler, W as getRouterParam, c as createError, G as GDCEvent } from '../../../../nitro/nitro.mjs';
 import 'mongoose';
 import 'yup';
 import 'cloudinary';
@@ -23,7 +23,7 @@ const _id__get = defineEventHandler(async (event) => {
   if (!id) {
     throw createError({ status: 400, statusText: "Event ID is required" });
   }
-  const doc = await Event.findOne({
+  const doc = await GDCEvent.findOne({
     _id: id,
     isPublic: true,
     status: "Confirmed"

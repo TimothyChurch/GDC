@@ -61,7 +61,6 @@ const isMac = computed(() =>
     />
 
     <div class="flex items-center gap-3">
-      <ModalCalculators />
       <NuxtLink to="/admin/inbox">
         <UChip :show="unreadCount > 0" :text="unreadCount" color="error" size="lg">
           <UButton

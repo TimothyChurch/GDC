@@ -12,14 +12,10 @@ const toast = useToast()
 
 const contact = computed(() => contactStore.getContactById(route.params._id as string))
 
-const displayName = computed(() => {
-  if (!contact.value) return ''
-  return contact.value.businessName || `${contact.value.firstName || ''} ${contact.value.lastName || ''}`.trim()
-})
+const displayName = computed(() => formatContactName(contact.value))
 
 const customerEvents = computed(() => {
-  const evts = eventStore.getEventsByContact(route.params._id as string)
-  return [...evts].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
+  return sortByDateDesc(eventStore.getEventsByContact(route.params._id as string))
 })
 
 const customerMessages = computed(() => {

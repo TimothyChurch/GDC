@@ -1,4 +1,4 @@
-import { o as createCreateHandler, a6 as recipeCreateSchema, R as Recipe } from '../../../nitro/nitro.mjs';
+import { q as createCreateHandler, a8 as recipeCreateSchema, R as Recipe } from '../../../nitro/nitro.mjs';
 import 'mongoose';
 import 'yup';
 import 'cloudinary';

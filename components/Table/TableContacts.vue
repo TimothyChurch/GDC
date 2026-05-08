@@ -155,7 +155,7 @@ defineExpose({ addItem });
         v-for="contact in filteredContacts.filter(c => {
           if (!search) return true;
           const term = search.toLowerCase();
-          return (c.businessName?.toLowerCase().includes(term)) || (`${c.firstName} ${c.lastName}`.toLowerCase().includes(term)) || c.type?.toLowerCase().includes(term);
+          return formatContactName(c).toLowerCase().includes(term) || c.type?.toLowerCase().includes(term);
         })"
         :key="contact._id"
         class="bg-charcoal rounded-lg border border-brown/30 p-4 cursor-pointer"
@@ -168,7 +168,7 @@ defineExpose({ addItem });
             </div>
             <div>
               <div class="text-sm font-medium text-parchment flex items-center gap-2">
-                {{ contact.businessName || `${contact.firstName} ${contact.lastName}` }}
+                {{ formatContactName(contact) }}
                 <UBadge v-if="contact.newsletter" color="success" variant="subtle" size="xs">Newsletter</UBadge>
               </div>
               <div v-if="contact.type" class="text-xs text-parchment/60">{{ contact.type }}</div>

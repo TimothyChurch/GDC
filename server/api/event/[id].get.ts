@@ -1,3 +1,3 @@
-export default createGetByIdHandler(Event, {
+export default createGetByIdHandler(GDCEvent, {
   populate: "contact",
 });

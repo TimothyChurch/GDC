@@ -10,8 +10,12 @@ const batchStore = useBatchStore()
 
 const batchesSource = computed(() => props.data ?? batchStore.batches)
 
+// Stages excluded from the board view — they accumulate indefinitely and
+// aren't actively worked on the batch index. Still reachable from the batch detail page.
+const HIDDEN_STAGES = new Set(['Barrel Aging', 'Bottled'])
+
 const allColumns = computed(() =>
-  ALL_STAGES.map((stage) => {
+  ALL_STAGES.filter((stage) => !HIDDEN_STAGES.has(stage)).map((stage) => {
     const display = STAGE_DISPLAY[stage] || { icon: 'i-lucide-circle', color: 'neutral' }
     // Volume-aware filtering: show batch in stage if it has volume there
     const batches = batchesSource.value.filter((b) => {

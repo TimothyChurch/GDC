@@ -81,9 +81,6 @@ const sources = [
                 "loc": "/admin/inventory/input"
             },
             {
-                "loc": "/admin/inventory/other"
-            },
-            {
                 "loc": "/admin/inventory/print"
             },
             {
@@ -99,28 +96,16 @@ const sources = [
                 "loc": "/admin/reports/inventory"
             },
             {
-                "loc": "/admin/inventory/bottling"
-            },
-            {
                 "loc": "/admin/reports/production"
             },
             {
                 "loc": "/admin/reports/ttb-storage"
             },
             {
-                "loc": "/admin/inventory/botanicals"
-            },
-            {
                 "loc": "/admin/purchaseOrders"
             },
             {
                 "loc": "/admin/reports/tabc-monthly"
-            },
-            {
-                "loc": "/admin/inventory/ingredients"
-            },
-            {
-                "loc": "/admin/inventory/bar-supplies"
             },
             {
                 "loc": "/admin/reports/ttb-excise-tax"

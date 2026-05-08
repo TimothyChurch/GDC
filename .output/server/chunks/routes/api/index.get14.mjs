@@ -1,4 +1,4 @@
-import { d as defineEventHandler, a7 as Settings, a8 as isH3Error, c as createError } from '../../nitro/nitro.mjs';
+import { d as defineEventHandler, a9 as ReportingPeriod, c as createError } from '../../nitro/nitro.mjs';
 import 'mongoose';
 import 'yup';
 import 'cloudinary';
@@ -20,30 +20,10 @@ import 'ipx';
 
 const index_get = defineEventHandler(async () => {
   try {
-    let settings = await Settings.findOne({}).lean();
-    if (!settings) {
-      settings = await new Settings({}).save().then((doc) => doc.toObject());
-    }
-    if (settings.barrelAgeDefaults instanceof Map) {
-      settings.barrelAgeDefaults = Object.fromEntries(settings.barrelAgeDefaults);
-    }
-    if (Array.isArray(settings.itemCategories) && settings.itemCategories.length > 0 && typeof settings.itemCategories[0] === "string") {
-      const migrated = settings.itemCategories.map((cat) => ({
-        key: cat.toLowerCase().replace(/\s+/g, "-"),
-        label: cat,
-        category: cat,
-        icon: "i-lucide-box",
-        description: ""
-      }));
-      await Settings.findByIdAndUpdate(settings._id, {
-        $set: { itemCategories: migrated }
-      });
-      settings.itemCategories = migrated;
-    }
-    return settings;
+    return await ReportingPeriod.find({}).sort({ period: -1 }).lean();
   } catch (error) {
-    if (isH3Error(error)) throw error;
-    throw createError({ status: 500, statusText: "Failed to fetch settings" });
+    console.error("Failed to list reporting periods:", error);
+    throw createError({ status: 500, statusText: "Failed to list reporting periods" });
   }
 });
 

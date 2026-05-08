@@ -3,6 +3,7 @@ import type { Bottle } from './interfaces/Bottle';
 import type { Cocktail, CocktailIngredient, IngredientSourceType } from './interfaces/Cocktail';
 import type { Contact } from './interfaces/Contact';
 import type { Contents } from './interfaces/Contents';
+import type { EquipmentLog } from './interfaces/EquipmentLog';
 import type { GDCEvent, EventAddOn } from './interfaces/Event';
 import type { Inventory } from './interfaces/Inventory';
 import type { Item, ItemCategory } from './interfaces/Item';
@@ -48,6 +49,7 @@ export type {
 	IngredientSourceType,
 	Contact,
 	Contents,
+	EquipmentLog,
 	GDCEvent,
 	EventAddOn,
 	Inventory,

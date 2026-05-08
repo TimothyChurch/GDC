@@ -1,20 +1,27 @@
 export default defineEventHandler(async (event) => {
+  rateLimit(event, {
+    key: 'event:request',
+    limit: 5,
+    windowMs: 60 * 60 * 1000,
+    message: 'Too many requests. Please try again later.',
+  });
+
   const body = await readBody(event);
   const validated = await validateBody(body, eventRequestSchema);
   const sanitized = sanitize(validated);
 
   try {
     // Find or create contact by email
-    let contact = await Contact.findOne({ email: sanitized.email });
+    let contact = await GDCContact.findOne({ email: sanitized.email });
     if (contact) {
       // Update name/phone if provided
-      await Contact.findByIdAndUpdate(contact._id, {
+      await GDCContact.findByIdAndUpdate(contact._id, {
         firstName: sanitized.firstName,
         lastName: sanitized.lastName,
         ...(sanitized.phone && { phone: sanitized.phone }),
       });
     } else {
-      contact = await Contact.create({
+      contact = await GDCContact.create({
         firstName: sanitized.firstName,
         lastName: sanitized.lastName,
         email: sanitized.email,
@@ -24,7 +31,7 @@ export default defineEventHandler(async (event) => {
     }
 
     // Create the event
-    await Event.create({
+    await GDCEvent.create({
       date: sanitized.date,
       groupSize: sanitized.groupSize,
       contact: contact._id,

@@ -10,12 +10,7 @@ const batchStore = useBatchStore()
 
 const stage = computed(() => props.batch.stages?.barrelAging as BarrelAgingStage | undefined)
 
-const sortedSamplings = computed(() => {
-  const samplings = stage.value?.samplings || []
-  return [...samplings].sort(
-    (a, b) => new Date(a.date).getTime() - new Date(b.date).getTime()
-  )
-})
+const sortedSamplings = computed(() => sortByDateAsc(stage.value?.samplings || []))
 
 // Sampling records
 const showAddSampling = ref(false)

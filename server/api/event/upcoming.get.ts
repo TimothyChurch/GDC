@@ -1,7 +1,7 @@
 export default defineEventHandler(async () => {
   try {
     const now = new Date();
-    const events = await Event.find({
+    const events = await GDCEvent.find({
       status: "Confirmed",
       isPublic: true,
       date: { $gte: now },

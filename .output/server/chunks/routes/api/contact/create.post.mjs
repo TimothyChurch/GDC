@@ -1,4 +1,4 @@
-import { o as createCreateHandler, H as contactCreateSchema, F as Contact } from '../../../nitro/nitro.mjs';
+import { q as createCreateHandler, K as contactCreateSchema, H as GDCContact } from '../../../nitro/nitro.mjs';
 import 'mongoose';
 import 'yup';
 import 'cloudinary';
@@ -18,7 +18,7 @@ import '@iconify/utils';
 import 'fast-xml-parser';
 import 'ipx';
 
-const create_post = createCreateHandler(Contact, {
+const create_post = createCreateHandler(GDCContact, {
   schema: contactCreateSchema
 });
 
