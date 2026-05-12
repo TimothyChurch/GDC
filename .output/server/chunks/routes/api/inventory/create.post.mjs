@@ -1,4 +1,4 @@
-import { q as createCreateHandler, Z as inventoryCreateSchema, I as Inventory } from '../../../nitro/nitro.mjs';
+import { x as createCreateHandler, _ as inventoryCreateSchema, I as Inventory } from '../../../nitro/nitro.mjs';
 import 'mongoose';
 import 'yup';
 import 'cloudinary';

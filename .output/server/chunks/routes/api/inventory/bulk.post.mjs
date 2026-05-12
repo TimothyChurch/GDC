@@ -1,5 +1,5 @@
-import { d as defineEventHandler, a as readBody, c as createError, s as sanitize, v as validateBody, I as Inventory, Z as inventoryCreateSchema } from '../../../nitro/nitro.mjs';
-import 'mongoose';
+import { d as defineEventHandler, a as readBody, c as createError, s as sanitize, v as validateBody, I as Inventory, _ as inventoryCreateSchema } from '../../../nitro/nitro.mjs';
+import mongoose from 'mongoose';
 import 'yup';
 import 'cloudinary';
 import 'square';
@@ -42,13 +42,21 @@ const bulk_post = defineEventHandler(async (event) => {
     if (!sanitized.location) delete sanitized.location;
     records.push(sanitized);
   }
+  const session = await mongoose.startSession();
   try {
-    return await Inventory.insertMany(records);
+    let inserted = [];
+    await session.withTransaction(async () => {
+      inserted = await Inventory.insertMany(records, { session, ordered: true });
+    });
+    return inserted;
   } catch (error) {
+    console.error("[inventory/bulk]", error);
     throw createError({
       status: 500,
       statusText: "Failed to create bulk inventory records"
     });
+  } finally {
+    await session.endSession();
   }
 });
 

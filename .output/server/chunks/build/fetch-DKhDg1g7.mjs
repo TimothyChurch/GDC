@@ -1,5 +1,5 @@
 import { computed, toValue, reactive } from 'vue';
-import { b2 as hash } from '../nitro/nitro.mjs';
+import { b5 as hash } from '../nitro/nitro.mjs';
 import { isPlainObject } from '@vue/shared';
 import { Z as fetchDefaults, $ as useAsyncData, a0 as useRequestFetch } from './server.mjs';
 

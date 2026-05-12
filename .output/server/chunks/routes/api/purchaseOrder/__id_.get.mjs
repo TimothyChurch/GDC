@@ -1,4 +1,4 @@
-import { i as createGetByIdHandler, F as PurchaseOrder } from '../../../nitro/nitro.mjs';
+import { i as createGetByIdHandler, J as PurchaseOrder } from '../../../nitro/nitro.mjs';
 import 'mongoose';
 import 'yup';
 import 'cloudinary';

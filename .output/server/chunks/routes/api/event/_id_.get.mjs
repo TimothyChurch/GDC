@@ -1,4 +1,4 @@
-import { i as createGetByIdHandler, G as GDCEvent } from '../../../nitro/nitro.mjs';
+import { i as createGetByIdHandler, K as GDCEvent } from '../../../nitro/nitro.mjs';
 import 'mongoose';
 import 'yup';
 import 'cloudinary';

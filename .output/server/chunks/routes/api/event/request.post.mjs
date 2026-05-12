@@ -1,4 +1,4 @@
-import { d as defineEventHandler, r as rateLimit, a as readBody, v as validateBody, s as sanitize, H as GDCContact, G as GDCEvent, M as Message, c as createError, X as eventRequestSchema } from '../../../nitro/nitro.mjs';
+import { d as defineEventHandler, r as rateLimit, a as readBody, v as validateBody, s as sanitize, L as GDCContact, K as GDCEvent, O as Message, c as createError, Y as eventRequestSchema } from '../../../nitro/nitro.mjs';
 import 'mongoose';
 import 'yup';
 import 'cloudinary';

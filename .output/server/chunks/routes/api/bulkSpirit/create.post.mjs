@@ -1,4 +1,4 @@
-import { q as createCreateHandler, y as bulkSpiritCreateSchema, B as BulkSpirit } from '../../../nitro/nitro.mjs';
+import { x as createCreateHandler, C as bulkSpiritCreateSchema, B as BulkSpirit } from '../../../nitro/nitro.mjs';
 import 'mongoose';
 import 'yup';
 import 'cloudinary';

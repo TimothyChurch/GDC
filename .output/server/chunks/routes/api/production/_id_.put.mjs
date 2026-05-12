@@ -1,4 +1,4 @@
-import { o as createUpdateHandler, a3 as productionUpdateSchema, P as Production } from '../../../nitro/nitro.mjs';
+import { t as createUpdateHandler, a4 as productionUpdateSchema, P as Production } from '../../../nitro/nitro.mjs';
 import 'mongoose';
 import 'yup';
 import 'cloudinary';

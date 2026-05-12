@@ -1,4 +1,4 @@
-import { q as createCreateHandler, a8 as recipeCreateSchema, R as Recipe } from '../../../nitro/nitro.mjs';
+import { d as defineEventHandler, a as readBody, s as sanitize, v as validateBody, aa as getDefaultGrainInForClass, a8 as computeRecipeProjection, R as Recipe, c as createError, ab as recipeCreateSchema } from '../../../nitro/nitro.mjs';
 import 'mongoose';
 import 'yup';
 import 'cloudinary';
@@ -18,8 +18,25 @@ import '@iconify/utils';
 import 'fast-xml-parser';
 import 'ipx';
 
-const create_post = createCreateHandler(Recipe, {
-  schema: recipeCreateSchema
+const create_post = defineEventHandler(async (event) => {
+  const body = await readBody(event);
+  const sanitized = sanitize(body);
+  await validateBody(sanitized, recipeCreateSchema);
+  if (typeof sanitized.grainIn !== "boolean") {
+    sanitized.grainIn = getDefaultGrainInForClass(sanitized.class);
+  }
+  const projection = await computeRecipeProjection(sanitized);
+  Object.assign(sanitized, projection);
+  try {
+    const recipe = new Recipe(sanitized);
+    await recipe.save();
+    return recipe;
+  } catch (error) {
+    throw createError({
+      status: 500,
+      statusText: "Failed to create recipe"
+    });
+  }
 });
 
 export { create_post as default };

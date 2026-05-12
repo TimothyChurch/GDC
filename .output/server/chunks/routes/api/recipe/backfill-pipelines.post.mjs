@@ -1,4 +1,4 @@
-import { d as defineEventHandler, l as requireRole, R as Recipe } from '../../../nitro/nitro.mjs';
+import { d as defineEventHandler, k as requireRole, o as runOnceMigration, R as Recipe } from '../../../nitro/nitro.mjs';
 import 'mongoose';
 import 'yup';
 import 'cloudinary';
@@ -20,6 +20,19 @@ import 'ipx';
 
 const backfillPipelines_post = defineEventHandler(async (event) => {
   await requireRole(event, "Admin");
+  const outcome = await runOnceMigration("backfill-recipe-pipelines", async () => {
+    return await backfillPipelines();
+  });
+  if (outcome.alreadyApplied) {
+    return {
+      alreadyApplied: true,
+      message: "Migration backfill-recipe-pipelines has already been applied.",
+      appliedAt: outcome.appliedAt
+    };
+  }
+  return outcome.result;
+});
+async function backfillPipelines() {
   const PIPELINE_MAP = {
     "Whisky": ["Mashing", "Fermenting", "Distilling", "Barrel Aging", "Storage", "Proofing", "Bottled"],
     "Brandy": ["Mashing", "Fermenting", "Distilling", "Barrel Aging", "Storage", "Proofing", "Bottled"],
@@ -66,7 +79,7 @@ const backfillPipelines_post = defineEventHandler(async (event) => {
     updated++;
   }
   return { updated, total: recipes.length };
-});
+}
 
 export { backfillPipelines_post as default };
 //# sourceMappingURL=backfill-pipelines.post.mjs.map

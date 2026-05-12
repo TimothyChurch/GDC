@@ -1,4 +1,4 @@
-import { d as defineEventHandler, l as requireRole, h as Batch, R as Recipe } from '../../../nitro/nitro.mjs';
+import { d as defineEventHandler, k as requireRole, o as runOnceMigration, h as Batch, R as Recipe } from '../../../nitro/nitro.mjs';
 import 'mongoose';
 import 'yup';
 import 'cloudinary';
@@ -20,12 +20,19 @@ import 'ipx';
 
 const deduplicatePipelines_post = defineEventHandler(async (event) => {
   await requireRole(event, "Admin");
-  const batchResults = await deduplicateBatches();
-  const recipeResults = await deduplicateRecipes();
-  return {
-    batches: batchResults,
-    recipes: recipeResults
-  };
+  const outcome = await runOnceMigration("deduplicate-pipelines", async () => {
+    const batchResults = await deduplicateBatches();
+    const recipeResults = await deduplicateRecipes();
+    return { batches: batchResults, recipes: recipeResults };
+  });
+  if (outcome.alreadyApplied) {
+    return {
+      alreadyApplied: true,
+      message: "Migration deduplicate-pipelines has already been applied.",
+      appliedAt: outcome.appliedAt
+    };
+  }
+  return outcome.result;
 });
 async function deduplicateBatches() {
   const batches = await Batch.find({});

@@ -1,4 +1,4 @@
-import { d as defineEventHandler, G as GDCEvent, c as createError } from '../../../nitro/nitro.mjs';
+import { d as defineEventHandler, K as GDCEvent, c as createError } from '../../../nitro/nitro.mjs';
 import 'mongoose';
 import 'yup';
 import 'cloudinary';

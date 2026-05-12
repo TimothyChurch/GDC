@@ -139,6 +139,9 @@ const sources = [
             },
             {
                 "loc": "/bottles"
+            },
+            {
+                "loc": "/floor"
             }
         ],
         "sourceType": "app"

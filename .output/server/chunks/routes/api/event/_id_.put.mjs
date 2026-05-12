@@ -1,4 +1,4 @@
-import { o as createUpdateHandler, S as eventUpdateSchema, G as GDCEvent } from '../../../nitro/nitro.mjs';
+import { t as createUpdateHandler, W as eventUpdateSchema, K as GDCEvent } from '../../../nitro/nitro.mjs';
 import 'mongoose';
 import 'yup';
 import 'cloudinary';

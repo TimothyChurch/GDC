@@ -1,4 +1,4 @@
-import { d as defineEventHandler, W as getRouterParam, c as createError, G as GDCEvent } from '../../../../nitro/nitro.mjs';
+import { d as defineEventHandler, m as getRouterParam, c as createError, K as GDCEvent } from '../../../../nitro/nitro.mjs';
 import 'mongoose';
 import 'yup';
 import 'cloudinary';

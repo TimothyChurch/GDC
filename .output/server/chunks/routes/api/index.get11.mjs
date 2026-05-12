@@ -1,4 +1,4 @@
-import { m as createGetAllHandler, P as Production } from '../../nitro/nitro.mjs';
+import { p as createGetAllHandler, P as Production } from '../../nitro/nitro.mjs';
 import 'mongoose';
 import 'yup';
 import 'cloudinary';

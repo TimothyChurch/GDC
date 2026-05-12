@@ -1,4 +1,4 @@
-import { d as defineEventHandler, r as rateLimit, a as readBody, s as sanitize, v as validateBody, H as GDCContact, M as Message, c as createError, L as contactInquirySchema } from '../../../nitro/nitro.mjs';
+import { d as defineEventHandler, r as rateLimit, a as readBody, s as sanitize, v as validateBody, L as GDCContact, O as Message, c as createError, Q as contactInquirySchema } from '../../../nitro/nitro.mjs';
 import 'mongoose';
 import 'yup';
 import 'cloudinary';
@@ -29,7 +29,7 @@ const inquiry_post = defineEventHandler(async (event) => {
   if (body == null ? void 0 : body.website) {
     return { success: true, message: "Thanks for reaching out! We'll get back to you soon." };
   }
-  if ((body == null ? void 0 : body._t) && Date.now() - Number(body._t) < 3e3) {
+  if ((body == null ? void 0 : body._t) && Date.now() - Number(body._t) < 1e3) {
     return { success: true, message: "Thanks for reaching out! We'll get back to you soon." };
   }
   const { website: _hp, _t, ...cleanBody } = body || {};

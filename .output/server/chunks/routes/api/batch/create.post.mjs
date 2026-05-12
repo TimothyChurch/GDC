@@ -1,4 +1,4 @@
-import { d as defineEventHandler, a as readBody, s as sanitize, v as validateBody, h as Batch, c as createError, k as batchCreateSchema } from '../../../nitro/nitro.mjs';
+import { d as defineEventHandler, a as readBody, s as sanitize, v as validateBody, R as Recipe, h as Batch, c as createError, n as batchCreateSchema } from '../../../nitro/nitro.mjs';
 import 'mongoose';
 import 'yup';
 import 'cloudinary';
@@ -23,6 +23,19 @@ const create_post = defineEventHandler(async (event) => {
   const body = await readBody(event);
   const sanitized = sanitize(body);
   await validateBody(sanitized, batchCreateSchema);
+  if (sanitized.recipe) {
+    try {
+      const recipeDoc = await Recipe.findById(sanitized.recipe).select("grainIn").lean();
+      if (recipeDoc) {
+        if (!sanitized.stages) sanitized.stages = {};
+        if (!sanitized.stages.mashing) sanitized.stages.mashing = {};
+        if (typeof sanitized.stages.mashing.grainIn !== "boolean") {
+          sanitized.stages.mashing.grainIn = !!recipeDoc.grainIn;
+        }
+      }
+    } catch {
+    }
+  }
   if (!sanitized.log) sanitized.log = [];
   sanitized.log.push({
     date: /* @__PURE__ */ new Date(),
