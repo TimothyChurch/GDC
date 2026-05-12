@@ -296,6 +296,103 @@ describe('distillation transfers (volume balance bypass)', () => {
 	});
 });
 
+describe('grain-in correction (effectiveVolume)', () => {
+	// Background: when the source batch is grain-in (whiskey/bourbon/rye), the
+	// fermenter's bulk volume includes the grain bed. PG must be computed from
+	// the *effective liquid volume* — bulk volume minus grain displacement —
+	// otherwise production is overstated by ~10–20% on every grain-in batch.
+	//
+	// Worked example: 100 gal bulk @ 8% ABV (16 proof), 20 gal grain displacement
+	//   pre-fix PG  = 100 × 16 / 100 = 16
+	//   post-fix PG =  80 × 16 / 100 = 12.8
+
+	it('computes PG from effectiveVolume when provided on the source', () => {
+		const input: TransferInput = {
+			type: 'vessel_move',
+			batch: '000000000000000000000001',
+			fromStage: 'Stripping Run',
+			toStage: 'Stripping Run',
+			sources: [{ vessel: '000000000000000000000010', volume: 100, effectiveVolume: 80, proof: 16 }],
+			destinations: [{ vessel: '000000000000000000000020', volume: 100, effectiveVolume: 80, proof: 16, stage: 'Stripping Run' }],
+			loss: { volume: 0, proof: 0, reasonCode: 'no_loss' },
+		};
+		const totals = computeTotals(input);
+		expect(totals.totalSourceVolume).toBe(100); // bulk preserved
+		expect(totals.sourcePG).toBeCloseTo(12.8, 4);
+		expect(totals.destPG).toBeCloseTo(12.8, 4);
+	});
+
+	it('grain-out batch (no effectiveVolume) computes PG from bulk — no drift', () => {
+		const input: TransferInput = {
+			type: 'vessel_move',
+			batch: '000000000000000000000001',
+			fromStage: 'Stripping Run',
+			toStage: 'Stripping Run',
+			sources: [{ vessel: '000000000000000000000010', volume: 100, proof: 16 }],
+			destinations: [{ vessel: '000000000000000000000020', volume: 100, proof: 16, stage: 'Stripping Run' }],
+			loss: { volume: 0, proof: 0, reasonCode: 'no_loss' },
+		};
+		const totals = computeTotals(input);
+		expect(totals.sourcePG).toBe(16);
+		expect(totals.destPG).toBe(16);
+	});
+
+	it('passes PG invariant when source and dest both carry matched effectiveVolume', () => {
+		const input: TransferInput = {
+			type: 'vessel_move',
+			batch: '000000000000000000000001',
+			fromStage: 'Stripping Run',
+			toStage: 'Stripping Run',
+			sources: [{ vessel: '000000000000000000000010', volume: 100, effectiveVolume: 80, proof: 16 }],
+			destinations: [{ vessel: '000000000000000000000020', volume: 100, effectiveVolume: 80, proof: 16, stage: 'Stripping Run' }],
+			loss: { volume: 0, proof: 0, reasonCode: 'no_loss' },
+		};
+		expect(() => validateInvariants(input, computeTotals(input))).not.toThrow();
+	});
+
+	it('rejects effectiveVolume larger than bulk volume', () => {
+		const input: TransferInput = {
+			type: 'vessel_move',
+			batch: '000000000000000000000001',
+			fromStage: 'Stripping Run',
+			toStage: 'Stripping Run',
+			sources: [{ vessel: '000000000000000000000010', volume: 80, effectiveVolume: 100, proof: 16 }],
+			destinations: [{ vessel: '000000000000000000000020', volume: 80, proof: 16, stage: 'Stripping Run' }],
+			loss: { volume: 0, proof: 0, reasonCode: 'no_loss' },
+		};
+		expect(() => validateInvariants(input, computeTotals(input))).toThrow(/INVALID_EFFECTIVE_VOLUME|effectiveVolume/i);
+	});
+
+	it('rejects negative effectiveVolume', () => {
+		const input: TransferInput = {
+			type: 'vessel_move',
+			batch: '000000000000000000000001',
+			fromStage: 'Stripping Run',
+			toStage: 'Stripping Run',
+			sources: [{ vessel: '000000000000000000000010', volume: 100, effectiveVolume: -10, proof: 16 }],
+			destinations: [{ vessel: '000000000000000000000020', volume: 100, proof: 16, stage: 'Stripping Run' }],
+			loss: { volume: 0, proof: 0, reasonCode: 'no_loss' },
+		};
+		expect(() => validateInvariants(input, computeTotals(input))).toThrow();
+	});
+
+	it('source effectiveVolume only: PG mismatch surfaces when dest is uncorrected (the bug we are fixing in real flow)', () => {
+		// This is the case BEFORE the destination side gets symmetric correction.
+		// It should fail PG balance (12.8 vs 16) — proving the validator is
+		// engaged when only one side is corrected.
+		const input: TransferInput = {
+			type: 'vessel_move',
+			batch: '000000000000000000000001',
+			fromStage: 'Stripping Run',
+			toStage: 'Stripping Run',
+			sources: [{ vessel: '000000000000000000000010', volume: 100, effectiveVolume: 80, proof: 16 }],
+			destinations: [{ vessel: '000000000000000000000020', volume: 100, proof: 16, stage: 'Stripping Run' }],
+			loss: { volume: 0, proof: 0, reasonCode: 'no_loss' },
+		};
+		expect(() => validateInvariants(input, computeTotals(input))).toThrow(/PG reconciliation failed/i);
+	});
+});
+
 describe('TransferEngineError', () => {
 	it('carries code, status, and details', () => {
 		const err = new TransferEngineError('TEST_CODE', 'test message', 418, { foo: 'bar' });

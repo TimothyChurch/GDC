@@ -68,6 +68,11 @@ export interface DistillingRun {
 	chargeVolume?: number;
 	chargeVolumeUnit?: string;
 	chargeAbv?: number;
+	/** Post grain-in correction charge volume. Only set when the source batch
+	 * is grain-in pre-distillation. PG = chargeEffectiveVolume × chargeAbv × 2
+	 * / 100 when set, otherwise PG = chargeVolume × chargeAbv × 2 / 100. */
+	chargeEffectiveVolume?: number;
+	chargeEffectiveVolumeUnit?: string;
 	chargeSourceVessel?: string;
 	chargeSourceVessels?: string[];
 	additions?: DistillingAddition[];

@@ -1,6 +1,7 @@
 <script setup lang="ts">
-import type { DistillingAddition } from '~/types'
+import type { DistillingAddition, MashingStage } from '~/types'
 import { convertUnitRatio } from '~/utils/conversions'
+import { calcGrainDisplacement, getEffectiveLiquidVolume, type ExtractType } from '~/utils/grainBill'
 
 interface VesselCharge {
   vesselId: string
@@ -33,12 +34,81 @@ const emit = defineEmits<{
 }>()
 
 const vesselStore = useVesselStore()
+const batchStore = useBatchStore()
+const recipeStore = useRecipeStore()
+const itemStore = useItemStore()
 
 // Form state
 const stillId = ref('')
 const chargeVolumeUnit = ref('gallon')
 const runType = ref<'stripping' | 'spirit'>(props.defaultRunType || 'stripping')
 const additions = ref<DistillingAddition[]>([])
+
+// ─── Grain-in context ─────────────────────────────────────────────────────
+// When the batch is grain-in AND we're charging into a stripping run, the
+// fermenter's bulk volume includes grain displacement. Show the operator a
+// hint with the effective (liquid) volume next to each source so they
+// understand the PG math reflected on the Transfer record.
+const batch = computed(() => batchStore.items.find(b => b._id === props.batchId))
+const recipe = computed(() => {
+  const b = batch.value
+  if (!b?.recipe) return null
+  return recipeStore.getRecipeById(b.recipe as any) || null
+})
+const effectiveGrainIn = computed<boolean>(() => {
+  const b = batch.value
+  const batchOverride = (b?.stages?.mashing as MashingStage | undefined)?.grainIn
+  if (typeof batchOverride === 'boolean') return batchOverride
+  return !!recipe.value?.grainIn
+})
+const totalGrainDisplacementGal = computed(() => {
+  const r = recipe.value
+  if (!r?.items?.length) return 0
+  const lookup = new Map<string, any>()
+  for (const it of itemStore.items as any[]) {
+    lookup.set(String(it._id), {
+      extractType: it.extractType as ExtractType | undefined,
+      fermentable: it.fermentable,
+      displacement: it.displacement,
+    })
+  }
+  return calcGrainDisplacement(
+    r.items.map((i: any) => ({ _id: String(i._id), amount: i.amount, unit: i.unit })),
+    lookup,
+  )
+})
+const totalBatchBulkGal = computed(() => {
+  let sum = 0
+  for (const v of vesselStore.items as any[]) {
+    for (const c of (v.contents || [])) {
+      if (String(c.batch) === String(props.batchId)) sum += Number(c.volume) || 0
+    }
+  }
+  return sum
+})
+/** True when grain-in correction is meaningful for the current charge: batch
+ * is grain-in, recipe has fermentable items with displacement, AND we're
+ * charging into a stripping run (post-stripping is already pure liquid). */
+const grainInCorrectionActive = computed(() => {
+  return (
+    effectiveGrainIn.value
+    && totalGrainDisplacementGal.value > 0
+    && runType.value === 'stripping'
+  )
+})
+/** Effective liquid volume (gal, in chargeVolumeUnit) for a per-vessel entry,
+ *  pro-rated by the vessel's share of total batch bulk. */
+const effectiveVolumeForVessel = (vesselId: string, enteredVolInUnit: number): number => {
+  if (!grainInCorrectionActive.value || enteredVolInUnit <= 0) return enteredVolInUnit
+  // Convert entered volume → gallons → apply correction → back to display unit
+  const ratioToGal = convertUnitRatio(chargeVolumeUnit.value, 'gallon')
+  const enteredGal = enteredVolInUnit * ratioToGal
+  const baseBulkGal = totalBatchBulkGal.value > 0 ? totalBatchBulkGal.value : enteredGal
+  const share = Math.min(1, enteredGal / baseBulkGal)
+  const lineDisplacementGal = totalGrainDisplacementGal.value * share
+  const effGal = getEffectiveLiquidVolume(enteredGal, lineDisplacementGal, true)
+  return effGal / ratioToGal // back to display unit
+}
 
 // Per-vessel charge volumes (vesselId -> volume in chargeVolumeUnit)
 const vesselVolumes = ref<Record<string, number | undefined>>({})
@@ -256,6 +326,14 @@ const submit = () => {
                   />
                 </div>
               </div>
+              <!-- Grain-in correction hint -->
+              <div
+                v-if="grainInCorrectionActive && (vesselVolumes[vessel.id] || 0) > 0"
+                class="mt-1.5 text-xs text-parchment/60 italic"
+              >
+                ~{{ effectiveVolumeForVessel(vessel.id, vesselVolumes[vessel.id] || 0).toFixed(2) }}
+                {{ chargeVolumeUnit }} effective (grain displacement subtracted)
+              </div>
             </div>
           </div>
 
@@ -270,6 +348,16 @@ const submit = () => {
             </div>
             <div v-if="enabledVesselIds.length > 1" class="text-xs text-parchment/50 mt-0.5">
               from {{ enabledVesselIds.length }} vessels
+            </div>
+            <div
+              v-if="grainInCorrectionActive"
+              class="text-xs text-amber-300/80 mt-1 flex items-start gap-1"
+            >
+              <UIcon name="i-lucide-info" class="mt-0.5 shrink-0" />
+              <span>
+                Volume includes grain displacement. PG is computed from effective
+                liquid volume on the Transfer record.
+              </span>
             </div>
           </div>
         </div>

@@ -217,6 +217,143 @@ describe('buildChargeTransferInput — empty/edge cases', () => {
 	});
 });
 
+describe('buildChargeTransferInput — grain-in correction', () => {
+	// Worked example from PLAN: 100 gal fermenter, 8% ABV, 20 gal grain
+	// displacement (e.g. 200 lb malted barley × 0.10 gal/lb). Without
+	// correction, source PG = 100 × 16 / 100 = 16. With correction,
+	// source PG = 80 × 16 / 100 = 12.8 — a 20% reduction reflecting the
+	// liquid that actually carries the alcohol.
+
+	it('stamps effectiveVolume on each source when grain-in context is provided', () => {
+		const input = buildChargeTransferInput({
+			batchId: BATCH,
+			stage: 'Stripping Run',
+			stillId: STILL,
+			chargeAbv: 8,
+			chargeSources: [
+				{ vesselId: FERMENTER, volume: 100, volumeUnit: 'gallon' },
+			],
+			grainIn: { totalDisplacementGal: 20, totalBulkGal: 100 },
+		});
+
+		expect(input.sources).toHaveLength(1);
+		expect(input.sources[0]!.volume).toBe(100);
+		expect(input.sources[0]!.effectiveVolume).toBeCloseTo(80, 4);
+		expect(input.sources[0]!.proof).toBe(16);
+	});
+
+	it('mirrors source effectiveVolume on the destination so PG balances', () => {
+		const input = buildChargeTransferInput({
+			batchId: BATCH,
+			stage: 'Stripping Run',
+			stillId: STILL,
+			chargeAbv: 8,
+			chargeSources: [
+				{ vesselId: FERMENTER, volume: 100, volumeUnit: 'gallon' },
+			],
+			grainIn: { totalDisplacementGal: 20, totalBulkGal: 100 },
+		});
+
+		expect(input.destinations[0]!.volume).toBe(100);
+		expect(input.destinations[0]!.effectiveVolume).toBeCloseTo(80, 4);
+		// PG balance: source 12.8 == dest 12.8
+		const totals = computeTotals(input);
+		expect(totals.sourcePG).toBeCloseTo(12.8, 4);
+		expect(totals.destPG).toBeCloseTo(12.8, 4);
+		expect(() => validateInvariants(input, totals)).not.toThrow();
+	});
+
+	it('grain-out batch (no grainIn ctx) leaves effectiveVolume undefined — PG matches pre-fix bulk math', () => {
+		const input = buildChargeTransferInput({
+			batchId: BATCH,
+			stage: 'Stripping Run',
+			stillId: STILL,
+			chargeAbv: 8,
+			chargeSources: [
+				{ vesselId: FERMENTER, volume: 100, volumeUnit: 'gallon' },
+			],
+		});
+		expect(input.sources[0]!.effectiveVolume).toBeUndefined();
+		expect(input.destinations[0]!.effectiveVolume).toBeUndefined();
+		const totals = computeTotals(input);
+		expect(totals.sourcePG).toBe(16);
+		expect(totals.destPG).toBe(16);
+	});
+
+	it('Spirit Run is downstream of grain — skip correction even if grainIn ctx supplied', () => {
+		// The wash has been stripped already; bulk volume is pure liquid.
+		const input = buildChargeTransferInput({
+			batchId: BATCH,
+			stage: 'Spirit Run',
+			stillId: STILL,
+			chargeAbv: 30,
+			chargeSources: [
+				{ vesselId: FERMENTER, volume: 30, volumeUnit: 'gallon' },
+			],
+			grainIn: { totalDisplacementGal: 20, totalBulkGal: 30 },
+		});
+		expect(input.sources[0]!.effectiveVolume).toBeUndefined();
+		expect(input.destinations[0]!.effectiveVolume).toBeUndefined();
+	});
+
+	it('zero displacement (e.g. all sugar-based recipe) skips correction', () => {
+		const input = buildChargeTransferInput({
+			batchId: BATCH,
+			stage: 'Stripping Run',
+			stillId: STILL,
+			chargeAbv: 8,
+			chargeSources: [
+				{ vesselId: FERMENTER, volume: 100, volumeUnit: 'gallon' },
+			],
+			grainIn: { totalDisplacementGal: 0, totalBulkGal: 100 },
+		});
+		expect(input.sources[0]!.effectiveVolume).toBeUndefined();
+		expect(input.destinations[0]!.effectiveVolume).toBeUndefined();
+	});
+
+	it('partial draw pro-rates displacement by bulk share', () => {
+		// 50 gal drawn from a 100 gal batch with 20 gal total displacement →
+		// share = 0.5 → line displacement = 10 → effective = 40
+		const input = buildChargeTransferInput({
+			batchId: BATCH,
+			stage: 'Stripping Run',
+			stillId: STILL,
+			chargeAbv: 8,
+			chargeSources: [
+				{ vesselId: FERMENTER, volume: 50, volumeUnit: 'gallon' },
+			],
+			grainIn: { totalDisplacementGal: 20, totalBulkGal: 100 },
+		});
+		expect(input.sources[0]!.effectiveVolume).toBeCloseTo(40, 4);
+		expect(input.destinations[0]!.effectiveVolume).toBeCloseTo(40, 4);
+	});
+
+	it('additions (feints) are NOT corrected — pure liquid from a tank', () => {
+		const input = buildChargeTransferInput({
+			batchId: BATCH,
+			stage: 'Stripping Run',
+			stillId: STILL,
+			chargeAbv: 8,
+			chargeSources: [
+				{ vesselId: FERMENTER, volume: 100, volumeUnit: 'gallon' },
+			],
+			additions: [
+				{ sourceVessel: FEINTS_VESSEL, volume: 10, volumeUnit: 'gallon', abv: 30 },
+			],
+			grainIn: { totalDisplacementGal: 20, totalBulkGal: 100 },
+		});
+		expect(input.sources).toHaveLength(2);
+		// Charge source corrected; feints addition NOT corrected.
+		expect(input.sources[0]!.effectiveVolume).toBeCloseTo(80, 4);
+		expect(input.sources[1]!.effectiveVolume).toBeUndefined();
+		// PG balance: 80*16/100 + 10*60/100 = 12.8 + 6 = 18.8 = dest effective × dest proof / 100
+		const totals = computeTotals(input);
+		expect(totals.sourcePG).toBeCloseTo(18.8, 4);
+		expect(totals.destPG).toBeCloseTo(18.8, 4);
+		expect(() => validateInvariants(input, totals)).not.toThrow();
+	});
+});
+
 describe('buildChargeTransferInput — TTB account routing', () => {
 	it('routes Stripping Run as production → production', () => {
 		const input = buildChargeTransferInput({

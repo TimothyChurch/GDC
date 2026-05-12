@@ -43,8 +43,14 @@ const gaugingSubSchema = {
 
 const sourceSubSchema = {
 	vessel: { type: Schema.Types.ObjectId, ref: 'Vessel', required: true },
-	volume: { type: Number, required: true },   // wine gallons
+	volume: { type: Number, required: true },   // wine gallons — bulk volume reported by operator
 	proof: { type: Number, required: true },    // 2 × ABV%
+	/**
+	 * Post grain-in correction volume (WG). When set, PG is computed from this
+	 * instead of `volume`. Undefined for non-grain-in transfers — interpret as
+	 * "effective === volume". See utils/grainBill.ts getEffectiveLiquidVolume().
+	 */
+	effectiveVolume: { type: Number, default: undefined },
 	gauging: gaugingSubSchema,
 };
 
@@ -53,12 +59,18 @@ const destinationSubSchema = {
 	stage: { type: String, default: null },     // stage this dest puts the batch into
 	volume: { type: Number, required: true },
 	proof: { type: Number, required: true },
+	/** See sourceSubSchema.effectiveVolume. Set only when destination stage is
+	 * pre-distillation AND batch is grain-in (e.g. mash → fermenter transfer). */
+	effectiveVolume: { type: Number, default: undefined },
 	gauging: gaugingSubSchema,
 };
 
 const lossSubSchema = {
 	volume: { type: Number, required: true, default: 0 },
 	proof: { type: Number, default: 0 },
+	/** See sourceSubSchema.effectiveVolume. Set when the lost portion came from
+	 * a grain-in pre-distillation slot. */
+	effectiveVolume: { type: Number, default: undefined },
 	reasonCode: { type: String, enum: LOSS_REASON_VALUES, required: true },
 	notes: String,
 };

@@ -17,8 +17,12 @@ export interface TransferGauging {
 
 export interface TransferSource {
 	vessel: string;          // ObjectId of the source Vessel
-	volume: number;          // wine gallons
+	volume: number;          // wine gallons — bulk volume reported by operator
 	proof: number;           // 2 × ABV%
+	/** Post grain-in correction volume (WG). When set, PG = effectiveVolume ×
+	 * proof / 100. Undefined means "effective === volume" (the grain-out case
+	 * or downstream-of-still where the bulk volume is already pure liquid). */
+	effectiveVolume?: number;
 	gauging?: TransferGauging;
 }
 
@@ -27,12 +31,16 @@ export interface TransferDestination {
 	stage?: string | null;   // stage this dest puts the batch into
 	volume: number;
 	proof: number;
+	/** See TransferSource.effectiveVolume. */
+	effectiveVolume?: number;
 	gauging?: TransferGauging;
 }
 
 export interface TransferLoss {
 	volume: number;          // wine gallons; ≥ 0
 	proof?: number;          // proof of the lost portion
+	/** See TransferSource.effectiveVolume. */
+	effectiveVolume?: number;
 	reasonCode: LossReasonCode;
 	notes?: string;
 }

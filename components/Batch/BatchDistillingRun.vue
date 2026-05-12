@@ -328,7 +328,10 @@ const formatDate = (d?: Date | string) => {
 const summaryCharge = computed(() => {
   const r = props.run
   if (!r.chargeVolume) return ''
-  return `${r.chargeVolume} ${r.chargeVolumeUnit || 'gal'} @ ${r.chargeAbv || 0}% ABV`
+  const eff = (typeof r.chargeEffectiveVolume === 'number' && r.chargeEffectiveVolume < r.chargeVolume)
+    ? ` (~${r.chargeEffectiveVolume.toFixed(2)} eff)`
+    : ''
+  return `${r.chargeVolume} ${r.chargeVolumeUnit || 'gal'}${eff} @ ${r.chargeAbv || 0}% ABV`
 })
 
 const summaryProofGallons = computed(() => {
@@ -590,7 +593,15 @@ const summaryProofGallons = computed(() => {
         <div class="text-xs text-parchment/60 uppercase tracking-wider mb-1">Charge</div>
         <div class="text-sm text-parchment">
           <template v-if="run.chargeVolume">
-            {{ run.chargeVolume }} {{ run.chargeVolumeUnit || 'gallon' }} @ {{ run.chargeAbv || 0 }}% ABV
+            {{ run.chargeVolume }} {{ run.chargeVolumeUnit || 'gallon' }}
+            <span
+              v-if="typeof run.chargeEffectiveVolume === 'number' && run.chargeEffectiveVolume < (run.chargeVolume || 0)"
+              class="text-parchment/50"
+              :title="'Grain-in correction: liquid volume after subtracting grain displacement'"
+            >
+              (~{{ run.chargeEffectiveVolume.toFixed(2) }} {{ run.chargeEffectiveVolumeUnit || 'gal' }} effective)
+            </span>
+            @ {{ run.chargeAbv || 0 }}% ABV
             <span v-if="run.chargeSourceVessels?.length" class="text-parchment/50">
               (from {{ run.chargeSourceVessels.map(id => getVesselName(id)).join(', ') }})
             </span>

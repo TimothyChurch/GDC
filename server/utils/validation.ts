@@ -477,6 +477,7 @@ const transferSourceSchema = yup.object({
   vessel: yup.string().required("Source vessel is required"),
   volume: yup.number().min(0, "Volume cannot be negative").required("Source volume is required"),
   proof: yup.number().min(0, "Proof cannot be negative").max(200, "Proof cannot exceed 200").required("Source proof is required"),
+  effectiveVolume: yup.number().min(0, "Effective volume cannot be negative").optional(),
   gauging: gaugingSchema.optional(),
 });
 
@@ -485,12 +486,14 @@ const transferDestinationSchema = yup.object({
   stage: yup.string().nullable().optional(),
   volume: yup.number().min(0, "Volume cannot be negative").required("Destination volume is required"),
   proof: yup.number().min(0).max(200, "Proof cannot exceed 200").required("Destination proof is required"),
+  effectiveVolume: yup.number().min(0, "Effective volume cannot be negative").optional(),
   gauging: gaugingSchema.optional(),
 });
 
 const transferLossSchema = yup.object({
   volume: yup.number().min(0, "Loss volume cannot be negative").required("Loss volume is required (0 if no loss)"),
   proof: yup.number().min(0).max(200).optional(),
+  effectiveVolume: yup.number().min(0, "Effective volume cannot be negative").optional(),
   reasonCode: yup.string().oneOf([...LOSS_REASON_CODES]).required("Loss reason code is required"),
   notes: yup.string().nullable().optional(),
 }).required("Loss line is required (use reasonCode='no_loss' if zero)");

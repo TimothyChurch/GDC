@@ -115,6 +115,12 @@ export const Batch = defineMongooseModel({
 					chargeVolume: Number,
 					chargeVolumeUnit: String,
 					chargeAbv: Number,
+					/** Post grain-in correction charge volume (gal). Only set
+					 * when the source batch is grain-in pre-distillation, so the
+					 * operator-visible chargeVolume (bulk, including grain bed)
+					 * can be reconciled against the PG-bearing liquid volume. */
+					chargeEffectiveVolume: Number,
+					chargeEffectiveVolumeUnit: String,
 					chargeSourceVessel: String,
 					chargeSourceVessels: [String],
 					additions: [{
@@ -153,6 +159,9 @@ export const Batch = defineMongooseModel({
 					chargeVolume: Number,
 					chargeVolumeUnit: String,
 					chargeAbv: Number,
+					/** See strippingRun.runs.chargeEffectiveVolume. */
+					chargeEffectiveVolume: Number,
+					chargeEffectiveVolumeUnit: String,
 					chargeSourceVessel: String,
 					chargeSourceVessels: [String],
 					additions: [{
@@ -189,6 +198,9 @@ export const Batch = defineMongooseModel({
 					chargeVolume: Number,
 					chargeVolumeUnit: String,
 					chargeAbv: Number,
+					/** See strippingRun.runs.chargeEffectiveVolume. */
+					chargeEffectiveVolume: Number,
+					chargeEffectiveVolumeUnit: String,
 					chargeSourceVessel: String,
 					chargeSourceVessels: [String],
 					additions: [{

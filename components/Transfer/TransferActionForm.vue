@@ -191,6 +191,7 @@ onMounted(() => {
 								:index="i"
 								:allow-remove="form.sources.value.length > 0"
 								:allowed-types="sourceAllowedTypes"
+								:from-stage="form.fromStage.value"
 								@update="(patch) => form.updateSource(i, patch)"
 								@remove="form.removeSource(i)"
 							/>

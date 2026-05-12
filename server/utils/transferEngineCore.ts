@@ -43,6 +43,19 @@ export interface Totals {
 	lossPG: number;
 }
 
+/**
+ * Volume to use for PG calculation. When the caller has supplied an
+ * `effectiveVolume` (the grain-in-corrected liquid volume), that takes
+ * precedence over the bulk `volume` field. Undefined / non-finite falls back
+ * to the bulk volume, which keeps grain-out and downstream transfers
+ * mathematically identical to the pre-grain-in-correction behavior.
+ */
+function pgVolume(line: { volume?: number; effectiveVolume?: number }): number {
+	const ev = line.effectiveVolume;
+	if (typeof ev === 'number' && Number.isFinite(ev) && ev >= 0) return ev;
+	return line.volume || 0;
+}
+
 export function computeTotals(input: TransferInput): Totals {
 	let totalSourceVolume = 0;
 	let totalDestVolume = 0;
@@ -52,15 +65,17 @@ export function computeTotals(input: TransferInput): Totals {
 	let lossPG = 0;
 
 	for (const s of input.sources) {
+		// Wine-gallon totals track BULK volume (vessel slot decrement uses bulk).
 		totalSourceVolume += s.volume || 0;
-		sourcePG += proofGallons(s.volume || 0, s.proof || 0);
+		// PG is computed from the effective liquid volume when supplied.
+		sourcePG += proofGallons(pgVolume(s), s.proof || 0);
 	}
 	for (const d of input.destinations) {
 		totalDestVolume += d.volume || 0;
-		destPG += proofGallons(d.volume || 0, d.proof || 0);
+		destPG += proofGallons(pgVolume(d), d.proof || 0);
 	}
 	if (input.loss) {
-		lossPG = proofGallons(totalLossVolume, input.loss.proof || 0);
+		lossPG = proofGallons(pgVolume(input.loss), input.loss.proof || 0);
 	}
 
 	return {
@@ -143,12 +158,45 @@ export function validateInvariants(input: TransferInput, totals: Totals): void {
 	for (const s of input.sources) {
 		if (s.volume < 0) throw new TransferEngineError('NEGATIVE_VOLUME', 'Source volume cannot be negative');
 		if (s.proof < 0 || s.proof > 200) throw new TransferEngineError('INVALID_PROOF', `Source proof must be 0–200, got ${s.proof}`);
+		if (typeof s.effectiveVolume === 'number') {
+			if (s.effectiveVolume < 0) {
+				throw new TransferEngineError('NEGATIVE_VOLUME', 'Source effectiveVolume cannot be negative');
+			}
+			if (s.effectiveVolume > s.volume + RECONCILIATION_EPSILON) {
+				throw new TransferEngineError(
+					'INVALID_EFFECTIVE_VOLUME',
+					`Source effectiveVolume ${s.effectiveVolume} cannot exceed bulk volume ${s.volume}`,
+				);
+			}
+		}
 	}
 	for (const d of input.destinations) {
 		if (d.volume < 0) throw new TransferEngineError('NEGATIVE_VOLUME', 'Destination volume cannot be negative');
 		if (d.proof < 0 || d.proof > 200) throw new TransferEngineError('INVALID_PROOF', `Destination proof must be 0–200, got ${d.proof}`);
+		if (typeof d.effectiveVolume === 'number') {
+			if (d.effectiveVolume < 0) {
+				throw new TransferEngineError('NEGATIVE_VOLUME', 'Destination effectiveVolume cannot be negative');
+			}
+			if (d.effectiveVolume > d.volume + RECONCILIATION_EPSILON) {
+				throw new TransferEngineError(
+					'INVALID_EFFECTIVE_VOLUME',
+					`Destination effectiveVolume ${d.effectiveVolume} cannot exceed bulk volume ${d.volume}`,
+				);
+			}
+		}
 	}
 	if (input.loss.volume < 0) throw new TransferEngineError('NEGATIVE_VOLUME', 'Loss volume cannot be negative');
+	if (typeof input.loss.effectiveVolume === 'number') {
+		if (input.loss.effectiveVolume < 0) {
+			throw new TransferEngineError('NEGATIVE_VOLUME', 'Loss effectiveVolume cannot be negative');
+		}
+		if (input.loss.effectiveVolume > input.loss.volume + RECONCILIATION_EPSILON) {
+			throw new TransferEngineError(
+				'INVALID_EFFECTIVE_VOLUME',
+				`Loss effectiveVolume ${input.loss.effectiveVolume} cannot exceed bulk loss volume ${input.loss.volume}`,
+			);
+		}
+	}
 
 	// 4. Loss-line / reasonCode consistency
 	if (input.loss.volume > 0 && input.loss.reasonCode === 'no_loss') {

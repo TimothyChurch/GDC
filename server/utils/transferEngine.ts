@@ -20,6 +20,7 @@ import {
 	TransferEngineError,
 	type Totals,
 } from './transferEngineCore';
+import { applyGrainInCorrection } from './grainInCorrection';
 
 /**
  * The Transfer Engine — single atomic primitive for moving liquid.
@@ -288,7 +289,12 @@ async function applyTransferToBatch(
 			if (!toStage) continue;
 			const existing = stageInflow.get(toStage) || { volume: 0, pg: 0 };
 			existing.volume += d.volume;
-			existing.pg += proofGallons(d.volume, d.proof);
+			// PG uses effectiveVolume when supplied so grain-in destinations
+			// (e.g. mash → fermenter) don't overstate the receiving stage's PG.
+			const ev = (typeof d.effectiveVolume === 'number' && Number.isFinite(d.effectiveVolume))
+				? d.effectiveVolume
+				: d.volume;
+			existing.pg += proofGallons(ev, d.proof);
 			stageInflow.set(toStage, existing);
 		}
 	}
@@ -380,10 +386,6 @@ export async function executeTransfer(
 	input: TransferInput,
 	options: ExecuteTransferOptions = {},
 ): Promise<ExecuteTransferResult> {
-	// 1. Compute and validate
-	const totals = computeTotals(input);
-	validateInvariants(input, totals);
-
 	const period = options.reportingPeriod || getCurrentReportingPeriod();
 	const ownsSession = !options.session;
 	const session = options.session || (await mongoose.startSession());
@@ -393,12 +395,26 @@ export async function executeTransfer(
 	try {
 		if (ownsSession) {
 			await session.withTransaction(async () => {
+				// 1. Server-side grain-in correction: stamp effectiveVolume on any
+				// source/dest/loss line that needs it (pre-distillation grain-in
+				// batches). No-op when the batch is grain-out or stages are
+				// downstream of the stripping run. Safe to call even if the
+				// caller already provided effectiveVolume — won't overwrite.
+				await applyGrainInCorrection(input, session);
+
+				// 2. Compute and validate (uses effectiveVolume for PG when set)
+				const totals = computeTotals(input);
+				validateInvariants(input, totals);
+
 				result = await executeWithSession(input, totals, period, options, session);
 			}, {
 				readConcern: { level: 'snapshot' },
 				writeConcern: { w: 'majority' },
 			});
 		} else {
+			await applyGrainInCorrection(input, session);
+			const totals = computeTotals(input);
+			validateInvariants(input, totals);
 			result = await executeWithSession(input, totals, period, options, session);
 		}
 	} finally {
@@ -571,6 +587,8 @@ async function reverseWithSession(
 				vessel: String(d.vessel),
 				volume: d.volume,
 				proof: d.proof,
+				// Preserve grain-in correction on reversal so PG balances symmetrically.
+				...(typeof d.effectiveVolume === 'number' ? { effectiveVolume: d.effectiveVolume } : {}),
 				gauging: d.gauging,
 			})),
 		destinations: (original.sources as any[]).map(s => ({
@@ -578,6 +596,7 @@ async function reverseWithSession(
 			stage: original.fromStage ?? null,
 			volume: s.volume,
 			proof: s.proof,
+			...(typeof s.effectiveVolume === 'number' ? { effectiveVolume: s.effectiveVolume } : {}),
 			gauging: s.gauging,
 		})),
 		loss: {

@@ -132,7 +132,7 @@ const addRun = async (defaultRunType: 'stripping' | 'spirit') => {
 
   addingRun.value = true
   try {
-    const { sourceVesselIds: sourceVessels } = await applyChargeResult({
+    const { sourceVesselIds: sourceVessels, chargeEffectiveVolume, chargeEffectiveVolumeUnit } = await applyChargeResult({
       batchId: props.batch._id,
       stage: 'Distilling',
       result,
@@ -146,6 +146,7 @@ const addRun = async (defaultRunType: 'stripping' | 'spirit') => {
       chargeVolume: result.chargeVolume,
       chargeVolumeUnit: result.chargeVolumeUnit,
       chargeAbv: result.chargeAbv,
+      ...(typeof chargeEffectiveVolume === 'number' ? { chargeEffectiveVolume, chargeEffectiveVolumeUnit } : {}),
       chargeSourceVessel: sourceVessels[0] || '',
       chargeSourceVessels: sourceVessels,
       additions: result.additions.length > 0 ? result.additions : undefined,

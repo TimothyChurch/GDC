@@ -1,0 +1,2 @@
+- [Transfer effectiveVolume field](project_transfer_effective_volume.md) — added 2026-05-12 for grain-in PG correction on the transfer/still-charge path
+- [Grain-in correction layer split](feedback_grainin_layer_split.md) — server derives via grainInCorrection.ts, client supplies via useStillCharge for hint sync
