@@ -1,1 +1,0 @@
-function n(t){if(t&&typeof t=="object"){const s=t,e=s.data;if(e){if(typeof e.statusMessage=="string")return e.statusMessage;if(typeof e.message=="string")return e.message}if(typeof s.message=="string")return s.message}return typeof t=="string"?t:"Unknown error"}export{n as g};

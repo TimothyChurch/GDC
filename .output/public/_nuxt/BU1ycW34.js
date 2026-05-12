@@ -1,1 +1,0 @@
-import{c as r}from"./DDFOTKQC.js";function a(n,o){if(!o||o==="gallon"||o==="gal")return n;const t=r(o,"gallon");return n*t}function s(n,o,t){return!n||!t?0:+(a(n,o)*t/50).toFixed(4)}export{s as c,a as t};
