@@ -69,6 +69,16 @@ const bypassReason = computed(() => {
 
 const sourceVesselIds = computed(() => form.sources.value.map(s => s.vessel).filter(Boolean));
 
+// Transfer types whose destinations may legitimately omit a vessel. Mirrors
+// server/utils/transferEngineCore.ts NULL_DEST_VESSEL_ALLOWED.
+const NULL_DEST_VESSEL_ALLOWED = new Set([
+	'destruction',
+	'tax_paid_withdrawal',
+	'sample',
+	'tib_out',
+]);
+const destVesselRequired = computed(() => !NULL_DEST_VESSEL_ALLOWED.has(form.type.value));
+
 // Restrict the source vessel picker to the type required by the source stage.
 // e.g., from 'Stripping Run' → only Stills appear (not the Fermenter that may
 // still hold residual wash from a partial draw earlier in the pipeline).
@@ -226,6 +236,7 @@ onMounted(() => {
 								:default-stage="form.toStage.value"
 								:allow-remove="form.destinations.value.length > 0"
 								:exclude-vessel-id="sourceVesselIds[0]"
+								:vessel-required="destVesselRequired"
 								@update="(patch) => form.updateDestination(i, patch)"
 								@remove="form.removeDestination(i)"
 							/>

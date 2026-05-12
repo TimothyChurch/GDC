@@ -91,6 +91,19 @@ export function computeTotals(input: TransferInput): Totals {
 // ─── Validation ───────────────────────────────────────────────────────────────
 
 /**
+ * Transfer types whose destinations are intentionally virtual (no real vessel).
+ * For every other type, each destination must reference an actual Vessel — a
+ * missing vessel is a UX bug, not a withdrawal, and would leave the liquid
+ * unaccounted for in the warehouse.
+ */
+const NULL_DEST_VESSEL_ALLOWED: ReadonlySet<string> = new Set([
+	'destruction',
+	'tax_paid_withdrawal',
+	'sample',
+	'tib_out',
+]);
+
+/**
  * Some transfer types create or destroy liquid rather than move it:
  *   - `tib_in` and `stage_transition` from `Upcoming`: liquid enters the system
  *   - `tib_out` to an external DSP: leaves our books
@@ -138,6 +151,34 @@ export function validateInvariants(input: TransferInput, totals: Totals): void {
 	// 1. Structural: at least one source or destination
 	if (input.sources.length === 0 && input.destinations.length === 0) {
 		throw new TransferEngineError('EMPTY_TRANSFER', 'Transfer must have at least one source or destination');
+	}
+
+	// 1a. Destinations must reference a vessel unless the transfer type
+	// legitimately has a virtual destination (destruction/withdrawal/sample/tib_out).
+	if (!NULL_DEST_VESSEL_ALLOWED.has(input.type)) {
+		for (let i = 0; i < input.destinations.length; i++) {
+			if (!input.destinations[i].vessel) {
+				throw new TransferEngineError(
+					'MISSING_DESTINATION_VESSEL',
+					`Destination #${i + 1} requires a vessel for transfer type "${input.type}". Select a vessel before submitting.`,
+					400,
+				);
+			}
+		}
+	}
+
+	// 1b. Sources without vessels are only allowed on reversal transfers — they
+	// mirror the original (virtual) destination of a destruction/withdrawal/sample/tib_out.
+	if (input.type !== 'reversal') {
+		for (let i = 0; i < input.sources.length; i++) {
+			if (!input.sources[i].vessel) {
+				throw new TransferEngineError(
+					'MISSING_SOURCE_VESSEL',
+					`Source #${i + 1} requires a vessel for transfer type "${input.type}".`,
+					400,
+				);
+			}
+		}
 	}
 
 	// 2. Loss line presence + reasonCode

@@ -9,7 +9,11 @@ const props = withDefaults(defineProps<{
 	defaultStage?: string | null;
 	allowRemove?: boolean;
 	excludeVesselId?: string;
-}>(), {});
+	/** When true the card shows a required-vessel error state. Set by the parent
+	 *  for transfer types where the destination must reference a real vessel
+	 *  (everything except destruction/withdrawal/sample/tib_out). */
+	vesselRequired?: boolean;
+}>(), { vesselRequired: false });
 
 const emit = defineEmits<{
 	update: [Partial<TransferDestination>];
@@ -52,10 +56,12 @@ const destVolume = computed({
 	get: () => props.dest.volume,
 	set: (v: number | null) => emit('update', { volume: v ?? 0 }),
 });
+
+const vesselMissing = computed(() => props.vesselRequired && !props.dest.vessel);
 </script>
 
 <template>
-	<UCard variant="subtle" class="border" :class="capacityHint?.wouldExceed ? 'border-warning/60' : 'border-default/40'">
+	<UCard variant="subtle" class="border" :class="vesselMissing ? 'border-error/60' : capacityHint?.wouldExceed ? 'border-warning/60' : 'border-default/40'">
 		<template #header>
 			<div class="flex items-center justify-between">
 				<div class="flex items-center gap-2">
@@ -74,7 +80,12 @@ const destVolume = computed({
 		</template>
 
 		<div class="space-y-3">
-			<UFormField label="Vessel" :name="`destinations.${index}.vessel`">
+			<UFormField
+				label="Vessel"
+				:name="`destinations.${index}.vessel`"
+				:error="vesselMissing ? 'Destination vessel is required' : undefined"
+				:required="vesselRequired"
+			>
 				<TransferVesselPicker
 					mode="destination"
 					:allowed-types="allowedTypes"

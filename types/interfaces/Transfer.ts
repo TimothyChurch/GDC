@@ -16,7 +16,14 @@ export interface TransferGauging {
 }
 
 export interface TransferSource {
-	vessel: string;          // ObjectId of the source Vessel
+	/**
+	 * ObjectId of the source Vessel. May be null for the source side of a
+	 * reversal transfer when the original destination was virtual (a
+	 * destruction, tax-paid withdrawal, sample, or tib_out). The engine skips
+	 * vessel-slot decrement for null-vessel sources but still uses their
+	 * volume/proof for batch-cache math.
+	 */
+	vessel: string | null;
 	volume: number;          // wine gallons — bulk volume reported by operator
 	proof: number;           // 2 × ABV%
 	/** Post grain-in correction volume (WG). When set, PG = effectiveVolume ×

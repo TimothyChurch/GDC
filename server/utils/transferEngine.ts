@@ -267,10 +267,15 @@ async function applyTransferToBatch(
 		if (newVol <= RECONCILIATION_EPSILON) {
 			stageVolumes.delete(input.fromStage);
 			stageProofs.delete(input.fromStage);
-			// Mark stage completed
 			const stageKey = stageKeyFor(input.fromStage);
 			if (stageKey && (batch.stages as any)?.[stageKey]) {
-				(batch.stages as any)[stageKey].completedAt = new Date();
+				if (transferType === 'reversal') {
+					// We're reverting out of this stage, not finishing it. Clear
+					// any prior completedAt so the UI doesn't show a stale checkmark.
+					delete (batch.stages as any)[stageKey].completedAt;
+				} else {
+					(batch.stages as any)[stageKey].completedAt = new Date();
+				}
 			}
 		} else {
 			stageVolumes.set(input.fromStage, newVol);
@@ -318,11 +323,36 @@ async function applyTransferToBatch(
 		}
 	}
 
-	// Update currentStage if a destination is further in pipeline
-	if (input.toStage && batch.pipeline) {
-		const toIdx = (batch.pipeline as string[]).indexOf(input.toStage);
-		const curIdx = (batch.pipeline as string[]).indexOf(batch.currentStage);
-		if (toIdx > -1 && toIdx > curIdx) {
+	// Update currentStage so it points at the most-advanced stage that still
+	// holds liquid after this transfer. Forward transfers normally advance the
+	// cursor; reversals roll it backward when the current stage is now empty.
+	if (batch.pipeline) {
+		const pipeline = batch.pipeline as string[];
+		const toIdx = input.toStage ? pipeline.indexOf(input.toStage) : -1;
+		const curIdx = pipeline.indexOf(batch.currentStage);
+
+		if (transferType === 'reversal') {
+			// If the stage we just drained (input.fromStage = original.toStage)
+			// was the current cursor and is now empty, walk back to the latest
+			// non-empty pipeline stage at or before its index.
+			const drainedNow = !!input.fromStage
+				&& (stageVolumes.get(input.fromStage) || 0) <= RECONCILIATION_EPSILON;
+			if (drainedNow && batch.currentStage === input.fromStage) {
+				let resolved: string | null = null;
+				for (let i = curIdx; i >= 0; i--) {
+					const s = pipeline[i];
+					const v = stageVolumes.get(s) || 0;
+					if (v > RECONCILIATION_EPSILON) { resolved = s; break; }
+				}
+				if (resolved) {
+					batch.currentStage = resolved;
+				} else if (input.toStage && toIdx > -1) {
+					// No content anywhere; fall back to the inverse destination's
+					// stage so the batch doesn't get stuck on an empty cursor.
+					batch.currentStage = input.toStage;
+				}
+			}
+		} else if (input.toStage && toIdx > -1 && toIdx > curIdx) {
 			batch.currentStage = input.toStage;
 		}
 	}
@@ -345,6 +375,14 @@ async function applyTransferToBatch(
 		const remaining = Array.from(stageVolumes.entries()).filter(([_, v]) => v > RECONCILIATION_EPSILON);
 		if (remaining.length === 0) {
 			batch.status = 'cancelled';
+		}
+	}
+
+	// Reversal that restores content should bump status back to active.
+	if (transferType === 'reversal' && batch.status !== 'active') {
+		const remaining = Array.from(stageVolumes.entries()).filter(([_, v]) => v > RECONCILIATION_EPSILON);
+		if (remaining.length > 0) {
+			batch.status = 'active';
 		}
 	}
 
@@ -469,6 +507,7 @@ async function executeWithSession(
 
 	// 5. Decrement source vessels
 	for (const src of input.sources) {
+		if (!src.vessel) continue; // null = virtual source (reversal of withdrawal/destruction/sample/tib_out)
 		await decrementVesselSlot(
 			src.vessel,
 			input.batch,
@@ -577,28 +616,30 @@ async function reverseWithSession(
 		batch: String(original.batch),
 		fromStage: original.toStage ?? null,
 		toStage: original.fromStage ?? null,
-		// Original destinations become new sources (and vice versa). For non-vessel
-		// destinations (withdrawal/destruction), we synthesize a virtual source
-		// from the loss line — but for now we only support reversing transfers
-		// that have at least one non-null vessel on each side with content.
-		sources: (original.destinations as any[])
-			.filter(d => d.vessel)
-			.map(d => ({
-				vessel: String(d.vessel),
-				volume: d.volume,
-				proof: d.proof,
-				// Preserve grain-in correction on reversal so PG balances symmetrically.
-				...(typeof d.effectiveVolume === 'number' ? { effectiveVolume: d.effectiveVolume } : {}),
-				gauging: d.gauging,
-			})),
-		destinations: (original.sources as any[]).map(s => ({
-			vessel: String(s.vessel),
-			stage: original.fromStage ?? null,
-			volume: s.volume,
-			proof: s.proof,
-			...(typeof s.effectiveVolume === 'number' ? { effectiveVolume: s.effectiveVolume } : {}),
-			gauging: s.gauging,
+		// Original destinations become new sources (and vice versa). Null-vessel
+		// destinations from the original (destruction/withdrawal/sample/tib_out,
+		// or a buggy stage_transition that was committed before the destination
+		// vessel was required) are preserved as null-vessel sources so the math
+		// balances and the batch stage cache is properly drained. The engine
+		// skips vessel-slot operations for null-vessel sources.
+		sources: (original.destinations as any[]).map(d => ({
+			vessel: d.vessel ? String(d.vessel) : null,
+			volume: d.volume,
+			proof: d.proof,
+			// Preserve grain-in correction on reversal so PG balances symmetrically.
+			...(typeof d.effectiveVolume === 'number' ? { effectiveVolume: d.effectiveVolume } : {}),
+			gauging: d.gauging,
 		})),
+		destinations: (original.sources as any[])
+			.filter(s => s.vessel) // skip phantom sources (legacy data); their slot can't be restored
+			.map(s => ({
+				vessel: String(s.vessel),
+				stage: original.fromStage ?? null,
+				volume: s.volume,
+				proof: s.proof,
+				...(typeof s.effectiveVolume === 'number' ? { effectiveVolume: s.effectiveVolume } : {}),
+				gauging: s.gauging,
+			})),
 		loss: {
 			volume: 0,
 			proof: 0,
@@ -613,24 +654,25 @@ async function reverseWithSession(
 		attachments: [],
 	};
 
-	// If the original had a non-zero loss, the reversal needs to account for that
-	// liquid coming back too. We can't physically restore lost liquid, so we
-	// synthesize an extra "virtual" destination volume equal to the original loss.
-	// This keeps invariants balanced while documenting that the reversal restores
-	// the pre-transfer state.
+	// If the original had a non-zero loss, the reversal needs to "un-lose" that
+	// volume so the source vessel(s) are restored to their pre-transfer state.
+	// We can't physically restore lost liquid, so we synthesize a virtual
+	// (null-vessel) source on the inverse equal to the original loss line.
+	// This keeps invariants balanced (source = dest + 0 loss) while documenting
+	// that the reversal undoes the original loss attestation.
 	const originalLossVolume = original.loss?.volume || 0;
+	const originalLossProof = original.loss?.proof || 0;
 	if (originalLossVolume > 0) {
-		// Distribute the original loss back to source(s) proportionally
-		const totalDest = (original.destinations as any[]).reduce((sum, d) => sum + (d.volume || 0), 0);
-		const baselineDest = (original.destinations as any[])
-			.filter(d => d.vessel)
-			.reduce((sum, d) => sum + (d.volume || 0), 0);
-		// Add the loss volume back to the first source (simple distribution).
-		// More sophisticated allocation is possible but yields no functional gain.
-		if (inverseInput.destinations.length > 0) {
-			const first = inverseInput.destinations[0];
-			first.volume = roundVolume(first.volume + originalLossVolume);
+		const phantomLossSource: any = {
+			vessel: null,
+			volume: originalLossVolume,
+			proof: originalLossProof,
+		};
+		const olEv = (original.loss as any)?.effectiveVolume;
+		if (typeof olEv === 'number' && Number.isFinite(olEv)) {
+			phantomLossSource.effectiveVolume = olEv;
 		}
+		inverseInput.sources.push(phantomLossSource);
 	}
 
 	// Execute the inverse transfer

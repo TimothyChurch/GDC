@@ -104,11 +104,27 @@ export function useTransferForm(initialState?: Partial<TransferInput>) {
 		return true;
 	});
 
+	// Transfer types whose destinations may legitimately have no vessel
+	// (mirrors server/utils/transferEngineCore.ts NULL_DEST_VESSEL_ALLOWED).
+	const NULL_DEST_VESSEL_ALLOWED = new Set([
+		'destruction',
+		'tax_paid_withdrawal',
+		'sample',
+		'tib_out',
+	]);
+
+	const destinationsValid = computed(() => {
+		if (NULL_DEST_VESSEL_ALLOWED.has(type.value)) return true;
+		if (destinations.value.length === 0) return true; // engine will reject empty when needed
+		return destinations.value.every((d) => !!d.vessel);
+	});
+
 	const canSubmit = computed(() =>
 		!!batch.value
 		&& !!type.value
 		&& balanced.value
 		&& lossLineValid.value
+		&& destinationsValid.value
 		&& (sources.value.length + destinations.value.length) > 0,
 	);
 
@@ -210,6 +226,7 @@ export function useTransferForm(initialState?: Partial<TransferInput>) {
 		isDistillationTransfer,
 		reconciliationVarianceWG,
 		lossLineValid,
+		destinationsValid,
 		canSubmit,
 
 		// Actions

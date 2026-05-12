@@ -393,6 +393,71 @@ describe('grain-in correction (effectiveVolume)', () => {
 	});
 });
 
+describe('destination vessel requirement', () => {
+	it('throws MISSING_DESTINATION_VESSEL when a stage_transition lacks a dest vessel', () => {
+		expectThrowsWithCode({
+			type: 'stage_transition',
+			batch: '000000000000000000000001',
+			fromStage: 'Fermenting',
+			toStage: 'Stripping Run',
+			sources: [{ vessel: '000000000000000000000010', volume: 100, proof: 16 }],
+			destinations: [{ vessel: null, volume: 100, proof: 16 }],
+			loss: { volume: 0, proof: 0, reasonCode: 'no_loss' },
+		}, 'MISSING_DESTINATION_VESSEL');
+	});
+
+	it('allows null destination vessel for destruction', () => {
+		const input: TransferInput = {
+			type: 'destruction',
+			batch: '000000000000000000000001',
+			fromStage: 'Storage',
+			toStage: null,
+			sources: [{ vessel: '000000000000000000000010', volume: 50, proof: 100 }],
+			destinations: [{ vessel: null, volume: 0, proof: 0 }],
+			loss: { volume: 50, proof: 100, reasonCode: 'destruction' },
+		};
+		expect(() => validateInvariants(input, computeTotals(input))).not.toThrow();
+	});
+
+	it('allows null destination vessel for tax_paid_withdrawal', () => {
+		const input: TransferInput = {
+			type: 'tax_paid_withdrawal',
+			batch: '000000000000000000000001',
+			fromStage: 'Bottled',
+			toStage: null,
+			sources: [{ vessel: '000000000000000000000010', volume: 10, proof: 80 }],
+			destinations: [{ vessel: null, volume: 10, proof: 80 }],
+			loss: { volume: 0, proof: 0, reasonCode: 'no_loss' },
+		};
+		expect(() => validateInvariants(input, computeTotals(input))).not.toThrow();
+	});
+
+	it('throws MISSING_SOURCE_VESSEL when a forward transfer lacks a source vessel', () => {
+		expectThrowsWithCode({
+			type: 'vessel_move',
+			batch: '000000000000000000000001',
+			fromStage: 'Storage',
+			toStage: 'Storage',
+			sources: [{ vessel: null, volume: 50, proof: 100 }],
+			destinations: [{ vessel: '000000000000000000000020', volume: 50, proof: 100, stage: 'Storage' }],
+			loss: { volume: 0, proof: 0, reasonCode: 'no_loss' },
+		}, 'MISSING_SOURCE_VESSEL');
+	});
+
+	it('allows null source vessel on reversal (inverse of a virtual-destination transfer)', () => {
+		const input: TransferInput = {
+			type: 'reversal',
+			batch: '000000000000000000000001',
+			fromStage: null,
+			toStage: 'Storage',
+			sources: [{ vessel: null, volume: 10, proof: 80 }],
+			destinations: [{ vessel: '000000000000000000000010', volume: 10, proof: 80, stage: 'Storage' }],
+			loss: { volume: 0, proof: 0, reasonCode: 'no_loss' },
+		};
+		expect(() => validateInvariants(input, computeTotals(input))).not.toThrow();
+	});
+});
+
 describe('TransferEngineError', () => {
 	it('carries code, status, and details', () => {
 		const err = new TransferEngineError('TEST_CODE', 'test message', 418, { foo: 'bar' });

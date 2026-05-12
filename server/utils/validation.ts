@@ -474,7 +474,10 @@ const gaugingSchema = yup.object({
 }).default(undefined);
 
 const transferSourceSchema = yup.object({
-  vessel: yup.string().required("Source vessel is required"),
+  // Nullable to allow reversal of virtual-destination transfers (the inverse
+  // source mirrors the original null-vessel destination). Forward transfers
+  // require a vessel — enforced in transferEngineCore.validateInvariants.
+  vessel: yup.string().nullable().defined(),
   volume: yup.number().min(0, "Volume cannot be negative").required("Source volume is required"),
   proof: yup.number().min(0, "Proof cannot be negative").max(200, "Proof cannot exceed 200").required("Source proof is required"),
   effectiveVolume: yup.number().min(0, "Effective volume cannot be negative").optional(),

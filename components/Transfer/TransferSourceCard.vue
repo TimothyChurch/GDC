@@ -162,7 +162,7 @@ const sourceVolume = computed({
 					:batch-id="batchId"
 					:allowed-types="allowedTypes"
 					:model-value="source.vessel"
-					@update:model-value="(v) => emit('update', { vessel: v as string })"
+					@update:model-value="(v) => emit('update', { vessel: v })"
 				/>
 			</UFormField>
 

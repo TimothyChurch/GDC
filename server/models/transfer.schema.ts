@@ -42,7 +42,11 @@ const gaugingSubSchema = {
 };
 
 const sourceSubSchema = {
-	vessel: { type: Schema.Types.ObjectId, ref: 'Vessel', required: true },
+	// Nullable: the source side of a reversal that undoes a virtual-destination
+	// transfer (destruction/withdrawal/sample/tib_out) carries no real vessel.
+	// Forward transfers should always have a vessel here — enforced in
+	// server/utils/transferEngineCore.ts validateInvariants.
+	vessel: { type: Schema.Types.ObjectId, ref: 'Vessel', default: null },
 	volume: { type: Number, required: true },   // wine gallons — bulk volume reported by operator
 	proof: { type: Number, required: true },    // 2 × ABV%
 	/**
