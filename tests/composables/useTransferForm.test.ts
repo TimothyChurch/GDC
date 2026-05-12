@@ -49,10 +49,10 @@ describe('useTransferForm', () => {
 		it('deep-clones initial state so seed objects are not shared', () => {
 			const seed = {
 				sources: [{ vessel: 'v1', volume: 100, proof: 16 }],
-			} as const;
+			};
 			const f = useTransferForm(seed);
 			f.updateSource(0, { volume: 999 });
-			expect(seed.sources[0].volume).toBe(100);
+			expect(seed.sources[0]!.volume).toBe(100);
 		});
 	});
 
@@ -85,7 +85,7 @@ describe('useTransferForm', () => {
 			});
 			f.removeSource(0);
 			expect(f.sources.value).toHaveLength(1);
-			expect(f.sources.value[0].vessel).toBe('b');
+			expect(f.sources.value[0]!.vessel).toBe('b');
 		});
 
 		it('replaces array reference (not mutate-in-place) for reactivity', () => {
@@ -100,7 +100,7 @@ describe('useTransferForm', () => {
 		it('addDestination uses toStage as the default stage', () => {
 			const f = useTransferForm({ toStage: 'Storage' });
 			f.addDestination();
-			expect(f.destinations.value[0].stage).toBe('Storage');
+			expect(f.destinations.value[0]!.stage).toBe('Storage');
 		});
 
 		it('removeDestination + updateDestination work', () => {
@@ -111,7 +111,7 @@ describe('useTransferForm', () => {
 				],
 			});
 			f.updateDestination(1, { volume: 99 });
-			expect(f.destinations.value[1].volume).toBe(99);
+			expect(f.destinations.value[1]!.volume).toBe(99);
 			f.removeDestination(0);
 			expect(f.destinations.value).toHaveLength(1);
 		});
@@ -314,6 +314,74 @@ describe('useTransferForm', () => {
 		it('omits notes when blank', () => {
 			const f = useTransferForm({ batch: 'b1' });
 			expect(f.build().notes).toBeUndefined();
+		});
+
+		it('passes volumes through build() unchanged (canonical gallons)', () => {
+			// Per-input units: each Form*Input converts to canonical before
+			// binding back to the form state, so build() never converts.
+			const f = useTransferForm({
+				batch: 'b1',
+				fromStage: 'Fermenting',
+				toStage: 'Stripping Run',
+				sources: [{ vessel: 'v1', volume: 100, proof: 16 }],
+				destinations: [{ vessel: 'v2', volume: 100, proof: 16 }],
+				loss: { volume: 0, proof: 0, reasonCode: 'no_loss' },
+			});
+			const payload = f.build();
+			expect(payload.sources[0]?.volume).toBe(100);
+			expect(payload.destinations[0]?.volume).toBe(100);
+			expect(payload.loss.volume).toBe(0);
+		});
+	});
+
+	describe('isDistillationTransfer + balance bypass', () => {
+		it('flags Stripping Run / Spirit Run / Distilling as distillation transfers', () => {
+			const f = useTransferForm({ batch: 'b1' });
+			f.fromStage.value = 'Stripping Run';
+			expect(f.isDistillationTransfer.value).toBe(true);
+			f.fromStage.value = 'Spirit Run';
+			expect(f.isDistillationTransfer.value).toBe(true);
+			f.fromStage.value = 'Distilling';
+			expect(f.isDistillationTransfer.value).toBe(true);
+			f.fromStage.value = 'Fermenting';
+			expect(f.isDistillationTransfer.value).toBe(false);
+		});
+
+		it('balanced=true on a distillation transfer when WG mismatches but PG matches', () => {
+			const f = useTransferForm({
+				batch: 'b1',
+				fromStage: 'Stripping Run',
+				toStage: 'Low Wines',
+				// 100 gal × 16 proof = 16 PG → 30 gal × 53.333 proof = 16 PG
+				sources: [{ vessel: 'v1', volume: 100, proof: 16 }],
+				destinations: [{ vessel: 'v2', volume: 30, proof: 53.333333 }],
+				loss: { volume: 0, proof: 0, reasonCode: 'no_loss' },
+			});
+			expect(f.balanced.value).toBe(true);
+		});
+
+		it('balanced=false on a distillation transfer when PG mismatches', () => {
+			const f = useTransferForm({
+				batch: 'b1',
+				fromStage: 'Stripping Run',
+				toStage: 'Low Wines',
+				sources: [{ vessel: 'v1', volume: 100, proof: 16 }],   // 16 PG
+				destinations: [{ vessel: 'v2', volume: 30, proof: 20 }], // 6 PG
+				loss: { volume: 0, proof: 0, reasonCode: 'no_loss' },
+			});
+			expect(f.balanced.value).toBe(false);
+		});
+
+		it('non-distillation stages still require WG balance', () => {
+			const f = useTransferForm({
+				batch: 'b1',
+				fromStage: 'Fermenting',
+				toStage: 'Stripping Run',
+				sources: [{ vessel: 'v1', volume: 400, proof: 16 }],
+				destinations: [{ vessel: 'v2', volume: 100, proof: 16 }],
+				loss: { volume: 0, proof: 0, reasonCode: 'no_loss' },
+			});
+			expect(f.balanced.value).toBe(false);
 		});
 	});
 

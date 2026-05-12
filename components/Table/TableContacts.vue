@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import type { TableColumn } from "@nuxt/ui";
 import type { Contact } from "~/types";
+import type { Row } from "@tanstack/vue-table";
 import { getPaginationRowModel } from "@tanstack/vue-table";
 
 const router = useRouter();
@@ -114,7 +115,7 @@ defineExpose({ addItem });
         :data="filteredContacts"
         :columns="columns"
         :loading="contactStore.loading"
-        @select="(_e: Event, row: any) => router.push(`/admin/contacts/${row.original._id}`)"
+        @select="(_e: Event, row: Row<Contact>) => router.push(`/admin/contacts/${row.original._id}`)"
         :ui="{ tr: 'cursor-pointer' }"
       >
         <template #empty>

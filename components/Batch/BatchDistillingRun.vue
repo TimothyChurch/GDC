@@ -250,7 +250,7 @@ const completeRun = async () => {
 
     // Get the stage vessel (the still)
     const batch = batchStore.items.find(b => b._id === props.batchId)
-    const stillId = (batch?.stages as any)?.[props.stageKey]?.vessel
+    const stillId = getStage(batch, props.stageKey)?.vessel
 
     if (stillId) {
       // Capture the batch's value from the still before emptying (proportional to batch cost)
@@ -435,7 +435,7 @@ const summaryProofGallons = computed(() => {
             <USelect v-model="local.chargeVolumeUnit" :items="volumeUnits" />
           </UFormField>
           <UFormField label="ABV %">
-            <UInput v-model.number="local.chargeAbv" type="number" step="0.1" placeholder="0" />
+            <NumberInputWithCalc v-model="local.chargeAbv" kind="abv" :step="0.1" placeholder="0" />
           </UFormField>
         </div>
       </div>
@@ -462,7 +462,7 @@ const summaryProofGallons = computed(() => {
               <UInput v-model.number="addition.volume" type="number" placeholder="0" size="sm" />
             </UFormField>
             <UFormField label="ABV %">
-              <UInput v-model.number="addition.abv" type="number" step="0.1" placeholder="0" size="sm" />
+              <NumberInputWithCalc v-model="addition.abv" kind="abv" :step="0.1" placeholder="0" size="sm" />
             </UFormField>
             <div class="flex justify-end">
               <UButton icon="i-lucide-x" color="error" variant="ghost" size="xs" @click="removeAddition(i)" />
@@ -486,7 +486,7 @@ const summaryProofGallons = computed(() => {
             <USelect v-model="local.output!.volumeUnit" :items="volumeUnits" />
           </UFormField>
           <UFormField label="ABV %">
-            <UInput v-model.number="local.output!.abv" type="number" step="0.1" placeholder="0" />
+            <NumberInputWithCalc v-model="local.output!.abv" kind="abv" :step="0.1" placeholder="0" />
           </UFormField>
         </div>
       </div>
@@ -532,7 +532,7 @@ const summaryProofGallons = computed(() => {
                 <USelect v-model="local.collected![cut]!.volumeUnit" :items="volumeUnits" />
               </UFormField>
               <UFormField label="ABV %">
-                <UInput v-model.number="local.collected![cut]!.abv" type="number" step="0.1" placeholder="0" />
+                <NumberInputWithCalc v-model="local.collected![cut]!.abv" kind="abv" :step="0.1" placeholder="0" />
               </UFormField>
             </div>
             </template>

@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import type { TableColumn } from "@nuxt/ui";
 import type { Vessel } from "~/types";
+import type { Row } from "@tanstack/vue-table";
 import { getPaginationRowModel } from "@tanstack/vue-table";
 
 const vesselStore = useVesselStore();
@@ -37,7 +38,10 @@ const columns: TableColumn<Vessel>[] = [
     {
       label: "Empty Vessel",
       async onClick() {
-        const confirmed = await confirm("Vessel", row.original.name);
+        const confirmed = await confirm("Vessel", row.original.name, {
+          verb: 'Empty',
+          warningText: 'Contents will be cleared. This does not delete the vessel.',
+        });
         if (confirmed) {
           vesselStore.emptyVessel(row.original._id);
         }
@@ -96,7 +100,7 @@ const addVessel = () => {
         :data="nonBarrelVessels"
         :columns="columns"
         :loading="vesselStore.loading"
-        @select="(_e: Event, row: any) => navigateTo(`/admin/vessels/${row.original._id}`)"
+        @select="(_e: Event, row: Row<Vessel>) => navigateTo(`/admin/vessels/${row.original._id}`)"
         :ui="{ tr: 'cursor-pointer' }"
       >
         <template #empty>

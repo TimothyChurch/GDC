@@ -42,6 +42,8 @@ export interface CrudStoreReturn<T extends { _id: string }> {
   deleteItem: (id: string) => Promise<void>;
   /** Find an item from the local list by ID */
   getById: (id: string) => T | undefined;
+  /** Replace an item if its `_id` matches an existing entry, otherwise append. */
+  upsert: (doc: T) => void;
 }
 
 /**
@@ -182,6 +184,21 @@ export function useCrudStore<T extends { _id: string }>(
     return items.value.find((i) => i._id === id);
   };
 
+  /**
+   * Replace an item if its `_id` matches an existing entry, otherwise append.
+   * Used by cross-store sync paths (notably `useTransferStore`) that need to
+   * fold engine responses back into the canonical list without going through
+   * the API layer again.
+   */
+  const upsert = (doc: T): void => {
+    const idx = items.value.findIndex((i) => i._id === doc._id);
+    if (idx >= 0) {
+      items.value[idx] = doc;
+    } else {
+      items.value.push(doc);
+    }
+  };
+
   return {
     items,
     item,
@@ -195,5 +212,6 @@ export function useCrudStore<T extends { _id: string }>(
     saveItem,
     deleteItem,
     getById,
+    upsert,
   };
 }

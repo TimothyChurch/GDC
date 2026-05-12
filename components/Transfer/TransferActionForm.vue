@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { TransferInput } from '~/types/interfaces/Transfer';
+import { STAGE_VESSEL_TYPE } from '~/composables/batchPipeline';
 
 /**
  * Unified Transfer Action form (Phase 5 of PLAN-PIPELINE-REVAMP.md §6.5).
@@ -32,7 +33,7 @@ const form = useTransferForm(props.prefill);
 // ─── Batch context ─────────────────────────────────────────────────────────
 const currentBatch = computed(() => {
 	if (!form.batch.value) return null;
-	return batchStore.crud.items.value.find((b) => b._id === form.batch.value) || null;
+	return batchStore.items.find((b) => b._id === form.batch.value) || null;
 });
 
 const transferTypeItems = TRANSFER_TYPES.map((t) => ({
@@ -60,10 +61,22 @@ const bypassReason = computed(() => {
 	if (form.type.value === 'tib_in' && form.sources.value.length === 0) {
 		return 'TIB receipt from external DSP — balance check skipped';
 	}
+	if (form.isDistillationTransfer.value) {
+		return 'Distillation — wine-gallon balance bypassed (PG balance still required)';
+	}
 	return null;
 });
 
 const sourceVesselIds = computed(() => form.sources.value.map(s => s.vessel).filter(Boolean));
+
+// Restrict the source vessel picker to the type required by the source stage.
+// e.g., from 'Stripping Run' → only Stills appear (not the Fermenter that may
+// still hold residual wash from a partial draw earlier in the pipeline).
+const sourceAllowedTypes = computed<string[] | undefined>(() => {
+	if (!form.fromStage.value) return undefined;
+	const t = STAGE_VESSEL_TYPE[form.fromStage.value];
+	return t ? [t] : undefined;
+});
 
 // ─── Submit ────────────────────────────────────────────────────────────────
 async function onSubmit() {
@@ -91,9 +104,7 @@ onMounted(() => {
 </script>
 
 <template>
-	<USlideover side="right" :close="{ onClick: onCancel }">
-		<template #content>
-			<div class="flex flex-col h-full w-full sm:max-w-2xl bg-default">
+	<div class="flex flex-col h-full w-full bg-default">
 				<!-- Header -->
 				<div class="flex items-center justify-between px-4 py-3 border-b border-white/10">
 					<div class="flex items-center gap-3">
@@ -109,7 +120,7 @@ onMounted(() => {
 				<div class="flex-1 overflow-y-auto p-4 space-y-4">
 					<!-- Type + batch context -->
 					<UCard variant="subtle">
-						<div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+						<div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-3">
 							<UFormField label="Transfer type" name="type">
 								<USelectMenu
 									v-model="form.type.value"
@@ -146,94 +157,82 @@ onMounted(() => {
 								/>
 							</UFormField>
 						</div>
+						<div class="mt-3 pt-3 border-t border-default/30 text-xs text-muted/70">
+							<UIcon name="i-lucide-info" class="inline align-text-bottom mr-1" />
+							Each volume / strength input below has its own unit selector — switch them independently per row. Default unit comes from <span class="text-muted">Settings → Units</span>.
+						</div>
 					</UCard>
 
-					<!-- Sources -->
-					<div class="space-y-3">
-						<div class="flex items-center justify-between">
-							<h3 class="text-sm font-bold uppercase tracking-wide text-muted">
-								Sources ({{ form.sources.value.length }})
-							</h3>
-							<UButton
-								icon="i-lucide-plus"
-								size="xs"
-								variant="outline"
-								color="primary"
-								@click="form.addSource()"
-								:disabled="form.fromStage.value === 'Upcoming' && form.sources.value.length > 0"
-							>
-								Add source
-							</UButton>
-						</div>
-						<TransferSourceCard
-							v-for="(src, i) in form.sources.value"
-							:key="`src-${i}`"
-							:source="src"
-							:batch-id="form.batch.value"
-							:index="i"
-							:allow-remove="form.sources.value.length > 0"
-							@update="(patch) => form.updateSource(i, patch)"
-							@remove="form.removeSource(i)"
-						/>
-						<div v-if="form.sources.value.length === 0" class="text-xs text-muted italic px-2">
-							No sources — for new batches starting in their first stage, this is correct.
-						</div>
+					<!-- Sources / Destinations side-by-side on wide screens -->
+					<div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+						<!-- Sources column -->
+						<section class="space-y-3 lg:border-r lg:border-white/5 lg:pr-4">
+							<div class="flex items-center justify-between">
+								<h3 class="text-sm font-bold uppercase tracking-wide text-muted flex items-center gap-2">
+									<UIcon name="i-lucide-arrow-up-from-line" class="text-copper" />
+									Sources ({{ form.sources.value.length }})
+								</h3>
+								<UButton
+									icon="i-lucide-plus"
+									size="xs"
+									variant="outline"
+									color="primary"
+									@click="form.addSource()"
+									:disabled="form.fromStage.value === 'Upcoming' && form.sources.value.length > 0"
+								>
+									Add source
+								</UButton>
+							</div>
+							<TransferSourceCard
+								v-for="(src, i) in form.sources.value"
+								:key="`src-${i}`"
+								:source="src"
+								:batch-id="form.batch.value"
+								:index="i"
+								:allow-remove="form.sources.value.length > 0"
+								:allowed-types="sourceAllowedTypes"
+								@update="(patch) => form.updateSource(i, patch)"
+								@remove="form.removeSource(i)"
+							/>
+							<div v-if="form.sources.value.length === 0" class="text-xs text-muted italic px-2 py-3 rounded-lg border border-dashed border-white/10">
+								No sources — correct for batches starting in their first stage.
+							</div>
+						</section>
+
+						<!-- Destinations column -->
+						<section class="space-y-3">
+							<div class="flex items-center justify-between">
+								<h3 class="text-sm font-bold uppercase tracking-wide text-muted flex items-center gap-2">
+									<UIcon name="i-lucide-arrow-down-to-line" class="text-gold" />
+									Destinations ({{ form.destinations.value.length }})
+								</h3>
+								<UButton
+									icon="i-lucide-plus"
+									size="xs"
+									variant="outline"
+									color="primary"
+									@click="form.addDestination()"
+									:disabled="['destruction', 'tax_paid_withdrawal', 'sample'].includes(form.type.value) && form.destinations.value.length > 0"
+								>
+									Add destination
+								</UButton>
+							</div>
+							<TransferDestCard
+								v-for="(dest, i) in form.destinations.value"
+								:key="`dest-${i}`"
+								:dest="dest"
+								:index="i"
+								:default-stage="form.toStage.value"
+								:allow-remove="form.destinations.value.length > 0"
+								:exclude-vessel-id="sourceVesselIds[0]"
+								@update="(patch) => form.updateDestination(i, patch)"
+								@remove="form.removeDestination(i)"
+							/>
+							<div v-if="form.destinations.value.length === 0" class="text-xs text-muted italic px-2 py-3 rounded-lg border border-dashed border-white/10">
+								No destinations — destruction, withdrawal, and sample transfers don't require one.
+							</div>
+						</section>
 					</div>
-
-					<!-- Destinations -->
-					<div class="space-y-3">
-						<div class="flex items-center justify-between">
-							<h3 class="text-sm font-bold uppercase tracking-wide text-muted">
-								Destinations ({{ form.destinations.value.length }})
-							</h3>
-							<UButton
-								icon="i-lucide-plus"
-								size="xs"
-								variant="outline"
-								color="primary"
-								@click="form.addDestination()"
-								:disabled="['destruction', 'tax_paid_withdrawal', 'sample'].includes(form.type.value) && form.destinations.value.length > 0"
-							>
-								Add destination
-							</UButton>
-						</div>
-						<TransferDestCard
-							v-for="(dest, i) in form.destinations.value"
-							:key="`dest-${i}`"
-							:dest="dest"
-							:index="i"
-							:default-stage="form.toStage.value"
-							:allow-remove="form.destinations.value.length > 0"
-							:exclude-vessel-id="sourceVesselIds[0]"
-							@update="(patch) => form.updateDestination(i, patch)"
-							@remove="form.removeDestination(i)"
-						/>
-						<div v-if="form.destinations.value.length === 0" class="text-xs text-muted italic px-2">
-							No destinations — destruction, withdrawal, and sample transfers don't require one.
-						</div>
-					</div>
-
-					<!-- Loss line -->
-					<TransferLossInput
-						:loss="form.loss.value"
-						:auto-loss-volume="suggestedLossVolume"
-						@update="(patch) => form.loss.value = { ...form.loss.value, ...patch }"
-					/>
-
-					<!-- Reconciliation -->
-					<TransferReconciliationPanel
-						:total-source-volume="form.totalSourceVolume.value"
-						:total-dest-volume="form.totalDestVolume.value"
-						:total-loss-volume="form.totalLossVolume.value"
-						:source-p-g="form.sourcePG.value"
-						:dest-p-g="form.destPG.value"
-						:loss-p-g="form.lossPG.value"
-						:balanced="form.balanced.value"
-						:bypass-reason="bypassReason"
-						:ttb-account-from="form.ttbAccountFrom.value"
-						:ttb-account-to="form.ttbAccountTo.value"
-						:reporting-period="reportingPeriod"
-					/>
 
 					<!-- Notes -->
 					<UFormField label="Notes (optional)" name="notes">
@@ -243,6 +242,30 @@ onMounted(() => {
 							:rows="2"
 						/>
 					</UFormField>
+				</div>
+
+				<!-- Sticky reconciliation strip — always visible above the footer -->
+				<div class="border-t border-white/10 bg-black/20 backdrop-blur-sm">
+					<div class="grid grid-cols-1 lg:grid-cols-2 gap-3 p-3">
+						<TransferLossInput
+							:loss="form.loss.value"
+							:auto-loss-volume="suggestedLossVolume"
+							@update="(patch) => form.loss.value = { ...form.loss.value, ...patch }"
+						/>
+						<TransferReconciliationPanel
+							:total-source-volume="form.totalSourceVolume.value"
+							:total-dest-volume="form.totalDestVolume.value"
+							:total-loss-volume="form.totalLossVolume.value"
+							:source-p-g="form.sourcePG.value"
+							:dest-p-g="form.destPG.value"
+							:loss-p-g="form.lossPG.value"
+							:balanced="form.balanced.value"
+							:bypass-reason="bypassReason"
+							:ttb-account-from="form.ttbAccountFrom.value"
+							:ttb-account-to="form.ttbAccountTo.value"
+							:reporting-period="reportingPeriod"
+						/>
+					</div>
 				</div>
 
 				<!-- Footer -->
@@ -263,7 +286,5 @@ onMounted(() => {
 						</UButton>
 					</div>
 				</div>
-			</div>
-		</template>
-	</USlideover>
+	</div>
 </template>

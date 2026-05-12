@@ -20,6 +20,8 @@ const tabcPermitExpiry = ref('')
       </template>
     </AdminPageHeader>
 
+    <ReportShell :exportable="false" />
+
     <!-- TABC permit date entry -->
     <div class="flex items-center gap-3 mb-6 bg-brown/10 rounded-lg p-3 border border-brown/20 w-fit print:hidden">
       <UIcon name="i-lucide-shield-check" class="text-amber-400 text-sm shrink-0" />

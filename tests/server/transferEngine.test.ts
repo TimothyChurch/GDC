@@ -238,6 +238,64 @@ describe('initial-entry transfers (Upcoming → first stage)', () => {
 	});
 });
 
+describe('distillation transfers (volume balance bypass)', () => {
+	// 100 gal of wash @ 8% ABV (16 proof) = 16 PG charge.
+	// Distillation concentrates this into ~30 gal of low wines @ ~26.7% ABV
+	// (~53 proof) = ~16 PG output. Wine-gallon volume drops dramatically
+	// because spent wash leaves as effluent — that material was never bonded.
+	// PG should still balance (alcohol can't disappear without a loss line).
+
+	it('Stripping Run → Low Wines passes when PG balances despite WG mismatch', () => {
+		const input: TransferInput = {
+			type: 'stage_transition',
+			batch: '000000000000000000000001',
+			fromStage: 'Stripping Run',
+			toStage: 'Low Wines',
+			sources: [{ vessel: '000000000000000000000010', volume: 100, proof: 16 }],
+			destinations: [{ vessel: '000000000000000000000020', volume: 30, proof: 53.333333 }],
+			loss: { volume: 0, proof: 0, reasonCode: 'no_loss' },
+		};
+		expect(() => validateInvariants(input, computeTotals(input))).not.toThrow();
+	});
+
+	it('Spirit Run → Storage passes when PG balances despite WG mismatch', () => {
+		const input: TransferInput = {
+			type: 'stage_transition',
+			batch: '000000000000000000000001',
+			fromStage: 'Spirit Run',
+			toStage: 'Storage',
+			sources: [{ vessel: '000000000000000000000010', volume: 30, proof: 60 }],
+			destinations: [{ vessel: '000000000000000000000020', volume: 12, proof: 150 }],
+			loss: { volume: 0, proof: 0, reasonCode: 'no_loss' },
+		};
+		expect(() => validateInvariants(input, computeTotals(input))).not.toThrow();
+	});
+
+	it('still rejects PG mismatch on a distillation transfer (alcohol cannot vanish)', () => {
+		expectThrowsWithCode({
+			type: 'stage_transition',
+			batch: '000000000000000000000001',
+			fromStage: 'Stripping Run',
+			toStage: 'Low Wines',
+			sources: [{ vessel: '000000000000000000000010', volume: 100, proof: 16 }],   // 16 PG in
+			destinations: [{ vessel: '000000000000000000000020', volume: 30, proof: 20 }], // 6 PG out
+			loss: { volume: 0, proof: 0, reasonCode: 'no_loss' },
+		}, 'INVARIANT_VIOLATION_PG');
+	});
+
+	it('non-distillation stages still enforce volume balance', () => {
+		expectThrowsWithCode({
+			type: 'stage_transition',
+			batch: '000000000000000000000001',
+			fromStage: 'Fermenting',
+			toStage: 'Stripping Run',
+			sources: [{ vessel: '000000000000000000000010', volume: 400, proof: 16 }],
+			destinations: [{ vessel: '000000000000000000000020', volume: 100, proof: 16 }],
+			loss: { volume: 0, proof: 0, reasonCode: 'no_loss' },
+		}, 'INVARIANT_VIOLATION_VOLUME');
+	});
+});
+
 describe('TransferEngineError', () => {
 	it('carries code, status, and details', () => {
 		const err = new TransferEngineError('TEST_CODE', 'test message', 418, { foo: 'bar' });

@@ -184,39 +184,29 @@ export const useTransferStore = defineStore('transfer', () => {
 	// ─── Cross-store sync ─────────────────────────────────────────────────────
 
 	function syncBatchAndVesselStores(response: CreateResponse) {
-		// Update the batch store in place if loaded
+		// Fold the engine's returned docs back into both stores via the factory's
+		// `upsert` so we avoid re-fetching. The singleton (`batchStore.batch`)
+		// also gets refreshed if it points at the just-touched batch.
 		try {
 			const batchStore = useBatchStore();
 			if (response.batch?._id) {
-				const idx = batchStore.crud.items.value.findIndex(
-					(b: any) => b._id === response.batch._id,
-				);
-				if (idx >= 0) {
-					const next = batchStore.crud.items.value.slice();
-					next[idx] = response.batch;
-					batchStore.crud.items.value = next;
-				}
-				if (batchStore.crud.item.value?._id === response.batch._id) {
-					batchStore.crud.item.value = response.batch;
+				batchStore.upsert(response.batch);
+				if (batchStore.batch?._id === response.batch._id) {
+					Object.assign(batchStore.batch, response.batch);
 				}
 			}
-		} catch {
-			// batch store not registered yet (e.g., during SSR or tests); skip
+		} catch (err) {
+			console.error('[useTransferStore.syncBatchAndVesselStores] batch sync failed', err);
 		}
-		// Update the vessel store
 		try {
 			const vesselStore = useVesselStore();
 			if (response.updatedVessels?.length) {
-				const next = vesselStore.crud.items.value.slice();
 				for (const updated of response.updatedVessels) {
-					const idx = next.findIndex((v: any) => v._id === updated._id);
-					if (idx >= 0) next[idx] = updated;
-					else next.push(updated);
+					vesselStore.upsert(updated);
 				}
-				vesselStore.crud.items.value = next;
 			}
-		} catch {
-			// vessel store not registered yet
+		} catch (err) {
+			console.error('[useTransferStore.syncBatchAndVesselStores] vessel sync failed', err);
 		}
 	}
 

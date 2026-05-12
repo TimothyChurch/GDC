@@ -8,6 +8,15 @@ import type {
 } from '~/types/interfaces/Transfer';
 
 /**
+ * Form volumes are stored in canonical wine gallons; proofs in canonical proof
+ * (2 × ABV%). Each input field on the form has its own unit selector that
+ * converts user-entered values to canonical before binding back. See:
+ *   - components/Form/FormVolumeInput.vue (gallons)
+ *   - components/Form/FormStrengthInput.vue (ABV %, mapped to proof in the
+ *     transfer cards via a 2× wrapper).
+ */
+
+/**
  * Reactive helper for the Transfer Action Form (Phase 5).
  *
  * Encapsulates: source/destination editing, loss attestation, live PG and
@@ -33,6 +42,7 @@ export function useTransferForm(initialState?: Partial<TransferInput>) {
 	const ttbAccountTo = ref<TtbAccount | null>(initialState?.ttbAccount?.to ?? null);
 	const notes = ref<string>(initialState?.notes || '');
 	const submitting = ref(false);
+
 
 	// ─── Derived: TTB account auto-routing from stage ────────────────────────
 	watch(toStage, (newToStage) => {
@@ -67,12 +77,20 @@ export function useTransferForm(initialState?: Partial<TransferInput>) {
 	const lossPG = computed(() => proofGallons(totalLossVolume.value, Number(loss.value.proof) || 0));
 
 	// ─── Reconciliation status ────────────────────────────────────────────────
+	// Distillation stages concentrate alcohol — wine-gallon balance is bypassed
+	// (see server/utils/transferEngineCore.ts::bypassesVolumeBalance), but PG
+	// balance is still required.
+	const DISTILLATION_FROM_STAGES = new Set(['Stripping Run', 'Spirit Run', 'Distilling']);
+	const isDistillationTransfer = computed(
+		() => !!fromStage.value && DISTILLATION_FROM_STAGES.has(fromStage.value),
+	);
 	const balanced = computed(() => {
 		// Initial entry / TIB-in: balance check skipped
 		if ((fromStage.value === 'Upcoming' || fromStage.value === null) && sources.value.length === 0) return true;
 		if (type.value === 'tib_in' && sources.value.length === 0) return true;
-		return isVolumeBalanced(totalSourceVolume.value, totalDestVolume.value, totalLossVolume.value)
-			&& isPGBalanced(sourcePG.value, destPG.value, lossPG.value);
+		const volumeOk = isDistillationTransfer.value
+			|| isVolumeBalanced(totalSourceVolume.value, totalDestVolume.value, totalLossVolume.value);
+		return volumeOk && isPGBalanced(sourcePG.value, destPG.value, lossPG.value);
 	});
 
 	const reconciliationVarianceWG = computed(() =>
@@ -139,6 +157,9 @@ export function useTransferForm(initialState?: Partial<TransferInput>) {
 
 	// ─── Build payload ───────────────────────────────────────────────────────
 	function build(): TransferInput {
+		// Volumes are already in canonical wine gallons (FormVolumeInput
+		// converts on input). Proofs are already in canonical proof. No
+		// conversion needed — just pass through to the engine.
 		return {
 			type: type.value,
 			batch: batch.value,
@@ -186,6 +207,7 @@ export function useTransferForm(initialState?: Partial<TransferInput>) {
 		destPG,
 		lossPG,
 		balanced,
+		isDistillationTransfer,
 		reconciliationVarianceWG,
 		lossLineValid,
 		canSubmit,

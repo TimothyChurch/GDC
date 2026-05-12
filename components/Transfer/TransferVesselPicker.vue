@@ -26,7 +26,7 @@ const emit = defineEmits<{ 'update:modelValue': [string | null] }>();
 const vesselStore = useVesselStore();
 
 const candidates = computed<Vessel[]>(() => {
-	let list = vesselStore.crud.items.value || [];
+	let list = vesselStore.items || [];
 
 	// Type filter
 	if (props.allowedTypes?.length) {

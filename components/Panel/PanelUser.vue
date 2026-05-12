@@ -7,6 +7,7 @@ const userStore = useUserStore();
 
 const { localData, isDirty, saving, save, cancel } = useFormPanel({
   source: () => userStore.user,
+  draft: { key: 'PanelUser', id: () => userStore.user._id, fields: ['firstName', 'lastName', 'email', 'role'] as any },
   async onSave(data) {
     Object.assign(userStore.user, data);
     await userStore.updateUser();

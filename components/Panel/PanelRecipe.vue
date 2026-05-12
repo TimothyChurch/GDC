@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import * as yup from 'yup';
+import { getDefaultGrainInForClass } from '../../utils/grainBill';
 
 const emit = defineEmits<{ close: [boolean] }>();
 
@@ -15,6 +16,7 @@ const itemStore = useItemStore();
 
 const { localData, isDirty, saving, save, cancel } = useFormPanel({
   source: () => recipeStore.recipe,
+  draft: { key: 'PanelRecipe', id: () => recipeStore.recipe._id },
   async onSave(data) {
     Object.assign(recipeStore.recipe, data);
     await recipeStore.updateRecipe();
@@ -70,6 +72,19 @@ const removeItem = (itemId: string) => {
     (i: any) => i._id !== itemId,
   );
 };
+
+// Prefill `grainIn` from the class on a new recipe (or when grainIn is unset
+// on an existing recipe being edited). Only fires when the user changes class
+// on a recipe that hasn't yet committed a grainIn choice — never overwrites
+// a deliberate user choice.
+watch(
+  () => localData.value.class,
+  (newClass, oldClass) => {
+    if (!newClass) return;
+    if (typeof localData.value.grainIn === 'boolean' && oldClass) return;
+    localData.value.grainIn = getDefaultGrainInForClass(newClass);
+  },
+);
 </script>
 
 <template>
@@ -143,14 +158,14 @@ const removeItem = (itemId: string) => {
                     itemStore.nameById(item._id)
                   }}</span>
                   <UInput
-                    v-model.number="localData.items[idx].amount"
+                    v-model.number="localData.items[idx]!.amount"
                     type="number"
                     size="xs"
                     step="any"
                     min="0"
                   />
                   <USelectMenu
-                    v-model="localData.items[idx].unit"
+                    v-model="localData.items[idx]!.unit"
                     :items="allUnits"
                     size="xs"
                   />
@@ -213,14 +228,14 @@ const removeItem = (itemId: string) => {
                     {{ bulkSpiritStore.getBulkSpiritById(bs.bulkSpirit)?.name || 'Unknown' }}
                   </span>
                   <UInput
-                    v-model.number="localData.bulkSpirits![idx].volume"
+                    v-model.number="localData.bulkSpirits![idx]!.volume"
                     type="number"
                     size="xs"
                     step="any"
                     min="0"
                   />
                   <USelectMenu
-                    v-model="localData.bulkSpirits![idx].volumeUnit"
+                    v-model="localData.bulkSpirits![idx]!.volumeUnit"
                     :items="volumeUnits"
                     size="xs"
                   />
@@ -263,6 +278,27 @@ const removeItem = (itemId: string) => {
                 </div>
               </div>
             </UFormField>
+
+            <!-- Grain-in toggle (affects PG projection math) -->
+            <UFormField>
+              <div class="flex items-center justify-between">
+                <div class="pr-4">
+                  <div class="text-sm font-medium text-parchment">Grain-in fermentation</div>
+                  <div class="text-xs text-parchment/60">
+                    Grain remains in the wash through fermentation (typical for
+                    bourbon/whiskey). Off = lautered/sparged before fermenting.
+                    Affects proof-gallon math.
+                  </div>
+                </div>
+                <USwitch v-model="localData.grainIn" />
+              </div>
+            </UFormField>
+
+            <!-- Projection (live preview) -->
+            <RecipeProjections
+              :recipe="localData"
+              @update:recipe="(r) => Object.assign(localData, r)"
+            />
 
             <!-- Pipeline Builder -->
             <RecipePipelineBuilder

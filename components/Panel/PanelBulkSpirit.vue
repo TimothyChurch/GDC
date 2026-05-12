@@ -13,6 +13,7 @@ const schema = yup.object({
 
 const { localData, isDirty, saving, save, cancel } = useFormPanel({
   source: () => bulkSpiritStore.bulkSpirit,
+  draft: { key: 'PanelBulkSpirit', id: () => bulkSpiritStore.bulkSpirit._id },
   async onSave(data) {
     Object.assign(bulkSpiritStore.bulkSpirit, data);
     await bulkSpiritStore.saveItem();

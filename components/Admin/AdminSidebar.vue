@@ -16,11 +16,27 @@ const {
   unreadMessages,
 } = useSidebarBadges();
 
+const { deadlines } = useComplianceDeadlines();
+const complianceUrgentCount = computed(() =>
+  deadlines.value.filter((d) =>
+    d.urgency === 'overdue' || d.urgency === 'critical' || d.urgency === 'warning'
+  ).length
+);
+const complianceWorstUrgency = computed(() => {
+  if (deadlines.value.some((d) => d.urgency === 'overdue')) return 'overdue';
+  if (deadlines.value.some((d) => d.urgency === 'critical')) return 'critical';
+  if (deadlines.value.some((d) => d.urgency === 'warning')) return 'warning';
+  return 'ok';
+});
+
+type BadgeTone = 'default' | 'warning' | 'critical' | 'overdue';
+
 interface NavLink {
   label: string;
   icon: string;
   to: string;
   badge?: ComputedRef<number>;
+  badgeTone?: ComputedRef<BadgeTone>;
 }
 
 interface NavSection {
@@ -29,6 +45,11 @@ interface NavSection {
 }
 
 const productionLinks: NavLink[] = [
+  {
+    label: "Overview",
+    icon: "i-lucide-layout-grid",
+    to: "/admin",
+  },
   {
     label: "Dashboard",
     icon: "i-lucide-layout-dashboard",
@@ -101,8 +122,27 @@ const inventoryLinks: NavLink[] = [
 ];
 
 const reportLinks: NavLink[] = [
-  { label: "Reports", icon: "i-lucide-bar-chart-3", to: "/admin/reports" },
+  {
+    label: "Reports",
+    icon: "i-lucide-bar-chart-3",
+    to: "/admin/reports",
+    badge: complianceUrgentCount,
+    badgeTone: complianceWorstUrgency as unknown as ComputedRef<BadgeTone>,
+  },
 ];
+
+function badgeToneClasses(tone: BadgeTone | undefined): { pill: string; dot: string } {
+  switch (tone) {
+    case 'overdue':
+      return { pill: 'bg-red-500/20 text-red-400', dot: 'bg-red-500' };
+    case 'critical':
+      return { pill: 'bg-orange-500/20 text-orange-400', dot: 'bg-orange-500' };
+    case 'warning':
+      return { pill: 'bg-yellow-500/20 text-yellow-400', dot: 'bg-yellow-500' };
+    default:
+      return { pill: 'bg-copper/20 text-copper', dot: 'bg-copper' };
+  }
+}
 
 const adminLinks: NavLink[] = [
   {
@@ -138,6 +178,8 @@ const sections: NavSection[] = [
 ];
 
 const isActive = (to: string) => {
+  // Exact-match only for the admin root, otherwise it would match every /admin/* route
+  if (to === "/admin") return route.path === "/admin" || route.path === "/admin/";
   return route.path === to || route.path.startsWith(to + "/");
 };
 
@@ -187,18 +229,23 @@ async function openQuickAdd(panelName: string) {
       />
     </div>
     <div v-else class="flex flex-col items-center gap-1 px-2 pt-3 pb-1">
-      <UButton
+      <UTooltip
         v-for="action in quickActions"
         :key="action.panel"
-        icon="i-lucide-plus"
-        variant="ghost"
-        color="neutral"
-        size="xs"
-        square
-        class="w-10 h-8 bg-brown/20 hover:bg-gold/15 text-parchment/50 hover:text-gold border border-transparent hover:border-gold/20 transition-all duration-200"
-        :title="`New ${action.label}`"
-        @click="openQuickAdd(action.panel)"
-      />
+        :text="`New ${action.label}`"
+        :delay-duration="200"
+      >
+        <UButton
+          :icon="action.icon"
+          variant="ghost"
+          color="neutral"
+          size="xs"
+          square
+          class="w-10 h-8 bg-brown/20 hover:bg-gold/15 text-parchment/50 hover:text-gold border border-transparent hover:border-gold/20 transition-all duration-200"
+          :aria-label="`New ${action.label}`"
+          @click="openQuickAdd(action.panel)"
+        />
+      </UTooltip>
     </div>
 
     <!-- Sidebar content -->
@@ -242,14 +289,20 @@ async function openQuickAdd(panelName: string) {
             <!-- Collapsed badge dot -->
             <span
               v-if="collapsed && link.badge?.value"
-              class="absolute -top-0.5 -right-0.5 w-2 h-2 rounded-full bg-copper"
+              :class="[
+                'absolute -top-0.5 -right-0.5 w-2 h-2 rounded-full',
+                badgeToneClasses(link.badgeTone?.value).dot,
+              ]"
             />
           </div>
           <span v-if="!collapsed" class="truncate">{{ link.label }}</span>
           <!-- Expanded badge pill -->
           <span
             v-if="!collapsed && link.badge?.value"
-            class="ml-auto min-w-5 h-5 px-1.5 rounded-full bg-copper/20 text-copper text-[10px] font-bold flex items-center justify-center"
+            :class="[
+              'ml-auto min-w-5 h-5 px-1.5 rounded-full text-[10px] font-bold flex items-center justify-center',
+              badgeToneClasses(link.badgeTone?.value).pill,
+            ]"
           >
             {{ link.badge.value }}
           </span>
@@ -259,6 +312,19 @@ async function openQuickAdd(panelName: string) {
 
     <!-- Bottom section -->
     <div class="p-3 border-t border-brown/20">
+      <NuxtLink
+        to="/floor"
+        class="group flex items-center gap-3 px-3 py-2 rounded-lg text-sm text-parchment/60 hover:text-parchment hover:bg-brown/30 transition-all duration-200"
+        :class="collapsed ? 'justify-center' : ''"
+        :title="collapsed ? 'Floor (tablet)' : ''"
+      >
+        <UIcon
+          name="i-lucide-tablet"
+          class="shrink-0 text-lg text-parchment/60 group-hover:text-gold"
+        />
+        <span v-if="!collapsed" class="flex-1">Floor</span>
+        <span v-if="!collapsed" class="text-[9px] uppercase tracking-wider text-parchment/30">Tablet</span>
+      </NuxtLink>
       <NuxtLink
         to="/"
         class="group flex items-center gap-3 px-3 py-2 rounded-lg text-sm text-parchment/50 hover:text-parchment hover:bg-brown/30 transition-all duration-200"

@@ -1,10 +1,23 @@
+import mongoose from 'mongoose';
+
+/**
+ * POST /api/inventory/bulk
+ *
+ * Atomic bulk insert of inventory records. Wrapped in a MongoDB transaction so
+ * that either ALL records commit or NONE — fixes the partial-write window in
+ * `useBatchStore.withdrawMashIngredients` and `useProductionStore.adjustInventoryForProduction`
+ * where a failure mid-list could leave the batch's inventory state drifted
+ * (tech-debt #45).
+ *
+ * Requires a MongoDB replica set (already required by the Transfer Engine).
+ */
 export default defineEventHandler(async (event) => {
 	const body = await readBody(event);
 
 	if (!Array.isArray(body)) {
 		throw createError({
 			status: 400,
-			statusText: "Request body must be an array of inventory records",
+			statusText: 'Request body must be an array of inventory records',
 		});
 	}
 
@@ -15,11 +28,11 @@ export default defineEventHandler(async (event) => {
 	if (body.length > 100) {
 		throw createError({
 			status: 400,
-			statusText: "Cannot create more than 100 inventory records at once",
+			statusText: 'Cannot create more than 100 inventory records at once',
 		});
 	}
 
-	const records = [];
+	const records: Record<string, unknown>[] = [];
 	for (const entry of body) {
 		const sanitized = sanitize(entry);
 		await validateBody(sanitized, inventoryCreateSchema);
@@ -27,12 +40,20 @@ export default defineEventHandler(async (event) => {
 		records.push(sanitized);
 	}
 
+	const session = await mongoose.startSession();
 	try {
-		return await Inventory.insertMany(records);
+		let inserted: unknown[] = [];
+		await session.withTransaction(async () => {
+			inserted = await Inventory.insertMany(records, { session, ordered: true });
+		});
+		return inserted;
 	} catch (error) {
+		console.error('[inventory/bulk]', error);
 		throw createError({
 			status: 500,
-			statusText: "Failed to create bulk inventory records",
+			statusText: 'Failed to create bulk inventory records',
 		});
+	} finally {
+		await session.endSession();
 	}
 });

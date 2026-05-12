@@ -73,7 +73,8 @@ const resolvedContents = computed(() => {
 const fillDate = computed(() => {
   if (!vessel.value?.contents?.length) return null
   const batch = batchStore.getBatchById(vessel.value.contents[0].batch)
-  return (batch?.stages as any)?.barrelAging?.entry?.date ? new Date((batch?.stages as any).barrelAging.entry.date) : null
+  const raw = getStage(batch, 'barrelAging')?.entry?.date
+  return raw ? new Date(raw) : null
 })
 
 const agingDuration = computed(() => {
@@ -116,7 +117,10 @@ const { confirm } = useDeleteConfirm()
 
 const handleEmpty = async () => {
   if (!vessel.value) return
-  const confirmed = await confirm('Vessel', vessel.value.name)
+  const confirmed = await confirm('Vessel', vessel.value.name, {
+    verb: 'Empty',
+    warningText: 'Contents will be cleared. This does not delete the vessel.',
+  })
   if (confirmed) {
     vesselStore.emptyVessel(vessel.value._id)
   }

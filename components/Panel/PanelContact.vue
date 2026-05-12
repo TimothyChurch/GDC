@@ -7,6 +7,7 @@ const contactStore = useContactStore();
 
 const { localData, isDirty, saving, save, cancel } = useFormPanel({
   source: () => contactStore.contact,
+  draft: { key: 'PanelContact', id: () => contactStore.contact._id },
   async onSave(data) {
     Object.assign(contactStore.contact, data);
     await contactStore.updateContact(contactStore.contact);

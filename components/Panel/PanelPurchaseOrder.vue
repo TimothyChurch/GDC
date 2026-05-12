@@ -19,6 +19,7 @@ const originalStatus = purchaseOrderStore.purchaseOrder.status;
 
 const { localData, isDirty, saving, save, cancel } = useFormPanel({
   source: () => purchaseOrderStore.purchaseOrder,
+  draft: { key: 'PanelPurchaseOrder', id: () => purchaseOrderStore.purchaseOrder._id },
   async onSave(data) {
     data.total = total.value;
     const statusChangedToDelivered =

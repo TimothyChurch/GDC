@@ -9,13 +9,20 @@ import { Recipe } from "~/server/models/recipe.schema";
 export default defineEventHandler(async (event) => {
 	await requireRole(event, 'Admin');
 
-	const batchResults = await deduplicateBatches();
-	const recipeResults = await deduplicateRecipes();
+	const outcome = await runOnceMigration('deduplicate-pipelines', async () => {
+		const batchResults = await deduplicateBatches();
+		const recipeResults = await deduplicateRecipes();
+		return { batches: batchResults, recipes: recipeResults };
+	});
 
-	return {
-		batches: batchResults,
-		recipes: recipeResults,
-	};
+	if (outcome.alreadyApplied) {
+		return {
+			alreadyApplied: true,
+			message: 'Migration deduplicate-pipelines has already been applied.',
+			appliedAt: outcome.appliedAt,
+		};
+	}
+	return outcome.result;
 });
 
 async function deduplicateBatches() {

@@ -14,7 +14,6 @@ const toast = useToast();
 const recipeStore = useRecipeStore();
 const itemStore = useItemStore();
 const batchStore = useBatchStore();
-const bulkSpiritStore = useBulkSpiritStore();
 const { confirm } = useDeleteConfirm();
 
 const stageDisplay = (name: string) =>
@@ -37,23 +36,31 @@ const editRecipe = () => {
 
 const deleteRecipe = async () => {
   if (!recipe.value) return;
-  const confirmed = await confirm('Recipe', recipe.value.name);
+  const id = recipe.value._id.toString();
+  const linked = batchStore.batches.filter((b) => (b as any).recipe?.toString() === id);
+  const active = linked.filter((b) => b.status === 'active');
+  let warningText = 'This action cannot be undone.';
+  if (active.length > 0) {
+    warningText = `${active.length} active batch${active.length !== 1 ? 'es' : ''} use this recipe. They will keep their data but lose the recipe link. This action cannot be undone.`;
+  } else if (linked.length > 0) {
+    warningText = `${linked.length} historical batch${linked.length !== 1 ? 'es' : ''} reference this recipe. They will lose the recipe link. This action cannot be undone.`;
+  }
+  const confirmed = await confirm('Recipe', recipe.value.name, { warningText });
   if (!confirmed) return;
   await recipeStore.deleteRecipe(recipe.value._id);
   toast.add({ title: 'Recipe deleted', color: 'success', icon: 'i-lucide-trash-2' });
   router.push('/admin/recipes');
 };
 
-const totalCost = computed(() => {
-  if (!recipe.value) return 0;
-  return recipePrice(recipe.value);
-});
-
-const { ingredientCost } = useUnitConversion();
-
 // --- Inline ingredient editing ---
 // Local editable copy of ingredients, synced from the recipe
 const editableIngredients = ref<{ _id: string; amount: number; unit: string }[]>([]);
+
+// Cost rows + totals are derived in a composable so the math is reusable + testable.
+const { ingredients, bulkSpiritIngredients, totalCost } = useRecipeCostCalculator({
+  ingredients: editableIngredients,
+  bulkSpirits: computed(() => recipe.value?.bulkSpirits),
+});
 
 // Initialize / sync when recipe changes
 watch(
@@ -74,6 +81,7 @@ const ingredientsDirty = computed(() => {
   if (original.length !== edited.length) return true;
   return original.some((orig, i) => {
     const ed = edited[i];
+    if (!ed) return true;
     return (
       orig._id !== ed._id ||
       orig.amount !== ed.amount ||
@@ -132,46 +140,19 @@ const addIngredient = () => {
   newIngredient.value = { _id: "", amount: null, unit: "" };
 };
 
-// Computed display data enriched from editable state
-const ingredients = computed(() => {
-  return editableIngredients.value.map((ing) => {
-    const item = itemStore.getItemById(ing._id);
-    const price = latestPrice(ing._id);
-    const cost = ingredientCost(price, ing.amount, ing.unit, item?.inventoryUnit || ing.unit);
-    return {
-      id: ing._id,
-      name: item?.name || "Unknown",
-      amount: ing.amount,
-      unit: ing.unit,
-      pricePerUnit: price,
-      cost,
-    };
-  });
-});
-
-// Bulk spirit display data enriched from the store
-const bulkSpiritIngredients = computed(() => {
-  if (!recipe.value?.bulkSpirits?.length) return [];
-  return recipe.value.bulkSpirits.map((bs) => {
-    const spirit = bulkSpiritStore.getBulkSpiritById(bs.bulkSpirit);
-    const cost = spirit && spirit.costPerProofGallon > 0
-      ? bulkSpiritIngredientCost(bs.volume, bs.volumeUnit, spirit)
-      : 0;
-    return {
-      id: bs.bulkSpirit,
-      name: spirit?.name || 'Unknown Spirit',
-      volume: bs.volume,
-      volumeUnit: bs.volumeUnit,
-      abv: spirit?.abv ?? 0,
-      costPerPG: spirit?.costPerProofGallon ?? 0,
-      cost,
-    };
-  });
-});
-
 const relatedBatches = computed(() =>
   batchStore.batches.filter((b) => b.recipe === route.params._id),
 );
+
+// Live recipe object for projection (uses editable ingredients so the
+// projection reacts to inline edits before save)
+const projectionRecipe = computed(() => {
+  if (!recipe.value) return null;
+  return {
+    ...recipe.value,
+    items: editableIngredients.value,
+  };
+});
 </script>
 
 <template>
@@ -290,6 +271,9 @@ const relatedBatches = computed(() =>
       </div>
     </div>
 
+    <!-- Projected Wash & Output (live, reflects unsaved ingredient edits) -->
+    <RecipeProjections v-if="projectionRecipe" :recipe="projectionRecipe" />
+
     <!-- Ingredients (inline editable) -->
     <div class="bg-charcoal rounded-xl border border-brown/30 p-5">
       <div class="flex items-center justify-between mb-4">
@@ -351,7 +335,7 @@ const relatedBatches = computed(() =>
 
           <!-- Amount (editable) -->
           <UInput
-            v-model.number="editableIngredients[i].amount"
+            v-model.number="editableIngredients[i]!.amount"
             type="number"
             size="sm"
             :ui="{ base: 'text-sm' }"
@@ -361,7 +345,7 @@ const relatedBatches = computed(() =>
 
           <!-- Unit (editable) -->
           <USelectMenu
-            v-model="editableIngredients[i].unit"
+            v-model="editableIngredients[i]!.unit"
             :items="allUnits"
             size="sm"
           />

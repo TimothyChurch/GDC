@@ -7,6 +7,8 @@ await settingsStore.ensureLoaded();
 const tabs = [
   { label: "Categories", icon: "i-lucide-tags", value: "categories", slot: "categories" },
   { label: "Barrel Defaults", icon: "i-lucide-cylinder", value: "barrels", slot: "barrels" },
+  { label: "Units", icon: "i-lucide-ruler", value: "units", slot: "units" },
+  { label: "Production", icon: "i-lucide-flask-conical", value: "production", slot: "production" },
   { label: "Theme", icon: "i-lucide-palette", value: "theme", slot: "theme" },
   { label: "Distillery Info", icon: "i-lucide-building-2", value: "distillery", slot: "distillery" },
 ];
@@ -32,6 +34,12 @@ const tabs = [
       </template>
       <template #barrels>
         <SettingsBarrelDefaults />
+      </template>
+      <template #units>
+        <SettingsUnits />
+      </template>
+      <template #production>
+        <SettingsProduction />
       </template>
       <template #theme>
         <SettingsTheme />

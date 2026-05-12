@@ -8,14 +8,15 @@ export default defineEventHandler(async (event) => {
 
 	const body = await readBody(event);
 
-	// Bot detection: honeypot field should be empty
+	// Bot detection: honeypot field should be empty.
+	// Silent-accept so bots don't probe for the trigger; rate limiter blocks abuse volume.
 	if (body?.website) {
-		// Silently accept to not tip off bots, but don't save anything
 		return { success: true, message: "Thanks for reaching out! We'll get back to you soon." };
 	}
 
-	// Bot detection: form submitted too quickly (< 3 seconds)
-	if (body?._t && Date.now() - Number(body._t) < 3000) {
+	// Optional time-on-page floor (1s). Set well below typical autofill submission so we
+	// don't drop legitimate fast submitters; the rate limiter is the real spam control.
+	if (body?._t && Date.now() - Number(body._t) < 1000) {
 		return { success: true, message: "Thanks for reaching out! We'll get back to you soon." };
 	}
 

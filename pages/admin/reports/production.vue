@@ -24,6 +24,8 @@ const periods = [
       </template>
     </AdminPageHeader>
 
+    <ReportShell />
+
     <!-- Period selector -->
     <div class="flex items-center gap-1.5 mb-6 bg-brown/15 rounded-lg p-1 border border-brown/20 w-fit">
       <UButton

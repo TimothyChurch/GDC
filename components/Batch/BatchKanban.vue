@@ -8,7 +8,9 @@ const props = defineProps<{
 
 const batchStore = useBatchStore()
 
-const batchesSource = computed(() => props.data ?? batchStore.batches)
+const batchesSource = computed(() =>
+  (props.data ?? batchStore.batches).filter((b) => b.status === 'active')
+)
 
 // Stages excluded from the board view — they accumulate indefinitely and
 // aren't actively worked on the batch index. Still reachable from the batch detail page.

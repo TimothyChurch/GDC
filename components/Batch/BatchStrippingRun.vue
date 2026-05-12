@@ -74,8 +74,7 @@ const totalProofGallons = computed(() =>
 const fermentingVesselId = computed(() => {
   const fermStageKey = STAGE_KEY_MAP['Fermenting']
   if (!fermStageKey) return undefined
-  const fermStage = (props.batch.stages as any)?.[fermStageKey]
-  return fermStage?.vessel as string | undefined
+  return getStage(props.batch, fermStageKey)?.vessel
 })
 
 const getRunIndex = (run: DistillingRun) => runs.value.indexOf(run)
@@ -95,37 +94,12 @@ const addRun = async () => {
 
   addingRun.value = true
   try {
-    const sourceVessels = result.chargeSourceVessels || (result.chargeSourceVessel ? [result.chargeSourceVessel] : [])
-    if (result.chargeVolume > 0 && sourceVessels.length > 0) {
-      for (const vesselId of sourceVessels) {
-        const perVessel = result.chargePerVessel?.find(p => p.vesselId === vesselId)
-        if (perVessel) {
-          await vesselStore.transferBatchContents(vesselId, result.stillId, props.batch._id, perVessel.volume, perVessel.volumeUnit)
-        } else {
-          const vessel = vesselStore.getVesselById(vesselId)
-          const entry = vessel?.contents?.find(c => c.batch === props.batch._id)
-          if (!entry || entry.volume <= 0) continue
-          await vesselStore.transferBatchContents(vesselId, result.stillId, props.batch._id, entry.volume, entry.volumeUnit)
-        }
-      }
-    }
-
-    for (const addition of result.additions) {
-      if (addition.sourceVessel && (addition.volume || 0) > 0) {
-        await vesselStore.transferBatch(addition.sourceVessel, result.stillId, {
-          volume: addition.volume!,
-          volumeUnit: addition.volumeUnit || 'gallon',
-          abv: addition.abv || 0,
-          value: 0,
-        })
-      }
-    }
-
-    if (result.stillId !== stage.value?.vessel) {
-      await batchStore.updateStageData(props.batch._id, 'Stripping Run', {
-        vessel: result.stillId,
-      })
-    }
+    const { sourceVesselIds: sourceVessels } = await applyChargeResult({
+      batchId: props.batch._id,
+      stage: 'Stripping Run',
+      result,
+      currentStageVessel: stage.value?.vessel,
+    })
 
     const newRun: DistillingRun = {
       runType: 'stripping',

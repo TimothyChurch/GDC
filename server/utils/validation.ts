@@ -133,6 +133,17 @@ export const inventoryCreateSchema = yup.object({
   unitSizeUnit: yup.string().nullable(),
 });
 
+const EXTRACT_TYPE_VALUES = [
+  "malted_grain",
+  "raw_grain",
+  "flaked_grain",
+  "specialty_grain",
+  "sugar",
+  "extract_dry",
+  "extract_liquid",
+  "adjunct",
+] as const;
+
 export const itemCreateSchema = yup.object({
   name: yup.string().required("Name is required"),
   category: yup.string(),
@@ -143,6 +154,14 @@ export const itemCreateSchema = yup.object({
   reorderPoint: yup.number().min(0, "Reorder point cannot be negative"),
   usePerMonth: yup.number().min(0, "Use per month cannot be negative"),
   notes: yup.string(),
+  ppg: yup.number().min(0, "PPG cannot be negative").max(50, "PPG cannot exceed 50").nullable(),
+  extractType: yup.string().oneOf([...EXTRACT_TYPE_VALUES]).nullable(),
+  fermentable: yup.boolean(),
+  displacement: yup
+    .number()
+    .min(0, "Displacement cannot be negative")
+    .max(0.30, "Displacement cannot exceed 0.30 gal/lb")
+    .nullable(),
 });
 
 const productionCostsSchema = yup.object({
@@ -177,6 +196,10 @@ export const recipeCreateSchema = yup.object({
   pipeline: yup.array().of(yup.string()).min(1, "Pipeline must have at least one stage")
     .test("unique-stages", "Pipeline must not contain duplicate stages", (val) => !val || new Set(val).size === val.length),
   pipelineTemplate: yup.string(),
+  mashEfficiency: yup.number().min(0).max(100).nullable(),
+  attenuation: yup.number().min(0).max(100).nullable(),
+  distillationYield: yup.number().min(0).max(100).nullable(),
+  grainIn: yup.boolean(),
 });
 
 export const newsletterSubscribeSchema = yup.object({
@@ -343,6 +366,14 @@ export const itemUpdateSchema = yup.object({
   reorderPoint: yup.number().min(0, "Reorder point cannot be negative"),
   usePerMonth: yup.number().min(0, "Use per month cannot be negative"),
   notes: yup.string(),
+  ppg: yup.number().min(0, "PPG cannot be negative").max(50, "PPG cannot exceed 50").nullable(),
+  extractType: yup.string().oneOf([...EXTRACT_TYPE_VALUES]).nullable(),
+  fermentable: yup.boolean(),
+  displacement: yup
+    .number()
+    .min(0, "Displacement cannot be negative")
+    .max(0.30, "Displacement cannot exceed 0.30 gal/lb")
+    .nullable(),
 });
 
 export const productionUpdateSchema = yup.object({
@@ -365,6 +396,10 @@ export const recipeUpdateSchema = yup.object({
   pipeline: yup.array().of(yup.string())
     .test("unique-stages", "Pipeline must not contain duplicate stages", (val) => !val || new Set(val).size === val.length),
   pipelineTemplate: yup.string(),
+  mashEfficiency: yup.number().min(0).max(100).nullable(),
+  attenuation: yup.number().min(0).max(100).nullable(),
+  distillationYield: yup.number().min(0).max(100).nullable(),
+  grainIn: yup.boolean(),
 });
 
 export const eventUpdateSchema = yup.object({
@@ -528,5 +563,19 @@ export const settingsUpdateSchema = yup.object({
       ttb: yup.string(),
       tabc: yup.string(),
     }),
+  }),
+  production: yup.object({
+    mashEfficiency: yup
+      .number()
+      .min(0, "Mash efficiency cannot be negative")
+      .max(100, "Mash efficiency cannot exceed 100%"),
+    fermentationAttenuation: yup
+      .number()
+      .min(0, "Attenuation cannot be negative")
+      .max(100, "Attenuation cannot exceed 100%"),
+    distillationYield: yup
+      .number()
+      .min(0, "Distillation yield cannot be negative")
+      .max(100, "Distillation yield cannot exceed 100%"),
   }),
 });

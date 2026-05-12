@@ -15,7 +15,8 @@ const filterRecipe = ref<string | undefined>(undefined)
 const getBarrelAge = (vessel: any): number => {
   if (!vessel.contents?.length) return 0
   const batch = batchStore.getBatchById(vessel.contents[0].batch)
-  const fillDate = (batch?.stages as any)?.barrelAging?.entry?.date ? new Date((batch?.stages as any).barrelAging.entry.date) : null
+  const raw = getStage(batch, 'barrelAging')?.entry?.date
+  const fillDate = raw ? new Date(raw) : null
   if (!fillDate) return 0
   return differenceInDays(new Date(), fillDate)
 }

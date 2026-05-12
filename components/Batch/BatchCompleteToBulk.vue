@@ -49,13 +49,13 @@ const summary = computed(() => {
 	return {
 		volume: getStageVolume(props.batch, 'Storage'),
 		volumeUnit: props.batch.batchSizeUnit || 'gallon',
-		abv: (props.batch.stages as any)?.storage?.abv || 0,
+		abv: (getStage(props.batch, 'storage') as any)?.abv || 0,
 		value: props.batch.batchCost || props.batch.recipeCost || 0,
 	};
 });
 
 const bulkSpiritName = computed(() => {
-	const target = bulkSpiritStore.crud.items.value.find((bs: any) => bs._id === selectedBulkSpirit.value);
+	const target = bulkSpiritStore.items.find((bs: any) => bs._id === selectedBulkSpirit.value);
 	return target?.name || 'bulk spirit';
 });
 

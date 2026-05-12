@@ -1,8 +1,6 @@
 import { calculateProofGallons } from '~/utils/proofGallons'
-
-// ─── Tax Constants ─────────────────────────────────────────────────────────────
-const TTB_CBMA_TIER1_RATE = 2.70  // $/proof gallon (CBMA Tier 1)
-const TABC_TAX_RATE = 2.40        // $/wine gallon (Texas Tax Code § 201.43)
+import { computeFederalExciseTax } from '~/utils/federalExciseTax'
+import { computeTabcTaxDue } from '~/utils/tabcCalculations'
 
 /** Convert bottle volume to wine gallons */
 export function bottleToWineGallons(bottle: { volume?: number; volumeUnit?: string }): number {
@@ -89,7 +87,7 @@ export function useProductionCosts({ localData, vesselStore, bottleStore, batchS
     const wgPerBottle = bottleToWineGallons(bottle)
     const totalWG = wgPerBottle * localData.value.quantity
     const proofGallons = calculateProofGallons(totalWG, 'gallon', bottle.abv || 0)
-    return +(proofGallons * TTB_CBMA_TIER1_RATE).toFixed(2)
+    return +computeFederalExciseTax(proofGallons).toFixed(2)
   })
 
   /** TABC Texas Excise Tax: wine gallons x $2.40/gal */
@@ -100,7 +98,7 @@ export function useProductionCosts({ localData, vesselStore, bottleStore, batchS
     if (!bottle || !localData.value.quantity) return 0
     const wgPerBottle = bottleToWineGallons(bottle)
     const totalWG = wgPerBottle * localData.value.quantity
-    return +(totalWG * TABC_TAX_RATE).toFixed(2)
+    return +computeTabcTaxDue(totalWG).toFixed(2)
   })
 
   /** Total production cost: all cost categories summed */

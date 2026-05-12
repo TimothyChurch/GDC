@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import type { TableColumn } from '@nuxt/ui'
 import type { Item, ItemCategory } from '~/types'
+import type { Row } from '@tanstack/vue-table'
 import { getPaginationRowModel } from '@tanstack/vue-table'
 import { getStockStatus, getStockStatusColor } from '~/composables/useInventoryCategories'
 
@@ -25,32 +26,44 @@ function getLatestQuantity(itemId: string): number {
   return latest ? inventoryStore.getTotalQuantity(latest) : 0
 }
 
-const outOfStockCount = computed(() =>
-  allCategoryItems.value.filter(item => getLatestQuantity(item._id) <= 0).length
+// Decorate each item with its current stock + status so TanStack Table sees a
+// fresh `data` reference whenever `inventoryStore.inventories` changes — cell
+// render functions are not Vue reactive templates and won't re-evaluate
+// otherwise (tech-debt #71).
+type DecoratedItem = Item & { currentStock: number; stockStatus: ReturnType<typeof getStockStatus> }
+
+const decoratedItems = computed<DecoratedItem[]>(() =>
+  allCategoryItems.value.map((item) => {
+    const currentStock = getLatestQuantity(item._id)
+    const stockStatus = getStockStatus(currentStock, item.reorderPoint || 0)
+    return { ...item, currentStock, stockStatus }
+  }),
 )
 
-const categoryItems = computed(() => {
-  if (showOutOfStock.value) return allCategoryItems.value
-  return allCategoryItems.value.filter(item => getLatestQuantity(item._id) > 0)
+const outOfStockCount = computed(() =>
+  decoratedItems.value.filter((item) => item.currentStock <= 0).length,
+)
+
+const categoryItems = computed<DecoratedItem[]>(() => {
+  if (showOutOfStock.value) return decoratedItems.value
+  return decoratedItems.value.filter((item) => item.currentStock > 0)
 })
 
 const { search, pagination, tableRef, filteredTotal } = useTableState(
   computed(() => categoryItems.value.length)
 )
 
-const columns: TableColumn<Item>[] = [
-  sortableColumn<Item>('name', 'Name'),
+const columns: TableColumn<DecoratedItem>[] = [
+  sortableColumn<DecoratedItem>('name', 'Name'),
   {
     accessorKey: 'type',
     header: 'Type',
   },
   {
     id: 'inventory',
+    accessorKey: 'currentStock',
     header: 'Inventory',
-    cell: ({ row }) => {
-      const qty = getLatestQuantity(row.original._id)
-      return formatWithUnits(qty, row.original)
-    },
+    cell: ({ row }) => formatWithUnits(row.original.currentStock, row.original),
   },
   {
     accessorKey: 'usePerMonth',
@@ -64,16 +77,14 @@ const columns: TableColumn<Item>[] = [
   },
   {
     id: 'stockStatus',
+    accessorKey: 'stockStatus',
     header: 'Status',
     cell: ({ row }) => {
-      const qty = getLatestQuantity(row.original._id)
-      const reorder = row.original.reorderPoint || 0
-      const status = getStockStatus(qty, reorder)
-      const color = getStockStatusColor(status)
-      return h(UBadge, { color, variant: 'subtle', size: 'sm' }, () => status)
+      const color = getStockStatusColor(row.original.stockStatus)
+      return h(UBadge, { color, variant: 'subtle', size: 'sm' }, () => row.original.stockStatus)
     },
   },
-  actionsColumn<Item>((row) => [
+  actionsColumn<DecoratedItem>((row) => [
     {
       label: 'Edit item',
       onSelect() {
@@ -142,7 +153,7 @@ const openModal = async () => await modal.open()
         :data="categoryItems"
         :columns="columns"
         :loading="itemStore.loading"
-        @select="(_e: Event, row: any) => router.push(`/admin/items/${row.original._id}`)"
+        @select="(_e: Event, row: Row<DecoratedItem>) => router.push(`/admin/items/${row.original._id}`)"
         :ui="{ tr: 'cursor-pointer' }"
       >
         <template #empty>
@@ -169,18 +180,18 @@ const openModal = async () => await modal.open()
             <div class="text-xs text-parchment/60">{{ item.type || 'No type' }}</div>
           </div>
           <UBadge
-            :color="getStockStatusColor(getStockStatus(getLatestQuantity(item._id), item.reorderPoint || 0))"
+            :color="getStockStatusColor(item.stockStatus)"
             variant="subtle"
             size="sm"
           >
-            {{ getStockStatus(getLatestQuantity(item._id), item.reorderPoint || 0) }}
+            {{ item.stockStatus }}
           </UBadge>
         </div>
         <div class="grid grid-cols-2 gap-2 text-xs">
           <div>
             <span class="text-parchment/60">Stock</span>
             <div class="text-parchment font-semibold">
-              {{ formatWithUnits(getLatestQuantity(item._id), item) }}
+              {{ formatWithUnits(item.currentStock, item) }}
             </div>
           </div>
           <div>

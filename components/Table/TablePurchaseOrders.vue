@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import type { TableColumn } from "@nuxt/ui";
 import type { PurchaseOrder } from "~/types";
+import type { Row } from "@tanstack/vue-table";
 import { getPaginationRowModel } from "@tanstack/vue-table";
 
 const props = defineProps<{
@@ -124,7 +125,7 @@ const addPurchaseOrder = () => {
         :data="tableData"
         :columns="columns"
         :loading="purchaseOrderStore.loading"
-        @select="(_e: Event, row: any) => router.push(`/admin/purchaseOrders/${row.original._id}`)"
+        @select="(_e: Event, row: Row<PurchaseOrder>) => router.push(`/admin/purchaseOrders/${row.original._id}`)"
         :ui="{ tr: 'cursor-pointer' }"
       >
         <template #empty>

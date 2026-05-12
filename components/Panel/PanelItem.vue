@@ -1,5 +1,8 @@
 <script setup lang="ts">
 import * as yup from 'yup';
+import { EXTRACT_TYPES } from '../../types/interfaces/Item';
+import { findGrainDefault } from '../../data/grainDefaults';
+import { DEFAULT_DISPLACEMENT_BY_EXTRACT_TYPE } from '../../utils/grainBill';
 
 const emit = defineEmits<{ close: [boolean] }>();
 
@@ -17,10 +20,13 @@ const schema = yup.object({
   baseCostPrice: yup.number().min(0).nullable(),
   baseCostSize: yup.number().min(0).nullable(),
   baseCostUnit: yup.string(),
+  ppg: yup.number().min(0).max(50).nullable(),
+  displacement: yup.number().min(0).max(0.30).nullable(),
 });
 
 const { localData, isDirty, saving, save, cancel } = useFormPanel({
   source: () => itemStore.item,
+  draft: { key: 'PanelItem', id: () => itemStore.item._id },
   async onSave(data) {
     Object.assign(itemStore.item, data);
     await itemStore.updateItem();
@@ -38,6 +44,53 @@ const addType = (type: string) => {
   itemInventoryTypes.value.push(type);
   localData.value.type = type;
 };
+
+const isFermentableCategory = computed(
+  () => localData.value.category === 'Base Ingredient',
+);
+
+const extractTypeOptions = EXTRACT_TYPES.map((t) => ({
+  value: t,
+  label: ({
+    malted_grain: 'Malted Grain',
+    raw_grain: 'Raw Grain',
+    flaked_grain: 'Flaked Grain',
+    specialty_grain: 'Specialty/Roasted Grain',
+    sugar: 'Sugar / Molasses / Honey',
+    extract_dry: 'Dry Malt Extract (DME)',
+    extract_liquid: 'Liquid Malt Extract (LME)',
+    adjunct: 'Adjunct (non-fermentable)',
+  } as Record<string, string>)[t],
+}));
+
+const suggestedDefault = computed(() => findGrainDefault(localData.value.name || ''));
+
+/** Default displacement (gal/lb) suggested for the current extractType.
+ * Shown as the placeholder in the Displacement input so users see the
+ * fallback value that will be used at calculation time when they leave it
+ * blank. Returns null when no extractType is set. */
+const suggestedDisplacement = computed(() => {
+  const t = localData.value.extractType as keyof typeof DEFAULT_DISPLACEMENT_BY_EXTRACT_TYPE | undefined;
+  if (!t) return null;
+  return DEFAULT_DISPLACEMENT_BY_EXTRACT_TYPE[t] ?? null;
+});
+
+function applySuggestion() {
+  const s = suggestedDefault.value;
+  if (!s) return;
+  localData.value.ppg = s.ppg;
+  localData.value.extractType = s.extractType;
+  localData.value.fermentable = true;
+}
+
+watch(
+  () => localData.value.ppg,
+  (ppg) => {
+    if (ppg && ppg > 0 && localData.value.fermentable !== true) {
+      localData.value.fermentable = true;
+    }
+  },
+);
 </script>
 
 <template>
@@ -129,6 +182,71 @@ const addType = (type: string) => {
                 class="w-full"
               />
             </UFormField>
+
+            <!-- Brewing Properties — fermentable items only -->
+            <template v-if="isFermentableCategory">
+              <USeparator label="Brewing Properties" />
+
+              <div
+                v-if="suggestedDefault && (!localData.ppg || !localData.extractType)"
+                class="rounded border border-amber-500/30 bg-amber-500/10 p-2 text-xs text-parchment/90 flex items-center justify-between gap-2"
+              >
+                <span>
+                  Suggested: <b>{{ suggestedDefault.label }}</b> —
+                  PPG {{ suggestedDefault.ppg }}
+                </span>
+                <UButton size="xs" variant="soft" color="warning" @click="applySuggestion">
+                  Use
+                </UButton>
+              </div>
+
+              <div class="grid grid-cols-2 gap-4">
+                <UFormField label="PPG" name="ppg" hint="Points per lb per gal">
+                  <UInput
+                    v-model.number="localData.ppg"
+                    type="number"
+                    min="0"
+                    max="50"
+                    step="1"
+                    placeholder="e.g. 37"
+                  />
+                </UFormField>
+                <UFormField label="Extract Type" name="extractType">
+                  <USelect
+                    v-model="localData.extractType"
+                    :items="extractTypeOptions"
+                    placeholder="Select type"
+                    class="w-full"
+                  />
+                </UFormField>
+              </div>
+              <UFormField>
+                <div class="flex items-center justify-between">
+                  <div>
+                    <div class="text-sm font-medium text-parchment">Fermentable</div>
+                    <div class="text-xs text-parchment/60">Include in grain-bill projections</div>
+                  </div>
+                  <USwitch v-model="localData.fermentable" />
+                </div>
+              </UFormField>
+              <UFormField
+                v-if="localData.fermentable"
+                label="Displacement"
+                name="displacement"
+                hint="gal/lb"
+                help="Volume displaced by 1 lb of this grain when wetted in mash. Affects proof-gallon calculations for grain-in batches. Leave blank to use the default for this extract type."
+              >
+                <UInput
+                  v-model.number="localData.displacement"
+                  type="number"
+                  min="0"
+                  max="0.30"
+                  step="0.01"
+                  :placeholder="suggestedDisplacement != null ? `default ${suggestedDisplacement.toFixed(2)}` : 'e.g. 0.10'"
+                />
+              </UFormField>
+            </template>
+
             <USeparator />
             <UFormField>
               <div class="flex items-center justify-between">

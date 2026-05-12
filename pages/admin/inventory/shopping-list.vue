@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import type { TableColumn } from "@nuxt/ui";
 import type { ShoppingListItem } from "~/stores/useItemStore";
+import type { Row } from "@tanstack/vue-table";
 import { getPaginationRowModel } from "@tanstack/vue-table";
 import { getStockStatusColor } from "~/composables/useInventoryCategories";
 
@@ -266,7 +267,7 @@ const lowStockCount = computed(
           :loading="itemStore.loading"
           :ui="{ tr: 'cursor-pointer' }"
           @select="
-            (_e: Event, row: any) =>
+            (_e: Event, row: Row<ShoppingListItem>) =>
               router.push(`/admin/items/${row.original.item._id}`)
           "
         >

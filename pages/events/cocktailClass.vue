@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import type { GDCEvent } from '~/types';
+
 if (import.meta.server) {
   useSeoMeta({
     title: 'Cocktail Classes | Galveston Distilling Co',
@@ -11,7 +13,7 @@ if (import.meta.server) {
 }
 
 // Upcoming public classes
-const { data: upcomingClasses, status: classesStatus } = useFetch('/api/event/upcoming');
+const { data: upcomingClasses, status: classesStatus } = useFetch<GDCEvent[]>('/api/event/upcoming');
 
 function formatClassDate(dateStr: string) {
   return new Date(dateStr).toLocaleDateString('en-US', {
@@ -73,7 +75,7 @@ const submitRequest = async () => {
     requestForm.value = { firstName: '', lastName: '', email: '', phone: '', date: '', groupSize: null, notes: '' };
   } catch (e) {
     requestStatus.value = 'error';
-    requestMessage.value = e?.data?.data?.[0] || 'Something went wrong. Please try again.';
+    requestMessage.value = (e as { data?: { data?: string[] } })?.data?.data?.[0] || 'Something went wrong. Please try again.';
   }
 };
 </script>

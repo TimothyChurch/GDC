@@ -41,7 +41,7 @@ function canRemove(index: number): boolean {
   // Cannot remove sole occurrence of a started stage
   const stageKey = STAGE_KEY_MAP[stageName]
   if (stageKey) {
-    const stageData = (props.batch.stages as any)?.[stageKey]
+    const stageData = getStage(props.batch, stageKey)
     if (stageData?.startedAt && occurrences(stageName) <= 1) return false
   }
 
@@ -58,7 +58,7 @@ function removeTooltip(index: number): string | undefined {
   if (getStageVolume(props.batch, stageName) > 0) return 'Stage has volume — transfer first'
   const stageKey = STAGE_KEY_MAP[stageName]
   if (stageKey) {
-    const stageData = (props.batch.stages as any)?.[stageKey]
+    const stageData = getStage(props.batch, stageKey)
     if (stageData?.startedAt && occurrences(stageName) <= 1) return 'Stage has been started'
   }
   if (editedPipeline.value.length <= 1) return 'Pipeline needs at least one stage'

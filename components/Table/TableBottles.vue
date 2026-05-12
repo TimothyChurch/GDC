@@ -125,7 +125,7 @@ const newBottle = () => {
         :data="props.bottles"
         :columns="columns"
         :loading="bottleStore.loading"
-        @select="(_e: Event, row: any) => router.push(`/admin/bottles/${row.original._id}`)"
+        @select="(_e: Event, row: Row<Bottle>) => router.push(`/admin/bottles/${row.original._id}`)"
         :ui="{ tr: 'cursor-pointer' }"
       >
         <template #empty>

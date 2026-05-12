@@ -89,6 +89,32 @@ export const Recipe = defineMongooseModel({
     pipelineTemplate: {
       type: String,
     },
+    // ─── Projection overrides ─────────────────────────────────
+    // When set, override the matching settings.production default for this
+    // recipe only. Leave undefined to inherit the global default.
+    mashEfficiency: { type: Number },
+    attenuation: { type: Number },
+    distillationYield: { type: Number },
+    /** Whether the grain remains in the wash through fermentation (grain-in,
+     * typical for bourbon/whiskey/rye/moonshine) versus lautered/sparged
+     * before fermenting (grain-out — typical for vodka, gin, rum, liqueur).
+     *
+     * When true, projection math subtracts grain displacement from the wash
+     * volume to get the *effective liquid* volume used for PG calculations.
+     *
+     * Default false at the DB level (safer — won't silently change PG on
+     * existing recipes). New recipes should be prefilled from the recipe's
+     * `class` (Whisky/Bourbon/Rye → true; Vodka/Gin/Rum/Liqueur → false). */
+    grainIn: { type: Boolean, default: false },
+    // ─── Projection snapshot ──────────────────────────────────
+    // Recomputed on every recipe save by utils/grainBill.ts so that the
+    // recipe card and reports can render projections without re-resolving
+    // grain items at query time.
+    projectedOG: { type: Number },
+    projectedFG: { type: Number },
+    projectedWashAbv: { type: Number },
+    projectedProofGallons: { type: Number },
+    projectedFermentableLb: { type: Number },
   },
   options: { timestamps: true },
 });

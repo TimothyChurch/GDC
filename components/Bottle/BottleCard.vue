@@ -3,7 +3,15 @@ import type { Bottle } from '~/types'
 
 const props = defineProps<{ bottle: Bottle }>()
 const router = useRouter()
-const { isLowStock } = useBottleStock()
+const { isLowStock, getStockStatus } = useBottleStock()
+
+const stockCount = computed(() => getStockStatus(props.bottle._id)?.currentStock)
+const stockLabel = computed(() => {
+  if (props.bottle.inStock === false) return 'Out of Stock'
+  if (stockCount.value === undefined) return 'In Stock'
+  const n = stockCount.value
+  return `${n} in stock`
+})
 
 const classIcon = computed(() => {
   const cls = props.bottle.class?.toLowerCase() || ''
@@ -66,7 +74,7 @@ const classIcon = computed(() => {
           ? 'bg-green-500/15 text-green-400 border-green-500/25'
           : 'bg-red-500/15 text-red-400 border-red-500/25'"
       >
-        {{ bottle.inStock !== false ? 'In Stock' : 'Out of Stock' }}
+        {{ stockLabel }}
       </span>
     </div>
   </div>

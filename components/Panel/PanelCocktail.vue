@@ -15,6 +15,7 @@ const { getIngredientName, totalIngredientCost } = useIngredientResolver();
 
 const { localData, isDirty, saving, save, cancel } = useFormPanel({
   source: () => cocktailStore.cocktail,
+  draft: { key: 'PanelCocktail', id: () => cocktailStore.cocktail._id },
   async onSave(data) {
     Object.assign(cocktailStore.cocktail, data);
     await cocktailStore.updateCocktail();

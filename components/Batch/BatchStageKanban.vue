@@ -27,26 +27,38 @@ const emit = defineEmits<{
 
 const vesselStore = useVesselStore()
 
-// Stages to display: every stage that currently holds volume, plus the next stage the batch will advance to.
+// Stages to display: every stage that currently holds volume (including
+// Upcoming when a batch is partially advanced), plus the next stage the
+// batch will advance to. Upcoming gets its own card so split batches can
+// be advanced from either side.
 const kanbanStages = computed<string[]>(() => {
   const list: string[] = []
   const active = hasStageVolumes(props.batch)
-    ? getActiveStages(props.batch).filter(s => s !== 'Upcoming')
-    : [props.batch.currentStage].filter(s => s !== 'Upcoming')
+    ? getActiveStages(props.batch)
+    : [props.batch.currentStage]
 
   for (const s of active) if (!list.includes(s)) list.push(s)
 
-  // "Next stage" — from the latest active stage (by pipeline order), show the first stage after it.
-  const lastActive = [...props.batch.pipeline]
+  // "Next stage" — from the latest non-Upcoming active stage (by pipeline
+  // order), show the first stage after it. (Upcoming's "next" is the first
+  // pipeline stage, which we handle separately so it doesn't push past
+  // genuine progress on a split batch.)
+  const lastActiveProduction = [...props.batch.pipeline]
     .reverse()
     .find(s => list.includes(s)) || props.batch.currentStage
-  const next = props.batch.currentStage === 'Upcoming'
-    ? props.batch.pipeline[0]
-    : getNextStage(props.batch.pipeline, lastActive)
+  let next: string | null | undefined = null
+  if (lastActiveProduction === 'Upcoming' || (!lastActiveProduction && props.batch.currentStage === 'Upcoming')) {
+    next = props.batch.pipeline[0]
+  } else if (lastActiveProduction) {
+    next = getNextStage(props.batch.pipeline, lastActiveProduction)
+  }
   if (next && !list.includes(next)) list.push(next)
 
-  // Sort by pipeline order so the flow reads left-to-right.
-  return list.sort((a, b) => props.batch.pipeline.indexOf(a) - props.batch.pipeline.indexOf(b))
+  // Sort by pipeline order (Upcoming first, then pipeline order) so the
+  // flow reads left-to-right.
+  const orderOf = (s: string) =>
+    s === 'Upcoming' ? -1 : props.batch.pipeline.indexOf(s)
+  return list.sort((a, b) => orderOf(a) - orderOf(b))
 })
 
 type CardData = {
@@ -71,7 +83,7 @@ const shortUnit = (u: string) => u.replace(/gallon/i, 'gal').replace(/liter/i, '
 const getStageStats = (stage: string): CardData => {
   const display = STAGE_DISPLAY[stage] || { icon: 'i-lucide-circle', color: 'neutral' }
   const stageKey = STAGE_KEY_MAP[stage]
-  const stageData: any = stageKey ? (props.batch.stages as any)?.[stageKey] : null
+  const stageData: any = stageKey ? getStage(props.batch, stageKey) : null
 
   const volume = getStageVolume(props.batch, stage)
   const volumeUnit = props.batch.batchSizeUnit || 'gallon'

@@ -2,7 +2,7 @@
 import type { Batch, DistillingRun } from '~/types';
 import type { Transfer, TransferInput } from '~/types/interfaces/Transfer';
 import { LazyModalTransferAction, LazyPanelProduction } from '#components';
-import { getNextStage, STAGE_DISPLAY } from '~/composables/batchPipeline';
+import { getNextStage, STAGE_DISPLAY, STAGE_VESSEL_TYPE } from '~/composables/batchPipeline';
 import { calculateProofGallons } from '~/utils/proofGallons';
 
 /**
@@ -46,12 +46,21 @@ const nextStage = computed(() => {
 const stageDisplay = computed(() => nextStage.value ? STAGE_DISPLAY[nextStage.value] : null);
 
 function findSources() {
+	// Pre-populate vessel + inferred proof, leave volume = 0 so the user types
+	// the amount they're actually moving (avoids the "you also have to change
+	// 400 down to 100" friction in partial transfers).
+	//
+	// Filter to vessels matching the source stage's vessel type — e.g.,
+	// advancing FROM "Stripping Run" sources only from Stills, not from the
+	// Fermenter that may still hold residual wash from a prior partial draw.
+	const requiredVesselType = STAGE_VESSEL_TYPE[sourceStage.value];
 	const out: { vessel: string; volume: number; proof: number }[] = [];
-	for (const v of vesselStore.crud.items.value) {
+	for (const v of vesselStore.items) {
+		if (requiredVesselType && v.type !== requiredVesselType) continue;
 		const slot = (v.contents || []).find((c: any) => String(c.batch) === props.batch._id);
 		if (slot && slot.volume > 0) {
 			const proof = (slot as any).proof ?? (slot.abv != null ? slot.abv * 2 : 0);
-			out.push({ vessel: v._id, volume: slot.volume, proof });
+			out.push({ vessel: v._id, volume: 0, proof });
 		}
 	}
 	return out;
@@ -104,7 +113,7 @@ async function applyEnterDistillation(transfer: Transfer) {
 
 async function applyExitStrippingToLowWines(transfer: Transfer) {
 	if (transfer.fromStage !== 'Stripping Run' || transfer.toStage !== 'Low Wines') return;
-	const fresh = batchStore.crud.items.value.find((b) => b._id === props.batch._id);
+	const fresh = batchStore.items.find((b) => b._id === props.batch._id);
 	const runs = fresh?.stages?.strippingRun?.runs || [];
 	if (runs.length === 0) return;
 	let runIndex = -1;
@@ -139,7 +148,7 @@ async function openBottling() {
 	// Phase 7 — Bottled stage uses the Production panel (PanelProduction handles
 	// the engine-driven vessel drain + production-doc creation atomically).
 	const allBatchVessels: string[] = [];
-	for (const v of vesselStore.crud.items.value) {
+	for (const v of vesselStore.items) {
 		const slot = (v.contents || []).find((c: any) => String(c.batch) === props.batch._id);
 		if (slot && slot.volume > 0) allBatchVessels.push(v._id);
 	}

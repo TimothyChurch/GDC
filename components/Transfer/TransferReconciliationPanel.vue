@@ -1,17 +1,19 @@
 <script setup lang="ts">
 const props = defineProps<{
-	totalSourceVolume: number;
-	totalDestVolume: number;
-	totalLossVolume: number;
+	totalSourceVolume: number;     // canonical wine gallons
+	totalDestVolume: number;       // canonical wine gallons
+	totalLossVolume: number;       // canonical wine gallons
 	sourcePG: number;
 	destPG: number;
 	lossPG: number;
 	balanced: boolean;
-	bypassReason?: string | null;       // e.g., 'Initial entry — balance check skipped'
+	bypassReason?: string | null;
 	ttbAccountFrom?: string | null;
 	ttbAccountTo?: string | null;
 	reportingPeriod?: string;
 }>();
+
+const u = useDisplayUnits();
 
 const wgVariance = computed(() =>
 	props.totalSourceVolume - (props.totalDestVolume + props.totalLossVolume),
@@ -25,54 +27,67 @@ const statusIcon = computed(() => props.balanced ? 'i-lucide-check-circle' : 'i-
 const statusText = computed(() => {
 	if (props.bypassReason) return props.bypassReason;
 	if (props.balanced) return 'Reconciled — ready to submit';
-	return `Off by ${Math.abs(wgVariance.value).toFixed(3)} gal · ${Math.abs(pgVariance.value).toFixed(3)} PG`;
+	return `Off by ${u.formatVolume(Math.abs(wgVariance.value), { decimals: 3 })} · ${Math.abs(pgVariance.value).toFixed(3)} PG`;
 });
 </script>
 
 <template>
-	<UCard variant="solid" :class="balanced ? 'bg-success/5' : 'bg-error/5'" class="border" :ui="{ root: balanced ? 'border-success/30' : 'border-error/30' }">
+	<UCard
+		variant="subtle"
+		:class="balanced ? 'bg-success/10 border-success/30' : 'bg-error/10 border-error/40'"
+		class="border"
+	>
 		<div class="space-y-3">
 			<!-- Status header -->
 			<div class="flex items-center gap-2">
 				<UIcon :name="statusIcon" :class="balanced ? 'text-success' : 'text-error'" class="text-lg" />
-				<span class="text-sm font-semibold" :class="balanced ? 'text-success' : 'text-error'">
+				<span
+					class="text-sm font-semibold"
+					:class="balanced ? 'text-green-300' : 'text-red-200'"
+				>
 					{{ statusText }}
 				</span>
 			</div>
 
-			<!-- Reconciliation table -->
+			<!-- Reconciliation table — totals shown in display unit (canonical converted on render) -->
 			<div class="grid grid-cols-3 gap-2 text-xs">
 				<div></div>
-				<div class="text-right text-muted font-medium uppercase tracking-wide">Wine Gal</div>
-				<div class="text-right text-muted font-medium uppercase tracking-wide">Proof Gal</div>
+				<div class="text-right text-parchment/60 font-medium uppercase tracking-wide">{{ u.volumeLabel.value }}</div>
+				<div class="text-right text-parchment/60 font-medium uppercase tracking-wide">Proof Gal</div>
 
-				<div class="text-muted">Source</div>
-				<div class="text-right font-mono">{{ totalSourceVolume.toFixed(3) }}</div>
-				<div class="text-right font-mono">{{ sourcePG.toFixed(3) }}</div>
+				<div class="text-parchment/70">Source</div>
+				<div class="text-right font-mono text-parchment">{{ u.formatVolume(totalSourceVolume, { decimals: 3, withLabel: false }) }}</div>
+				<div class="text-right font-mono text-parchment">{{ sourcePG.toFixed(3) }}</div>
 
-				<div class="text-muted">Destination</div>
-				<div class="text-right font-mono">{{ totalDestVolume.toFixed(3) }}</div>
-				<div class="text-right font-mono">{{ destPG.toFixed(3) }}</div>
+				<div class="text-parchment/70">Destination</div>
+				<div class="text-right font-mono text-parchment">{{ u.formatVolume(totalDestVolume, { decimals: 3, withLabel: false }) }}</div>
+				<div class="text-right font-mono text-parchment">{{ destPG.toFixed(3) }}</div>
 
-				<div class="text-muted">Loss</div>
-				<div class="text-right font-mono">{{ totalLossVolume.toFixed(3) }}</div>
-				<div class="text-right font-mono">{{ lossPG.toFixed(3) }}</div>
+				<div class="text-parchment/70">Loss</div>
+				<div class="text-right font-mono text-parchment">{{ u.formatVolume(totalLossVolume, { decimals: 3, withLabel: false }) }}</div>
+				<div class="text-right font-mono text-parchment">{{ lossPG.toFixed(3) }}</div>
 
-				<div class="border-t border-default pt-1 text-muted font-medium">Variance</div>
-				<div class="border-t border-default pt-1 text-right font-mono" :class="Math.abs(wgVariance) > 0.001 ? 'text-error font-semibold' : ''">
-					{{ wgVariance.toFixed(3) }}
+				<div class="border-t border-parchment/20 pt-1 text-parchment/70 font-medium">Variance</div>
+				<div
+					class="border-t border-parchment/20 pt-1 text-right font-mono"
+					:class="Math.abs(wgVariance) > 0.001 ? 'text-red-200 font-semibold' : 'text-parchment'"
+				>
+					{{ u.formatVolume(wgVariance, { decimals: 3, withLabel: false }) }}
 				</div>
-				<div class="border-t border-default pt-1 text-right font-mono" :class="Math.abs(pgVariance) > 0.001 ? 'text-error font-semibold' : ''">
+				<div
+					class="border-t border-parchment/20 pt-1 text-right font-mono"
+					:class="Math.abs(pgVariance) > 0.001 ? 'text-red-200 font-semibold' : 'text-parchment'"
+				>
 					{{ pgVariance.toFixed(3) }}
 				</div>
 			</div>
 
 			<!-- TTB metadata -->
-			<div v-if="ttbAccountFrom || ttbAccountTo || reportingPeriod" class="flex flex-wrap gap-2 text-xs pt-2 border-t border-default">
+			<div v-if="ttbAccountFrom || ttbAccountTo || reportingPeriod" class="flex flex-wrap gap-2 text-xs pt-2 border-t border-parchment/20">
 				<UBadge v-if="ttbAccountFrom" color="neutral" variant="subtle" size="xs">
 					From: {{ ttbAccountFrom }}
 				</UBadge>
-				<UIcon v-if="ttbAccountFrom && ttbAccountTo" name="i-lucide-arrow-right" class="text-muted self-center" />
+				<UIcon v-if="ttbAccountFrom && ttbAccountTo" name="i-lucide-arrow-right" class="text-parchment/60 self-center" />
 				<UBadge v-if="ttbAccountTo" color="neutral" variant="subtle" size="xs">
 					To: {{ ttbAccountTo }}
 				</UBadge>

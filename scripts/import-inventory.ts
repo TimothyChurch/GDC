@@ -4,7 +4,12 @@
  * Usage:
  *   npx tsx scripts/import-inventory.ts --dry-run   # Preview mapping + record count
  *   npx tsx scripts/import-inventory.ts              # Actually insert records
+ *
+ * One-off ops script run with tsx; depends on `xlsx` which is not in
+ * package.json by default (install when needed). Excluded from the app
+ * typecheck because of the optional dependency.
  */
+// @ts-nocheck
 
 import XLSX from "xlsx";
 import mongoose from "mongoose";

@@ -61,11 +61,8 @@ const totalProofGallons = computed(() =>
 // Get the low wines vessel or fermenting vessel as source for charges
 const sourceVesselId = computed(() => {
   const lowWinesKey = STAGE_KEY_MAP['Low Wines']
-  if (lowWinesKey) {
-    const lowWinesStage = (props.batch.stages as any)?.[lowWinesKey]
-    if (lowWinesStage?.vessel) return lowWinesStage.vessel as string
-  }
-  return undefined
+  if (!lowWinesKey) return undefined
+  return getStage(props.batch, lowWinesKey)?.vessel
 })
 
 const getRunIndex = (run: DistillingRun) => runs.value.indexOf(run)
@@ -85,37 +82,12 @@ const addRun = async () => {
 
   addingRun.value = true
   try {
-    const sourceVessels = result.chargeSourceVessels || (result.chargeSourceVessel ? [result.chargeSourceVessel] : [])
-    if (result.chargeVolume > 0 && sourceVessels.length > 0) {
-      for (const vesselId of sourceVessels) {
-        const perVessel = result.chargePerVessel?.find(p => p.vesselId === vesselId)
-        if (perVessel) {
-          await vesselStore.transferBatchContents(vesselId, result.stillId, props.batch._id, perVessel.volume, perVessel.volumeUnit)
-        } else {
-          const vessel = vesselStore.getVesselById(vesselId)
-          const entry = vessel?.contents?.find(c => c.batch === props.batch._id)
-          if (!entry || entry.volume <= 0) continue
-          await vesselStore.transferBatchContents(vesselId, result.stillId, props.batch._id, entry.volume, entry.volumeUnit)
-        }
-      }
-    }
-
-    for (const addition of result.additions) {
-      if (addition.sourceVessel && (addition.volume || 0) > 0) {
-        await vesselStore.transferBatch(addition.sourceVessel, result.stillId, {
-          volume: addition.volume!,
-          volumeUnit: addition.volumeUnit || 'gallon',
-          abv: addition.abv || 0,
-          value: 0,
-        })
-      }
-    }
-
-    if (result.stillId !== stage.value?.vessel) {
-      await batchStore.updateStageData(props.batch._id, 'Spirit Run', {
-        vessel: result.stillId,
-      })
-    }
+    const { sourceVesselIds: sourceVessels } = await applyChargeResult({
+      batchId: props.batch._id,
+      stage: 'Spirit Run',
+      result,
+      currentStageVessel: stage.value?.vessel,
+    })
 
     const newRun: DistillingRun = {
       runType: 'spirit',

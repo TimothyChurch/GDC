@@ -45,46 +45,13 @@ const vesselVolumes = ref<Record<string, number | undefined>>({})
 
 const volumeUnits = ['gallon', 'L', 'mL', 'fl oz']
 
-// All vessels containing this batch (exclude stills — they are the destination)
-interface SourceVesselOption {
-  id: string
-  name: string
-  availableVolume: number
-  availableVolumeUnit: string
-  abv: number
-}
-
-// Vessel types allowed as the source for each run type.
-// Stripping: charge from Fermenter (wash) or Tank (e.g. pre-staged wash).
-// Spirit:    charge from Tank (low wines collection).
-const allowedSourceTypes = computed<string[]>(() =>
-  runType.value === 'spirit' ? ['Tank'] : ['Fermenter', 'Tank']
-)
-
-const sourceVesselOptions = computed<SourceVesselOption[]>(() => {
-  const options: SourceVesselOption[] = []
-
-  for (const v of vesselStore.vessels) {
-    if (v.type === 'Still') continue
-    const entry = v.contents?.find((c) => c.batch === props.batchId && c.volume > 0.001)
-    const typeAllowed = allowedSourceTypes.value.includes(v.type)
-
-    // Include if the vessel holds this batch AND is an allowed type,
-    // OR if it's the explicit sourceVesselId passed in (even if contents was already cleared).
-    const isExplicitSource = props.sourceVesselId === v._id
-    if (!isExplicitSource && !(entry && typeAllowed)) continue
-
-    options.push({
-      id: v._id,
-      name: v.name,
-      availableVolume: entry?.volume || 0,
-      availableVolumeUnit: entry?.volumeUnit || 'gallon',
-      abv: entry?.abv || 0,
-    })
-  }
-
-  return options
+// Source-vessel discovery (filtered by batch presence + run-type compatibility) lives in a composable.
+const batchIdRef = computed(() => props.batchId)
+const explicitSourceVesselIdRef = computed(() => props.sourceVesselId)
+const { sourceVesselOptions } = useSourceVesselOptions(batchIdRef, runType, {
+  explicitSourceVesselId: explicitSourceVesselIdRef,
 })
+type SourceVesselOption = (typeof sourceVesselOptions.value)[number]
 
 // Which vessels are enabled (have a volume > 0 entered)
 const enabledVesselIds = computed(() =>
@@ -97,23 +64,8 @@ const enabledVesselIds = computed(() =>
 const availableInUnit = (vessel: SourceVesselOption) =>
   vessel.availableVolume * convertUnitRatio(vessel.availableVolumeUnit, chargeVolumeUnit.value)
 
-// Still options with capacity hints (convert current to vessel's stats unit)
-const stillOptions = computed(() => {
-  return vesselStore.stills.map((v) => {
-    const statsUnit = v.stats?.volumeUnit || 'gal'
-    const currentVol = (v.current?.volume || 0) * convertUnitRatio(v.current?.volumeUnit || statsUnit, statsUnit)
-    const capacity = v.stats?.volume || 0
-    const hint = capacity > 0
-      ? `${currentVol.toFixed(1)}/${capacity.toFixed(0)} ${statsUnit}`
-      : currentVol > 0
-        ? `${currentVol.toFixed(1)} ${statsUnit} in use`
-        : 'empty'
-    return {
-      label: `${v.name} (${hint})`,
-      value: v._id,
-    }
-  })
-})
+// Still options (with capacity hints) live in a composable.
+const { stillOptions } = useStillOptions()
 
 // Total charge volume (sum of all per-vessel inputs)
 const totalChargeVolume = computed(() => {

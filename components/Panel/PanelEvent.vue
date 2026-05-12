@@ -25,6 +25,7 @@ if (eventStore.event.date) {
 
 const { localData, isDirty, saving, save, cancel } = useFormPanel({
   source: () => eventStore.event,
+  draft: { key: 'PanelEvent', id: () => eventStore.event._id },
   async onSave(data) {
     Object.assign(eventStore.event, data);
     await eventStore.updateEvent();

@@ -101,13 +101,14 @@ const totalProofGallons = computed(() =>
 const dumpedFromBarrels = computed(() => {
   return batchStore.batches
     .filter(b => {
-      const exitDate = (b.stages as any)?.barrelAging?.exit?.date ? new Date((b.stages as any).barrelAging.exit.date) : null
+      const raw = getStage(b, 'barrelAging')?.exit?.date
+      const exitDate = raw ? new Date(raw) : null
       if (!exitDate) return false
       return exitDate >= monthStart.value && exitDate <= monthEnd.value
     })
     .map(b => {
       const recipe = b.recipe ? recipeStore.getRecipeById(b.recipe) : null
-      const exit = (b.stages as any)?.barrelAging?.exit
+      const exit = getStage(b, 'barrelAging')?.exit
       const vol = exit ? toGallons(exit.volume || 0, exit.volumeUnit || 'gal') : 0
       const abv = exit?.abv || 0
       return {

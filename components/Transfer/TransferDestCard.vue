@@ -1,14 +1,15 @@
 <script setup lang="ts">
 import type { TransferDestination } from '~/types/interfaces/Transfer';
 import { STAGE_VESSEL_TYPE } from '~/composables/batchPipeline';
+import { convertVolume } from '~/server/utils/unitConverter';
 
-const props = defineProps<{
+const props = withDefaults(defineProps<{
 	dest: TransferDestination;
 	index: number;
 	defaultStage?: string | null;
 	allowRemove?: boolean;
 	excludeVesselId?: string;
-}>();
+}>(), {});
 
 const emit = defineEmits<{
 	update: [Partial<TransferDestination>];
@@ -16,6 +17,7 @@ const emit = defineEmits<{
 }>();
 
 const vesselStore = useVesselStore();
+const u = useDisplayUnits();
 
 const allowedTypes = computed<string[] | undefined>(() => {
 	const stage = props.dest.stage || props.defaultStage;
@@ -26,17 +28,29 @@ const allowedTypes = computed<string[] | undefined>(() => {
 
 const selectedVessel = computed(() => {
 	if (!props.dest.vessel) return null;
-	return vesselStore.crud.items.value.find(v => v._id === props.dest.vessel) || null;
+	return vesselStore.items.find(v => v._id === props.dest.vessel) || null;
 });
 
 const capacityHint = computed(() => {
 	if (!selectedVessel.value) return null;
-	const cap = selectedVessel.value.stats?.volume || 0;
-	const cur = selectedVessel.value.current?.volume || 0;
+	const statsUnit = selectedVessel.value.stats?.volumeUnit || 'gallon';
+	const currentUnit = selectedVessel.value.current?.volumeUnit || statsUnit;
+	const cap = convertVolume(selectedVessel.value.stats?.volume || 0, statsUnit, 'gallon');
+	const cur = convertVolume(selectedVessel.value.current?.volume || 0, currentUnit, 'gallon');
 	const remaining = Math.max(0, cap - cur);
-	const incoming = Number(props.dest.volume) || 0;
+	const incoming = Number(props.dest.volume) || 0;  // already in gallons (canonical)
 	const wouldExceed = incoming > remaining;
-	return { capacity: cap, current: cur, remaining, wouldExceed };
+	return { capacityGal: cap, remainingGal: remaining, wouldExceed };
+});
+
+const destAbv = computed({
+	get: () => (props.dest.proof || 0) / 2,
+	set: (abv: number | null) => emit('update', { proof: (abv ?? 0) * 2 }),
+});
+
+const destVolume = computed({
+	get: () => props.dest.volume,
+	set: (v: number | null) => emit('update', { volume: v ?? 0 }),
 });
 </script>
 
@@ -72,7 +86,10 @@ const capacityHint = computed(() => {
 
 			<div v-if="capacityHint" class="text-xs text-muted flex items-center justify-between">
 				<span>
-					Free: <span class="font-mono">{{ capacityHint.remaining.toFixed(1) }} / {{ capacityHint.capacity }} gal</span>
+					Free:
+					<span class="font-mono">
+						{{ u.formatVolume(capacityHint.remainingGal) }} / {{ u.formatVolume(capacityHint.capacityGal) }}
+					</span>
 				</span>
 				<UBadge v-if="capacityHint.wouldExceed" color="warning" variant="subtle" size="xs">
 					Exceeds capacity
@@ -80,28 +97,11 @@ const capacityHint = computed(() => {
 			</div>
 
 			<div class="grid grid-cols-2 gap-3">
-				<UFormField label="Volume (gal)" :name="`destinations.${index}.volume`">
-					<UInput
-						type="number"
-						inputmode="decimal"
-						:model-value="dest.volume"
-						@update:model-value="(v) => emit('update', { volume: Number(v) || 0 })"
-						step="0.01"
-						min="0"
-						placeholder="0.00"
-					/>
+				<UFormField label="Volume" :name="`destinations.${index}.volume`">
+					<FormVolumeInput v-model="destVolume" placeholder="0.00" />
 				</UFormField>
-				<UFormField label="Proof" :name="`destinations.${index}.proof`">
-					<UInput
-						type="number"
-						inputmode="decimal"
-						:model-value="dest.proof"
-						@update:model-value="(v) => emit('update', { proof: Number(v) || 0 })"
-						step="0.1"
-						min="0"
-						max="200"
-						placeholder="0"
-					/>
+				<UFormField label="Strength" :name="`destinations.${index}.proof`">
+					<FormStrengthInput v-model="destAbv" placeholder="0" />
 				</UFormField>
 			</div>
 		</div>

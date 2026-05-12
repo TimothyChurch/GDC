@@ -4,6 +4,7 @@ import { getBatchBorderClass } from '~/composables/useRecipeColors'
 
 const batchStore = useBatchStore();
 const recipeStore = useRecipeStore();
+const vesselStore = useVesselStore();
 
 const props = defineProps<{ batchId: string }>();
 
@@ -12,6 +13,27 @@ const batch = computed(() => batchStore.getBatchById(props.batchId));
 const stageDisplay = computed(() => {
   if (!batch.value) return { icon: 'i-lucide-circle', color: 'neutral' }
   return STAGE_DISPLAY[batch.value.currentStage] || { icon: 'i-lucide-circle', color: 'neutral' }
+});
+
+// Vessels currently holding this batch (multi-vessel-aware: a batch can be
+// split across multiple fermenters/barrels). Each entry pulls volume from the
+// matching slot in vessel.contents[].
+const vesselSlots = computed(() => {
+  if (!batch.value) return []
+  const out: { id: string; name: string; type: string; location?: string; volume: number }[] = []
+  for (const v of vesselStore.items) {
+    const slot = (v.contents || []).find((c: any) => String(c.batch) === batch.value!._id)
+    if (slot && (slot.volume || 0) > 0) {
+      out.push({
+        id: v._id,
+        name: v.name,
+        type: v.type,
+        location: v.location,
+        volume: slot.volume || 0,
+      })
+    }
+  }
+  return out
 });
 
 const statusBadge = computed(() => {
@@ -56,6 +78,18 @@ const startDate = computed(() => {
       <div class="flex justify-between">
         <span class="text-parchment/60">Size</span>
         <span class="text-parchment/70">{{ batch.batchSize }} {{ batch.batchSizeUnit }}</span>
+      </div>
+      <div v-if="vesselSlots.length" class="flex justify-between items-start gap-2">
+        <span class="text-parchment/60 shrink-0">{{ vesselSlots.length > 1 ? 'Vessels' : 'Vessel' }}</span>
+        <div class="text-right text-parchment/80 min-w-0 truncate">
+          <div v-for="s in vesselSlots" :key="s.id" class="truncate">
+            <UIcon name="i-lucide-cylinder" class="text-[10px] text-parchment/50 mr-0.5" />
+            <span class="font-medium">{{ s.name }}</span>
+            <span class="text-parchment/50">
+              · {{ s.volume }} gal{{ s.location ? ` · ${s.location}` : '' }}
+            </span>
+          </div>
+        </div>
       </div>
       <div v-if="batch.batchCost" class="flex justify-between">
         <span class="text-parchment/60">Cost</span>

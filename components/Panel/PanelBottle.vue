@@ -14,6 +14,7 @@ const schema = yup.object({
 
 const { localData, isDirty, saving, save, cancel } = useFormPanel({
   source: () => bottleStore.bottle,
+  draft: { key: 'PanelBottle', id: () => bottleStore.bottle._id },
   async onSave(data) {
     Object.assign(bottleStore.bottle, data);
     await bottleStore.updateBottle();
@@ -86,7 +87,7 @@ const newType = (type: string) => {
             </div>
             <div class="grid grid-cols-2 gap-4">
               <UFormField label="ABV" name="abv">
-                <UInput v-model="localData.abv" type="number" />
+                <FormStrengthInput v-model="localData.abv" />
               </UFormField>
               <UFormField label="Price" name="price">
                 <UInput v-model="localData.price" type="number" />

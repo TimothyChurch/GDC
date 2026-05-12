@@ -46,6 +46,47 @@ export const Settings = defineMongooseModel({
         tabc: { type: String, default: "" },
       },
     },
+    /** Display unit preferences. Storage stays canonical (gallon, ABV%, °F, lb);
+     * UI converts at render time via the useDisplayUnits composable. */
+    units: {
+      volume: {
+        type: String,
+        enum: ["gallon", "liter", "milliliter", "fluid_ounce"],
+        default: "gallon",
+      },
+      strength: {
+        type: String,
+        enum: ["abv", "proof"],
+        default: "abv",
+      },
+      temperature: {
+        type: String,
+        enum: ["fahrenheit", "celsius"],
+        default: "fahrenheit",
+      },
+      weight: {
+        type: String,
+        enum: ["pound", "kilogram", "ounce", "gram"],
+        default: "pound",
+      },
+    },
+    /** Production-projection defaults. Used by utils/grainBill.ts to compute
+     * projected OG / FG / wash ABV / proof gallons from a recipe's grain bill.
+     * Recipes may override any of these per-recipe. */
+    production: {
+      /** Mash efficiency — % of theoretical sugars extracted from grain.
+       * Distillery-typical range 72–80%. */
+      mashEfficiency: { type: Number, default: 75 },
+      /** Yeast attenuation — % of fermentable sugars converted to alcohol.
+       * Distiller's yeast typically 78–85%. */
+      fermentationAttenuation: { type: Number, default: 80 },
+      /** Distillation yield — % of wash proof gallons recovered post-distillation.
+       * Pot still 70–85%, reflux/column 85–92%. */
+      distillationYield: { type: Number, default: 80 },
+    },
+    /** Append-only list of one-time migrations already applied. Used by
+     * server/utils/migrationGuard.ts to gate migration routes. */
+    migrationsRun: { type: [String], default: [] },
   },
   options: { timestamps: true },
 });

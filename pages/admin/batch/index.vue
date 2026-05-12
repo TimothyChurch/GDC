@@ -11,6 +11,10 @@ const viewMode = useLocalStorage('batch-view-mode', 'table')
 
 const selectedFilter = ref('All')
 
+watch(selectedFilter, (next) => {
+  if (next === 'Completed' && viewMode.value === 'board') viewMode.value = 'table'
+})
+
 // Stages that accumulate over time and aren't actively worked — hidden from
 // the batch index. Still reachable from the batch detail page.
 const HIDDEN_STAGES = new Set(['Barrel Aging', 'Bottled'])

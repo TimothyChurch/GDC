@@ -27,24 +27,22 @@ const monthLabel = computed(() =>
 
 // Get the distilling start date from either legacy distilling stage or new spirit run stage
 const getDistillingStartDate = (b: Batch): Date | null => {
-  const spiritDate = (b.stages as any)?.spiritRun?.startedAt
-  const distDate = (b.stages as any)?.distilling?.startedAt
-  const dateStr = spiritDate || distDate
+  const dateStr = getStage(b, 'spiritRun')?.startedAt || getStage(b, 'distilling')?.startedAt
   return dateStr ? new Date(dateStr) : null
 }
 
 // Get all spirit runs from a batch (checks both new spiritRun stage and legacy distilling stage)
 const getSpiritRuns = (b: Batch) => {
-  const newRuns = (b.stages as any)?.spiritRun?.runs || []
-  const legacyRuns = normalizeDistillingRuns((b.stages as any)?.distilling)
+  const newRuns = getStage(b, 'spiritRun')?.runs || []
+  const legacyRuns = normalizeDistillingRuns(getStage(b, 'distilling'))
   return [...newRuns, ...legacyRuns].filter((r: any) => r.runType === 'spirit')
 }
 
 // Get all runs (stripping + spirit) from a batch
 const getAllRuns = (b: Batch) => {
-  const strippingRuns = (b.stages as any)?.strippingRun?.runs || []
-  const spiritRuns = (b.stages as any)?.spiritRun?.runs || []
-  const legacyRuns = normalizeDistillingRuns((b.stages as any)?.distilling)
+  const strippingRuns = getStage(b, 'strippingRun')?.runs || []
+  const spiritRuns = getStage(b, 'spiritRun')?.runs || []
+  const legacyRuns = normalizeDistillingRuns(getStage(b, 'distilling'))
   return [...strippingRuns, ...spiritRuns, ...legacyRuns]
 }
 
@@ -175,7 +173,8 @@ const materialsUsed = computed(() => {
 const batchDetails = computed(() => {
   return distilledBatches.value.map(batch => {
     const recipe = batch.recipe ? recipeStore.getRecipeById(batch.recipe) : null
-    const runs = normalizeDistillingRuns((batch.stages as any)?.distilling)
+    const distillingStage = getStage(batch, 'distilling')
+    const runs = normalizeDistillingRuns(distillingStage)
 
     let heartsVol = 0
     let heartsAbvWeighted = 0
@@ -195,7 +194,7 @@ const batchDetails = computed(() => {
       _id: batch._id,
       recipeName: recipe?.name || 'Unknown',
       spiritType: recipe?.class || recipe?.type || 'Unknown',
-      date: (batch.stages as any)?.distilling?.startedAt ? new Date((batch.stages as any).distilling.startedAt).toLocaleDateString() : '--',
+      date: distillingStage?.startedAt ? new Date(distillingStage.startedAt).toLocaleDateString() : '--',
       wineGallons: heartsVol,
       abv,
       proofGallons: calculateProofGallons(heartsVol, 'gallon', abv),

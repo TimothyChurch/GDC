@@ -1,9 +1,11 @@
 import { calculateProofGallons, toGallons } from '~/utils/proofGallons'
 import { normalizeDistillingRuns } from '~/utils/distillingMigration'
 import { bottleToWineGallons } from '~/composables/useProductionCosts'
-
-// Texas excise tax rate: $2.40 per wine gallon of spirits produced
-const TABC_TAX_RATE = 2.40
+import {
+  aggregateFractions,
+  computeTabcTaxDue,
+  TABC_TAX_RATE_PER_WG,
+} from '~/utils/tabcCalculations'
 
 export interface TABCProductionRow {
   type: string
@@ -94,26 +96,13 @@ export function useTABCCalculations(month: Ref<string> | ComputedRef<string>) {
       const recipe = batch.recipe ? recipeStore.getRecipeById(batch.recipe) : null
       const spiritType = recipe?.class || recipe?.type || 'Unknown'
       const runs = getSpiritRuns(batch)
-
-      let heartsVol = 0
-      let heartsAbvWeighted = 0
-
-      for (const run of runs) {
-        if (run.collected?.hearts) {
-          const h = run.collected.hearts
-          const vol = toGallons(h.volume || 0, h.volumeUnit || 'gallon')
-          heartsVol += vol
-          heartsAbvWeighted += vol * (h.abv || 0)
-        }
-      }
-      if (heartsVol === 0) return
-
-      const avgAbv = heartsAbvWeighted / heartsVol
-      const pg = calculateProofGallons(heartsVol, 'gallon', avgAbv)
+      const hearts = runs.map((r: any) => r.collected?.hearts).filter(Boolean)
+      const { wineGallons, proofGallons } = aggregateFractions(hearts)
+      if (wineGallons === 0) return
 
       const existing = map.get(spiritType) || { wineGallons: 0, proofGallons: 0, batches: 0 }
-      existing.wineGallons += heartsVol
-      existing.proofGallons += pg
+      existing.wineGallons += wineGallons
+      existing.proofGallons += proofGallons
       existing.batches += 1
       map.set(spiritType, existing)
     })
@@ -131,41 +120,23 @@ export function useTABCCalculations(month: Ref<string> | ComputedRef<string>) {
 
   // Heads/late heads/tails (non-beverage spirits)
   const headsAndTails = computed(() => {
-    let headsWG = 0, tailsWG = 0, headsAbvWt = 0, tailsAbvWt = 0
-
+    const headsFractions: any[] = []
+    const tailsFractions: any[] = []
     distilledBatches.value.forEach(batch => {
-      const runs = getSpiritRuns(batch)
-      for (const run of runs) {
+      for (const run of getSpiritRuns(batch)) {
         if (!run.collected) continue
-        const heads = run.collected.heads
-        const lateHeads = run.collected.lateHeads
-        const tails = run.collected.tails
-        if (heads) {
-          const vol = toGallons(heads.volume || 0, heads.volumeUnit || 'gallon')
-          headsWG += vol
-          headsAbvWt += vol * (heads.abv || 0)
-        }
-        if (lateHeads) {
-          const vol = toGallons(lateHeads.volume || 0, lateHeads.volumeUnit || 'gallon')
-          headsWG += vol
-          headsAbvWt += vol * (lateHeads.abv || 0)
-        }
-        if (tails) {
-          const vol = toGallons(tails.volume || 0, tails.volumeUnit || 'gallon')
-          tailsWG += vol
-          tailsAbvWt += vol * (tails.abv || 0)
-        }
+        if (run.collected.heads) headsFractions.push(run.collected.heads)
+        if (run.collected.lateHeads) headsFractions.push(run.collected.lateHeads)
+        if (run.collected.tails) tailsFractions.push(run.collected.tails)
       }
     })
-
-    const headsAvgAbv = headsWG > 0 ? headsAbvWt / headsWG : 0
-    const tailsAvgAbv = tailsWG > 0 ? tailsAbvWt / tailsWG : 0
-
+    const heads = aggregateFractions(headsFractions)
+    const tails = aggregateFractions(tailsFractions)
     return {
-      headsWG,
-      headsPG: calculateProofGallons(headsWG, 'gallon', headsAvgAbv),
-      tailsWG,
-      tailsPG: calculateProofGallons(tailsWG, 'gallon', tailsAvgAbv),
+      headsWG: heads.wineGallons,
+      headsPG: heads.proofGallons,
+      tailsWG: tails.wineGallons,
+      tailsPG: tails.proofGallons,
     }
   })
 
@@ -239,16 +210,15 @@ export function useTABCCalculations(month: Ref<string> | ComputedRef<string>) {
 
   const barreledThisMonth = computed(() =>
     batchStore.batches.filter(b => {
-      const d = (b.stages as any)?.barrelAging?.entry?.date
-        ? new Date((b.stages as any).barrelAging.entry.date)
-        : null
+      const entry = getStage(b, 'barrelAging')?.entry
+      const d = entry?.date ? new Date(entry.date) : null
       return d && d >= monthStart.value && d <= monthEnd.value
     })
   )
   const barreledWG = computed(() => {
     let wg = 0
     barreledThisMonth.value.forEach(b => {
-      const entry = (b.stages as any)?.barrelAging?.entry
+      const entry = getStage(b, 'barrelAging')?.entry
       if (entry) wg += toGallons(entry.volume || 0, entry.volumeUnit || 'gal')
     })
     return wg
@@ -265,7 +235,7 @@ export function useTABCCalculations(month: Ref<string> | ComputedRef<string>) {
   })
 
   // ─── Texas excise tax calculation ────────────────────────────────────────────
-  const tabcTaxDue = computed(() => totalProductionWG.value * TABC_TAX_RATE)
+  const tabcTaxDue = computed(() => computeTabcTaxDue(totalProductionWG.value))
 
   return {
     monthStart,

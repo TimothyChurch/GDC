@@ -23,13 +23,13 @@ const filledBarrels = computed(() =>
 // TTB stats
 const distillingBatches = computed(() =>
   batchStore.batches.filter(b =>
-    (b.stages as any)?.distilling?.startedAt ||
-    (b.stages as any)?.spiritRun?.startedAt ||
-    (b.stages as any)?.strippingRun?.startedAt
+    getStage(b, 'distilling')?.startedAt ||
+    getStage(b, 'spiritRun')?.startedAt ||
+    getStage(b, 'strippingRun')?.startedAt
   ).length
 )
 const barreledBatches = computed(() =>
-  batchStore.batches.filter(b => (b.stages as any)?.barrelAging?.entry?.date).length
+  batchStore.batches.filter(b => getStage(b, 'barrelAging')?.entry?.date).length
 )
 
 // Compliance deadline urgency — drives the calendar card color

@@ -13,9 +13,10 @@ const barrelData = computed(() => {
     const hasFill = barrel.contents && barrel.contents.length > 0
     const batch = hasFill ? batchStore.getBatchById(barrel.contents![0]!.batch) : null
     const recipe = batch?.recipe ? recipeStore.getRecipeById(batch.recipe) : null
-    const fillDate = (batch?.stages as any)?.barrelAging?.entry?.date ? new Date((batch?.stages as any).barrelAging.entry.date) : null
+    const entry = getStage(batch, 'barrelAging')?.entry
+    const fillDate = entry?.date ? new Date(entry.date) : null
     const ageDays = fillDate ? differenceInDays(new Date(), fillDate) : 0
-    const entryVolume = (batch?.stages as any)?.barrelAging?.entry?.volume || barrel.current?.volume || 0
+    const entryVolume = entry?.volume || barrel.current?.volume || 0
     const currentVolume = barrel.current?.volume || 0
     const angelsShare = entryVolume > 0 && currentVolume > 0 ? entryVolume - currentVolume : 0
     const angelsSharePct = entryVolume > 0 ? (angelsShare / entryVolume) * 100 : 0
@@ -31,7 +32,7 @@ const barrelData = computed(() => {
       char: barrel.barrel?.char || '',
       cost: barrel.barrel?.cost || 0,
       size: barrel.barrel?.size || '',
-      entryAbv: (batch?.stages as any)?.barrelAging?.entry?.abv || 0,
+      entryAbv: entry?.abv || 0,
       currentAbv: barrel.current?.abv || 0,
       entryVolume,
       currentVolume,

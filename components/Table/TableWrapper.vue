@@ -28,6 +28,14 @@ watch(searchInput, (val) => debouncedSync(val))
 watch(search, (val) => {
   if (val !== searchInput.value) searchInput.value = val
 })
+
+const rangeLabel = computed(() => {
+  const total = props.totalItems
+  if (total <= 0) return ''
+  const start = pagination.value.pageIndex * pagination.value.pageSize + 1
+  const end = Math.min((pagination.value.pageIndex + 1) * pagination.value.pageSize, total)
+  return `${start.toLocaleString()}–${end.toLocaleString()} of ${total.toLocaleString()}`
+})
 </script>
 
 <template>
@@ -58,12 +66,17 @@ watch(search, (val) => {
           @update:model-value="pagination = { ...pagination, pageSize: Number($event), pageIndex: 0 }"
         />
       </UFormField>
-      <UPagination
-        :page="pagination.pageIndex + 1"
-        @update:page="pagination = { ...pagination, pageIndex: $event - 1 }"
-        :items-per-page="pagination.pageSize"
-        :total="totalItems"
-      />
+      <div class="flex items-center gap-3">
+        <span v-if="rangeLabel" class="text-xs text-parchment/50 hidden sm:inline">
+          {{ rangeLabel }}
+        </span>
+        <UPagination
+          :page="pagination.pageIndex + 1"
+          @update:page="pagination = { ...pagination, pageIndex: $event - 1 }"
+          :items-per-page="pagination.pageSize"
+          :total="totalItems"
+        />
+      </div>
     </div>
   </div>
 </template>

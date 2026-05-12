@@ -7,7 +7,10 @@ const props = defineProps<{
   currentStage: string
   stageVolumes?: Record<string, number>
   batchSizeUnit?: string
+  editable?: boolean
 }>()
+
+const emit = defineEmits<{ edit: [] }>()
 
 const hasVolumes = computed(() =>
   props.stageVolumes && Object.keys(props.stageVolumes).length > 0
@@ -82,7 +85,17 @@ const stageColorClasses = (color: string) => {
 </script>
 
 <template>
-  <div class="bg-charcoal rounded-xl border border-brown/30 p-4">
+  <div class="bg-charcoal rounded-xl border border-brown/30 p-4 relative">
+    <UButton
+      v-if="editable"
+      icon="i-lucide-pencil"
+      size="xs"
+      variant="ghost"
+      color="neutral"
+      class="absolute top-2 right-2 z-10 text-parchment/50 hover:text-gold"
+      title="Edit pipeline"
+      @click="emit('edit')"
+    />
     <div class="flex items-center justify-between">
       <div
         v-for="(stage, index) in displayStages"

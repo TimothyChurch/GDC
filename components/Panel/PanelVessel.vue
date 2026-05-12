@@ -17,6 +17,7 @@ const vesselStore = useVesselStore();
 
 const { localData, isDirty, saving, save, cancel } = useFormPanel({
   source: () => vesselStore.vessel,
+  draft: { key: 'PanelVessel', id: () => vesselStore.vessel._id },
   async onSave(data) {
     Object.assign(vesselStore.vessel, data);
     await vesselStore.updateVessel();

@@ -124,7 +124,10 @@ const isLoading = computed(() =>
     </div>
 
     <template v-else>
-      <!-- KPI Stats Cards -->
+      <!-- Needs Attention (hero) -->
+      <DashboardActionItems prominent :max-items="20" />
+
+      <!-- KPI Stats Cards (secondary) -->
       <div class="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-5 gap-3 md:gap-4">
         <DashboardStatCard
           title="Active Batches"
@@ -175,13 +178,7 @@ const isLoading = computed(() =>
       <div class="grid grid-cols-1 xl:grid-cols-3 gap-6">
         <!-- Left column (2/3) -->
         <div class="xl:col-span-2 space-y-6">
-          <!-- Action Items + Recent Productions row -->
-          <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <DashboardActionItems />
-            <DashboardRecentProductions />
-          </div>
-
-          <!-- Vessel Overview -->
+          <DashboardRecentProductions />
           <DashboardVesselOverview />
         </div>
 

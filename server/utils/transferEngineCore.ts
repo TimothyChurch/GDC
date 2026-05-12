@@ -100,6 +100,22 @@ function bypassesBalanceCheck(input: TransferInput): boolean {
 	return false;
 }
 
+/**
+ * Distillation transfers concentrate alcohol: the wine-gallon volume legitimately
+ * drops because spent wash (water + grain residue) is removed as effluent — that
+ * material was never bonded liquid in the TTB sense. PG must still balance
+ * (any alcohol that disappears requires a loss attestation), but wine-gallon
+ * mismatch is expected.
+ *
+ * Applies when the source side is a still (fromStage in distillation stages).
+ */
+const DISTILLATION_FROM_STAGES = new Set(['Stripping Run', 'Spirit Run', 'Distilling']);
+
+export function bypassesVolumeBalance(input: TransferInput): boolean {
+	if (bypassesBalanceCheck(input)) return true;
+	return !!input.fromStage && DISTILLATION_FROM_STAGES.has(input.fromStage);
+}
+
 export function validateInvariants(input: TransferInput, totals: Totals): void {
 	// Order matters — check structural problems first so callers get actionable errors,
 	// then loss-line consistency, then the math reconciliation last.
@@ -148,8 +164,11 @@ export function validateInvariants(input: TransferInput, totals: Totals): void {
 		);
 	}
 
-	// 5. Math reconciliation (skipped for create/destroy operations, e.g. Upcoming→Mashing)
-	if (!bypassesBalanceCheck(input)) {
+	// 5. Math reconciliation
+	//    Volume balance is skipped for create/destroy operations (e.g. Upcoming→Mashing)
+	//    AND for distillation transfers (Stripping/Spirit Run/Distilling) where the
+	//    spent wash isn't bonded liquid. PG balance still applies.
+	if (!bypassesVolumeBalance(input)) {
 		if (!isVolumeBalanced(totals.totalSourceVolume, totals.totalDestVolume, totals.totalLossVolume)) {
 			throw new TransferEngineError(
 				'INVARIANT_VIOLATION_VOLUME',
@@ -158,6 +177,8 @@ export function validateInvariants(input: TransferInput, totals: Totals): void {
 				{ totals },
 			);
 		}
+	}
+	if (!bypassesBalanceCheck(input)) {
 		if (!isPGBalanced(totals.sourcePG, totals.destPG, totals.lossPG)) {
 			throw new TransferEngineError(
 				'INVARIANT_VIOLATION_PG',

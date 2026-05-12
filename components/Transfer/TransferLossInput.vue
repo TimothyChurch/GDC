@@ -3,10 +3,12 @@ import type { TransferLoss } from '~/types/interfaces/Transfer';
 
 const props = defineProps<{
 	loss: TransferLoss;
-	autoLossVolume?: number;  // computed shortfall = source - dest, suggested as the loss volume
+	autoLossVolume?: number;  // computed shortfall in gallons (canonical)
 }>();
 
 const emit = defineEmits<{ update: [Partial<TransferLoss>] }>();
+
+const u = useDisplayUnits();
 
 const reasonItems = LOSS_REASON_CODES.map((code) => ({
 	label: LOSS_REASON_LABELS[code],
@@ -31,6 +33,16 @@ function applyAutoLoss() {
 		emit('update', { volume: props.autoLossVolume });
 	}
 }
+
+const lossAbv = computed({
+	get: () => (props.loss.proof || 0) / 2,
+	set: (abv: number | null) => emit('update', { proof: (abv ?? 0) * 2 }),
+});
+
+const lossVolume = computed({
+	get: () => props.loss.volume,
+	set: (v: number | null) => emit('update', { volume: v ?? 0 }),
+});
 </script>
 
 <template>
@@ -61,34 +73,17 @@ function applyAutoLoss() {
 			</UFormField>
 
 			<div class="grid grid-cols-2 gap-3">
-				<UFormField label="Volume (gal)" name="loss.volume">
-					<UInput
-						type="number"
-						inputmode="decimal"
-						:model-value="loss.volume"
-						@update:model-value="(v) => emit('update', { volume: Number(v) || 0 })"
-						step="0.01"
-						min="0"
-						placeholder="0.00"
-					/>
+				<UFormField label="Volume" name="loss.volume">
+					<FormVolumeInput v-model="lossVolume" placeholder="0.00" />
 				</UFormField>
-				<UFormField label="Proof" name="loss.proof">
-					<UInput
-						type="number"
-						inputmode="decimal"
-						:model-value="loss.proof"
-						@update:model-value="(v) => emit('update', { proof: Number(v) || 0 })"
-						step="0.1"
-						min="0"
-						max="200"
-						placeholder="0"
-					/>
+				<UFormField label="Strength" name="loss.proof">
+					<FormStrengthInput v-model="lossAbv" placeholder="0" />
 				</UFormField>
 			</div>
 
 			<div v-if="autoLossVolume && autoLossVolume > 0 && Math.abs(loss.volume - autoLossVolume) > 0.001" class="text-xs text-muted flex items-center gap-2">
 				<UIcon name="i-lucide-info" />
-				Reconciliation gap is <span class="font-mono">{{ autoLossVolume.toFixed(2) }} gal</span>.
+				Reconciliation gap is <span class="font-mono">{{ u.formatVolume(autoLossVolume) }}</span>.
 				<UButton size="xs" variant="link" @click="applyAutoLoss">Apply</UButton>
 			</div>
 

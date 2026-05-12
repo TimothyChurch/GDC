@@ -32,9 +32,9 @@ const vesselDefaults = computed(() => {
   const vessels = vesselStore.vessels.filter(v =>
     v.contents?.some(c => c.batch === props.batch._id)
   )
-  if (vessels.length === 0) return null
   // Use the first vessel that has this batch
   const v = vessels[0]
+  if (!v) return null
   const batchContent = v.contents?.find(c => c.batch === props.batch._id)
   return {
     volume: batchContent?.volume || v.current?.volume,

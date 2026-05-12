@@ -22,6 +22,7 @@ const handleFiles = async (files: FileList | null) => {
   if (!files?.length) return
 
   const file = files[0]
+  if (!file) return
 
   // Validate type
   const allowed = ['image/jpeg', 'image/png', 'image/webp', 'image/gif']

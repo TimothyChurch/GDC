@@ -49,10 +49,12 @@ export const useProofingCalculator = () => {
 			}
 			if (steps.value.length >= 1) {
 				let abv = 0;
-				if (steps.value[steps.value.length - 1].abv != 0) {
-					abv = steps.value[steps.value.length - 1].abv;
-				} else if (steps.value.length > 2) {
-					abv = steps.value[steps.value.length - 2].abv;
+				const lastStep = steps.value[steps.value.length - 1];
+				const secondLastStep = steps.value[steps.value.length - 2];
+				if (lastStep && lastStep.abv != 0) {
+					abv = lastStep.abv;
+				} else if (steps.value.length > 2 && secondLastStep) {
+					abv = secondLastStep.abv;
 				} else {
 					abv = initialAbv.value;
 				}

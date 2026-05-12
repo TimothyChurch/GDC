@@ -20,6 +20,9 @@ export interface MashingStage extends BatchStageBase {
 	postBoilGravity?: number;
 	/** Flag to prevent duplicate ingredient withdrawal from inventory */
 	ingredientsWithdrawn?: boolean;
+	/** Per-batch grain-in override. Copied from Recipe.grainIn at creation;
+	 * undefined = inherit from recipe at calculation time. */
+	grainIn?: boolean;
 }
 
 export interface FermentingStage extends BatchStageBase {

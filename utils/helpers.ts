@@ -1,40 +1,14 @@
 import type { Item, Recipe, Bottle } from '~/types';
 import { calculateProofGallons } from '~/utils/proofGallons';
 
-export const latestPrice = (item: Item | string): number => {
-	const itemStore = useItemStore();
-	const purchaseOrderStore = usePurchaseOrderStore();
-	const { computePricePerUnit } = useUnitConversion();
-
-	const selectedItem = typeof item === 'string' ? itemStore.getItemById(item) : item;
-	if (!selectedItem) return 0;
-
-	const sortedPurchaseOrders = sortByDateDesc(purchaseOrderStore.purchaseOrders);
-
-	for (const po of sortedPurchaseOrders) {
-		const lineItem = po.items.find((i) => i.item === selectedItem._id);
-		if (lineItem) {
-			return computePricePerUnit(
-				lineItem.price,
-				lineItem.size,
-				lineItem.sizeUnit,
-				selectedItem.inventoryUnit || lineItem.sizeUnit
-			);
-		}
-	}
-
-	// Fallback to manual base cost fields
-	if (selectedItem.baseCostPrice && selectedItem.baseCostSize && selectedItem.baseCostUnit) {
-		return computePricePerUnit(
-			selectedItem.baseCostPrice,
-			selectedItem.baseCostSize,
-			selectedItem.baseCostUnit,
-			selectedItem.inventoryUnit || selectedItem.baseCostUnit
-		);
-	}
-
-	return 0;
-};
+/**
+ * Auto-imported alias delegating to the cached `useItemStore.latestPrice`.
+ * The store version uses a pre-indexed PO line-item map (O(1) per call); this
+ * helper exists so call sites that don't already have the store handy can keep
+ * the simple `latestPrice(itemId)` ergonomics.
+ */
+export const latestPrice = (item: Item | string): number =>
+	useItemStore().latestPrice(item);
 
 export const recipePrice = (recipe: Recipe | string) => {
 	const itemStore = useItemStore();

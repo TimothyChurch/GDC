@@ -7,6 +7,14 @@ import {
 	normalizeAbv,
 	roundVolume,
 	UnitConversionError,
+	toFahrenheit,
+	fromFahrenheit,
+	convertTemperature,
+	normalizeTemperatureUnit,
+	toAbvPercent,
+	fromAbvPercent,
+	convertStrength,
+	normalizeStrengthUnit,
 } from '~/server/utils/unitConverter';
 
 describe('normalizeUnit', () => {
@@ -138,5 +146,58 @@ describe('roundVolume', () => {
 	it('handles non-finite gracefully', () => {
 		expect(roundVolume(NaN)).toBe(0);
 		expect(roundVolume(Infinity)).toBe(0);
+	});
+});
+
+describe('temperature', () => {
+	it('normalizes F/C aliases', () => {
+		expect(normalizeTemperatureUnit('F')).toBe('fahrenheit');
+		expect(normalizeTemperatureUnit('°F')).toBe('fahrenheit');
+		expect(normalizeTemperatureUnit('Celsius')).toBe('celsius');
+		expect(normalizeTemperatureUnit('°c')).toBe('celsius');
+	});
+
+	it('throws on unknown temperature unit', () => {
+		expect(() => normalizeTemperatureUnit('K')).toThrow(UnitConversionError);
+	});
+
+	it('toFahrenheit handles canonical and conversion', () => {
+		expect(toFahrenheit(72, 'fahrenheit')).toBe(72);
+		expect(toFahrenheit(0, 'celsius')).toBe(32);
+		expect(toFahrenheit(100, 'celsius')).toBe(212);
+	});
+
+	it('fromFahrenheit converts both directions', () => {
+		expect(fromFahrenheit(32, 'celsius')).toBe(0);
+		expect(fromFahrenheit(212, 'celsius')).toBe(100);
+		expect(fromFahrenheit(70, 'fahrenheit')).toBe(70);
+	});
+
+	it('convertTemperature is symmetric', () => {
+		expect(convertTemperature(0, 'celsius', 'fahrenheit')).toBe(32);
+		expect(convertTemperature(32, 'fahrenheit', 'celsius')).toBe(0);
+	});
+});
+
+describe('strength (ABV ↔ proof)', () => {
+	it('normalizes aliases', () => {
+		expect(normalizeStrengthUnit('ABV')).toBe('abv');
+		expect(normalizeStrengthUnit('%')).toBe('abv');
+		expect(normalizeStrengthUnit('Proof')).toBe('proof');
+	});
+
+	it('toAbvPercent: proof divides by 2, abv passes through', () => {
+		expect(toAbvPercent(80, 'proof')).toBe(40);
+		expect(toAbvPercent(40, 'abv')).toBe(40);
+	});
+
+	it('fromAbvPercent: doubles for proof', () => {
+		expect(fromAbvPercent(40, 'proof')).toBe(80);
+		expect(fromAbvPercent(40, 'abv')).toBe(40);
+	});
+
+	it('convertStrength round-trips', () => {
+		expect(convertStrength(80, 'proof', 'abv')).toBe(40);
+		expect(convertStrength(40, 'abv', 'proof')).toBe(80);
 	});
 });

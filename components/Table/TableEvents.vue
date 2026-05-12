@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import type { TableColumn } from "@nuxt/ui";
 import type { GDCEvent } from "~/types";
+import type { Row } from "@tanstack/vue-table";
 import { getPaginationRowModel } from "@tanstack/vue-table";
 
 const eventStore = useEventStore();
@@ -168,7 +169,7 @@ defineExpose({ addItem });
         :data="filteredEvents"
         :columns="columns"
         :loading="eventStore.loading"
-        @select="(_e: Event, row: any) => router.push(`/admin/events/${row.original._id}`)"
+        @select="(_e: Event, row: Row<GDCEvent>) => router.push(`/admin/events/${row.original._id}`)"
         :ui="{ tr: 'cursor-pointer' }"
       >
         <template #empty>

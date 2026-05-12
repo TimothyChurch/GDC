@@ -160,6 +160,99 @@ export const useProductionStore = defineStore('productions', () => {
 		return summary;
 	};
 
+	/**
+	 * Apply inventory deltas when an existing production is edited.
+	 *
+	 * Compares old vs new (quantity, bottle, bottling materials) and writes
+	 * corrective inventory records. If a field is unchanged, no adjustment is
+	 * made. If a field changed, the old effect is reversed on the old item and
+	 * the new effect applied to the new item.
+	 *
+	 * Fixes tech-debt #73 — `adjustInventoryForProduction` previously ran only
+	 * on create, leaving inventory drifted after a quantity edit.
+	 */
+	const adjustInventoryForProductionEdit = async (
+		oldProd: ProductionInventoryShape,
+		newProd: ProductionInventoryShape,
+	): Promise<Array<{ itemName: string; change: number; newStock: number }>> => {
+		const inventoryStore = useInventoryStore();
+		const itemStore = useItemStore();
+		const bottleStore = useBottleStore();
+
+		const deltas = computeProductionInventoryDeltas(oldProd, newProd);
+		if (deltas.length === 0) return [];
+
+		const summary: Array<{ itemName: string; change: number; newStock: number }> = [];
+		const inventoryRecords: Array<{ item: string; quantity: number; date: Date }> = [];
+
+		for (const { itemId, kind, delta } of deltas) {
+			let itemName: string | undefined;
+			if (kind === 'bottle') {
+				itemName = bottleStore.getBottleById(itemId)?.name;
+			} else {
+				const item = itemStore.getItemById(itemId);
+				// Skip materials with trackInventory disabled — same as the create path.
+				if (!item || item.trackInventory === false) continue;
+				itemName = item.name;
+			}
+			if (!itemName) continue;
+
+			const currentStock = inventoryStore.getCurrentStock(itemId);
+			const newStock = kind === 'material'
+				? Math.max(0, currentStock + delta) // materials can't go negative
+				: currentStock + delta;
+
+			inventoryRecords.push({
+				item: itemId,
+				quantity: Math.round(newStock * 100) / 100,
+				date: new Date(),
+			});
+			summary.push({
+				itemName,
+				change: Math.round(delta * 100) / 100,
+				newStock: Math.round(newStock * 100) / 100,
+			});
+		}
+
+		if (inventoryRecords.length === 0) return [];
+
+		try {
+			await inventoryStore.createBulk(inventoryRecords);
+		} catch {
+			return [];
+		}
+
+		// Re-sync bottle inStock flag if bottle changed or quantity reached zero.
+		const bottlesToCheck = new Set<string>();
+		if (oldProd.bottle) bottlesToCheck.add(oldProd.bottle);
+		if (newProd.bottle) bottlesToCheck.add(newProd.bottle);
+		for (const bottleId of bottlesToCheck) {
+			const bottle = bottleStore.getBottleById(bottleId);
+			if (!bottle) continue;
+			const finalStock = inventoryStore.getCurrentStock(bottleId);
+			const shouldBeInStock = finalStock > 0;
+			if (bottle.inStock !== shouldBeInStock) {
+				bottleStore.bottle = { ...bottle, inStock: shouldBeInStock };
+				await bottleStore.updateBottle();
+			}
+		}
+
+		if (summary.length > 0) {
+			const lines = summary.map((s) =>
+				s.change > 0 ? `+${s.change} ${s.itemName}` : `${s.change} ${s.itemName}`,
+			);
+			toast.add({
+				title: 'Inventory adjusted for production edit',
+				description: lines.join(', '),
+				color: 'success',
+				icon: 'i-lucide-archive',
+				duration: 8000,
+			});
+		}
+
+		return summary;
+	};
+
 	// Domain-specific getters
 	const getProductionsByDate = (date: Date): Production[] => {
 		return crud.items.value.filter(
@@ -184,6 +277,7 @@ export const useProductionStore = defineStore('productions', () => {
 		getProductionById,
 		createAndReturnId,
 		adjustInventoryForProduction,
+		adjustInventoryForProductionEdit,
 		getProductionsByDate,
 		getProductionsByBottle,
 	};

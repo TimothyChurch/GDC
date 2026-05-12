@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import type { TableColumn } from '@nuxt/ui'
 import type { User } from '~/types'
+import type { Row } from '@tanstack/vue-table'
 import { getPaginationRowModel } from '@tanstack/vue-table'
 
 const userStore = useUserStore()
@@ -75,7 +76,7 @@ defineExpose({ addUser })
         :data="userStore.users"
         :columns="columns"
         :loading="userStore.loading"
-        @select="(_e: Event, row: any) => { userStore.setUser(row.original._id); openPanel() }"
+        @select="(_e: Event, row: Row<User>) => { userStore.setUser(row.original._id); openPanel() }"
         :ui="{ tr: 'cursor-pointer' }"
       >
         <template #empty>

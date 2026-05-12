@@ -1,7 +1,8 @@
 <script setup lang="ts">
 import { Line } from 'vue-chartjs'
 useChartRegistration()
-import type { Batch, FermentingStage } from '~/types'
+import type { Batch, FermentingStage, MashingStage } from '~/types'
+import { calcGrainDisplacement, getEffectiveLiquidVolume, toGallons } from '~/utils/grainBill'
 
 const props = defineProps<{
   batch: Batch
@@ -10,8 +11,54 @@ const props = defineProps<{
 
 const batchStore = useBatchStore()
 const vesselStore = useVesselStore()
+const recipeStore = useRecipeStore()
+const itemStore = useItemStore()
 
 const stage = computed(() => props.batch.stages?.fermenting as FermentingStage | undefined)
+const mashingStage = computed(() => props.batch.stages?.mashing as MashingStage | undefined)
+
+const recipe = computed(() => recipeStore.getRecipeById(props.batch.recipe as any))
+
+/** Effective grain-in flag: per-batch override beats recipe default. */
+const effectiveGrainIn = computed<boolean>(() => {
+  const batchOverride = mashingStage.value?.grainIn
+  if (typeof batchOverride === 'boolean') return batchOverride
+  return !!recipe.value?.grainIn
+})
+
+/** Total grain displacement (gal) for the linked recipe. Re-uses the same
+ * calculation the recipe projection uses, so the hint matches the projection. */
+const grainDisplacementGal = computed(() => {
+  const r = recipe.value
+  if (!r?.items?.length) return 0
+  const lookup = new Map<string, any>()
+  for (const it of itemStore.items as any[]) {
+    lookup.set(String(it._id), {
+      extractType: it.extractType,
+      fermentable: it.fermentable,
+      displacement: it.displacement,
+    })
+  }
+  return calcGrainDisplacement(
+    r.items.map((i: any) => ({ _id: String(i._id), amount: i.amount, unit: i.unit })),
+    lookup,
+  )
+})
+
+/** Effective liquid volume of the *measured* wash, after grain displacement
+ * is subtracted. Only meaningful when grainIn is true and a wash volume is
+ * recorded. */
+const effectiveWashGal = computed(() => {
+  const v = stage.value?.washVolume
+  if (!v) return 0
+  const reportedGal = toGallons(v, stage.value?.washVolumeUnit || 'gallon')
+  return getEffectiveLiquidVolume(reportedGal, grainDisplacementGal.value, effectiveGrainIn.value)
+})
+
+const hasProjection = computed(() => {
+  const r = recipe.value
+  return !!(r?.projectedOG && r?.projectedFG && r?.projectedWashAbv)
+})
 
 const vesselName = computed(() => {
   if (!stage.value?.vessel) return 'Not assigned'
@@ -25,8 +72,8 @@ const estimatedABV = computed(() => {
   const fg = stage.value?.finalGravity
   if (og && fg) return ((og - fg) * 131.25).toFixed(2)
   if (!sortedReadings.value || sortedReadings.value.length < 2) return null
-  const first = sortedReadings.value[0].gravity
-  const last = sortedReadings.value[sortedReadings.value.length - 1].gravity
+  const first = sortedReadings.value[0]?.gravity
+  const last = sortedReadings.value[sortedReadings.value.length - 1]?.gravity
   if (!first || !last) return null
   return ((first - last) * 131.25).toFixed(2)
 })
@@ -34,7 +81,7 @@ const estimatedABV = computed(() => {
 // OG for per-reading calculations (use explicit OG or first reading)
 const effectiveOG = computed(() => {
   if (stage.value?.originalGravity) return stage.value.originalGravity
-  if (sortedReadings.value.length > 0) return sortedReadings.value[0].gravity
+  if (sortedReadings.value.length > 0) return sortedReadings.value[0]?.gravity ?? null
   return null
 })
 
@@ -151,6 +198,18 @@ const saveEdits = async () => {
     savingEdits.value = false
   }
 }
+
+/** Toggle the per-batch grain-in override on the Mashing stage. Routes
+ * through `updateStageData` (writes to `stages.mashing.grainIn`) so it
+ * goes through the same persistence path as other stage edits. */
+const grainInOverride = computed({
+  get: () => effectiveGrainIn.value,
+  set: async (val: boolean) => {
+    await batchStore.updateStageData(props.batch._id, 'Mashing', {
+      grainIn: val,
+    } as any, `Grain-in ${val ? 'enabled' : 'disabled'} (per-batch override)`)
+  },
+})
 </script>
 
 <template>
@@ -225,6 +284,18 @@ const saveEdits = async () => {
       </div>
     </div>
 
+    <!-- Recipe projection (reference, doesn't replace measured values) -->
+    <div
+      v-if="hasProjection"
+      class="mb-4 rounded border border-amber-500/20 bg-amber-500/5 p-2 text-xs flex flex-wrap gap-x-4 gap-y-1 text-parchment/70"
+    >
+      <span class="font-semibold text-amber-300/80">Recipe projection:</span>
+      <span>OG <b class="text-parchment/90">{{ recipe?.projectedOG?.toFixed(3) }}</b></span>
+      <span>FG <b class="text-parchment/90">{{ recipe?.projectedFG?.toFixed(3) }}</b></span>
+      <span>Wash ABV <b class="text-parchment/90">{{ recipe?.projectedWashAbv?.toFixed(1) }}%</b></span>
+      <span v-if="recipe?.projectedProofGallons">Output <b class="text-parchment/90">{{ recipe.projectedProofGallons.toFixed(2) }} PG</b></span>
+    </div>
+
     <!-- OG / FG / Wash Volume -->
     <div v-if="editing" class="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-4">
       <UFormField label="Original Gravity">
@@ -243,7 +314,33 @@ const saveEdits = async () => {
     <div v-else class="flex flex-wrap gap-6 mb-4 text-sm text-parchment/60">
       <span v-if="stage?.originalGravity">OG: {{ stage.originalGravity }}</span>
       <span v-if="stage?.finalGravity">FG: {{ stage.finalGravity }}</span>
-      <span v-if="stage?.washVolume">Wash: {{ stage.washVolume }} {{ stage.washVolumeUnit }}</span>
+      <span v-if="stage?.washVolume">
+        Wash: {{ stage.washVolume }} {{ stage.washVolumeUnit }}
+        <span
+          v-if="effectiveGrainIn && grainDisplacementGal > 0 && effectiveWashGal > 0"
+          class="text-amber-300/80"
+        >
+          (~{{ effectiveWashGal.toFixed(1) }} gal liquid after grain displacement)
+        </span>
+      </span>
+    </div>
+
+    <!-- Grain-in hint + per-batch override -->
+    <div
+      v-if="grainDisplacementGal > 0 || effectiveGrainIn"
+      class="mb-4 rounded border border-white/10 bg-black/20 p-2 text-xs flex items-center justify-between gap-3"
+    >
+      <div class="text-parchment/70">
+        <span class="font-semibold text-parchment/90">Grain-in</span>:
+        <span v-if="effectiveGrainIn">
+          {{ grainDisplacementGal.toFixed(2) }} gal of grain displacement subtracted
+          from wash volume for PG calculations.
+        </span>
+        <span v-else>
+          Off — wash volume treated as fully liquid.
+        </span>
+      </div>
+      <USwitch v-if="editing" v-model="grainInOverride" size="xs" />
     </div>
 
     <div v-if="editing" class="mb-4 flex justify-end">

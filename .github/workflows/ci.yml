@@ -1,0 +1,46 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+# Cancel any in-flight run for the same ref when a new commit arrives.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    name: Vitest unit tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - name: Prepare Nuxt (.nuxt + tsconfig)
+        run: npx nuxt prepare
+      - name: Run vitest
+        run: npm test -- --run
+
+  typecheck:
+    name: Nuxt typecheck (advisory)
+    runs-on: ubuntu-latest
+    # Advisory until the legacy Mongoose schema typing issues are resolved.
+    # Failing this job will not block merges; it surfaces regressions early.
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - name: Prepare Nuxt (.nuxt + tsconfig)
+        run: npx nuxt prepare
+      - name: Run typecheck
+        run: npx nuxt typecheck

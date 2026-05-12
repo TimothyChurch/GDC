@@ -84,7 +84,7 @@ describe('sanitize', () => {
       ],
     };
     const result = sanitize(input);
-    expect(result.items[0].amount).toEqual({});
+    expect(result.items[0]!.amount).toEqual({});
   });
 });
 

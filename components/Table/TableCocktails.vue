@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import type { TableColumn } from "@nuxt/ui";
 import type { Cocktail } from "~/types";
+import type { Row } from "@tanstack/vue-table";
 import { getPaginationRowModel } from "@tanstack/vue-table";
 
 const props = defineProps<{
@@ -103,7 +104,7 @@ const openModal = async () => await modal.open();
         :columns="columns"
         :loading="cocktailStore.loading"
         class="max-h-full"
-        @select="(_e: Event, row: any) => navigateTo(`/admin/cocktails/${row.original._id}`)"
+        @select="(_e: Event, row: Row<Cocktail>) => navigateTo(`/admin/cocktails/${row.original._id}`)"
         :ui="{ tr: 'cursor-pointer' }"
       >
         <template #empty>

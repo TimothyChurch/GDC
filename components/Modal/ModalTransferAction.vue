@@ -4,16 +4,13 @@ import type { TransferInput } from '~/types/interfaces/Transfer';
 /**
  * useOverlay-compatible wrapper around TransferActionForm (Phase 5.8).
  *
- * Usage:
- *   const overlay = useOverlay()
- *   const modal = overlay.create(LazyModalTransferAction)
- *   const result = await modal.open({ prefill: { batch, fromStage, toStage, sources } }).result
- *   if (result) { ... }
- *
  * Resolves with the `{ transfer, batch, updatedVessels }` payload on submit, or
- * `null` if the user dismisses. The form itself owns its USlideover chrome, so
- * this component is a typed pass-through that normalises both exit paths into
- * a single `close` event.
+ * `null` if the user dismisses. We deliberately do NOT declare an `open` model
+ * here — Nuxt UI's OverlayProvider binds `v-model:open` to this component, and
+ * we let it fall through as an attr to USlideover (matches the PanelBatch /
+ * PanelProduction pattern). Declaring defineModel('open') with a default
+ * intercepts the prop and races with the parent's reactive open=true, which
+ * snaps DialogRoot back to open=false and unmounts the panel content.
  */
 defineProps<{
 	prefill?: Partial<TransferInput>;
@@ -25,9 +22,17 @@ const emit = defineEmits<{
 </script>
 
 <template>
-	<TransferActionForm
-		:prefill="prefill"
-		@submitted="(result) => emit('close', result)"
-		@close="emit('close', null)"
-	/>
+	<USlideover
+		side="right"
+		:close="{ onClick: () => emit('close', null) }"
+		:ui="{ content: 'w-full sm:max-w-xl lg:max-w-4xl xl:max-w-6xl' }"
+	>
+		<template #content>
+			<TransferActionForm
+				:prefill="prefill"
+				@submitted="(result) => emit('close', result)"
+				@close="emit('close', null)"
+			/>
+		</template>
+	</USlideover>
 </template>

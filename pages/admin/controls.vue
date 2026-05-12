@@ -40,35 +40,10 @@ let inputData = reactive({
 	mashTun: { status: false, power: 0, agitator: false },
 });
 
-// Equipment logging
-const activityLog = ref<Array<{ equipment: string; action: string; value?: number; timestamp: string }>>([]);
-const loadingLogs = ref(false);
-
-const fetchLogs = async () => {
-	loadingLogs.value = true;
-	try {
-		const response = await $fetch('/api/equipmentLog');
-		activityLog.value = response as typeof activityLog.value;
-	} catch {
-		// Silently fail — logs are non-critical
-	} finally {
-		loadingLogs.value = false;
-	}
-};
+// Equipment logging — feed + endpoints live in a composable; the watchers below
+// stay inline because they're page-specific (which control → which log entry).
+const { activityLog, loading: loadingLogs, fetchLogs, logAction } = useEquipmentLogging();
 fetchLogs();
-
-const logAction = async (equipment: string, action: string, value?: number) => {
-	try {
-		const entry = await $fetch('/api/equipmentLog/create', {
-			method: 'POST',
-			body: { equipment, action, value, timestamp: new Date().toISOString() },
-		});
-		activityLog.value.unshift(entry as typeof activityLog.value[0]);
-		if (activityLog.value.length > 20) activityLog.value.pop();
-	} catch {
-		// Silently fail
-	}
-};
 
 const sendMessage = () => {
 	send(

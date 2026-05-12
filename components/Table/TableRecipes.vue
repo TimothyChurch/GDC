@@ -1,12 +1,27 @@
 <script setup lang="ts">
 import type { TableColumn } from "@nuxt/ui";
 import type { Recipe } from "~/types";
+import type { Row } from "@tanstack/vue-table";
 import { getPaginationRowModel, getSortedRowModel } from "@tanstack/vue-table";
 
 const router = useRouter();
 const recipeStore = useRecipeStore();
 const itemStore = useItemStore();
+const batchStore = useBatchStore();
 const { confirm } = useDeleteConfirm();
+
+function buildRecipeDeleteWarning(recipeId: string): string {
+  const id = recipeId.toString();
+  const linked = batchStore.batches.filter((b) => (b as any).recipe?.toString() === id);
+  const active = linked.filter((b) => b.status === 'active');
+  if (active.length > 0) {
+    return `${active.length} active batch${active.length !== 1 ? 'es' : ''} use this recipe. They will keep their data but lose the recipe link. This action cannot be undone.`;
+  }
+  if (linked.length > 0) {
+    return `${linked.length} historical batch${linked.length !== 1 ? 'es' : ''} reference this recipe. They will lose the recipe link. This action cannot be undone.`;
+  }
+  return 'This action cannot be undone.';
+}
 
 const { search, pagination, tableRef, filteredTotal } = useTableState(
   computed(() => filteredRecipes.value.length)
@@ -53,7 +68,8 @@ const columns: TableColumn<Recipe>[] = [
       label: "Delete recipe",
       variant: "danger",
       async onClick() {
-        const confirmed = await confirm("Recipe", row.original.name);
+        const warningText = buildRecipeDeleteWarning(row.original._id.toString());
+        const confirmed = await confirm("Recipe", row.original.name, { warningText });
         if (confirmed) {
           recipeStore.deleteRecipe(row.original._id.toString());
         }
@@ -98,7 +114,7 @@ defineExpose({ newRecipe });
         :data="filteredRecipes"
         :columns="columns"
         :loading="recipeStore.loading"
-        @select="(_e: Event, row: any) => router.push(`/admin/recipes/${row.original._id}`)"
+        @select="(_e: Event, row: Row<Recipe>) => router.push(`/admin/recipes/${row.original._id}`)"
         :ui="{ tr: 'cursor-pointer' }"
       >
         <template #empty>

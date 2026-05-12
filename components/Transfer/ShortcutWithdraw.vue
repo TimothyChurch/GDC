@@ -23,7 +23,7 @@ const vesselStore = useVesselStore();
 
 function findSources() {
 	const out: { vessel: string; volume: number; proof: number }[] = [];
-	for (const v of vesselStore.crud.items.value) {
+	for (const v of vesselStore.items) {
 		const slot = (v.contents || []).find((c: any) => String(c.batch) === props.batch._id);
 		if (slot && slot.volume > 0) {
 			const proof = (slot as any).proof ?? (slot.abv != null ? slot.abv * 2 : 0);

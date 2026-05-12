@@ -18,7 +18,7 @@ const selectTemplate = (name: string) => {
   if (name === "Custom") {
     pipeline.value = [];
   } else {
-    pipeline.value = [...PIPELINE_TEMPLATES[name]];
+    pipeline.value = [...(PIPELINE_TEMPLATES[name] ?? [])];
   }
 };
 
@@ -51,7 +51,11 @@ const moveStage = (index: number, direction: -1 | 1) => {
   const current = [...pipeline.value];
   const targetIdx = index + direction;
   if (targetIdx < 0 || targetIdx >= current.length) return;
-  [current[index], current[targetIdx]] = [current[targetIdx], current[index]];
+  const a = current[index];
+  const b = current[targetIdx];
+  if (a === undefined || b === undefined) return;
+  current[index] = b;
+  current[targetIdx] = a;
   pipeline.value = current;
   pipelineTemplate.value = "Custom";
 };
@@ -74,6 +78,7 @@ const onDrop = (targetIndex: number) => {
   }
   const current = [...pipeline.value];
   const [moved] = current.splice(dragIndex.value, 1);
+  if (moved === undefined) return;
   current.splice(targetIndex, 0, moved);
   pipeline.value = current;
   pipelineTemplate.value = "Custom";

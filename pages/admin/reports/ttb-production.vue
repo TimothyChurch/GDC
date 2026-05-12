@@ -22,6 +22,15 @@ const months = computed(() => {
   }
   return result
 })
+
+const transferStore = useTransferStore()
+watch(selectedMonth, async (v) => {
+  if (v) await transferStore.list({ period: v })
+}, { immediate: true })
+
+const { status, discrepancies, summary } = useReportStatus({
+  period: () => selectedMonth.value,
+})
 </script>
 
 <template>
@@ -38,6 +47,15 @@ const months = computed(() => {
         </NuxtLink>
       </template>
     </AdminPageHeader>
+
+    <ReportShell
+      :period="selectedMonth"
+      :status="status"
+      :discrepancies="discrepancies"
+      :transfer-count="summary.transferCount"
+      submit-url="https://www.pay.gov/public/form/start/3499/"
+      submit-label="Open pay.gov"
+    />
 
     <!-- Month selector -->
     <div class="flex flex-wrap items-center gap-1.5 mb-6 bg-brown/15 rounded-lg p-1 border border-brown/20 w-fit print:hidden">

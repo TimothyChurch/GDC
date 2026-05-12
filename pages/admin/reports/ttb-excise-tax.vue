@@ -53,6 +53,12 @@ const months = computed(() => {
       </template>
     </AdminPageHeader>
 
+    <ReportShell
+      :period="selectedMonth"
+      submit-url="https://www.pay.gov/public/form/start/3499/"
+      submit-label="Open pay.gov"
+    />
+
     <!-- Controls -->
     <div class="flex flex-wrap items-end gap-4 mb-6 print:hidden">
       <!-- Month selector -->

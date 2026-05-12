@@ -35,10 +35,26 @@ const toast = useToast();
 const linkedBatchId = ref(props.prefill?.batchId || '');
 const isBatchLinked = computed(() => !!linkedBatchId.value);
 
-const { localData, isDirty, saving, save, cancel } = useFormPanel({
+const { localData, isDirty, saving, save, cancel, draftRestoredAt, discardDraft } = useFormPanel({
   source: () => productionsStore.production,
+  draft: {
+    key: 'PanelProduction',
+    id: () => productionsStore.production._id || (props.prefill?.batchId ? `batch-${props.prefill.batchId}` : null),
+  },
   async onSave(data) {
     const isNewProduction = !data._id;
+    // Snapshot the pre-save state for delta-based inventory adjustment on edits.
+    // (Tech-debt #73: previously only the create path adjusted inventory.)
+    const originalForEdit = !isNewProduction
+      ? {
+          quantity: productionsStore.production.quantity || 0,
+          bottle: productionsStore.production.bottle,
+          bottling: productionsStore.production.bottling
+            ? { ...productionsStore.production.bottling }
+            : undefined,
+        }
+      : null;
+
     data.costs = {
       batch: calculatedBatchCost.value,
       barrel: calculatedBarrelCost.value,
@@ -55,9 +71,15 @@ const { localData, isDirty, saving, save, cancel } = useFormPanel({
     Object.assign(productionsStore.production, data);
     await productionsStore.updateProduction();
 
-    // Auto-adjust inventory for new productions only (not edits)
     if (isNewProduction && updateInventory.value) {
       await productionsStore.adjustInventoryForProduction({
+        quantity: data.quantity,
+        bottle: data.bottle,
+        bottling: data.bottling,
+      });
+    } else if (originalForEdit && updateInventory.value) {
+      // Apply the delta between old and new on edit.
+      await productionsStore.adjustInventoryForProductionEdit(originalForEdit, {
         quantity: data.quantity,
         bottle: data.bottle,
         bottling: data.bottling,
@@ -132,7 +154,7 @@ const linkedBatchRecipeName = computed(() => {
  */
 function findVesselSlotsForBatch(batchId: string) {
   const slots: { vesselId: string; volume: number; proof: number; abv: number; volumeUnit: string; value: number }[] = [];
-  for (const v of vesselStore.crud.items.value) {
+  for (const v of vesselStore.items) {
     const slot = (v.contents || []).find((c: any) => String(c.batch) === batchId);
     if (slot && slot.volume > 0) {
       const proof = (slot as any).proof ?? (slot.abv != null ? slot.abv * 2 : 0);
@@ -261,6 +283,17 @@ const wizardSave = async () => {
           <UButton icon="i-lucide-x" color="neutral" variant="ghost" @click="cancel" />
         </div>
 
+        <div
+          v-if="draftRestoredAt"
+          class="flex items-center gap-2 px-4 py-2 bg-amber-500/10 border-b border-amber-500/20 text-xs text-amber-300"
+        >
+          <UIcon name="i-lucide-archive-restore" class="shrink-0" />
+          <span class="flex-1">Draft restored from a previous session.</span>
+          <UButton size="xs" variant="ghost" color="neutral" class="text-amber-300 hover:text-amber-200" @click="discardDraft">
+            Discard
+          </UButton>
+        </div>
+
         <!-- Wizard Step Indicator (new only) -->
         <div v-if="isNew" class="px-4 py-3 border-b border-white/5">
           <div class="flex items-center gap-2">
@@ -373,7 +406,7 @@ const wizardSave = async () => {
               :total-production-cost="totalProductionCost"
               :per-bottle-cost="perBottleCost"
               :update-inventory="updateInventory"
-              :selected-bottle-name="selectedBottleName"
+              :selected-bottle-name="selectedBottleName ?? ''"
               @update:update-inventory="updateInventory = $event"
             />
           </div>

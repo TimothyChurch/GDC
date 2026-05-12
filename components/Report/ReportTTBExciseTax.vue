@@ -1,5 +1,13 @@
 <script setup lang="ts">
 import { calculateProofGallons, toGallons } from '~/utils/proofGallons'
+import {
+  getCbmaRate,
+  getCbmaRateLabel,
+  CBMA_TIER1_LIMIT_PG,
+  CBMA_TIER2_LIMIT_PG,
+  type CbmaTier,
+} from '~/utils/federalExciseTax'
+import { bottleToWineGallons } from '~/composables/useProductionCosts'
 
 /**
  * TTB Excise Tax Report — Form 5000.24
@@ -25,7 +33,7 @@ import { calculateProofGallons, toGallons } from '~/utils/proofGallons'
 
 const props = defineProps<{
   month: string   // 'YYYY-MM'
-  cbmaRate: 'tier1' | 'tier2' | 'standard'  // which CBMA rate tier applies
+  cbmaRate: CbmaTier  // which CBMA rate tier applies
   ytdProofGallons?: number  // proof gallons removed so far this calendar year BEFORE this month
 }>()
 
@@ -47,41 +55,8 @@ const monthLabel = computed(() =>
 )
 
 // ─── CBMA Rate Logic ─────────────────────────────────────────────────────────
-
-// CBMA Tier 1: $2.70/PG for first 100,000 PG of domestically produced spirits
-// Tier 2: $13.34/PG for next 22,130,000 PG
-// Standard: $13.50/PG above that
-
-const CBMA_TIER1_LIMIT = 100_000       // PG
-const CBMA_TIER2_LIMIT = 22_230_000    // PG (100k + 22.13M)
-
-const TAX_RATE_TIER1 = 2.70
-const TAX_RATE_TIER2 = 13.34
-const TAX_RATE_STANDARD = 13.50
-
-function getRateLabel(rate: 'tier1' | 'tier2' | 'standard'): string {
-  if (rate === 'tier1') return `CBMA Reduced Rate — $${TAX_RATE_TIER1.toFixed(2)}/PG (first 100,000 PG)`
-  if (rate === 'tier2') return `CBMA Reduced Rate — $${TAX_RATE_TIER2.toFixed(2)}/PG (100,001–22,230,000 PG)`
-  return `Standard Rate — $${TAX_RATE_STANDARD.toFixed(2)}/PG`
-}
-
-function getApplicableRate(rate: 'tier1' | 'tier2' | 'standard'): number {
-  if (rate === 'tier1') return TAX_RATE_TIER1
-  if (rate === 'tier2') return TAX_RATE_TIER2
-  return TAX_RATE_STANDARD
-}
-
-// ─── Volume conversion for bottles ──────────────────────────────────────────
-
-function bottleToWineGallons(bottle: { volume?: number; volumeUnit?: string }): number {
-  const vol = bottle.volume || 750
-  const unit = (bottle.volumeUnit || 'mL').toLowerCase()
-  if (unit === 'ml' || unit.includes('milli')) return vol * 0.000264172
-  if (unit === 'l' || unit.includes('liter')) return vol * 0.264172
-  if (unit.includes('oz')) return vol * 0.0078125
-  if (unit.includes('gal')) return vol
-  return vol * 0.000264172  // default: assume mL
-}
+// Schedule lives in `utils/federalExciseTax.ts`. This file just resolves the
+// rate label + numeric rate via the shared kernel.
 
 // ─── Productions (removals) this month ──────────────────────────────────────
 
@@ -116,7 +91,7 @@ interface RemovalLine {
 }
 
 function buildRemovalLines(productions: typeof monthlyRemovals.value): RemovalLine[] {
-  const rate = getApplicableRate(props.cbmaRate)
+  const rate = getCbmaRate(props.cbmaRate)
   return productions.map(p => {
     const bottle = bottleStore.getBottleById(p.bottle)
     const abv = bottle?.abv || 0
@@ -145,7 +120,7 @@ const allLines = computed(() => buildRemovalLines(monthlyRemovals.value))
 // ─── Aggregated by product (for summary section) ─────────────────────────────
 
 const removalsByProduct = computed(() => {
-  const rate = getApplicableRate(props.cbmaRate)
+  const rate = getCbmaRate(props.cbmaRate)
   const map = new Map<string, {
     product: string
     spiritType: string
@@ -178,13 +153,13 @@ const removalsByProduct = computed(() => {
 
 const totalWG = computed(() => allLines.value.reduce((s, l) => s + l.wineGallons, 0))
 const totalPG = computed(() => allLines.value.reduce((s, l) => s + l.proofGallons, 0))
-const totalTax = computed(() => totalPG.value * getApplicableRate(props.cbmaRate))
+const totalTax = computed(() => totalPG.value * getCbmaRate(props.cbmaRate))
 
 const period1PG = computed(() => period1Lines.value.reduce((s, l) => s + l.proofGallons, 0))
-const period1Tax = computed(() => period1PG.value * getApplicableRate(props.cbmaRate))
+const period1Tax = computed(() => period1PG.value * getCbmaRate(props.cbmaRate))
 
 const period2PG = computed(() => period2Lines.value.reduce((s, l) => s + l.proofGallons, 0))
-const period2Tax = computed(() => period2PG.value * getApplicableRate(props.cbmaRate))
+const period2Tax = computed(() => period2PG.value * getCbmaRate(props.cbmaRate))
 
 // ─── YTD tracking for CBMA tier monitoring ───────────────────────────────────
 
@@ -193,7 +168,7 @@ const ytdAfterMonth = computed(() =>
 )
 
 const cbmaTier1Remaining = computed(() =>
-  Math.max(0, CBMA_TIER1_LIMIT - ytdAfterMonth.value)
+  Math.max(0, CBMA_TIER1_LIMIT_PG - ytdAfterMonth.value)
 )
 
 // ─── Deposit due dates ────────────────────────────────────────────────────────
@@ -239,7 +214,7 @@ const period2Overdue = computed(() => {
         Reporting Period: {{ monthLabel }}
       </p>
       <p class="text-xs text-parchment/50 mt-1 print:text-gray-500">
-        Applied rate: {{ getRateLabel(cbmaRate) }}
+        Applied rate: {{ getCbmaRateLabel(cbmaRate) }}
       </p>
     </div>
 

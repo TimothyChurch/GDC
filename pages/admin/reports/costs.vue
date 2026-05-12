@@ -13,6 +13,8 @@ definePageMeta({ layout: 'admin' })
       </template>
     </AdminPageHeader>
 
+    <ReportShell />
+
     <ReportCostBreakdown />
   </div>
 </template>

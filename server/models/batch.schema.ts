@@ -79,6 +79,12 @@ export const Batch = defineMongooseModel({
 				preBoilGravity: Number,
 				postBoilGravity: Number,
 				ingredientsWithdrawn: Boolean,
+				/** Per-batch override for the recipe's grain-in flag. Copied from
+				 * Recipe.grainIn at batch creation; can be flipped per-batch if a
+				 * given run differs from the recipe template (e.g. trial lautering
+				 * a normally grain-in mash). Falls back to the recipe value when
+				 * unset. */
+				grainIn: Boolean,
 			},
 			fermenting: {
 				...stageBase,

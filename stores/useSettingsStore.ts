@@ -23,6 +23,17 @@ const DEFAULT_SETTINGS: Omit<Settings, "_id"> = {
     address: "",
     permitNumbers: { ttb: "", tabc: "" },
   },
+  units: {
+    volume: "gallon",
+    strength: "abv",
+    temperature: "fahrenheit",
+    weight: "pound",
+  },
+  production: {
+    mashEfficiency: 75,
+    fermentationAttenuation: 80,
+    distillationYield: 80,
+  },
 };
 
 export const useSettingsStore = defineStore("settings", () => {
@@ -94,6 +105,18 @@ export const useSettingsStore = defineStore("settings", () => {
   const barrelAgeDefaults = computed(() => settings.value.barrelAgeDefaults);
   const theme = computed(() => settings.value.theme);
   const distillery = computed(() => settings.value.distillery);
+  // Falls back to canonical defaults when an older settings doc lacks `units`.
+  const units = computed(() => settings.value.units || {
+    volume: "gallon",
+    strength: "abv",
+    temperature: "fahrenheit",
+    weight: "pound",
+  });
+  const production = computed(() => settings.value.production || {
+    mashEfficiency: 75,
+    fermentationAttenuation: 80,
+    distillationYield: 80,
+  });
 
   return {
     settings,
@@ -107,5 +130,7 @@ export const useSettingsStore = defineStore("settings", () => {
     barrelAgeDefaults,
     theme,
     distillery,
+    units,
+    production,
   };
 });

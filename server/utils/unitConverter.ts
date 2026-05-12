@@ -27,6 +27,8 @@ export class UnitConversionError extends Error {
 
 export type CanonicalVolumeUnit = 'gallon' | 'liter' | 'milliliter' | 'fluid_ounce' | 'cup';
 export type CanonicalWeightUnit = 'pound' | 'ounce' | 'kilogram' | 'gram';
+export type CanonicalTemperatureUnit = 'fahrenheit' | 'celsius';
+export type CanonicalStrengthUnit = 'abv' | 'proof';
 export type CanonicalUnit = CanonicalVolumeUnit | CanonicalWeightUnit;
 
 // ─── Alias normalization ──────────────────────────────────────────────────────
@@ -186,4 +188,102 @@ export function roundVolume(volume: number, decimals = 4): number {
 	if (!Number.isFinite(volume)) return 0;
 	const factor = Math.pow(10, decimals);
 	return Math.round(volume * factor) / factor;
+}
+
+// ─── Temperature ──────────────────────────────────────────────────────────────
+// Temperature uses an offset, not a ratio, so it gets its own helpers rather
+// than fitting into the multiplicative VOLUME_TO_GALLON_FACTOR pattern.
+// Canonical for storage: Fahrenheit (US distillery convention).
+
+const TEMPERATURE_ALIASES: Record<string, CanonicalTemperatureUnit> = {
+	fahrenheit: 'fahrenheit',
+	f: 'fahrenheit',
+	'°f': 'fahrenheit',
+	celsius: 'celsius',
+	c: 'celsius',
+	'°c': 'celsius',
+	centigrade: 'celsius',
+};
+
+export function normalizeTemperatureUnit(raw: string | null | undefined): CanonicalTemperatureUnit {
+	if (raw === null || raw === undefined || raw === '') {
+		throw new UnitConversionError('Temperature unit is required (got empty/null)');
+	}
+	const lower = String(raw).trim().toLowerCase();
+	const canonical = TEMPERATURE_ALIASES[lower];
+	if (!canonical) {
+		throw new UnitConversionError(
+			`Unknown temperature unit: '${raw}'. Supported: ${Object.keys(TEMPERATURE_ALIASES).sort().join(', ')}`,
+		);
+	}
+	return canonical;
+}
+
+export function toFahrenheit(value: number, fromUnit: string): number {
+	if (!Number.isFinite(value)) {
+		throw new UnitConversionError(`Temperature must be finite, got: ${value}`);
+	}
+	const c = normalizeTemperatureUnit(fromUnit);
+	if (c === 'fahrenheit') return value;
+	return value * 9 / 5 + 32;
+}
+
+export function fromFahrenheit(valueF: number, toUnit: string): number {
+	if (!Number.isFinite(valueF)) {
+		throw new UnitConversionError(`Temperature must be finite, got: ${valueF}`);
+	}
+	const c = normalizeTemperatureUnit(toUnit);
+	if (c === 'fahrenheit') return valueF;
+	return (valueF - 32) * 5 / 9;
+}
+
+export function convertTemperature(value: number, fromUnit: string, toUnit: string): number {
+	return fromFahrenheit(toFahrenheit(value, fromUnit), toUnit);
+}
+
+// ─── Strength (ABV ↔ proof) ───────────────────────────────────────────────────
+// Canonical for storage: ABV percent (0–100). Proof = 2 × ABV%.
+
+const STRENGTH_ALIASES: Record<string, CanonicalStrengthUnit> = {
+	abv: 'abv',
+	'%abv': 'abv',
+	percent: 'abv',
+	'%': 'abv',
+	proof: 'proof',
+};
+
+export function normalizeStrengthUnit(raw: string | null | undefined): CanonicalStrengthUnit {
+	if (raw === null || raw === undefined || raw === '') {
+		throw new UnitConversionError('Strength unit is required (got empty/null)');
+	}
+	const lower = String(raw).trim().toLowerCase();
+	const canonical = STRENGTH_ALIASES[lower];
+	if (!canonical) {
+		throw new UnitConversionError(
+			`Unknown strength unit: '${raw}'. Supported: ${Object.keys(STRENGTH_ALIASES).sort().join(', ')}`,
+		);
+	}
+	return canonical;
+}
+
+export function toAbvPercent(value: number, fromUnit: string): number {
+	if (!Number.isFinite(value)) {
+		throw new UnitConversionError(`Strength must be finite, got: ${value}`);
+	}
+	const c = normalizeStrengthUnit(fromUnit);
+	if (c === 'abv') return value;
+	return value / 2;  // proof → abv
+}
+
+export function fromAbvPercent(abv: number, toUnit: string): number {
+	if (!Number.isFinite(abv)) {
+		throw new UnitConversionError(`ABV must be finite, got: ${abv}`);
+	}
+	const c = normalizeStrengthUnit(toUnit);
+	if (c === 'abv') return abv;
+	return abv * 2;  // abv → proof
+}
+
+export function convertStrength(value: number, fromUnit: string, toUnit: string): number {
+	return fromAbvPercent(toAbvPercent(value, fromUnit), toUnit);
 }

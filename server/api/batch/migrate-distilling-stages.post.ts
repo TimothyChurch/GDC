@@ -10,13 +10,20 @@ import { Recipe } from "~/server/models/recipe.schema";
 export default defineEventHandler(async (event) => {
 	await requireRole(event, 'Admin');
 
-	const batchResults = await migrateBatches();
-	const recipeResults = await migrateRecipes();
+	const outcome = await runOnceMigration('migrate-distilling-stages', async () => {
+		const batchResults = await migrateBatches();
+		const recipeResults = await migrateRecipes();
+		return { batches: batchResults, recipes: recipeResults };
+	});
 
-	return {
-		batches: batchResults,
-		recipes: recipeResults,
-	};
+	if (outcome.alreadyApplied) {
+		return {
+			alreadyApplied: true,
+			message: 'Migration migrate-distilling-stages has already been applied.',
+			appliedAt: outcome.appliedAt,
+		};
+	}
+	return outcome.result;
 });
 
 const NEW_STAGES = ["Stripping Run", "Low Wines", "Spirit Run"];

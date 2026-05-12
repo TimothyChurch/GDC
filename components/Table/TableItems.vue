@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import type { TableColumn } from "@nuxt/ui";
 import type { Item } from "~/types";
+import type { Row } from "@tanstack/vue-table";
 import { getPaginationRowModel } from "@tanstack/vue-table";
 
 const router = useRouter();
@@ -151,7 +152,7 @@ defineExpose({ newItem });
         :columns="columns"
         :loading="itemStore.loading"
         @select="
-          (_e: Event, row: any) =>
+          (_e: Event, row: Row<Item>) =>
             router.push(`/admin/items/${row.original._id}`)
         "
         :ui="{ tr: 'cursor-pointer' }"

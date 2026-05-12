@@ -37,7 +37,7 @@ watchEffect(() => {
 
 const vesselNameById = (id: string | null | undefined) => {
 	if (!id) return '—';
-	return vesselStore.crud.items.value.find(v => v._id === id)?.name || id.slice(-6);
+	return vesselStore.items.find(v => v._id === id)?.name || id.slice(-6);
 };
 
 function summarizeSources(t: Transfer): string {
@@ -78,6 +78,32 @@ const formatDate = (iso?: string) =>
 		month: 'short', day: 'numeric',
 		hour: 'numeric', minute: '2-digit',
 	}) : '—';
+
+const transferById = computed(() => {
+	const map = new Map<string, Transfer>();
+	for (const t of transfers.value) map.set(t._id, t);
+	return map;
+});
+
+function shortId(id: string | null | undefined): string {
+	return id ? `#${id.slice(-6)}` : '';
+}
+
+function reverserCreatorName(t: Transfer): string | null {
+	if (!t.reversedBy) return null;
+	const rev = transferById.value.get(t.reversedBy);
+	return rev?.createdBy?.name || null;
+}
+
+function correctorNameForReversal(t: Transfer): string | null {
+	if (t.type !== 'reversal') return null;
+	return t.createdBy?.name || null;
+}
+
+const highlightedId = ref<string | null>(null);
+function pairFor(t: Transfer): string | null {
+	return t.reverses || t.reversedBy || null;
+}
 </script>
 
 <template>
@@ -108,22 +134,37 @@ const formatDate = (iso?: string) =>
 			<div
 				v-for="t in transfers"
 				:key="t._id"
-				class="flex items-start gap-3 p-3 rounded-lg border border-brown/20 bg-charcoal/60"
-				:class="t.status === 'reversed' ? 'opacity-60 italic' : ''"
+				class="flex items-start gap-3 p-3 rounded-lg border bg-charcoal/60 transition-colors"
+				:class="[
+					t.status === 'reversed' ? 'opacity-60 italic' : '',
+					highlightedId === t._id || (highlightedId && pairFor(t) === highlightedId)
+						? 'border-amber-500/40 bg-amber-500/5'
+						: 'border-brown/20',
+				]"
+				@mouseenter="highlightedId = t._id"
+				@mouseleave="highlightedId = null"
 			>
 				<div class="shrink-0 pt-0.5">
 					<TransferTypeBadge :type="t.type" size="sm" />
 				</div>
 
 				<div class="min-w-0 flex-1">
-					<div class="flex items-center gap-2 text-xs text-parchment/60">
+					<div class="flex items-center flex-wrap gap-2 text-xs text-parchment/60">
 						<span class="font-mono">{{ formatDate(t.createdAt) }}</span>
+						<span class="font-mono text-parchment/30">{{ shortId(t._id) }}</span>
 						<UBadge size="xs" color="neutral" variant="subtle" :icon="periodLocked(t) ? 'i-lucide-lock' : 'i-lucide-calendar'">
 							{{ t.reportingPeriod }}
 						</UBadge>
-						<UBadge v-if="t.status === 'reversed'" size="xs" color="warning" variant="subtle">
-							Reversed
+						<UBadge v-if="t.status === 'reversed'" size="xs" color="warning" variant="subtle" icon="i-lucide-undo-2">
+							Reversed{{ reverserCreatorName(t) ? ` by ${reverserCreatorName(t)}` : '' }}
+							<span v-if="t.reversedBy" class="font-mono ml-1">→ {{ shortId(t.reversedBy) }}</span>
 						</UBadge>
+						<UBadge v-if="t.type === 'reversal' && t.reverses" size="xs" color="info" variant="subtle" icon="i-lucide-corner-up-left">
+							Reverses {{ shortId(t.reverses) }}{{ correctorNameForReversal(t) ? ` · ${correctorNameForReversal(t)}` : '' }}
+						</UBadge>
+						<span v-if="t.createdBy?.name && t.type !== 'reversal'" class="text-parchment/40">
+							· {{ t.createdBy.name }}
+						</span>
 					</div>
 					<div class="text-sm text-parchment mt-1">
 						<span v-if="t.fromStage" class="font-medium">{{ t.fromStage }}</span>

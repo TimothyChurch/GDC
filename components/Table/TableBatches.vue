@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import type { TableColumn } from "@nuxt/ui";
 import type { Batch } from "~/types";
+import type { Row } from "@tanstack/vue-table";
 import { getPaginationRowModel } from "@tanstack/vue-table";
 
 const props = defineProps<{ data?: Batch[] }>();
@@ -8,7 +9,19 @@ const props = defineProps<{ data?: Batch[] }>();
 const router = useRouter();
 const batchStore = useBatchStore();
 const recipeStore = useRecipeStore();
+const vesselStore = useVesselStore();
 const { confirm } = useDeleteConfirm();
+
+function findBatchVessels(batchId: string) {
+  const out: { name: string; type: string; location?: string; volume: number }[] = [];
+  for (const v of vesselStore.items) {
+    const slot = (v.contents || []).find((c: any) => String(c.batch) === batchId);
+    if (slot && (slot.volume || 0) > 0) {
+      out.push({ name: v.name, type: v.type, location: v.location, volume: slot.volume || 0 });
+    }
+  }
+  return out;
+}
 
 const tableData = computed(() => {
   const data = props.data ?? batchStore.batches;
@@ -80,6 +93,30 @@ const columns: TableColumn<Batch>[] = [
       return h("div", { class: "flex items-center gap-1.5 flex-wrap" }, badges);
     },
   }),
+  {
+    accessorKey: "vessel",
+    header: "Vessel",
+    cell: ({ row }) => {
+      const slots = findBatchVessels(row.original._id);
+      if (!slots.length) {
+        return h("span", { class: "text-parchment/40 italic text-xs" }, "—");
+      }
+      return h(
+        "div",
+        { class: "flex flex-col gap-0.5 text-xs" },
+        slots.map((s) =>
+          h("div", { class: "flex items-baseline gap-1.5" }, [
+            h("span", { class: "font-medium text-parchment/80" }, s.name),
+            h(
+              "span",
+              { class: "text-parchment/50" },
+              `${s.volume} gal${s.location ? ` · ${s.location}` : ""}`,
+            ),
+          ]),
+        ),
+      );
+    },
+  },
   actionsColumn<Batch>((row) => [
     {
       label: "Details",
@@ -140,7 +177,7 @@ const addItem = () => {
         :data="tableData"
         :columns="columns"
         :loading="batchStore.loading"
-        @select="(_e: Event, row: any) => router.push(`/admin/batch/${row.original._id}`)"
+        @select="(_e: Event, row: Row<Batch>) => router.push(`/admin/batch/${row.original._id}`)"
         :ui="{ tr: 'cursor-pointer' }"
       >
         <template #empty>
@@ -195,6 +232,17 @@ const addItem = () => {
           <div v-if="batch.createdAt">
             <span class="text-parchment/60">Created</span>
             <div class="text-parchment/70">{{ new Date(batch.createdAt).toLocaleDateString() }}</div>
+          </div>
+        </div>
+        <div v-if="findBatchVessels(batch._id).length" class="mt-2 pt-2 border-t border-brown/20 text-xs">
+          <span class="text-parchment/60">{{ findBatchVessels(batch._id).length > 1 ? 'Vessels' : 'Vessel' }}</span>
+          <div
+            v-for="s in findBatchVessels(batch._id)"
+            :key="s.name"
+            class="text-parchment/80 truncate"
+          >
+            <span class="font-medium">{{ s.name }}</span>
+            <span class="text-parchment/50"> · {{ s.volume }} gal{{ s.location ? ` · ${s.location}` : '' }}</span>
           </div>
         </div>
       </div>

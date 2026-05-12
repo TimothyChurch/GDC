@@ -248,10 +248,21 @@ async function applyTransferToBatch(
 	const stageVolumes = (batch.stageVolumes ||= new Map()) as Map<string, number>;
 	const stageProofs = ((batch as any).stageProofs ||= new Map()) as Map<string, number>;
 
-	// Decrement source stage(s)
-	if (input.fromStage && totals.totalSourceVolume > 0) {
+	// Decrement source stage(s).
+	// For "initial entry" (Upcoming → first stage with sources=[]), there's no
+	// physical source vessel, so totalSourceVolume is 0 — but the planned volume
+	// in stageVolumes[fromStage] still needs to be drawn down. Fall back to the
+	// destination total in that case so Upcoming reflects what was committed.
+	const isInitialEntry =
+		(input.fromStage === 'Upcoming' || input.fromStage == null)
+		&& input.sources.length === 0
+		&& input.destinations.length > 0;
+	const sourceDecrement = isInitialEntry
+		? totals.totalDestVolume + (input.loss?.volume || 0)
+		: totals.totalSourceVolume;
+	if (input.fromStage && sourceDecrement > 0) {
 		const current = stageVolumes.get(input.fromStage) || 0;
-		const newVol = roundVolume(current - totals.totalSourceVolume);
+		const newVol = roundVolume(current - sourceDecrement);
 		if (newVol <= RECONCILIATION_EPSILON) {
 			stageVolumes.delete(input.fromStage);
 			stageProofs.delete(input.fromStage);

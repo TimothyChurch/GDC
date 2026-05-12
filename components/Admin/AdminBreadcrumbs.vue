@@ -72,12 +72,13 @@ const breadcrumbs = computed(() => {
   const pathSegments = segments.slice(adminIdx + 1)
 
   const items: { label: string; icon?: string; to?: string }[] = [
-    { label: 'Dashboard', icon: 'i-lucide-layout-dashboard', to: '/admin/dashboard' },
+    { label: 'Overview', icon: 'i-lucide-layout-grid', to: '/admin' },
   ]
 
   let currentPath = '/admin'
   for (let i = 0; i < pathSegments.length; i++) {
     const segment = pathSegments[i]
+    if (!segment) continue
     currentPath += `/${segment}`
     const isLast = i === pathSegments.length - 1
 
@@ -90,7 +91,7 @@ const breadcrumbs = computed(() => {
         label: entityName,
         ...(isLast ? {} : { to: currentPath }),
       })
-    } else if (segment !== 'dashboard') {
+    } else {
       const label = segment === 'inventory'
         ? resolveInventoryLabel(pathSegments)
         : (labelMap[segment] || segment)

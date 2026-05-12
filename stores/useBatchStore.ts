@@ -1,6 +1,5 @@
-import type { Batch, BatchStages, DistillingRun, MashingStage, Recipe, TastingNote, TransferLogEntry } from '~/types';
+import type { Batch, BatchStages, DistillingRun, MashingStage, Recipe, TastingNote } from '~/types';
 import { STAGE_KEY_MAP, isStageActive, getActiveStages, hasStageVolumes, getStageIndex, getPreviousStage } from '~/composables/batchPipeline';
-import { calculateProofGallons } from '~/utils/proofGallons';
 
 const emptyStages = (): BatchStages => ({});
 
@@ -17,7 +16,6 @@ const defaultBatch = (): Batch => ({
 	barrelCost: undefined,
 	stages: emptyStages(),
 	stageVolumes: {},
-	transferLog: [],
 });
 
 export const useBatchStore = defineStore('batches', () => {
@@ -86,27 +84,14 @@ export const useBatchStore = defineStore('batches', () => {
 		if (!target.stageVolumes || Object.keys(target.stageVolumes).length === 0) {
 			target.stageVolumes = { [target.currentStage]: target.batchSize || 0 };
 		}
-		if (!target.transferLog) {
-			target.transferLog = [];
-		}
 	};
 
-	// --- Helper: get current user name for transfer log ---
+	// --- Helper: get current user name for activity log entries ---
 	const getCurrentUserName = (): string | undefined => {
 		const { user } = useAuth();
 		return user.value
 			? `${user.value.firstName || ''} ${user.value.lastName || ''}`.trim() || user.value.email
 			: undefined;
-	};
-
-	// --- Helper: add a transfer log entry ---
-	const addTransferLogEntry = (target: Batch, entry: Omit<TransferLogEntry, 'date' | 'user'>): void => {
-		if (!target.transferLog) target.transferLog = [];
-		target.transferLog.push({
-			...entry,
-			date: new Date(),
-			user: getCurrentUserName(),
-		});
 	};
 
 	// --- Pipeline-based stage advancement (engine-routed, Phase 4) ---
@@ -118,23 +103,11 @@ export const useBatchStore = defineStore('batches', () => {
 	// batch + vessel stores. Fixes Bugs 1.1, 4.1, 6.1, 12.1 from
 	// PLAN-PIPELINE-REVAMP.md §4.1.
 	//
-	// PROOF DEFAULTING: legacy callers (existing UI in advanced stages of
-	// distillation) don't capture proof. We default to 0 for both source
-	// and destination, which trivially balances PG (0 = 0 + 0). Phase 5/6
-	// UI work will surface proof inputs and pass them through.
+	// PROOF: source proof is read from `vessel.contents[batch].proof`
+	// (falling back to abv*2 for legacy slots without a proof field).
+	// Destination proof is back-computed so that PG is conserved through
+	// the transfer (assuming losses carry zero proof — see advanceToStage).
 
-	const findVesselsContaining = (batchId: string): { vesselId: string; volume: number; proof: number }[] => {
-		const vesselStore = useVesselStore();
-		const out: { vesselId: string; volume: number; proof: number }[] = [];
-		for (const v of vesselStore.crud.items.value) {
-			const slot = (v.contents || []).find((c: any) => String(c.batch) === batchId);
-			if (slot && slot.volume > 0) {
-				const proof = slot.proof ?? (slot.abv != null ? slot.abv * 2 : 0);
-				out.push({ vesselId: v._id, volume: slot.volume, proof });
-			}
-		}
-		return out;
-	};
 
 	/** Start the first production stage with optional partial volume transfer.
 	 * Routes through the Transfer Engine. Side effects (inventory withdrawal,
@@ -213,7 +186,7 @@ export const useBatchStore = defineStore('batches', () => {
 		// If fromStage is 'Upcoming', sources is empty (engine bypass).
 		let sources: { vessel: string; volume: number; proof: number }[] = [];
 		if (fromStage !== 'Upcoming') {
-			const containing = findVesselsContaining(batchId);
+			const containing = useVesselStore().getVesselsContainingBatch(batchId);
 			if (containing.length === 0) {
 				console.warn(`[advanceToStage] No vessels contain batch ${batchId}; cannot determine source.`);
 				return;
@@ -231,9 +204,16 @@ export const useBatchStore = defineStore('batches', () => {
 			}
 		}
 
-		// Destination: caller-supplied vessel (or null for stages without a physical vessel like Storage).
+		// Conserve proof gallons through the transfer:
+		//   sourcePG = destPG + lossPG   (engine validates this)
+		// We assume losses (e.g. foreshots/heads/tails for distillation) carry zero proof —
+		// a conservative default that anchors all source PG into the destination.
+		// When destVol is 0 (e.g. stages with no physical vessel), proof falls to 0 too.
+		const sourcePG = sources.reduce((s, x) => s + (x.volume * x.proof) / 100, 0);
+		const destProof = destVol > 0 ? (sourcePG * 100) / destVol : 0;
+
 		const destinations = stageData?.vessel
-			? [{ vessel: stageData.vessel, stage: targetStage, volume: destVol, proof: 0 }]
+			? [{ vessel: stageData.vessel, stage: targetStage, volume: destVol, proof: destProof }]
 			: [];
 
 		// Loss = source volume - dest volume (only when distillation produces less than charged).
@@ -368,38 +348,7 @@ export const useBatchStore = defineStore('batches', () => {
 	};
 
 	// --- Stripping run management ---
-
-	// Recompute the lowWines stage totals from all stripping run outputs.
-	// Low wines is the accumulation of every stripping run — volume sums, ABV is volume-weighted.
-	const recomputeLowWines = (target: Batch): void => {
-		const runs = target.stages?.strippingRun?.runs || [];
-		const runsWithOutput = runs.filter((r: DistillingRun) => (r.output?.volume || r.total?.volume || 0) > 0);
-
-		if (!target.stages.lowWines) target.stages.lowWines = {};
-		const lw: any = target.stages.lowWines;
-
-		if (runsWithOutput.length === 0) {
-			lw.volume = 0;
-			lw.abv = 0;
-			lw.proofGallons = 0;
-			lw.sourceRuns = runs.length;
-			return;
-		}
-
-		const totalVol = runsWithOutput.reduce((s: number, r: DistillingRun) => s + (r.output?.volume || r.total?.volume || 0), 0);
-		const weightedAbv = runsWithOutput.reduce((s: number, r: DistillingRun) => {
-			const vol = r.output?.volume || r.total?.volume || 0;
-			const abv = r.output?.abv || r.total?.abv || 0;
-			return s + vol * abv;
-		}, 0);
-		const avgAbv = totalVol > 0 ? weightedAbv / totalVol : 0;
-
-		lw.volume = totalVol;
-		lw.volumeUnit = runsWithOutput[0].output?.volumeUnit || runsWithOutput[0].total?.volumeUnit || lw.volumeUnit || 'gallon';
-		lw.abv = avgAbv;
-		lw.proofGallons = totalVol > 0 && avgAbv > 0 ? calculateProofGallons(totalVol, lw.volumeUnit, avgAbv) : 0;
-		lw.sourceRuns = runs.length;
-	};
+	// `recomputeLowWines` is auto-imported from utils/distillingRunCalc.ts
 
 	const addStrippingRun = async (batchId: string, run: DistillingRun): Promise<void> => {
 		const target = crud.items.value.find((b) => b._id === batchId);
@@ -618,8 +567,14 @@ export const useBatchStore = defineStore('batches', () => {
 			scaleFactor = batchInRecipeUnits / recipe.volume;
 		}
 
+		// Sequential per-spirit calls — each is its own PUT to /api/bulkSpirit/[_id].
+		// NOT atomic across spirits; tracked as partial-success below so the user
+		// sees which spirits applied vs failed when something goes wrong (tech-debt
+		// #45 — true atomicity needs a server-side `withdraw-bulk` endpoint with
+		// a MongoDB transaction).
 		let totalWithdrawnValue = 0;
 		const summary: string[] = [];
+		const failures: { name: string; error: string }[] = [];
 
 		for (const bsIngredient of recipe.bulkSpirits) {
 			const spirit = bulkSpiritStore.getBulkSpiritById(bsIngredient.bulkSpirit);
@@ -635,8 +590,9 @@ export const useBatchStore = defineStore('batches', () => {
 				});
 				totalWithdrawnValue += result.value;
 				summary.push(`${scaledVolume.toFixed(1)} ${bsIngredient.volumeUnit} ${spirit.name}`);
-			} catch {
-				// Error toast shown by withdraw
+			} catch (error) {
+				console.error('[useBatchStore.withdrawBulkSpirits]', spirit.name, error);
+				failures.push({ name: spirit.name, error: getErrorMessage(error) });
 			}
 		}
 
@@ -646,6 +602,20 @@ export const useBatchStore = defineStore('batches', () => {
 			addLogEntry(batch, 'Bulk spirits withdrawn', summary.join(', '));
 			crud.item.value = batch;
 			await updateBatch();
+		}
+
+		if (failures.length > 0) {
+			const failedNames = failures.map((f) => f.name).join(', ');
+			const successCount = summary.length;
+			toast.add({
+				title: successCount > 0 ? 'Partial bulk-spirit withdrawal' : 'Bulk-spirit withdrawal failed',
+				description: successCount > 0
+					? `Withdrew ${successCount} spirit(s); ${failedNames} did NOT apply. Check bulk-spirit inventory and re-run if needed.`
+					: `Failed: ${failedNames}`,
+				color: 'error',
+				icon: 'i-lucide-alert-triangle',
+				duration: 12000,
+			});
 		}
 	};
 

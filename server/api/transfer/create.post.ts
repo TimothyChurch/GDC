@@ -9,7 +9,10 @@ import type { TransferInput } from '../../../types/interfaces/Transfer';
  * transaction. Replaces the legacy multi-PUT flow.
  */
 export default defineEventHandler(async (event) => {
-	await requireRole(event, 'Admin', 'Manager');
+	// Transfers are day-to-day operations (mash → ferment → still). Staff can
+	// create them; the audit trail in `createdBy` records who did it.
+	// Reversals stay Admin-only (server/api/transfer/[id]/reverse.post.ts).
+	await requireRole(event, 'Admin', 'Manager', 'Staff');
 
 	const body = await readBody(event);
 	const sanitized = sanitize(body);

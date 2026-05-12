@@ -74,9 +74,8 @@ export const useVesselStore = defineStore('vessels', () => {
 
 	/**
 	 * Custom updateVessel that recalculates `current` from `contents` before saving.
-	 * This is domain logic that doesn't fit the generic CRUD pattern.
-	 * Note: intentionally swallows errors (original behavior) -- callers like
-	 * fullTransfer/transferBatch don't expect throws.
+	 * Domain logic that doesn't fit the generic CRUD pattern; intentionally swallows
+	 * errors so legacy callers (`emptyVessel`, `disposeBarrel`) don't have to handle them.
 	 */
 	const updateVessel = async (): Promise<void> => {
 		if (crud.item.value.contents && crud.item.value.contents.length > 0) {
@@ -169,93 +168,6 @@ export const useVesselStore = defineStore('vessels', () => {
 		}
 	};
 
-	/** Move ALL contents from source to dest. Emits one transfer per batch. */
-	const fullTransfer = async (sourceId: string, destId: string): Promise<void> => {
-		const source = crud.items.value.find(v => v._id === sourceId);
-		const dest = crud.items.value.find(v => v._id === destId);
-		if (!source || !dest) return;
-		const transferStore = useTransferStore();
-
-		const slots = (source.contents || []).filter((c: any) => c.volume > 0);
-		for (const slot of slots) {
-			const volumeWG = toGallonsLenient(slot.volume, slot.volumeUnit);
-			const proof = (slot as any).proof ?? (slot.abv != null ? slot.abv * 2 : 0);
-			await transferStore.create({
-				type: 'vessel_move',
-				batch: String(slot.batch),
-				fromStage: null,
-				toStage: null,
-				sources: [{ vessel: sourceId, volume: volumeWG, proof }],
-				destinations: [{ vessel: destId, volume: volumeWG, proof }],
-				loss: { volume: 0, proof: 0, reasonCode: 'no_loss' },
-				notes: 'Full vessel transfer',
-			});
-		}
-	};
-
-	/**
-	 * @deprecated Buggy "siphon all batches proportionally" semantic. Use
-	 * `transferBatchContents(source, dest, batchId, volume, unit)` instead to
-	 * specify which batch is moving. Kept as a wrapper that loops over all
-	 * batches in the source vessel and transfers each proportionally.
-	 *
-	 * Bug 3.1 from PLAN-PIPELINE-REVAMP.md §4.1.
-	 */
-	const transferBatch = async (
-		sourceId: string,
-		destId: string,
-		transfer: { volume: number; volumeUnit: string; abv: number; value: number },
-	): Promise<void> => {
-		console.warn('[useVesselStore] transferBatch is deprecated and ambiguous; use transferBatchContents(source, dest, batchId, volume, unit) instead.');
-		const source = crud.items.value.find(v => v._id === sourceId);
-		if (!source) return;
-		const slots = (source.contents || []).filter((c: any) => c.volume > 0);
-		const totalVol = slots.reduce((s, c: any) => s + toGallonsLenient(c.volume, c.volumeUnit), 0);
-		if (totalVol <= 0) return;
-		const requestedWG = toGallonsLenient(transfer.volume, transfer.volumeUnit);
-		const ratio = Math.min(1, requestedWG / totalVol);
-
-		for (const slot of slots) {
-			const slotWG = toGallonsLenient(slot.volume, slot.volumeUnit);
-			const moveWG = slotWG * ratio;
-			if (moveWG <= 0.001) continue;
-			await transferBatchContents(sourceId, destId, String(slot.batch), moveWG, 'gallon');
-		}
-	};
-
-	/** Move a specific batch's contents from one vessel to another.
-	 *  Emits one engine transfer of type `vessel_move`.
-	 *  Replaces the legacy in-memory mutation pattern (Bugs 1.5, 2.2). */
-	const transferBatchContents = async (
-		sourceId: string,
-		destId: string,
-		batchId: string,
-		volume: number,
-		volumeUnit: string,
-	): Promise<void> => {
-		const source = crud.items.value.find(v => v._id === sourceId);
-		if (!source) return;
-		const slot = getSlot(source, batchId);
-		if (!slot) {
-			console.warn(`[useVesselStore] Source vessel ${source.name} does not contain batch ${batchId}`);
-			return;
-		}
-		const requestedWG = toGallonsLenient(volume, volumeUnit);
-		const moveWG = Math.min(requestedWG, slot.volumeWG);
-		if (moveWG <= 0.001) return;
-
-		const transferStore = useTransferStore();
-		await transferStore.create({
-			type: 'vessel_move',
-			batch: batchId,
-			fromStage: null,
-			toStage: null,
-			sources: [{ vessel: sourceId, volume: moveWG, proof: slot.proof }],
-			destinations: [{ vessel: destId, volume: moveWG, proof: slot.proof }],
-			loss: { volume: 0, proof: 0, reasonCode: 'no_loss' },
-		});
-	};
-
 	/** Empty a barrel (via destruction transfers) and mark it disposed. */
 	const disposeBarrel = async (id: string): Promise<void> => {
 		const vessel = crud.items.value.find(v => v._id === id);
@@ -303,6 +215,24 @@ export const useVesselStore = defineStore('vessels', () => {
 		return crud.items.value.filter((v) => v.type === type);
 	};
 
+	/**
+	 * Vessels currently holding a given batch, with proof inferred per slot.
+	 * Used by `useBatchStore.advanceToStage` to enumerate transfer sources.
+	 */
+	const getVesselsContainingBatch = (
+		batchId: string,
+	): { vesselId: string; volume: number; proof: number }[] => {
+		const out: { vesselId: string; volume: number; proof: number }[] = [];
+		for (const v of crud.items.value) {
+			const slot = (v.contents || []).find((c: any) => String(c.batch) === batchId);
+			if (slot && slot.volume > 0) {
+				const proof = (slot as any).proof ?? (slot.abv != null ? slot.abv * 2 : 0);
+				out.push({ vesselId: v._id, volume: slot.volume, proof });
+			}
+		}
+		return out;
+	};
+
 	return {
 		...crud,
 		// Domain aliases for backward compatibility
@@ -327,9 +257,7 @@ export const useVesselStore = defineStore('vessels', () => {
 		emptyVessel,
 		disposeBarrel,
 		getVesselByType,
-		fullTransfer,
-		transferBatch,
-		transferBatchContents,
+		getVesselsContainingBatch,
 		addContents,
 	};
 });

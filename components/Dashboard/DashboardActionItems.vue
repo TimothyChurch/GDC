@@ -1,96 +1,13 @@
 <script setup lang="ts">
-const batchStore = useBatchStore();
-const recipeStore = useRecipeStore();
-const inventoryStore = useInventoryStore();
-const itemStore = useItemStore();
+const props = withDefaults(defineProps<{
+  prominent?: boolean
+  maxItems?: number
+}>(), {
+  prominent: false,
+  maxItems: 12,
+})
 
-interface ActionItem {
-  id: string;
-  title: string;
-  description: string;
-  priority: 'high' | 'medium' | 'low';
-  icon: string;
-  category: string;
-  link?: string;
-}
-
-// Generate action items from real data where possible
-const actionItems = computed<ActionItem[]>(() => {
-  const items: ActionItem[] = [];
-
-  // Batches in fermenting that might need gravity checks
-  for (const batch of batchStore.fermentingBatches) {
-    const recipeName = recipeStore.getRecipeById(batch.recipe)?.name || 'Unknown';
-    const fermData = (batch.stages as any)?.fermenting;
-    const lastReading = fermData?.readings?.length
-      ? fermData.readings[fermData.readings.length - 1]
-      : null;
-
-    if (!lastReading) {
-      items.push({
-        id: `ferm-check-${batch._id}`,
-        title: `Take gravity reading: ${recipeName}`,
-        description: 'No fermentation readings recorded yet',
-        priority: 'high',
-        icon: 'i-lucide-thermometer',
-        category: 'Fermentation',
-        link: `/admin/batch/${batch._id}`,
-      });
-    } else {
-      const daysSinceReading = Math.floor(
-        (Date.now() - new Date(lastReading.date).getTime()) / (1000 * 60 * 60 * 24)
-      );
-      if (daysSinceReading >= 2) {
-        items.push({
-          id: `ferm-overdue-${batch._id}`,
-          title: `Gravity reading overdue: ${recipeName}`,
-          description: `Last reading was ${daysSinceReading} days ago`,
-          priority: daysSinceReading >= 5 ? 'high' : 'medium',
-          icon: 'i-lucide-alert-triangle',
-          category: 'Fermentation',
-          link: `/admin/batch/${batch._id}`,
-        });
-      }
-    }
-  }
-
-  // Upcoming batches that need to be started
-  for (const batch of batchStore.upcomingBatches) {
-    const recipeName = recipeStore.getRecipeById(batch.recipe)?.name || 'Unknown';
-    items.push({
-      id: `start-${batch._id}`,
-      title: `Start brewing: ${recipeName}`,
-      description: `${batch.batchSize} ${batch.batchSizeUnit} batch ready to begin`,
-      priority: 'medium',
-      icon: 'i-lucide-play',
-      category: 'Production',
-      link: `/admin/batch/${batch._id}`,
-    });
-  }
-
-  // Low inventory items that need reordering — use each item's reorderPoint
-  for (const item of itemStore.items) {
-    if (!item.reorderPoint || item.reorderPoint <= 0) continue;
-    const stock = inventoryStore.getCurrentStock(item._id);
-    if (stock <= item.reorderPoint) {
-      items.push({
-        id: `reorder-${item._id}`,
-        title: `Reorder: ${item.name}`,
-        description: `Only ${stock} ${item.inventoryUnit || 'units'} remaining (reorder point: ${item.reorderPoint})`,
-        priority: stock <= 1 ? 'high' : 'medium',
-        icon: 'i-lucide-shopping-cart',
-        category: 'Inventory',
-        link: `/admin/items/${item._id}`,
-      });
-    }
-  }
-
-  // Sort by priority
-  const priorityOrder = { high: 0, medium: 1, low: 2 };
-  items.sort((a, b) => priorityOrder[a.priority] - priorityOrder[b.priority]);
-
-  return items;
-});
+const { items: actionItems } = useAttentionFeed();
 
 const priorityColor = (priority: string) => {
   switch (priority) {
@@ -121,10 +38,27 @@ const priorityIconColor = (priority: string) => {
 </script>
 
 <template>
-  <div class="bg-charcoal rounded-xl border border-brown/30 p-5">
+  <div
+    :class="[
+      'bg-charcoal rounded-xl border border-brown/30',
+      prominent ? 'p-6' : 'p-5',
+    ]"
+  >
     <div class="flex items-center justify-between mb-4">
       <div class="flex items-center gap-2">
-        <h2 class="text-lg font-bold text-parchment font-[Cormorant_Garamond]">Action Items</h2>
+        <UIcon
+          v-if="prominent"
+          name="i-lucide-bell-ring"
+          class="text-xl text-gold"
+        />
+        <h2
+          :class="[
+            'font-bold text-parchment font-[Cormorant_Garamond]',
+            prominent ? 'text-xl md:text-2xl' : 'text-lg',
+          ]"
+        >
+          {{ prominent ? 'Needs your attention' : 'Action Items' }}
+        </h2>
         <span
           v-if="actionItems.filter((a) => a.priority === 'high').length > 0"
           class="flex items-center justify-center min-w-5 h-5 px-1.5 rounded-full bg-red-500/20 text-red-400 text-[10px] font-bold"
@@ -154,9 +88,15 @@ const priorityIconColor = (priority: string) => {
       <p class="text-sm text-parchment/50">All caught up!</p>
     </div>
 
-    <div v-else class="flex flex-col gap-2 max-h-80 overflow-y-auto">
+    <div
+      v-else
+      :class="[
+        'flex flex-col gap-2 overflow-y-auto',
+        prominent ? 'max-h-[32rem]' : 'max-h-80',
+      ]"
+    >
       <NuxtLink
-        v-for="item in actionItems.slice(0, 12)"
+        v-for="item in actionItems.slice(0, maxItems)"
         :key="item.id"
         :to="item.link || '#'"
         :class="[
@@ -188,10 +128,10 @@ const priorityIconColor = (priority: string) => {
       </NuxtLink>
 
       <div
-        v-if="actionItems.length > 12"
+        v-if="actionItems.length > maxItems"
         class="text-xs text-parchment/50 text-center py-1"
       >
-        +{{ actionItems.length - 12 }} more items
+        +{{ actionItems.length - maxItems }} more items
       </div>
     </div>
   </div>

@@ -3,11 +3,27 @@ import { Recipe } from "~/server/models/recipe.schema";
 /**
  * One-time migration endpoint to backfill pipeline field on existing recipes.
  * Maps recipe class → appropriate pipeline template.
- * Safe to run multiple times — only updates recipes without a pipeline.
+ * Gated by `runOnceMigration` (tech-debt #54) so the route can't be triggered
+ * twice; also internally idempotent (only touches recipes with no pipeline).
  */
 export default defineEventHandler(async (event) => {
 	await requireRole(event, 'Admin');
 
+	const outcome = await runOnceMigration('backfill-recipe-pipelines', async () => {
+		return await backfillPipelines();
+	});
+
+	if (outcome.alreadyApplied) {
+		return {
+			alreadyApplied: true,
+			message: 'Migration backfill-recipe-pipelines has already been applied.',
+			appliedAt: outcome.appliedAt,
+		};
+	}
+	return outcome.result;
+});
+
+async function backfillPipelines() {
 	const PIPELINE_MAP: Record<string, string[]> = {
 		'Whisky': ['Mashing', 'Fermenting', 'Distilling', 'Barrel Aging', 'Storage', 'Proofing', 'Bottled'],
 		'Brandy': ['Mashing', 'Fermenting', 'Distilling', 'Barrel Aging', 'Storage', 'Proofing', 'Bottled'],
@@ -63,4 +79,4 @@ export default defineEventHandler(async (event) => {
 	}
 
 	return { updated, total: recipes.length };
-});
+}

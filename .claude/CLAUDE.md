@@ -104,6 +104,58 @@ Federal TTB Forms 5110.40/.11/.28 + Texas TABC monthly + excise. Reports compute
 - Validate at server boundaries with yup; use `sanitize()` + `validateObjectId()` first
 - Throw `createError({ statusCode, statusMessage })` from server; catch + `getErrorMessage(err)` on client
 
+## Display units (added 2026-05-08)
+
+The app has a unit-preference system with two layers:
+1. **Global default** — `useSettingsStore.units.{volume,strength,temperature,weight}` configured at admin Settings → Units
+2. **Per-input override** — every input field has its own sticky unit selector that defaults to global but is independently changeable
+
+**Storage is always canonical** (gallon, ABV%, °F, lb) for fields that don't already track their own unit. Many existing fields (recipe ingredients, vessel.contents) store the unit alongside the value — those are inherently polymorphic and use a different pattern.
+
+### For displays — `useDisplayUnits()` composable
+
+```ts
+const u = useDisplayUnits()
+{{ u.formatVolume(batch.volume) }}          // "100.00 gal" or "378.54 L"
+{{ u.formatStrength(bottle.abv) }}          // "40.0%" or "80.0 proof"
+{{ u.formatTemperature(reading.temp) }}     // "72°F" or "22°C"
+{{ u.formatWeight(item.weight) }}           // "10.00 lb" or "4.54 kg"
+```
+
+### For canonical inputs — Form input components
+
+When a field stores a single canonical number (e.g., `bottle.abv` as ABV%, `batch.fermentTemp` as °F), use the matching input wrapper. The user can switch units inline without changing the underlying value.
+
+```vue
+<FormVolumeInput v-model="recipe.batchSize" />        <!-- v-model = gallons -->
+<FormStrengthInput v-model="bottle.abv" />            <!-- v-model = ABV % -->
+<FormTemperatureInput v-model="ferment.temperature" />  <!-- v-model = °F -->
+<FormWeightInput v-model="ingredient.weight" />       <!-- v-model = lb -->
+```
+
+Each input renders a number field + a tiny unit dropdown/toggle. Switching the unit converts the displayed number; v-model stays canonical. Per-instance default: `<FormVolumeInput :default-unit="'liter'" v-model="…" />`.
+
+### For unit-tracked storage — keep existing pattern
+
+Recipe ingredients (`{ amount, unit }`), vessel contents (`{ volume, volumeUnit }`), batch sizes (`{ batchSize, batchSizeUnit }`) all store the unit. Don't migrate those to FormVolumeInput — the unit IS data.
+
+### Reference implementations
+- `components/Transfer/TransferActionForm.vue` — every source/dest/loss row uses `<FormVolumeInput>` + `<FormStrengthInput>`. Each input has its own sticky unit selector. Form state is canonical (gallons + proof); engine receives canonical with no conversion at submit.
+- `components/Panel/PanelBottle.vue` (ABV field) — `<FormStrengthInput>`
+
+### Bridging Form*Input to schema fields
+When a schema stores a unit different from the input's canonical (e.g., Transfer schema stores `proof`, FormStrengthInput's v-model is `abv`), bridge via a `computed({get, set})` proxy:
+```ts
+const sourceAbv = computed({
+  get: () => (source.proof || 0) / 2,
+  set: (abv) => emit('update', { proof: (abv ?? 0) * 2 }),
+})
+// Then: <FormStrengthInput v-model="sourceAbv" />
+```
+
+### Status (rollout incremental)
+~30 components still hardcode display units (BatchDistillingRun, BatchFermenting, Card/*, Table/*, Report/*). Migrate as you touch them.
+
 ## Nuxt UI v4
 
 Full reference at `.claude/NUXT_UI_REFERENCE.md` (legacy). Prefer the `/nuxt-ui [topic]` skill for current docs. Component-specific rules load automatically via `.claude/rules/nuxt-ui-components.md` when editing `.vue` files.

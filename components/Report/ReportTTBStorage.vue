@@ -27,7 +27,8 @@ const monthLabel = computed(() =>
 // "Received into storage" = batches that entered barrels during this month
 const receivedIntoStorage = computed(() => {
   return batchStore.batches.filter(b => {
-    const entryDate = (b.stages as any)?.barrelAging?.entry?.date ? new Date((b.stages as any).barrelAging.entry.date) : null
+    const raw = getStage(b, 'barrelAging')?.entry?.date
+    const entryDate = raw ? new Date(raw) : null
     if (!entryDate) return false
     return entryDate >= monthStart.value && entryDate <= monthEnd.value
   })
@@ -36,7 +37,8 @@ const receivedIntoStorage = computed(() => {
 // "Removed from storage" = batches that exited barrels (for bottling) during this month
 const removedFromStorage = computed(() => {
   return batchStore.batches.filter(b => {
-    const exitDate = (b.stages as any)?.barrelAging?.exit?.date ? new Date((b.stages as any).barrelAging.exit.date) : null
+    const raw = getStage(b, 'barrelAging')?.exit?.date
+    const exitDate = raw ? new Date(raw) : null
     if (!exitDate) return false
     return exitDate >= monthStart.value && exitDate <= monthEnd.value
   })
@@ -46,7 +48,7 @@ const removedFromStorage = computed(() => {
 const receivedTotals = computed(() => {
   let wg = 0, pg = 0
   receivedIntoStorage.value.forEach(b => {
-    const entry = (b.stages as any)?.barrelAging?.entry
+    const entry = getStage(b, 'barrelAging')?.entry
     if (!entry) return
     const vol = toGallons(entry.volume || 0, entry.volumeUnit || 'gal')
     wg += vol
@@ -59,7 +61,7 @@ const receivedTotals = computed(() => {
 const removedTotals = computed(() => {
   let wg = 0, pg = 0
   removedFromStorage.value.forEach(b => {
-    const exit = (b.stages as any)?.barrelAging?.exit
+    const exit = getStage(b, 'barrelAging')?.exit
     if (!exit) return
     const vol = toGallons(exit.volume || 0, exit.volumeUnit || 'gal')
     wg += vol
@@ -87,10 +89,9 @@ const storageLosses = computed(() => {
   let lossWG = 0, lossPG = 0
 
   batchStore.batches.forEach(b => {
-    const entryDate = (b.stages as any)?.barrelAging?.entry?.date ? new Date((b.stages as any).barrelAging.entry.date) : null
+    const entry = getStage(b, 'barrelAging')?.entry
+    const entryDate = entry?.date ? new Date(entry.date) : null
     if (!entryDate || entryDate > monthEnd.value) return
-
-    const entry = (b.stages as any)?.barrelAging?.entry
     if (!entry) return
 
     // Find corresponding barrel
@@ -123,10 +124,11 @@ const barrelInventory = computed(() => {
       const content = barrel.contents![0]!
       const batch = batchStore.getBatchById(content.batch)
       const recipe = batch?.recipe ? recipeStore.getRecipeById(batch.recipe) : null
-      const entryDate = (batch?.stages as any)?.barrelAging?.entry?.date ? new Date((batch?.stages as any).barrelAging.entry.date) : null
+      const rawEntry = getStage(batch, 'barrelAging')?.entry?.date
+      const entryDate = rawEntry ? new Date(rawEntry) : null
       const vol = toGallons(content.volume || 0, content.volumeUnit || 'gal')
       const abv = content.abv || 0
-      const barrelEntry = (batch?.stages as any)?.barrelAging?.entry
+      const barrelEntry = getStage(batch, 'barrelAging')?.entry
       const entryVol = barrelEntry
         ? toGallons(barrelEntry.volume || 0, barrelEntry.volumeUnit || 'gal')
         : vol

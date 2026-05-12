@@ -46,16 +46,17 @@ export default defineEventHandler(async (event) => {
 			await doc.save();
 			return doc;
 		}
-		if (existing.status !== 'open') {
+		const doc = existing as any;
+		if (doc.status !== 'open') {
 			throw createError({
 				status: 409,
-				statusText: `Period ${period} is already ${existing.status}`,
+				statusText: `Period ${period} is already ${doc.status}`,
 			});
 		}
-		existing.status = 'closed';
-		existing.closedAt = new Date();
-		(existing as any).closedBy = closedBy;
-		if (sanitized.notes) existing.notes = sanitized.notes;
+		doc.status = 'closed';
+		doc.closedAt = new Date();
+		doc.closedBy = closedBy;
+		if (sanitized.notes) doc.notes = sanitized.notes;
 		await existing.save();
 		return existing;
 	} catch (error: any) {
